@@ -58,7 +58,7 @@
                                 <div class="media-content">
                                     <div class="content">
                                         <p><strong>{{ $project->name }}</strong> <small>{{ $project->role }}</small> <br>
-                                            <strong>The Digital Bible Library</strong>® (DBL) is an online digital asset and licensing management platform developed and maintained by the United Bible Societies. DBL gathers, validates, and safeguards a large collection of quality, standardized, digital Scripture texts and publication assets, in hundreds of languages — all contributed by a growing number of partnering translation agencies. DBL enables the secure licensing and distribution of these resources to approved internal or external ministry partners. In this way, DBL seeks to empower others to reach people from every tribe, in every nation, with the power of God’s Word in their heart language.</p>
+                                            <strong>The Digital Bible Platform (DBP)</strong> is a free service that lets users access Bible text, audio, and video programmatically. The Digital Bible Platform is a large repository of Biblical rich content in more than 1000 languages including Deaf Bible Video Content, available in multiple sign languages.</p>
                                     </div>
                                     <nav class="level is-mobile">
                                         <div class="level-left">
