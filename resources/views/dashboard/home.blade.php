@@ -58,7 +58,7 @@
                                 <div class="media-content">
                                     <div class="content">
                                         <p><strong>{{ $project->name }}</strong> <small>{{ $project->role }}</small> <br>
-                                            <strong>The Digital Bible Platform (DBP)</strong> is a free service that lets users access Bible text, audio, and video programmatically. The Digital Bible Platform is a large repository of Biblical rich content in more than 1000 languages including Deaf Bible Video Content, available in multiple sign languages.</p>
+                                            <strong>The Digital Bible Platform (DBP)</strong> is a free service that lets users access Bible text, audio, and video programmatically. The Digital Bible Platform is a large repository of Biblically rich content in more than 1000 languages including Deaf Bible Video Content, available in multiple sign languages.</p>
                                     </div>
                                     <nav class="level is-mobile">
                                         <div class="level-left">
