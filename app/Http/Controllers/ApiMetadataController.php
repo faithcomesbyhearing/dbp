@@ -271,8 +271,8 @@ class ApiMetadataController extends APIController
 
     public function refreshDevCache()
     {
-        if(config('app.server_name') != 'APP_DEV') {
-            return $this->setStatusCode(422)->replyWithError('This is not the dev server');
+        if(config('app.env') != 'dev') {
+            return $this->setStatusCode(422)->replyWithError('This is not a dev server');
         }
         Cache::flush();
         return $this->reply('Cache Flushed successfully');
