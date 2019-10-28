@@ -6,7 +6,6 @@ use App\Http\Controllers\APIController;
 
 use App\Models\User\Account;
 use App\Models\User\ProjectMember;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Validator;
 
@@ -24,10 +23,6 @@ class AccountsController extends APIController
      *          @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Parameter(name="user_id", in="query", description="The User ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/User/properties/id")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -63,10 +58,6 @@ class AccountsController extends APIController
      *          @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Parameter(name="user_id", in="query", description="The User ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/User/properties/id")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\RequestBody(required=true, description="Information supplied for user account creation",
      *          @OA\MediaType(mediaType="application/json",
      *              @OA\Schema(
@@ -110,10 +101,6 @@ class AccountsController extends APIController
      *     summary="Update a specific Account",
      *     description="",
      *     operationId="v4_user_accounts.update",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Parameter(name="project_id", in="query", description="The Project ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Parameter(name="user_id", in="query", description="The User ID", required=true,
@@ -173,10 +160,6 @@ class AccountsController extends APIController
      *     summary="Delete an account",
      *     description="",
      *     operationId="v4_user_accounts.delete",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Parameter(name="project_id", in="query", description="The Project ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Parameter(name="user_id", in="query", description="The User ID", required=true,

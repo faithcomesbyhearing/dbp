@@ -77,8 +77,8 @@ Route::name('v4_access_groups.update')->put('access/groups/{group_id}',         
 Route::name('v4_access_groups.destroy')->delete('access/groups/{group_id}',        'User\AccessGroupController@destroy');
 
 // VERSION 4 | Stream
-Route::name('v4_video_stream')->get('bible/filesets/{fileset_id}/{file_id}/playlist.m3u8',    'Bible\VideoStreamController@index');
-Route::name('v4_video_stream_ts')->get('bible/filesets/{fileset_id}/{file_id}/{file_name}',   'Bible\VideoStreamController@transportStream');
+Route::name('v4_media_stream')->get('bible/filesets/{fileset_id}/{file_id}/playlist.m3u8',    'Bible\StreamController@index');
+Route::name('v4_media_stream_ts')->get('bible/filesets/{fileset_id}/{file_id}/{file_name}',   'Bible\StreamController@transportStream');
 
 // VERSION 4 | Bible
 Route::name('v4_bible.books')->get('bibles/{bible_id}/book/{book?}',               'Bible\BiblesController@books');
@@ -101,6 +101,7 @@ Route::name('v4_filesets.books')->get('bibles/filesets/{fileset_id}/books',     
 // VERSION 4 | Text
 Route::name('v4_filesets.chapter')->get('bibles/filesets/{fileset_id}/{book}/{chapter}', 'Bible\TextController@index');
 Route::name('v4_text_search')->get('search',                                             'Bible\TextController@search');
+Route::name('v4_library_search')->middleware('APIToken:check')->get('search/library',    'Bible\TextController@searchLibrary');
 
 // VERSION 4 | Commentaries
 
@@ -114,7 +115,7 @@ Route::name('v4_lexicon_index')->get('lexicons',                                
 
 // VERSION 4 | Timestamps
 Route::name('v4_timestamps')->get('timestamps',                                    'Bible\AudioController@availableTimestamps');
-Route::name('v4_timestamps.tag')->get('timestamps/search',                        'Bible\AudioController@timestampsByTag');
+Route::name('v4_timestamps.tag')->get('timestamps/search',                         'Bible\AudioController@timestampsByTag');
 Route::name('v4_timestamps.verse')->get('timestamps/{id}/{book}/{chapter}',        'Bible\AudioController@timestampsByReference');
 
 // VERSION 4 | Countries
@@ -144,6 +145,10 @@ Route::name('v4_user.oAuth')->get('/login/{driver}',                            
 Route::name('v4_user.oAuthCallback')->get('/login/{driver}/callback',              'User\SocialController@callback');
 Route::name('v4_user.password_reset')->post('users/password/reset/{token?}',       'User\PasswordsController@validatePasswordReset');
 Route::name('v4_user.password_email')->post('users/password/email',                'User\PasswordsController@triggerPasswordResetEmail');
+Route::name('v4_user.logout')
+    ->middleware('APIToken:check')->post('/logout',                                'User\UsersController@logout');
+Route::name('v4_api_token.validate')
+    ->middleware('APIToken')->post('/token/validate',                               'User\UsersController@validateApiToken');
 
 // VERSION 4 | Accounts
 Route::name('v4_user_accounts.index')->get('accounts',                             'User\AccountsController@index');
@@ -151,20 +156,22 @@ Route::name('v4_user_accounts.store')->post('accounts',                         
 Route::name('v4_user_accounts.update')->put('accounts',                            'User\AccountsController@update');
 Route::name('v4_user_accounts.destroy')->delete('accounts',                        'User\AccountsController@destroy');
 
-// VERSION 4 | Annotations
-Route::name('v4_notes.index')->get('users/{user_id}/notes',                        'User\NotesController@index');
-Route::name('v4_notes.show')->get('users/{user_id}/notes/{id}',                    'User\NotesController@show');
-Route::name('v4_notes.store')->post('users/{user_id}/notes',                       'User\NotesController@store');
-Route::name('v4_notes.update')->put('users/{user_id}/notes/{id}',                  'User\NotesController@update');
-Route::name('v4_notes.destroy')->delete('users/{user_id}/notes/{id}',              'User\NotesController@destroy');
-Route::name('v4_bookmarks.index')->get('users/{user_id}/bookmarks',                'User\BookmarksController@index');
-Route::name('v4_bookmarks.store')->post('users/{user_id}/bookmarks',               'User\BookmarksController@store');
-Route::name('v4_bookmarks.update')->put('users/{user_id}/bookmarks/{id}',          'User\BookmarksController@update');
-Route::name('v4_bookmarks.destroy')->delete('users/{user_id}/bookmarks/{id}',      'User\BookmarksController@destroy');
-Route::name('v4_highlights.index')->get('users/{user_id}/highlights',              'User\HighlightsController@index');
-Route::name('v4_highlights.store')->post('users/{user_id}/highlights',             'User\HighlightsController@store');
-Route::name('v4_highlights.update')->put('users/{user_id}/highlights/{id}',        'User\HighlightsController@update');
-Route::name('v4_highlights.destroy')->delete('users/{user_id}/highlights/{id}',    'User\HighlightsController@destroy');
+// VERSION 4 | Annotations with api_token
+Route::middleware('APIToken')->group(function () {
+    Route::name('v4_notes.index')->get('users/{user_id}/notes',                        'User\NotesController@index');
+    Route::name('v4_notes.show')->get('users/{user_id}/notes/{id}',                    'User\NotesController@show');
+    Route::name('v4_notes.store')->post('users/{user_id}/notes',                       'User\NotesController@store');
+    Route::name('v4_notes.update')->put('users/{user_id}/notes/{id}',                  'User\NotesController@update');
+    Route::name('v4_notes.destroy')->delete('users/{user_id}/notes/{id}',              'User\NotesController@destroy');
+    Route::name('v4_bookmarks.index')->get('users/{user_id}/bookmarks',                'User\BookmarksController@index');
+    Route::name('v4_bookmarks.store')->post('users/{user_id}/bookmarks',               'User\BookmarksController@store');
+    Route::name('v4_bookmarks.update')->put('users/{user_id}/bookmarks/{id}',          'User\BookmarksController@update');
+    Route::name('v4_bookmarks.destroy')->delete('users/{user_id}/bookmarks/{id}',      'User\BookmarksController@destroy');
+    Route::name('v4_highlights.index')->get('users/{user_id}/highlights',              'User\HighlightsController@index');
+    Route::name('v4_highlights.store')->post('users/{user_id}/highlights',             'User\HighlightsController@store');
+    Route::name('v4_highlights.update')->put('users/{user_id}/highlights/{id}',        'User\HighlightsController@update');
+    Route::name('v4_highlights.destroy')->delete('users/{user_id}/highlights/{id}',    'User\HighlightsController@destroy');
+});
 
 // VERSION 4 | User Settings
 Route::name('v4_UserSettings.show')->get('users/{user_id}/settings',               'User\UserSettingsController@show');
@@ -194,8 +201,8 @@ Route::name('v4_resources.index')->get('resources',                             
 Route::name('v4_resources.show')->get('resources/{resource_id}',                   'Organization\ResourcesController@show');
 
 Route::name('v4_video_jesus_film_languages')->get('arclight/jesus-film/languages', 'Bible\VideoStreamController@jesusFilmsLanguages');
-Route::name('v4_video_jesus_film_language')->get('arclight/jesus-film/chapters',   'Bible\VideoStreamController@jesusFilmChapters');
-Route::name('v4_video_jesus_film_language')->get('arclight/jesus-film',            'Bible\VideoStreamController@jesusFilmFile');
+Route::name('v4_video_jesus_film_chapters')->get('arclight/jesus-film/chapters',   'Bible\VideoStreamController@jesusFilmChapters');
+Route::name('v4_video_jesus_film_file')->get('arclight/jesus-film',                'Bible\VideoStreamController@jesusFilmFile');
 
 // VERSION 4 | API METADATA
 Route::name('v4_api.versions')->get('/api/versions',                               'HomeController@versions');
@@ -214,5 +221,36 @@ Route::name('v4_playlists.index')
     ->middleware('APIToken')->get('playlists',                                      'Playlist\PlaylistsController@index');
 Route::name('v4_playlists.store')
     ->middleware('APIToken:check')->post('playlists',                               'Playlist\PlaylistsController@store');
+Route::name('v4_playlists.show')
+    ->middleware('APIToken')->get('playlists/{playlist_id}',                        'Playlist\PlaylistsController@show');
+Route::name('v4_playlists.update')
+    ->middleware('APIToken:check')->put('playlists/{playlist_id}',                  'Playlist\PlaylistsController@update');
 Route::name('v4_playlists.destroy')
     ->middleware('APIToken:check')->delete('playlists/{playlist_id}',               'Playlist\PlaylistsController@destroy');
+Route::name('v4_playlists.follow')
+    ->middleware('APIToken:check')->post('playlists/{playlist_id}/follow',          'Playlist\PlaylistsController@follow');
+Route::name('v4_playlists_items.store')
+    ->middleware('APIToken:check')->post('playlists/{playlist_id}/item',            'Playlist\PlaylistsController@storeItem');
+Route::name('v4_playlists_items.complete')
+    ->middleware('APIToken:check')->post('playlists/item/{item_id}/complete',       'Playlist\PlaylistsController@completeItem');
+
+
+// VERSION 4 | Plans
+Route::name('v4_plans.index')
+    ->middleware('APIToken')->get('plans',                                          'Plan\PlansController@index');
+Route::name('v4_plans.store')
+    ->middleware('APIToken:check')->post('plans',                                   'Plan\PlansController@store');
+Route::name('v4_plans.show')
+    ->middleware('APIToken')->get('plans/{plan_id}',                                'Plan\PlansController@show');
+Route::name('v4_plans.update')
+    ->middleware('APIToken:check')->put('plans/{plan_id}',                          'Plan\PlansController@update');
+Route::name('v4_plans.destroy')
+    ->middleware('APIToken:check')->delete('plans/{plan_id}',                       'Plan\PlansController@destroy');
+Route::name('v4_plans.start')
+    ->middleware('APIToken:check')->post('plans/{plan_id}/start',                   'Plan\PlansController@start');
+Route::name('v4_plans.reset')
+    ->middleware('APIToken:check')->post('plans/{plan_id}/reset',                   'Plan\PlansController@reset');
+Route::name('v4_plans_days.store')
+    ->middleware('APIToken:check')->post('plans/{plan_id}/day',                     'Plan\PlansController@storeDay');
+Route::name('v4_plans_days.complete')
+    ->middleware('APIToken:check')->post('plans/day/{day_id}/complete',             'Plan\PlansController@completeDay');

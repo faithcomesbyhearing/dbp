@@ -5,12 +5,10 @@ namespace App\Http\Controllers\Organization;
 use App\Http\Controllers\APIController;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleLink;
-use App\Models\Language\Language;
 use App\Models\Organization\Organization;
 use App\Transformers\OrganizationTransformer;
 use App\Transformers\BibleTransformer;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 
 class OrganizationsController extends APIController
 {
@@ -54,10 +52,6 @@ class OrganizationsController extends APIController
      *          description="",
      *          @OA\Schema(type="string")
      *     ),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -82,7 +76,6 @@ class OrganizationsController extends APIController
 
         $cache_string = strtolower($this->v . '_organizations:' . $language_id . $membership . $content . $bibles . $resources);
         $organizations = \Cache::remember($cache_string, now()->addDay(), function () use ($language_id, $membership, $content, $bibles, $resources) {
-
             $organizations = Organization::with('translations')
                 ->includeMemberResources($membership)
                 ->includeLogos($language_id)
@@ -96,8 +89,8 @@ class OrganizationsController extends APIController
                     $q->has('resources');
                 })->get();
 
-                return fractal($organizations, new OrganizationTransformer(), $this->serializer);
-            }
+            return fractal($organizations, new OrganizationTransformer(), $this->serializer);
+        }
         );
 
         return $this->reply($organizations);
@@ -138,7 +131,7 @@ class OrganizationsController extends APIController
     {
         $organization = Organization::with('bibles')->where('slug', $slug)->first();
 
-        return $this->reply(fractal($organization->bibles,new BibleTransformer()));
+        return $this->reply(fractal($organization->bibles, new BibleTransformer()));
     }
 
     public function compare()
@@ -163,7 +156,7 @@ class OrganizationsController extends APIController
         $destination = $destination_bibles->merge($destination_links);
 
         $bible_array = Arr::flatten(Arr::sort($destination->diff($source)->unique()));
-        $bibles = Bible::with('translations')->whereIn('id',$bible_array)->get();
+        $bibles = Bible::with('translations')->whereIn('id', $bible_array)->get();
 
         return $this->reply($bibles);
     }

@@ -17,10 +17,6 @@ class CommentaryController extends APIController
      *     summary="Commentaries",
      *     description="A list of all the commentaries that can be retrieved",
      *     operationId="v4_commentary_index",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
      *     @OA\Response(
      *         response=200,
      *         description="The fileset types",
@@ -46,10 +42,6 @@ class CommentaryController extends APIController
      *     summary="Commentary Chapters",
      *     description="A list of all the chapter navigation for a specific commentary",
      *     operationId="v4_commentary_chapter",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
      *     @OA\Parameter(
      *          name="commentary_id",
      *          in="path",
@@ -98,15 +90,15 @@ class CommentaryController extends APIController
 
         $commentary = Commentary::with('translations')->get();
         $commentary_sections = CommentarySection::where('commentary_id', $commentary_id)->distinct()
-            ->when($book_id, function ($query) use($book_id) {
+            ->when($book_id, function ($query) use ($book_id) {
                 $query->where('book_id', $book_id);
             })
-            ->when($chapter, function ($query) use($chapter) {
+            ->when($chapter, function ($query) use ($chapter) {
                 $query->where('chapter_start', $chapter);
             })
-            ->leftJoin('books', function($query) {
-                $query->on('books.id','commentary_sections.book_id');
-            })->select('book_id','chapter_start')
+            ->leftJoin('books', function ($query) {
+                $query->on('books.id', 'commentary_sections.book_id');
+            })->select('book_id', 'chapter_start')
               ->orderBy('books.protestant_order')
               ->orderBy('commentary_sections.chapter_start')->get();
 
@@ -125,10 +117,6 @@ class CommentaryController extends APIController
      *     summary="Commentary Sections",
      *     description="A list of all the chapter navigation for a specific commentary",
      *     operationId="v4_commentary_section",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
      *     @OA\Parameter(
      *          name="commentary_id",
      *          in="path",
@@ -175,8 +163,8 @@ class CommentaryController extends APIController
      *
      * @return mixed
      */
-    public function sections($commentary_id, $book_id, $chapter) {
-
+    public function sections($commentary_id, $book_id, $chapter)
+    {
         $commentary = Commentary::with('translations')->get();
         $commentary_section = CommentarySection::where([
             ['commentary_id', $commentary_id],
@@ -186,5 +174,4 @@ class CommentaryController extends APIController
 
         return $this->reply(['data' => $commentary_section, 'meta' => $commentary->toArray()]);
     }
-
 }

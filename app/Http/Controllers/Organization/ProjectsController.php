@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Organization;
 
 use App\Http\Controllers\APIController;
-use App\Models\User\Key;
 use App\Models\User\Project;
 use App\Models\User\ProjectMember;
 use App\Models\User\Role;
@@ -25,10 +24,6 @@ class ProjectsController extends APIController
      *     summary="Returns the projects currently using the DBP",
      *     description="Returns the projects currently registered that aren't labeled as sensitive",
      *     operationId="v4_projects.index",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -70,10 +65,6 @@ class ProjectsController extends APIController
      *     summary="Apply for a project_id",
      *     description="It is recommended that you create a distinct project_id for each app using the API",
      *     operationId="v4_projects.store",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\RequestBody(required=true, description="Information supplied for project creation", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
      *              @OA\Property(property="name",                    ref="#/components/schemas/Project/properties/name"),
@@ -149,10 +140,6 @@ class ProjectsController extends APIController
      *     description="",
      *     operationId="v4_projects.show",
      *     @OA\Parameter(name="project_id", in="path", required=true, description="The project id", @OA\Schema(ref="#/components/schemas/Project/properties/id")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -213,10 +200,6 @@ class ProjectsController extends APIController
      *     description="",
      *     operationId="v4_projects.update",
      *     @OA\Parameter(name="project_id", in="path", required=true, description="The project id", @OA\Schema(ref="#/components/schemas/Project/properties/id")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\RequestBody(required=true, description="Information supplied for project update", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
      *              @OA\Property(property="name",                    ref="#/components/schemas/Project/properties/name"),
@@ -274,10 +257,6 @@ class ProjectsController extends APIController
      *     description="",
      *     operationId="v4_projects.destroy",
      *     @OA\Parameter(name="project_id", in="path", required=true, description="The project id", @OA\Schema(ref="#/components/schemas/Project/properties/id")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",

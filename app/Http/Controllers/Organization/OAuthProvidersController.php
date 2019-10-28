@@ -26,10 +26,6 @@ class OAuthProvidersController extends APIController
      *     operationId="v4_projects_oAuthProvider.index",
      *     @OA\Parameter(name="project_id", in="path", required=true, description="The Project id", @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Parameter(name="provider_id", in="query", description="The Provider id", @OA\Schema(ref="#/components/schemas/Account/properties/provider_id")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -45,7 +41,6 @@ class OAuthProvidersController extends APIController
      */
     public function index(string $project_id)
     {
-
         $project_id = checkParam('project_id', true, $project_id);
         $provider_id = checkParam('provider_id');
 
@@ -90,8 +85,8 @@ class OAuthProvidersController extends APIController
             return $this->setStatusCode(404)->replyWithError(trans('api.projects_404'));
         }
 
-        $roles = Role::where('slug','admin')->orWhere('slug','developer')->select('id')->get()->pluck('id')->toArray();
-        $access_allowed = ProjectMember::where('project_id',$project_id)
+        $roles = Role::where('slug', 'admin')->orWhere('slug', 'developer')->select('id')->get()->pluck('id')->toArray();
+        $access_allowed = ProjectMember::where('project_id', $project_id)
             ->where('user_id', $this->user->id)
             ->whereIn('role_id', $roles)->first();
         if (!$access_allowed) {

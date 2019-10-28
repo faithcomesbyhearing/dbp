@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers\Bible;
 
+use Illuminate\Support\Str;
 use App\Models\Organization\Asset;
 use App\Traits\AccessControlAPI;
 use App\Traits\CallsBucketsTrait;
-use Validator;
-use Auth;
-use Illuminate\Http\Request;
 use App\Http\Controllers\APIController;
 
 use App\Models\Bible\Bible;
@@ -33,10 +31,6 @@ class BibleFileSetsController extends APIController
      *     summary="Returns Bibles Filesets",
      *     description="Returns a list of bible filesets",
      *     operationId="v4_bible_filesets.show",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
@@ -84,7 +78,7 @@ class BibleFileSetsController extends APIController
             }
 
             $access_blocked = $this->blockedByAccessControl($fileset);
-            if($access_blocked) {
+            if ($access_blocked) {
                 return $access_blocked;
             }
 
@@ -146,6 +140,7 @@ class BibleFileSetsController extends APIController
                 $fileset_type = 'text';
                 break;
         }
+
         return $fileset_type . '/' . ($bible ? $bible->id . '/' : '') . $fileset->id . '/' . $fileset_chapter->file_name;
     }
 
@@ -157,10 +152,6 @@ class BibleFileSetsController extends APIController
      *     summary="Download a Fileset",
      *     description="Returns a an entire fileset or a selected portion of a fileset for download",
      *     operationId="v4_bible_filesets.download",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Parameter(name="fileset_id", in="path", required=true, description="The fileset ID",
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
@@ -225,10 +216,6 @@ class BibleFileSetsController extends APIController
      *     summary="Fileset Copyright information",
      *     description="A fileset's copyright information and organizational connections",
      *     operationId="v4_bible_filesets.copyright",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Parameter(
      *          name="fileset_id",
      *          in="path",
@@ -306,10 +293,6 @@ class BibleFileSetsController extends APIController
      *     summary="Available fileset types",
      *     description="A list of all the file types that exist within the filesets",
      *     operationId="v4_bible_filesets.types",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="The fileset types",
@@ -351,20 +334,28 @@ class BibleFileSetsController extends APIController
      */
     private function generateFilesetChapters($fileset, $fileset_chapters, $bible, $asset_id)
     {
-        if ($fileset->set_type_code === 'video_stream') {
+        $is_stream = $fileset->set_type_code === 'video_stream' || $fileset->set_type_code === 'audio_stream';
+        $is_video = Str::contains($fileset->set_type_code, 'video');
+
+        if ($is_stream) {
             foreach ($fileset_chapters as $key => $fileSet_chapter) {
-                $fileset_chapters[$key]->file_name = route('v4_video_stream', ['fileset_id' => $fileset->id, 'file_id' => $fileSet_chapter->id]);
+                $fileset_chapters[$key]->file_name = route('v4_media_stream', ['fileset_id' => $fileset->id, 'file_id' => $fileSet_chapter->id]);
             }
         }
 
-        if ($fileset->set_type_code !== 'video_stream') {
+        if (!$is_stream) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
                 $fileset_chapters[$key]->file_name = $this->signedUrl($this->signedPath($bible, $fileset, $fileset_chapter), $asset_id, random_int(0, 10000000));
             }
         }
 
+        
+        if ($is_video) {
+            foreach ($fileset_chapters as $key => $fileset_chapter) {
+                $fileset_chapters[$key]->thumbnail = $this->signedUrl('video/thumbnails/' . $fileset_chapters[$key]->book_id . '_' . str_pad($fileset_chapter->chapter_start, 2, '0', STR_PAD_LEFT) . '.jpg', $asset_id, random_int(0, 10000000));
+            }
+        }
+
         return $fileset_chapters;
     }
-
-
 }

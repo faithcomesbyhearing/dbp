@@ -26,15 +26,14 @@ use Carbon\Carbon;
 
 class UsersControllerV2 extends APIController
 {
-
     public function __construct()
     {
         $this->preset_v = 2;
         parent::__construct();
-        $keys = explode(",", config('services.bibleIs.key'));
-        $secrets = explode(",", config('services.bibleIs.secret'));
+        $keys = explode(',', config('services.bibleIs.key'));
+        $secrets = explode(',', config('services.bibleIs.secret'));
         $this->hashes = [];
-        foreach($keys as $index => $key){
+        foreach ($keys as $index => $key) {
             $this->hashes[] = md5(date('m/d/Y') . $key . $secrets[$index]);
         }
     }
@@ -91,10 +90,6 @@ class UsersControllerV2 extends APIController
      *     summary="Login a user",
      *     description="",
      *     operationId="v2_user_login",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\RequestBody(required=true, description="Either the `email` & `password` or the `remote_id` & `remote_type` are required for user Login", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
      *              @OA\Property(property="email",                     ref="#/components/schemas/User/properties/email"),
@@ -112,7 +107,7 @@ class UsersControllerV2 extends APIController
      *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v2_user_login"))
      *     )
      * )
-     * 
+     *
      * @OA\Schema (
      *    title="v2_user_login",
      *    type="array",
@@ -142,7 +137,7 @@ class UsersControllerV2 extends APIController
 
             if ($email) {
                 $user = User::where('email', $email)->first();
-            } else if ($provider) {
+            } elseif ($provider) {
                 $user = User::whereHas('accounts', function ($query) use ($provider) {
                     $query->where('provider_user_id', request()->remote_id)->where('provider_id', $provider);
                 })->first();
@@ -263,7 +258,6 @@ class UsersControllerV2 extends APIController
     public function bookmarkAlter()
     {
         if (in_array(request()->hash, $this->hashes)) {
-
             if (request()->_method === 'delete') {
                 Bookmark::where('id', request()->id)->delete();
                 return ['Status' => 'Done'];
@@ -310,6 +304,7 @@ class UsersControllerV2 extends APIController
                 })->select([
                     'user_highlights.id',
                     'user_highlights.bible_id',
+                    'user_highlights.book_id',
                     'user_highlights.user_id',
                     'user_highlights.chapter',
                     'user_highlights.verse_start',
@@ -407,7 +402,6 @@ class UsersControllerV2 extends APIController
     public function noteAlter()
     {
         if (in_array(request()->hash, $this->hashes)) {
-
             if (request()->_method === 'delete') {
                 Note::where('id', request()->id)->delete();
                 return ['Status' => 'Done'];

@@ -17,7 +17,6 @@ use Symfony\Component\Yaml\Yaml;
 use Yosymfony\Toml\TomlBuilder;
 use Illuminate\Support\Str;
 
-
 class APIController extends Controller
 {
     // Top Level Swagger Docs
@@ -39,11 +38,11 @@ class APIController extends Controller
      * )
      *
      * @OA\Server(
-     *     url="https://api.dbp.test",
+     *     url="https://dbp.test/api",
      *     description="Development server",
      *     @OA\ServerVariable( serverVariable="schema", enum={"https"}, default="https")
      * )
-     * 
+     *
      * @OA\SecurityScheme(
      *   securityScheme="api_token",
      *   name="api_token",
@@ -56,10 +55,34 @@ class APIController extends Controller
      * @OA\Parameter(parameter="key",name="key",in="query",description="The Key granted to the api user upon sign up",required=true,@OA\Schema(type="string",example="ar45g3h4ae644"))
      * @OA\Parameter(parameter="pretty",name="pretty",in="query",description="Setting this param to true will add human readable whitespace to the return",@OA\Schema(type="boolean"))
      * @OA\Parameter(parameter="format",name="format",in="query",description="Setting this param to true will add format the return as a specific file type. The currently supported return types are `xml`, `csv`, `json`, and `yaml`",@OA\Schema(type="string",enum={"xml","csv","json","yaml"}))
+     * @OA\Parameter(name="limit",  in="query", description="The number of search results to return", @OA\Schema(type="integer",default=25))
+     * @OA\Parameter(name="page",  in="query", description="The current page of the results", @OA\Schema(type="integer",default=1))
      * @OA\Parameter(name="sort_by", in="query", description="The field to sort by", @OA\Schema(type="string"))
      * @OA\Parameter(name="sort_dir", in="query", description="The direction to sort by", @OA\Schema(type="string",enum={"asc","desc"}))
      * @OA\Parameter(name="l10n", in="query", description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route", @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
      *
+     */
+
+    /**
+     * Pagination
+     * @OA\Schema (
+     *   type="object",
+     *   schema="pagination",
+     *   title="Pagination",
+     *   description="The pagination meta response.",
+     *   @OA\Xml(name="pagination"),
+     *   @OA\Property(property="current_page", type="integer"),
+     *   @OA\Property(property="first_page_url", type="string"),
+     *   @OA\Property(property="from", type="integer"),
+     *   @OA\Property(property="last_page", type="integer"),
+     *   @OA\Property(property="last_page_url", type="string"),
+     *   @OA\Property(property="next_page_url", type="string"),
+     *   @OA\Property(property="path", type="string"),
+     *   @OA\Property(property="per_page", type="integer"),
+     *   @OA\Property(property="prev_page_url", type="string"),
+     *   @OA\Property(property="to", type="integer"),
+     *   @OA\Property(property="total", type="integer")
+     * )
      */
 
     /**
@@ -91,6 +114,8 @@ class APIController extends Controller
      * )
      * @OA\Tag(name="Bibles",          description="v4 Routes for obtaining Bibles Data")
      * @OA\Tag(name="Users",           description="v4 Routes for obtaining Users Data")
+     * @OA\Tag(name="Playlists",       description="v4 Routes for obtaining Playlists Data")
+     * @OA\Tag(name="Plans",           description="v4 Routes for obtaining Plans Data")
      *
      */
 
@@ -111,9 +136,8 @@ class APIController extends Controller
 
     public function __construct()
     {
-        $url           = explode('.', url()->current());
-        $subdomain     = array_shift($url);
-        if (Str::contains($subdomain, 'api')) {
+        $url = url()->current();
+        if (Str::contains($url, '/api')) {
             $this->api = true;
             $this->v   = (int) checkParam('v', true, $this->preset_v);
             $this->key = checkParam('key', true);
@@ -217,7 +241,7 @@ class APIController extends Controller
 
         return response()->json(['error' => [
             'message'     => $message,
-            'status code' => $this->statusCode,
+            'status_code' => $this->statusCode,
             'action'      => $action ?? ''
         ]], $this->statusCode);
     }

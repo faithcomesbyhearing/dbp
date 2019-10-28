@@ -8,7 +8,6 @@ use App\Transformers\UserNotesTransformer;
 use Illuminate\Http\Request;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use Validator;
-use Auth;
 use App\Traits\CheckProjectMembership;
 use App\Traits\AnnotationTags;
 
@@ -26,6 +25,7 @@ class NotesController extends APIController
      *     summary="List a user's notes",
      *     description="Query information about a user's notes",
      *     operationId="v4_notes.index",
+     *     security={{"api_token":{}}},
      *     @OA\Parameter(name="user_id",     in="path", required=true, description="The user who created the note", @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\Parameter(name="bible_id",    in="query", description="If provided the fileset_id will filter results to only those related to the Bible", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
      *     @OA\Parameter(name="book_id",     in="query", description="If provided the USFM 2.4 book id will filter results to only those related to the book. For a complete list see the `book_id` field in the `/bibles/books` route.", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
@@ -34,10 +34,6 @@ class NotesController extends APIController
      *     @OA\Parameter(name="paginate",    in="query", description="When set to false will disable pagination", @OA\Schema(type="boolean",example=false)),
      *     @OA\Parameter(name="page",  in="query", description="The current page of the results",
      *          @OA\Schema(type="integer",default=1)),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Parameter(ref="#/components/parameters/sort_by"),
      *     @OA\Parameter(ref="#/components/parameters/sort_dir"),
      *     @OA\Response(
@@ -53,8 +49,10 @@ class NotesController extends APIController
      * @param null|int $user_id
      * @return \Illuminate\Http\Response
      */
-    public function index($user_id)
+    public function index(Request $request, $user_id)
     {
+        $user = $request->user();
+        $user_id = $user ? $user->id : $user_id;
         $user_is_member = $this->compareProjects($user_id, $this->key);
         if (!$user_is_member) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
@@ -94,12 +92,9 @@ class NotesController extends APIController
      *     summary="Get a Note",
      *     description="",
      *     operationId="v4_notes.show",
+     *     security={{"api_token":{}}},
      *     @OA\Parameter(name="user_id",     in="path",required=true, description="The user who created the note", @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\Parameter(name="note_id",     in="path",required=true, description="The note currently being altered", @OA\Schema(ref="#/components/schemas/Note/properties/id")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -115,8 +110,10 @@ class NotesController extends APIController
      *
      * @return \Illuminate\Http\Response
      */
-    public function show($user_id, $note_id)
+    public function show(Request $request, $user_id, $note_id)
     {
+        $user = $request->user();
+        $user_id = $user ? $user->id : $user_id;
         if (!$this->compareProjects($user_id, $this->key)) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
@@ -138,6 +135,7 @@ class NotesController extends APIController
      *     summary="Store a Note",
      *     description="",
      *     operationId="v4_notes.store",
+     *     security={{"api_token":{}}},
      *     @OA\Parameter(name="user_id",     in="path", required=true, description="The user who is creating the note", @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\RequestBody(required=true, description="Fields for Note Creation", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
@@ -150,10 +148,6 @@ class NotesController extends APIController
      *              @OA\Property(property="notes",                     ref="#/components/schemas/Note/properties/notes"),
      *          )
      *     )),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -170,7 +164,9 @@ class NotesController extends APIController
      */
     public function store(Request $request)
     {
-        $user_is_member = $this->compareProjects($request->user_id, $this->key);
+        $user = $request->user();
+        $user_id = $user ? $user->id : $request->user_id;
+        $user_is_member = $this->compareProjects($user_id, $this->key);
         if (!$user_is_member) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
@@ -181,7 +177,7 @@ class NotesController extends APIController
         }
 
         $note = Note::create([
-            'user_id'     => $request->user_id,
+            'user_id'     => $user_id,
             'bible_id'    => $request->bible_id,
             'book_id'     => $request->book_id,
             'chapter'     => $request->chapter,
@@ -204,12 +200,9 @@ class NotesController extends APIController
      *     summary="Update a Note",
      *     description="",
      *     operationId="v4_notes.update",
+     *     security={{"api_token":{}}},
      *     @OA\Parameter(name="user_id", in="path", required=true, description="The user who created the note", @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\Parameter(name="note_id", in="path", required=true, description="The note currently being altered", @OA\Schema(ref="#/components/schemas/Note/properties/id")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\RequestBody(required=true, description="Fields for Note Creation", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
      *              @OA\Property(property="bible_id",                  ref="#/components/schemas/Bible/properties/id"),
@@ -238,6 +231,8 @@ class NotesController extends APIController
      */
     public function update(Request $request, $user_id, $note_id)
     {
+        $user = $request->user();
+        $user_id = $user ? $user->id : $user_id;
         $user_is_member = $this->compareProjects($user_id, $this->key);
         if (!$user_is_member) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
@@ -273,12 +268,9 @@ class NotesController extends APIController
      *     summary="Delete a Note",
      *     description="",
      *     operationId="v4_notes.destroy",
+     *     security={{"api_token":{}}},
      *     @OA\Parameter(name="user_id", in="path", required=true, description="The user who created the note", @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\Parameter(name="note_id", in="path", required=true, description="The note currently being deleted", @OA\Schema(ref="#/components/schemas/Note/properties/id")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -294,8 +286,10 @@ class NotesController extends APIController
      *
      * @return \Illuminate\Http\Response
      */
-    public function destroy(int $user_id, int $note_id)
+    public function destroy(Request $request, int $user_id, int $note_id)
     {
+        $user = $request->user();
+        $user_id = $user ? $user->id : $user_id;
         $user_is_member = $this->compareProjects($user_id, $this->key);
         if (!$user_is_member) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));

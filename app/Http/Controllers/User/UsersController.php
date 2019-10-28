@@ -6,30 +6,27 @@ use App\Http\Controllers\APIController;
 use App\Mail\ProjectVerificationEmail;
 
 use App\Models\User\Project;
-use App\Models\User\ProjectOauthProvider;
 use App\Models\User\ProjectMember;
 use App\Models\User\Account;
+use App\Models\User\APIToken;
 use App\Models\User\Role;
 use App\Models\User\User;
 use App\Models\User\Key;
 use App\Models\User\Study\Note;
-
-use App\Transformers\Serializers\DataArraySerializer;
+use App\Traits\CheckProjectMembership;
 use App\Transformers\UserTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-use Socialite;
-use Image;
 use Mail;
 use Validator;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
 
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 
 class UsersController extends APIController
 {
+    use CheckProjectMembership;
 
     /**
      * Returns an index of all users within the system
@@ -40,10 +37,6 @@ class UsersController extends APIController
      *     summary="",
      *     description="",
      *     operationId="v4_user.index",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Parameter(name="limit",  in="query", description="The number of search results to return",
      *          @OA\Schema(type="integer",default=100)),
      *     @OA\Parameter(name="page",  in="query", description="The current page of the results",
@@ -87,10 +80,6 @@ class UsersController extends APIController
      *     description="",
      *     operationId="v4_user.show",
      *     @OA\Parameter(name="id", in="path", description="The user ID for which to retrieve info.", required=true, @OA\Schema(ref="#/components/schemas/User/properties/id")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -111,7 +100,9 @@ class UsersController extends APIController
 
         $user = User::with('accounts', 'organizations', 'profile')
             ->whereHas('projectMembers', function ($query) use ($available_projects) {
-                if (!empty($available_projects)) $query->whereIn('project_id', $available_projects);
+                if (!empty($available_projects)) {
+                    $query->whereIn('project_id', $available_projects);
+                }
             })->where('id', $id)->first();
         if (!$user) {
             return $this->replyWithError(trans('api.users_errors_404', ['param' => $id]));
@@ -148,10 +139,6 @@ class UsersController extends APIController
      *     summary="Login a user",
      *     description="",
      *     operationId="v4_user.login",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\RequestBody(required=true, description="Either the `email` & `password` or the `social_provider_user_id` & `social_provider_id` are required for user Login", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
      *              @OA\Property(property="email",                     ref="#/components/schemas/User/properties/email"),
@@ -211,9 +198,10 @@ class UsersController extends APIController
         }
 
         $token = Str::random(60);
-        $user->forceFill([
+        APIToken::create([
+            'user_id'   => $user->id,
             'api_token' => hash('sha256', $token),
-        ])->save();
+        ]);
 
         $user->api_token = $token;
 
@@ -224,6 +212,46 @@ class UsersController extends APIController
 
         Auth::login($user, true);
         return redirect()->to('dashboard');
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/logout",
+     *     tags={"Users"},
+     *     summary="Logout a user",
+     *     operationId="v4_user.logout",
+     *     security={{"api_token":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
+     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
+     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
+     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *     )
+     * )
+     *
+     * @param Request $request
+     *
+     * @return mixed
+     */
+    public function logout(Request $request)
+    {
+        // Validate Project / User Connection
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+        }
+        $user->forceFill([
+            'api_token' => null,
+        ])->save();
+
+        $api_token = APIToken::where('api_token', hash('sha256', $request->api_token))->first();
+        $api_token->delete();
+
+        return $this->reply('User logged out');
     }
 
     private function loginWithEmail($email, $password)
@@ -259,10 +287,6 @@ class UsersController extends APIController
      *     summary="Create a new user",
      *     description="",
      *     operationId="v4_user.store",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\RequestBody(required=true, description="Information supplied for user creation", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
      *              @OA\Property(property="email",                   ref="#/components/schemas/User/properties/email"),
@@ -324,9 +348,11 @@ class UsersController extends APIController
         }
 
         $token = Str::random(60);
-        $user->forceFill([
+
+        APIToken::create([
+            'user_id'   => $user->id,
             'api_token' => hash('sha256', $token),
-        ])->save();
+        ]);
 
         $user->api_token = $token;
 
@@ -346,10 +372,6 @@ class UsersController extends APIController
      *     summary="Update an existing user",
      *     description="",
      *     operationId="v4_user.update",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Parameter(name="id", in="path", description="The user ID for which to retrieve info.", required=true, @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\RequestBody(required=true, description="Information supplied for updating an existing user", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
@@ -444,10 +466,6 @@ class UsersController extends APIController
      *     summary="Delete an existing user",
      *     description="",
      *     operationId="v4_user.destroy",
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     security={{"api_token":{}}},
      *     @OA\RequestBody(required=true, description="Either `password` or the `social_provider_user_id` & `social_provider_id` are required for user deletion", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
@@ -481,7 +499,7 @@ class UsersController extends APIController
             $oldPassword = \Hash::check(md5($password), $user->password);
             $newPassword = \Hash::check($password, $user->password);
             $access_granted = $oldPassword || $newPassword;
-        } else if ($social_provider_id) {
+        } elseif ($social_provider_id) {
             $account  = $user->accounts->where('provider_id', $social_provider_id)
                 ->where('provider_user_id', $social_provider_user_id)->first();
             $access_granted = $account;
@@ -504,11 +522,88 @@ class UsersController extends APIController
             'last_name'  => 'user',
             'email'  => $user->id . '@deleted.com',
             'password'  => Str::random(40),
-        ])->save();;
+        ])->save();
 
         $user->delete();
 
         return $this->reply('User successfully deleted');
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/token/validate",
+     *     tags={"Users"},
+     *     summary="Validate user api_token ",
+     *     operationId="v4_api_token.validate",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(
+     *          name="renew_token",
+     *          in="query",
+     *          @OA\Schema(type="boolean"),
+     *          description="Renew the user token"
+     *     ),
+     *     @OA\Parameter(
+     *          name="user_details",
+     *          in="query",
+     *          @OA\Schema(type="boolean"),
+     *          description="Retrieve user details"
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
+     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
+     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
+     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="unsuccessful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
+     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
+     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
+     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
+     *     )
+     * )
+     * @param Request $request
+     *
+     * @return mixed
+     */
+    public function validateApiToken(Request $request)
+    {
+        $user = $request->user();
+        if (empty($user)) {
+            return $this->setStatusCode(401)->reply(['valid' => false]);
+        }
+
+        $user_details = checkParam('user_details');
+        $user_details = $user_details && $user_details != 'false';
+
+        $renew_token = checkParam('renew_token');
+        $renew_token = $renew_token && $renew_token != 'false';
+
+        $response = ['valid' => true];
+        $api_token = checkParam('api_token');
+
+        if ($renew_token) {
+            $api_token = APIToken::where('api_token', hash('sha256', $api_token))->first();
+            $api_token->delete();
+            $token = Str::random(60);
+            APIToken::create([
+                'user_id'   => $user->id,
+                'api_token' => hash('sha256', $token),
+            ]);
+            $user->api_token = $token;
+            $response['api_token'] = $token;
+        } else {
+            $user->api_token = $api_token;
+        }
+
+        if ($user_details) {
+            $response['user'] = $user;
+        }
+
+        return $this->reply($response);
     }
 
     public function verify($token)

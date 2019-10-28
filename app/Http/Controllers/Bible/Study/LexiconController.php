@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Bible\Study;
 
 use App\Http\Controllers\APIController;
 use App\Models\Bible\Study\Lexicon;
-use App\Models\Bible\Study\LexicalDefinition;
-
 
 class LexiconController extends APIController
 {
@@ -39,10 +37,6 @@ class LexiconController extends APIController
      *         description="Enables"
      *     ),
      *     @OA\Parameter(name="limit",  in="query", description="The Number of records to return", @OA\Schema(type="integer")),
-     *     @OA\Parameter(ref="#/components/parameters/version_number"),
-     *     @OA\Parameter(ref="#/components/parameters/key"),
-     *     @OA\Parameter(ref="#/components/parameters/pretty"),
-     *     @OA\Parameter(ref="#/components/parameters/format"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -82,5 +76,4 @@ class LexiconController extends APIController
 
         return $this->reply(Lexicon::filterByLanguage($language)->filterByWord($word, $exact_match)->take($limit));
     }
-
 }
