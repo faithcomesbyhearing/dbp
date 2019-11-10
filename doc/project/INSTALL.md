@@ -65,7 +65,68 @@ and Run composer install
 ##### Import a copy of the live database using your preferred method: phpMyAdmin, Sequel pro, etc.
 
 ### Running on Windows
-##### (Coming soon)
+##### (Work in Progress)
+
+One useful set of instruction can be found on https://github.com/cretueusebiu/valet-windows/blob/master/README.md#documentation
+
+>Before installation, make sure that no other programs such as Apache or Nginx are binding to your local machine's port 80. <br> Also make sure to open your preferred terminal (CMD, Git Bash, PowerShell, etc.) as Administrator. 
+>
+>- If you don't have PHP installed, open PowerShell (3.0+) as Administrator and run: 
+>
+> # PHP 7.3
+> ```bash
+> Set-ExecutionPolicy RemoteSigned; [System.Net.ServicePointManager]> ::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; > Invoke-WebRequest -Uri "https://github.com/cretueusebiu/> valet-windows/raw/master/bin/php73.ps1" -OutFile > $env:temp\php73.ps1; .$env:temp\php73.ps1
+> 
+> # PHP 7.2
+> Set-ExecutionPolicy RemoteSigned; [System.Net.ServicePointManager]> ::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; > Invoke-WebRequest -Uri "https://github.com/cretueusebiu/> valet-windows/raw/master/bin/php72.ps1" -OutFile > $env:temp\php72.ps1; .$env:temp\php72.ps1
+> ```
+> 
+> > This script will download and install PHP for you and add it to > your environment path variable. PowerShell is only required for > this step.
+> 
+> - If you don't have Composer installed, make sure to [install]> (https://getcomposer.org/Composer-Setup.exe) it.
+> 
+> - Install Valet with Composer via `composer global require > cretueusebiu/valet-windows`.
+> 
+> - Run the `valet install` command. This will configure and install > Valet and register Valet's daemon to launch when your system > starts.
+> 
+> - If you're installing on Windows 10, you may need to [manually > configure](http://mayakron.altervista.org/wikibase/show.php?> id=AcrylicWindows10Configuration) Windows to use the Acrylic > DNS proxy.
+> 
+> Valet will automatically start its daemon each time your machine > boots. There is no need to run `valet start` or `valet install` > ever again once the initial Valet installation is complete.
+> 
+> For more please refer to the official documentation on the [Laravel > website](https://laravel.com/docs/5.8/valet#serving-sites).
+> 
+> ## Known Issues
+> 
+> - When sharing sites the url will not be copied to the clipboard.
+> - You must run the `valet` commands from the drive where Valet is > installed, except for park and link. See [#12](https://> github.com/cretueusebiu/valet-windows/issues/> 12#issuecomment-283111834).
+> - If your machine is not connected to the internet you'll have to > manually add the domains in your `hosts` file or you can > install the "Microsoft Loopback Adapter" as this simulates an > active local network interface that Valet can bind too.
+> 
+
+***The Following Error is where the Windows 10 Install gets stuck:***
+> Installation failed, deleting ./composer.json.
+
+If you don't already have [git]('https://git-scm.com/downloads') and [Chocolatey]('https://package.chocolatey.org/install#individual') installed, you will want to install those now.
+
+##### Installing Packages
+Run **PowerShell** "Run as Administrator" mode with elevated privileges
+```PowerShell
+choco install php -y
+```
+You should see output like: `The install of php was successful. Software installed to 'C:\tools\php73'`
+
+```PowerShell
+choco install composer -y
+```
+
+This should now add `C:\tools\php73` and `C:\ProgramData\ComposerSetup\bin` to your windows PATH variables accessible from the command line. Close and reopen PowerShell and try the following two commands to confirm this.
+
+```PowerShell
+composer -V
+php -?
+```
+
+
+- https://windows.php.net/download#php-7.2
 
 #### Installing on Ubuntu 18
 
