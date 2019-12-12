@@ -213,7 +213,7 @@ class ApiMetadataController extends APIController
      */
     public function versionLatest()
     {
-        return $this->reply(['Version' => 4]);
+        return $this->reply(['Version' => 'v4']);
     }
 
     /**

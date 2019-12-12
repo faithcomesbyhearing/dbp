@@ -1,6 +1,6 @@
 # Getting started as a consumer
  
-> Before you can complete this tutorial, you'll need an API key from dbp4.org
+> Before you can complete this tutorial, you'll need an API key from dbp4.org by emailing `jrstear <at> fcbhmail.org` **TODO: confirm email address**
  
 Make your first call: a GET request to `https://api.dbp4.org/api/bibles`
 Here's a sample you can run from the command line if you'd like to try it out

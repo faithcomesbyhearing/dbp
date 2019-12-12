@@ -65,7 +65,28 @@ and Run composer install
 ##### Import a copy of the live database using your preferred method: phpMyAdmin, Sequel pro, etc.
 
 ### Running on Windows
-##### (Coming soon)
+##### (Work in Progress)
+
+If you don't already have [git]('https://git-scm.com/downloads') and [Chocolatey]('https://package.chocolatey.org/install#individual') installed, you will want to install those now.
+
+##### Installing Packages
+Run **PowerShell** "Run as Administrator" mode with elevated privileges
+```PowerShell
+choco install php -y
+```
+You should see output like: `The install of php was successful. Software installed to 'C:\tools\php73'`
+
+```PowerShell
+choco install composer -y
+```
+
+This should now add `C:\tools\php73` and `C:\ProgramData\ComposerSetup\bin` to your windows PATH variables accessible from the command line. Close and reopen PowerShell and try the following two commands to confirm this.
+
+```PowerShell
+composer -V
+php -?
+```
+An alternative useful set of instruction can be found at https://github.com/cretueusebiu/valet-windows/blob/master/README.md#documentation
 
 #### Installing on Ubuntu 18
 
