@@ -8,7 +8,7 @@ class UserDownload extends Model
 {
     protected $connection = 'dbp_users';
     public $table         = 'user_downloads';
-    protected $fillable  = ['id','user_id','bible_id', 'book_id', 'chapter', 'created_at'];
+    protected $fillable  = ['id','user_id','fileset_id', 'book_id', 'chapter', 'created_at'];
     const UPDATED_AT = null;
 
     /**
@@ -26,19 +26,24 @@ class UserDownload extends Model
 
     /**
      *
+     * @OA\Property(
+     *   title="playlist_id",
+     *   type="integer",
+     *   description="The fileset id"
+     * )
+     *
+     * @property string $fileset_id
+     */
+    
+    protected $fileset_id;
+
+    /**
+     *
      * @OA\Property(ref="#/components/schemas/User/properties/id")
      * @method static UserDownload whereUserId($value)
      * @property string $user_id
      */
     protected $user_id;
-
-    /**
-     *
-     * @OA\Property(ref="#/components/schemas/Bible/properties/id")
-     * @method static UserDownload whereBibleId($value)
-     * @property string $bible_id
-     */
-    protected $bible_id;
 
     /**
      *
@@ -69,9 +74,9 @@ class UserDownload extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function bible()
+    public function fileset()
     {
-        return $this->belongsTo(Bible::class);
+        return $this->belongsTo(BibleFileset::class);
     }
 
     public function book()

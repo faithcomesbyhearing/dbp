@@ -18,8 +18,8 @@ class AddUserDownloadsTable extends Migration
                 $table->increments('id');
                 $table->integer('user_id')->unsigned();
                 $table->foreign('user_id', 'FK_users_user_downloads')->references('id')->on(config('database.connections.dbp_users.database') . '.users')->onUpdate('cascade');
-                $table->string('bible_id', 12);
-                $table->foreign('bible_id', 'FK_bibles_user_downloads')->references('id')->on(config('database.connections.dbp.database').'.bibles')->onUpdate('cascade')->onDelete('cascade');
+                $table->string('fileset_id', 16);
+                $table->foreign('fileset_id', 'FK_bible_filesets_user_downloads')->references('id')->on(config('database.connections.dbp.database') . '.bible_filesets')->onUpdate('cascade')->onDelete('cascade');
                 $table->char('book_id', 3);
                 $table->foreign('book_id', 'FK_books_bible_books')->references('id')->on(config('database.connections.dbp.database').'.books');
                 $table->tinyInteger('chapter')->unsigned();
