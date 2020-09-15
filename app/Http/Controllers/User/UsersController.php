@@ -208,7 +208,7 @@ class UsersController extends APIController
 
 
         if ($this->api) {
-            return $user;
+            return $this->reply('User logged in');
         }
 
         Auth::login($user, true);
@@ -276,7 +276,9 @@ class UsersController extends APIController
     {
 
 
-        $user = \DB::table('dbp_users.users')->join('dbp_users.user_accounts', function ($join) use ($provider_id, $provider_user_id) {
+        $user = \DB::table(
+            config('database.connections.dbp_users.database') . '.users' )
+                ->join(config('database.connections.dbp_users.database') . '.user_accounts', function ($join) use ($provider_id, $provider_user_id) {
             $join->on('users.id', 'user_accounts.user_id')
             ->where('user_accounts.provider_id', $provider_id)
             ->where('user_accounts.provider_user_id', $provider_user_id);
