@@ -16,6 +16,7 @@ use App\Http\Controllers\APIController;
 use App\Http\Controllers\User\BookmarksController;
 use App\Http\Controllers\User\HighlightsController;
 use App\Http\Controllers\User\NotesController;
+use App\Models\User\UserDownload;
 use App\Models\Bible\BibleDefault;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
@@ -675,6 +676,16 @@ class BiblesController extends APIController
         $chapter = checkParam('chapter', true);
 
         $zip = checkBoolean('zip');
+
+        if (!empty($user) && $zip) {
+            UserDownload::create([
+                'user_id'        => $user->id,
+                'bible_id'        => $bible_id,
+                'book_id'        => $book_id,
+                'chapter'        => $chapter,
+            ]);
+        }
+
         $copyrights = checkBoolean('copyrights');
         $drama = checkParam('drama') ?? 'all';
         if ($drama !== 'all') {
