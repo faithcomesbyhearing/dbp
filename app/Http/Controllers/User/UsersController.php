@@ -208,7 +208,8 @@ class UsersController extends APIController
 
 
         if ($this->api) {
-            return $this->reply('User logged in');
+            return $user;
+            //return $this->reply('User logged in');
         }
 
         Auth::login($user, true);
