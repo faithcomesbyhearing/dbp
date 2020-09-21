@@ -761,31 +761,35 @@ class BiblesController extends APIController
             }
 
             $drama_all = $drama === 'all';
-
+            
             if ($drama === 'drama' || $drama_all) {
                 $chapter_filesets = $this->getAudioFilesetData($chapter_filesets, $bible, $book, $chapter, 'audio_drama', 'drama', $zip, 'audio', 'non_drama', !$drama_all && $zip);
 
-                if (!empty($user) && $zip && isset($chapter_filesets->audio)) {
-                    UserDownload::create([
-                      'user_id'        => $user->id,
-                      'book_id'        => $book_id,
-                      'chapter'        => $chapter,
-                      'fileset_id'     => $chapter_filesets->audio->drama['fileset']['id'],
+                if (!empty($user) && $zip && isset($chapter_filesets->audio->drama)) {
+                    $fileset_id = $chapter_filesets->audio->drama['fileset']['id'];
+                
+                    cacheRemember('v4_user_download', [$user->id, $fileset_id], now()->addDay(), function () use ($user, $fileset_id) {
+                        UserDownload::create([
+                    'user_id'        => $user->id,
+                    'fileset_id'     => $fileset_id,
                   ]);
+                        return true;
+                    });
                 }
             }
-
+            
             if ($drama === 'non-drama' || $drama_all) {
                 $chapter_filesets = $this->getAudioFilesetData($chapter_filesets, $bible, $book, $chapter, 'audio', 'non_drama', $zip, 'audio_drama', 'drama', !$drama_all && $zip);
-                
+
                 if (!empty($user) && $zip && isset($chapter_filesets->audio->non_drama)) {
-                    UserDownload::create([
-                      'user_id'        => $user->id,
-                      'bible_id'        => $bible_id,
-                      'book_id'        => $book_id,
-                      'chapter'        => $chapter,
-                      'fileset_id'     => $chapter_filesets->audio->non_drama['fileset']['id'],
+                    $fileset_id = $chapter_filesets->audio->non_drama['fileset']['id'];
+                    cacheRemember('v4_user_download', [$user->id, $fileset_id], now()->addDay(), function () use ($user, $fileset_id) {
+                        UserDownload::create([
+                    'user_id'        => $user->id,
+                    'fileset_id'     => $fileset_id,
                   ]);
+                        return true;
+                    });
                 }
             }
 
