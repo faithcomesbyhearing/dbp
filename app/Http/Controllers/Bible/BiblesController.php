@@ -16,6 +16,7 @@ use App\Http\Controllers\APIController;
 use App\Http\Controllers\User\BookmarksController;
 use App\Http\Controllers\User\HighlightsController;
 use App\Http\Controllers\User\NotesController;
+use App\Models\User\UserDownload;
 use App\Models\Bible\BibleDefault;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
@@ -675,6 +676,7 @@ class BiblesController extends APIController
         $chapter = checkParam('chapter', true);
 
         $zip = checkBoolean('zip');
+
         $copyrights = checkBoolean('copyrights');
         $drama = checkParam('drama') ?? 'all';
         if ($drama !== 'all') {
@@ -714,7 +716,7 @@ class BiblesController extends APIController
 
         $cache_params = [$bible_id, $book_id, $chapter, $zip, $drama];
 
-        $chapter_filesets = cacheRemember('v4_chapter_filesets', $cache_params, now()->addHours(12), function () use ($drama, $zip, $bible, $book, $bible_id, $book_id, $chapter) {
+        $chapter_filesets = cacheRemember('v4_chapter_filesets', $cache_params, now()->addHours(12), function () use ($drama, $zip, $bible, $book, $bible_id, $book_id, $chapter, $user) {
             $chapter_filesets = (object) [
                 'video' => (object) ['gospel_films' => [], 'jesus_films' => []],
                 'audio' => (object) [],
@@ -759,13 +761,36 @@ class BiblesController extends APIController
             }
 
             $drama_all = $drama === 'all';
-
+            
             if ($drama === 'drama' || $drama_all) {
                 $chapter_filesets = $this->getAudioFilesetData($chapter_filesets, $bible, $book, $chapter, 'audio_drama', 'drama', $zip, 'audio', 'non_drama', !$drama_all && $zip);
-            }
 
+                if (!empty($user) && $zip && isset($chapter_filesets->audio->drama)) {
+                    $fileset_id = $chapter_filesets->audio->drama['fileset']['id'];
+                
+                    cacheRemember('v4_user_download', [$user->id, $fileset_id], now()->addDay(), function () use ($user, $fileset_id) {
+                        UserDownload::create([
+                    'user_id'        => $user->id,
+                    'fileset_id'     => $fileset_id,
+                  ]);
+                        return true;
+                    });
+                }
+            }
+            
             if ($drama === 'non-drama' || $drama_all) {
                 $chapter_filesets = $this->getAudioFilesetData($chapter_filesets, $bible, $book, $chapter, 'audio', 'non_drama', $zip, 'audio_drama', 'drama', !$drama_all && $zip);
+
+                if (!empty($user) && $zip && isset($chapter_filesets->audio->non_drama)) {
+                    $fileset_id = $chapter_filesets->audio->non_drama['fileset']['id'];
+                    cacheRemember('v4_user_download', [$user->id, $fileset_id], now()->addDay(), function () use ($user, $fileset_id) {
+                        UserDownload::create([
+                    'user_id'        => $user->id,
+                    'fileset_id'     => $fileset_id,
+                  ]);
+                        return true;
+                    });
+                }
             }
 
             $video_stream = $this->getFileset($bible->filesets, 'video_stream', $book->book_testament);
