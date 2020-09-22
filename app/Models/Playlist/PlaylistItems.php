@@ -5,8 +5,10 @@ namespace App\Models\Playlist;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
+use App\Models\Bible\BibleFileTimestamp;
 use App\Models\Bible\BibleVerse;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
@@ -352,6 +354,62 @@ class PlaylistItems extends Model implements Sortable
         }
 
         return $verses;
+    }
+
+    public function getTimestamps()
+    {
+
+        // Check Params
+        $fileset_id = $this['fileset_id'];
+        $book = $this['book_id'];
+        $chapter_start = $this['chapter_start'];
+        $chapter_end = $this['chapter_end'];
+        $verse_start = $this['verse_start'];
+        $verse_end = $this['verse_end'];
+        $cache_params = [$fileset_id, $book, $chapter_start, $chapter_end, $verse_start, $verse_end];
+        return cacheRemember('playlist_item_timestamps', $cache_params, now()->addDay(), function () use ($fileset_id, $book, $chapter_start, $chapter_end, $verse_start, $verse_end) {
+            $fileset = BibleFileset::where('id', $fileset_id)->first();
+
+            $bible_files = BibleFile::where('hash_id', $fileset->hash_id)
+                ->when($book, function ($query) use ($book) {
+                    return $query->where('book_id', $book);
+                })->where('chapter_start', '>=', $chapter_start)
+                ->where('chapter_end', '<=', $chapter_end)
+                ->get();
+
+            // Fetch Timestamps
+            $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))->orderBy('verse_start')->get();
+
+
+            if ($audioTimestamps->isEmpty() && ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream')) {
+                $audioTimestamps = [];
+                $bible_files = BibleFile::with('streamBandwidth.transportStreamBytes')->where([
+                    'hash_id' => $fileset->hash_id,
+                    'book_id' => $book,
+                ])
+                    ->where('chapter_start', '>=', $chapter_start)
+                    ->where('chapter_start', '<=', $chapter_end)
+                    ->get();
+                foreach ($bible_files as $bible_file) {
+                    $currentBandwidth = $bible_file->streamBandwidth->first();
+                    foreach ($currentBandwidth->transportStreamBytes as $stream) {
+                        if ($stream->timestamp) {
+                            $audioTimestamps[] = $stream->timestamp;
+                        }
+                    }
+                }
+            }
+
+            if ($verse_start && $verse_end) {
+                $audioTimestamps =  Arr::where($audioTimestamps, function ($timestamp) use ($verse_start, $verse_end) {
+                    return $timestamp['verse_start'] >= $verse_start && $timestamp['verse_start'] <= $verse_end;
+                });
+            }
+
+            $audioTimestamps = Arr::pluck($audioTimestamps, 'timestamp', 'verse_start');
+
+            return $audioTimestamps;
+        });
     }
 
     /**

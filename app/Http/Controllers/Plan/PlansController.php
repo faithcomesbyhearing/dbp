@@ -283,6 +283,7 @@ class PlansController extends APIController
                 if ($show_text) {
                     foreach ($day_playlist->items as $item) {
                         $item->verse_text = $item->getVerseText();
+                        $item->item_timestamps = $item->getTimestamps();
                     }
                 }
                 $day->playlist = $day_playlist;
