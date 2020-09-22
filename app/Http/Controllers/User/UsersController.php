@@ -271,24 +271,15 @@ class UsersController extends APIController
         return $user;
     }
 
-
     private function loginWithSocialProvider($provider_id, $provider_user_id)
     {
-
-
-        $user = \DB::table(
-            config('database.connections.dbp_users.database') . '.users' )
-                ->join(config('database.connections.dbp_users.database') . '.user_accounts', function ($join) use ($provider_id, $provider_user_id) {
-            $join->on('users.id', 'user_accounts.user_id')
-            ->where('user_accounts.provider_id', $provider_id)
-            ->where('user_accounts.provider_user_id', $provider_user_id);
-        })->select(['*'])->first();
-
+        $user = User::with('accounts')->whereHas('accounts', function ($query) use ($provider_id, $provider_user_id) {
+            $query->where('provider_id', $provider_id)->where('provider_user_id', $provider_user_id);
+        })->first();
 
         return $user;
-
-
     }
+
     /**
      *
      * @OA\Post(
