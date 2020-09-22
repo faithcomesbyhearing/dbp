@@ -844,7 +844,7 @@ class PlansController extends APIController
      * )
      */
 
-    private function getPlan($plan_id, $user)
+    private function getPlan($plan_id, $user, $with_order = false)
     {
         $select = ['plans.*'];
         if (!empty($user)) {
@@ -937,14 +937,17 @@ class PlansController extends APIController
         $translation_data = [];
         $translated_percentage = 0;
         $playlists_data = [];
+        $order = 1;
         foreach ($plan->days as $day) {
             $playlist = (object) $playlist_controller->translate($request, $day->playlist_id, $user)->original;
             $playlists_data[] = [
                 'plan_id'               => $new_plan->id,
                 'playlist_id'           => $playlist->id,
+                'order_column'          => $order,
             ];
             $translation_data[] = $playlist->translation_data;
             $translated_percentage += $playlist->translated_percentage;
+            $order += 1;
         }
         PlanDay::insert($playlists_data);
         $translated_percentage = sizeof($plan->days) ? $translated_percentage / sizeof($plan->days) : 0;
