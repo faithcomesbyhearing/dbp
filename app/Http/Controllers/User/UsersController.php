@@ -471,6 +471,14 @@ class UsersController extends APIController
 
         // Fetch Data
         $user->fill($request->except(['v', 'key', 'pretty', 'project_id']))->save();
+        if (!$user->profile) {
+            Profile::create(['user_id' => $user->id]);
+            $user = User::with('projects')->whereId($id)->first();
+        }
+
+        if ($request->profile) {
+            $user->profile->fill($request->profile)->save();
+        }
 
         if ($this->api) {
             return $this->reply(['success' => 'User updated', 'user' => $user]);
