@@ -626,8 +626,10 @@ class UsersController extends APIController
         }
 
         if ($user_details) {
+            $api_token = $user->api_token;
             $user = User::with('accounts', 'profile')
                 ->where('id', $user->id)->first();
+            $user->api_token = $api_token;
             $response['user'] = $user;
         }
 
