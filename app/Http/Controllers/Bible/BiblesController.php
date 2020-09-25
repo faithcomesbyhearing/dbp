@@ -797,7 +797,11 @@ class BiblesController extends APIController
             if ($video_stream) {
                 $fileset_controller = new BibleFileSetsController();
                 $gospel_films = $fileset_controller->show($video_stream->id, $video_stream->asset_id, $video_stream->set_type_code, 'v4_chapter_filesets_show')->original['data'] ?? [];
-                $chapter_filesets->video->gospel_films = $gospel_films;
+                $chapter_filesets->video->gospel_films = array_map(function ($gospel_film) use ($video_stream) {
+                    unset($video_stream->laravel_through_key);
+                    $gospel_film['fileset'] = $video_stream;
+                    return $gospel_film;
+                }, $gospel_films);
             }
 
             $video_stream_controller = new VideoStreamController();
