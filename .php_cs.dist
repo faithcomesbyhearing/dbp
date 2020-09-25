@@ -5,6 +5,8 @@ require_once __DIR__.'/fixers/PrettierPHPFixer.php';
 $finder = PhpCsFixer\Finder::create()
     ->exclude('vendor')
     ->exclude('public/sdk')
+    ->exclude('bootstrap')
+    ->exclude('storage')
     ->in(__DIR__)
     ->name('*.php')
     ->ignoreDotFiles(true)
