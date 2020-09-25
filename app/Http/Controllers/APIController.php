@@ -161,10 +161,11 @@ class APIController extends Controller
     public function __construct()
     {
         $url = url()->current();
-        if (Str::contains($url, '/api')) {
+        $this->key = checkParam('key', true);
+
+        if (Str::contains($url, '/api') || $this->key === 2) {
             $this->api = true;
             $this->v   = (int) checkParam('v', true, $this->preset_v);
-            $this->key = checkParam('key', true);
 
             $cache_params = [$this->key];
             $keyExists = cacheRemember('keys', $cache_params, now()->addDay(), function () {
