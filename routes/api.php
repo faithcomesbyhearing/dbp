@@ -1,10 +1,5 @@
 <?php
 
-Route::prefix('v3')->group(function () {
-    Route::name('v3_query')->get('search',                                         'Connections\V3Controller@search');
-    Route::name('v3_books')->get('books',                                          'Connections\V3Controller@books');
-});
-
 // VERSION 4 | Access Groups
 Route::name('v4_access_groups.index')->get('access/groups',                        'User\AccessGroupController@index');
 Route::name('v4_access_groups.store')->post('access/groups/',                      'User\AccessGroupController@store');
