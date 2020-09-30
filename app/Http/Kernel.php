@@ -19,6 +19,7 @@ use \Illuminate\View\Middleware\ShareErrorsFromSession;
 use \Illuminate\Routing\Middleware\SubstituteBindings;
 use \App\Http\Middleware\VerifyCsrfToken;
 use \Lunaweb\Localization\Middleware\LocalizationHandler;
+use \App\Http\Middleware\ApiVersion;
 
 class Kernel extends HttpKernel
 {
@@ -54,6 +55,7 @@ class Kernel extends HttpKernel
             LocalizationHandler::class
         ],
         'api' => [
+            ApiVersion::class,
             'throttle:150,5',
             'bindings'
         ],
