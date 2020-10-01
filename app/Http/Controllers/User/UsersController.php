@@ -273,9 +273,18 @@ class UsersController extends APIController
 
     private function loginWithSocialProvider($provider_id, $provider_user_id)
     {
+        /*
+        // This is the attempt at hitting the accounts table first and then pullling the 
+        // user by the one to many inverse relationship
+    $account = Account::where('provider_user_id', $provider_user_id)
+        ->user;
+*/
+
+//this is the query that has a full table scan
         $user = User::with('accounts')->whereHas('accounts', function ($query) use ($provider_id, $provider_user_id) {
             $query->where('provider_id', $provider_id)->where('provider_user_id', $provider_user_id);
         })->first();
+
 
         return $user;
     }
