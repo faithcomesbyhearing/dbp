@@ -770,12 +770,12 @@ class PlaylistsController extends APIController
      *
      *
      */
-    public function translate(Request $request, $playlist_id, $user = false)
+    public function translate(Request $request, $playlist_id, $user = false, $compare_projects = true)
     {
         $user = $user ? $user : $request->user();
 
         // Validate Project / User Connection
-        if (!empty($user) && !$this->compareProjects($user->id, $this->key)) {
+        if ($compare_projects && !empty($user) && !$this->compareProjects($user->id, $this->key)) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
