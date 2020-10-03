@@ -399,7 +399,7 @@ class PlaylistItems extends Model implements Sortable
 
 
                 foreach ($bible_files_ids as $bible_file_id) {
-                    $timestamps = DB::select('select t.* from bible_file_stream_bandwidths as b
+                    $timestamps = DB::connection('dbp')->select('select t.* from bible_file_stream_bandwidths as b
                     join bible_file_stream_bytes as s 
                     on s.stream_bandwidth_id = b.id 
                     join bible_file_timestamps as t
