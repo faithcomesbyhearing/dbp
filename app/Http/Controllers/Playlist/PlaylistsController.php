@@ -15,6 +15,7 @@ use App\Traits\CallsBucketsTrait;
 use App\Traits\CheckProjectMembership;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -334,8 +335,10 @@ class PlaylistsController extends APIController
         }
 
         if ($show_text) {
+            $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist_id);
             foreach ($playlist->items as $item) {
-                $item->verse_text = $item->getVerseText();
+                $item->verse_text = $item->getVerseText($playlist_text_filesets);
+                $item->item_timestamps = $item->getTimestamps();
             }
         }
 
@@ -770,12 +773,12 @@ class PlaylistsController extends APIController
      *
      *
      */
-    public function translate(Request $request, $playlist_id, $user = false)
+    public function translate(Request $request, $playlist_id, $user = false, $compare_projects = true)
     {
         $user = $user ? $user : $request->user();
 
         // Validate Project / User Connection
-        if (!empty($user) && !$this->compareProjects($user->id, $this->key)) {
+        if ($compare_projects && !empty($user) && !$this->compareProjects($user->id, $this->key)) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
@@ -1185,5 +1188,38 @@ class PlaylistsController extends APIController
         });
 
         return $playlist;
+    }
+
+    public function getPlaylistTextFilesets($playlist_id)
+    {
+        $filesets = Arr::pluck(DB::connection('dbp_users')
+            ->select('select DISTINCT(fileset_id) from playlist_items where playlist_id = ?', [$playlist_id]), 'fileset_id');
+
+        $filesets_hashes = DB::connection('dbp')
+            ->table('bible_filesets')
+            ->select(['hash_id', 'id'])
+            ->whereIn('id', $filesets)->get();
+
+        $hashes_bibles = DB::connection('dbp')
+            ->table('bible_fileset_connections')
+            ->select(['hash_id', 'bible_id'])
+            ->whereIn('hash_id', $filesets_hashes->pluck('hash_id'))->get();
+
+        $text_filesets = DB::connection('dbp')
+            ->table('bible_fileset_connections as fc')
+            ->join('bible_filesets as f', 'f.hash_id', '=', 'fc.hash_id')
+            ->select(['f.*', 'fc.bible_id'])
+            ->where('f.set_type_code', 'text_plain')
+            ->whereIn('fc.bible_id', $hashes_bibles->pluck('bible_id'))->get()->groupBy('bible_id');
+
+
+        $fileset_text_info = $filesets_hashes->pluck('hash_id', 'id');
+        $bible_hash = $hashes_bibles->pluck('bible_id', 'hash_id');
+
+        foreach ($filesets as $fileset) {
+            $bible_id = $bible_hash[$fileset_text_info[$fileset]];
+            $fileset_text_info[$fileset] = $text_filesets[$bible_id];
+        }
+        return $fileset_text_info;
     }
 }

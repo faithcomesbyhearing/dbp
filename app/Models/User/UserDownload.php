@@ -4,11 +4,18 @@ namespace App\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @OA\Schema (
+ *     type="object",
+ *     description="The User Download entry",
+ *     title="UserDownload"
+ * )
+ */
 class UserDownload extends Model
 {
     protected $connection = 'dbp_users';
     public $table         = 'user_downloads';
-    protected $fillable  = ['id','user_id','fileset_id','created_at'];
+    protected $fillable  = ['id', 'user_id', 'fileset_id', 'created_at'];
     const UPDATED_AT = null;
 
     /**
@@ -34,7 +41,6 @@ class UserDownload extends Model
      *
      * @property string $fileset_id
      */
-    
     protected $fileset_id;
 
     /**

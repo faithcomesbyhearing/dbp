@@ -656,7 +656,12 @@ class BiblesController extends APIController
     public function chapter(Request $request, $bible_id)
     {
         $bible = cacheRemember('v4_chapter_bible', [$bible_id], now()->addDay(), function () use ($bible_id) {
-            return Bible::whereId($bible_id)->first();
+            $access_control = $this->accessControl($this->key);
+            return Bible::with([
+                'filesets' => function ($query) use ($access_control) {
+                    $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
+                }
+            ])->whereId($bible_id)->first();
         });
 
         if (!$bible) {
@@ -797,7 +802,11 @@ class BiblesController extends APIController
             if ($video_stream) {
                 $fileset_controller = new BibleFileSetsController();
                 $gospel_films = $fileset_controller->show($video_stream->id, $video_stream->asset_id, $video_stream->set_type_code, 'v4_chapter_filesets_show')->original['data'] ?? [];
-                $chapter_filesets->video->gospel_films = $gospel_films;
+                $chapter_filesets->video->gospel_films = array_map(function ($gospel_film) use ($video_stream) {
+                    unset($video_stream->laravel_through_key);
+                    $gospel_film['fileset'] = $video_stream;
+                    return $gospel_film;
+                }, $gospel_films);
             }
 
             $video_stream_controller = new VideoStreamController();
