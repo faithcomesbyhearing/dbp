@@ -44,24 +44,34 @@ class syncPlaylistDuration extends Command
     public function handle()
     {
         $sync_type = $this->choice('What do you want to sync?', ['Playlist', 'Plan', 'All plans and playlists'], 0);
-        
+        $this->alert(Carbon::now() . ' ' . $sync_type . ' items sync started ');
+
         if ($sync_type !== 'All plans and playlists') {
             $plan_playlist_id = $this->ask('Enter the ' . $sync_type . ' id:');
-            $this->alert(Carbon::now() . ' ' . $sync_type . ' items sync started ');
 
             if ($sync_type === 'Plan') {
                 $plan = Plan::where('id', $plan_playlist_id)->first();
-                foreach ($plan->days as $key => $day) {
-                    $this->line(Carbon::now() . ' Calculating duration and verses for day ' . ($key + 1) . ' of the plan');
-                    $playlist_items = PlaylistItems::where('playlist_id', $day['playlist_id'])->get();
-                    $this->playlist_verses_and_duration($playlist_items);
-                    $this->line('');
+                
+                if ($plan) {
+                    foreach ($plan->days as $key => $day) {
+                        $this->line(Carbon::now() . ' Calculating duration and verses for day ' . ($key + 1) . ' of the plan');
+                        $playlist_items = PlaylistItems::where('playlist_id', $day['playlist_id'])->get();
+                        $this->playlist_verses_and_duration($playlist_items);
+                        $this->line('');
+                    }
+                } else {
+                    $this->error(Carbon::now() . ' Plan with id: ' . $plan_playlist_id . ' does not exists ');
                 }
             } else {
                 $playlist_items = PlaylistItems::when($plan_playlist_id, function ($query, $plan_playlist_id) {
                     $query->where('playlist_id', $plan_playlist_id);
                 })->get();
-                $this->playlist_verses_and_duration($playlist_items);
+
+                if (count($playlist_items) > 0) {
+                    $this->playlist_verses_and_duration($playlist_items);
+                } else {
+                    $this->error(Carbon::now() . ' Playlist with id: ' . $plan_playlist_id . ' does not exists or has no items');
+                }
             }
         } else {
             $playlist_items = PlaylistItems::all();
