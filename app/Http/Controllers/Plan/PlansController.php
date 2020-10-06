@@ -900,12 +900,12 @@ class PlansController extends APIController
      *
      *
      */
-    public function translate(Request $request, $plan_id)
+    public function translate(Request $request, $plan_id, $user = null, $compare_projects = true, $draft = true)
     {
-        $user = $request->user();
+        $user = $user ? $user : $request->user();
 
         // Validate Project / User Connection
-        if (!empty($user) && !$this->compareProjects($user->id, $this->key)) {
+        if ($compare_projects && !empty($user) && !$this->compareProjects($user->id, $this->key)) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
@@ -928,7 +928,7 @@ class PlansController extends APIController
             'user_id'               => $user->id,
             'name'                  => $plan->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
             'featured'              => false,
-            'draft'                 => true,
+            'draft'                 => $draft,
             'suggested_start_date'  => $plan->suggested_start_date
         ];
 
@@ -939,7 +939,7 @@ class PlansController extends APIController
         $playlists_data = [];
         $order = 1;
         foreach ($plan->days as $day) {
-            $playlist = (object) $playlist_controller->translate($request, $day->playlist_id, $user)->original;
+            $playlist = (object) $playlist_controller->translate($request, $day->playlist_id, $user, $compare_projects)->original;
             $playlists_data[] = [
                 'plan_id'               => $new_plan->id,
                 'playlist_id'           => $playlist->id,
