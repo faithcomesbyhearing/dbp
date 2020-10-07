@@ -9,9 +9,11 @@ import config
 from myconfig import *
 # you need to add a myconfig.py file
 
+singlekey = '2f15fecc-e93c-11e9-a92f-38c98600e117'
+apiUrl = 'http://api.dbp.test:80/api/'
+
 
 def keyTest(mykey):
-
 
     try:
         cnx = mysql.connector.connect(**myconfig)
@@ -50,7 +52,7 @@ def keyTest(mykey):
 
 def compareFilesets(mykey):
     
-    response = urlopen('http://api.dbp.test:80/api/bibles?key='+ mykey + '&v=4')
+    response = urlopen(apiUrl + 'bibles?key='+ mykey + '&v=4')
     apiResult = json.load(response)
     fmtApiResult = json.dumps(apiResult, indent=2)
     #print(apiResult['data'])
@@ -101,4 +103,4 @@ for keyval in columns:
     mykey = keyval.value
 #    print('key ' + mykey)
 #    compareFilesets(mykey)
-compareFilesets('SOMEKEY')
+compareFilesets(singlekey)
