@@ -4,6 +4,7 @@ import pprint
 from urllib.request import urlopen
 import json
 import xlrd
+import csv
 import config
 from myconfig import *
 # you need to add a myconfig.py file
@@ -39,7 +40,7 @@ def keyTest(mykey):
         cursor.execute(query)
         myresult = cursor.fetchall()
 
-
+    
         return myresult
         cursor.close()
 
@@ -48,11 +49,12 @@ def keyTest(mykey):
 
 
 def compareFilesets(mykey):
+    
     response = urlopen('http://api.dbp.test:80/api/bibles?key='+ mykey + '&v=4')
     apiResult = json.load(response)
     fmtApiResult = json.dumps(apiResult, indent=2)
-    #print(fmtApiResult)
-    recordNum = len( apiResult )
+    #print(apiResult['data'])
+    recordNum = len( apiResult['data'] )
 
     dbResult = keyTest(mykey);
     print(dbResult)
@@ -65,8 +67,25 @@ def compareFilesets(mykey):
         print(mykey + ' filesets returned by db: ' + str(dbFilesets))
 
 
+    with open('permissions-testkey-101-db.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['access_group_id', 'id', 'asset_id', 'set_type_code', 'set_type_size', 'found_in_api'])
+        
+        for dbRow in dbResult:
 
+            dbRowList = list(dbRow)
+            for apiEl in apiResult['data']:
+                if apiEl['abbr'] == dbRow[1]:
+                    dbRowList.extend(['yes'])
 
+            if len(dbRowList) == 5:
+                dbRowList.extend(['no']) 
+                    
+
+            writer.writerow(dbRowList)
+            print(dbRowList)
+        
+  
 # iterate thru spreadsheet keys
 loc = ("permissionTest.xlsx") 
 wb = xlrd.open_workbook(loc) 
@@ -80,6 +99,6 @@ columns.pop(0)#removed heading
 
 for keyval in columns:
     mykey = keyval.value
-    #print('key ' + mykey)
-    #compareFilesets(mykey)
-compareFilesets('testkey-101')
+#    print('key ' + mykey)
+#    compareFilesets(mykey)
+compareFilesets('SOMEKEY')
