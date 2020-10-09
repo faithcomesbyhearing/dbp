@@ -9,8 +9,8 @@ import config
 from myconfig import *
 # you need to add a myconfig.py file
 
-singlekey = '2f15fecc-e93c-11e9-a92f-38c98600e117'
-apiUrl = 'http://api.dbp.test:80/api/'
+singlekey = 'testkey-101';
+apiUrl = 'http://api.dbp.test:80/api/';
 
 
 def keyTest(mykey):
@@ -38,10 +38,12 @@ def keyTest(mykey):
                 "WHERE uk.key IN ('" + mykey + "') "
                 "ORDER BY bf.id")
 
+        print(query)
 
         cursor.execute(query)
         myresult = cursor.fetchall()
 
+       # print(myresult)
     
         return myresult
         cursor.close()
@@ -49,23 +51,38 @@ def keyTest(mykey):
 
     cnx.close()
 
+def getFlattenedApi(mykey):
+    response = urlopen(apiUrl + 'bibles?key='+ mykey + '&v=4')
+    apiResult = json.load(response)
+    newApi = []
+    #print(apiResult)
+    for el in apiResult['data']:
+        
+        if el['filesets']['dbp-prod']:
+            for fs in el['filesets']['dbp-prod']:
+                fs['asset'] = 'dbp-prod'
+                newApi.append(fs)
+
+    #print(newApi)
+    print(len(newApi))
+    return newApi
+
 
 def compareFilesets(mykey):
     
-    response = urlopen(apiUrl + 'bibles?key='+ mykey + '&v=4')
-    apiResult = json.load(response)
-    fmtApiResult = json.dumps(apiResult, indent=2)
-    #print(apiResult['data'])
-    recordNum = len( apiResult['data'] )
+    apiList = getFlattenedApi(mykey)
+    apiNum = len(apiList)
+
+    #fmtApiResult = json.dumps(apiResult, indent=2)
 
     dbResult = keyTest(mykey);
-    print(dbResult)
+    #print(dbResult)
     dbFilesets = len(dbResult)
 
-    if recordNum == dbFilesets:
-        print(mykey + ' has the same number of filesets ' + str(recordNum))
+    if apiNum == dbFilesets:
+        print(mykey + ' has the same number of filesets ' + str(apiNum))
     else:
-        print(mykey + ' filesets returned by api: ' + str(recordNum))
+        print(mykey + ' filesets returned by api: ' + str(apiNum))
         print(mykey + ' filesets returned by db: ' + str(dbFilesets))
 
 
@@ -75,17 +92,18 @@ def compareFilesets(mykey):
         
         for dbRow in dbResult:
 
-            dbRowList = list(dbRow)
-            for apiEl in apiResult['data']:
-                if apiEl['abbr'] == dbRow[1]:
+            for apiEl in apiList:
+                dbRowList = list(dbRow)
+                if (apiEl['id'][0:6] == dbRow[1][0:6] and apiEl['asset'] == dbRow[2] and apiEl['type'] == dbRow[3] and apiEl['size'] == dbRow[4]):
                     dbRowList.extend(['yes'])
-
-            if len(dbRowList) == 5:
-                dbRowList.extend(['no']) 
+                    #print(dbRowList)
+                    #print(apiEl)
+                else:
+                    dbRowList.extend(['no']) 
                     
 
             writer.writerow(dbRowList)
-            print(dbRowList)
+            #print(dbRowList)
         
   
 # iterate thru spreadsheet keys
