@@ -107,10 +107,6 @@ class Account extends Model
      */
     protected $updated_at;
 
-
-        // this is for the one to many inverse relationship between user and accounts
-    // not sure if this is wrong or it's wrong in the controller
-    // https://laravel.com/docs/5.8/eloquent-relationships#one-to-many-inverse
     public function user()
     {
         return $this->belongsTo(User::class);
