@@ -273,7 +273,7 @@ class UsersController extends APIController
 
     private function loginWithSocialProvider($provider_id, $provider_user_id)
     {
-        $user = User::with('accounts')->whereHas('accounts', function ($query) use ($provider_id, $provider_user_id) {
+        $user = User::with('accounts', 'profile')->whereHas('accounts', function ($query) use ($provider_id, $provider_user_id) {
             $query->where('provider_id', $provider_id)->where('provider_user_id', $provider_user_id);
         })->first();
 
