@@ -9,7 +9,7 @@ import config
 from myconfig import *
 # you need to add a myconfig.py file
 
-singlekey = 'testkey-101';
+singlekey = 'somekey';
 apiUrl = 'http://api.dbp.test:80/api/';
 
 
@@ -43,7 +43,7 @@ def keyTest(mykey):
         cursor.execute(query)
         myresult = cursor.fetchall()
 
-       # print(myresult)
+        print(myresult)
     
         return myresult
         cursor.close()
