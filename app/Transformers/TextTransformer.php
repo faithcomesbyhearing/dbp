@@ -92,9 +92,9 @@ class TextTransformer extends BaseTransformer
              *   @OA\Xml(name="v2_text_verse"),
              *   @OA\Items(
              *              @OA\Property(property="book_name",         ref="#/components/schemas/Book/properties/name"),
-             *              @OA\Property(property="book_id",           ref="#/components/schemas/Book/properties/id_osis"),
+             *              @OA\Property(property="book_id",           ref="#/components/schemas/Book/properties/name"),
              *              @OA\Property(property="book_order",           ref="#/components/schemas/Book/properties/protestant_order"),
-             *              @OA\Property(property="chapter_id",        ref="#/components/schemas/BibleFile/properties/chapter_start"),
+             *              @OA\Property(property="chapter_id",        ref="#/components/schemas/BibleFile/properties/chapter"),
              *              @OA\Property(property="chapter_title",     type="string",example="Chapter 1"),
              *              @OA\Property(property="verse_id",          ref="#/components/schemas/BibleFile/properties/verse_start"),
              *              @OA\Property(property="verse_text",        ref="#/components/schemas/BibleFile/properties/verse_text"),
@@ -106,13 +106,13 @@ class TextTransformer extends BaseTransformer
             default:
                 return [
                     'book_name'        => (string) $text->book_name,
-                    'book_id'          => (string) $text->osis_id,
+                    'book_id'          => (string) $text->book_name,  # changed to match DBP2
                     'book_order'       => (string) $text->protestant_order,
                     'chapter_id'       => (string) $text->chapter,
                     'chapter_title'    => "Chapter $text->chapter",
                     'verse_id'         => (string) $text->verse_start,
                     'verse_text'       => (string) $text->verse_text,
-                    'paragraph_number' => (string) 1
+                    'paragraph_number' => ''
                 ];
         }
     }

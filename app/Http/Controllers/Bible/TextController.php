@@ -130,6 +130,7 @@ class TextController extends APIController
                 ->select([
                     'bible_verses.book_id as book_id',
                     'books.name as book_name',
+                    'books.protestant_order as book_order',
                     'bible_books.name as book_vernacular_name',
                     'bible_verses.chapter',
                     'bible_verses.verse_start',
