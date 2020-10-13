@@ -106,7 +106,7 @@ class TextTransformer extends BaseTransformer
             default:
                 return [
                     'book_name'        => (string) $text->book_name,
-                    'book_id'          => (string) $text->book_name,  # changed to match DBP2
+                    'book_id'          => (string) $text->book_name,
                     'book_order'       => (string) $text->protestant_order,
                     'chapter_id'       => (string) $text->chapter,
                     'chapter_title'    => "Chapter $text->chapter",
