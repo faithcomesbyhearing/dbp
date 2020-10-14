@@ -94,7 +94,7 @@ class TextTransformer extends BaseTransformer
              *              @OA\Property(property="book_name",         ref="#/components/schemas/Book/properties/name"),
              *              @OA\Property(property="book_id",           ref="#/components/schemas/Book/properties/name"),
              *              @OA\Property(property="book_order",           ref="#/components/schemas/Book/properties/protestant_order"),
-             *              @OA\Property(property="chapter_id",        ref="#/components/schemas/BibleFile/properties/chapter"),
+             *              @OA\Property(property="chapter_id",        ref="#/components/schemas/BibleFile/properties/chapter_start"),
              *              @OA\Property(property="chapter_title",     type="string",example="Chapter 1"),
              *              @OA\Property(property="verse_id",          ref="#/components/schemas/BibleFile/properties/verse_start"),
              *              @OA\Property(property="verse_text",        ref="#/components/schemas/BibleFile/properties/verse_text"),
