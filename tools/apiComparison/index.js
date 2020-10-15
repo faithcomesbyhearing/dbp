@@ -12,7 +12,8 @@ function allV2PropertiesPresent(resV2, resV4) {
 
     function compareByList(listV2, listV4){
         let diff =  _.difference(_.keys(listV2[0]), _.keys(listV4[0]) ).length === 0;
-        console.log('passes test: ', diff);
+        if (!diff){return false}
+        //console.log('passes test: ', diff);
     }
 
     //compare top level
@@ -24,6 +25,7 @@ function allV2PropertiesPresent(resV2, resV4) {
             compareByList(resV2[0][name], resV4[0][name])
         }
     })
+    return true
 
 
 
