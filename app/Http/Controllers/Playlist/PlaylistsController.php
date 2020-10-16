@@ -1218,7 +1218,7 @@ class PlaylistsController extends APIController
 
         foreach ($filesets as $fileset) {
             $bible_id = $bible_hash[$fileset_text_info[$fileset]];
-            $fileset_text_info[$fileset] = $text_filesets[$bible_id];
+            $fileset_text_info[$fileset] = $text_filesets[$bible_id] ?? null;
         }
         return $fileset_text_info;
     }
