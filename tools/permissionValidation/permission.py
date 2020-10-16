@@ -1,3 +1,4 @@
+import sys
 import mysql.connector
 from mysql.connector import errorcode
 import pprint
@@ -115,10 +116,16 @@ def compareFilesets(mykey):
 
             writer.writerow(dbRowList)
         
-with open('testkeys.csv', newline='') as csvfile:
-    keyreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
-    for row in keyreader:
-        compareFilesets(row[0])
 
-#single file        
-#compareFilesets(singlekey)
+if sys.argv[1]:
+    print('running compareFileset for: ' + sys.argv[1])
+    compareFilesets(sys.argv[1])
+
+else:
+
+    with open('testkeys.csv', newline='') as csvfile:
+        keyreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+        for row in keyreader:
+            compareFilesets(row[0])
+
+
