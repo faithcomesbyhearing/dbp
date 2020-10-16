@@ -13,7 +13,6 @@ function allV2PropertiesPresent(resV2, resV4) {
     function compareByList(listV2, listV4){
         let diff =  _.difference(_.keys(listV2[0]), _.keys(listV4[0]) ).length === 0;
         if (!diff){return false}
-        //console.log('passes test: ', diff);
     }
 
     //compare top level
@@ -26,11 +25,10 @@ function allV2PropertiesPresent(resV2, resV4) {
         }
     })
     return true
-
-
-
     
 }
+function getObjectDiff(x, y) {
+    return _(x).xorWith(y, _.isEqual).isEmpty();
+  };
 
-
-allV2PropertiesPresent(dbp2, dbp4)
+getObjectDiff(dbp2, dbp4)
