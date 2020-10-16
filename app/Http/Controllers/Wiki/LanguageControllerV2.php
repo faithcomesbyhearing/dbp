@@ -272,9 +272,9 @@ class LanguageControllerV2 extends APIController
                     //     });
                     // })
                     ->when($media, function ($query) use ($media) {
-                        return $query->whereHas(['bibles.filesets' => function ($query) use ($media) {
+                        return $query->whereHas('bibles.filesets', function ($query) use ($media) {
                             return $query->where('set_type_code', 'LIKE', $media . '%');
-                        }]);
+                        });
                     })->select([
                         'languages.id',
                         'languages.glotto_id',
