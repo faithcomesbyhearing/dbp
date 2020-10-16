@@ -53,3 +53,4 @@ fixers/tmp
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+tools/permissionValidation/results/**

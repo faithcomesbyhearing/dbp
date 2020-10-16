@@ -1,15 +1,18 @@
 import mysql.connector
 from mysql.connector import errorcode
 import pprint
+import urllib
 from urllib.request import urlopen
 import json
+import os
+import errno
 import xlrd
 import csv
 import config
 from myconfig import *
 # you need to add a myconfig.py file
 
-singlekey = '18459gba89ga94tha84dbg98ba98';
+singlekey = 'testkey-165';
 apiUrl = 'http://api.dbp.test:80/api/';
 
 
@@ -31,8 +34,6 @@ def keyTest(mykey):
         cursor = cnx.cursor()
 
         query = ("SELECT agak.access_group_id, bf.id, bf.asset_id, bf.set_type_code, bf.set_size_code "
-#                "FROM dbp_200909.access_group_filesets agf "
-#                "JOIN  dbp_200909.bible_filesets bf ON agf.hash_id=bf.hash_id "
                 "FROM access_group_filesets agf "
                 "JOIN bible_filesets bf ON agf.hash_id=bf.hash_id "
                 "JOIN dbp_users.access_group_api_keys agak ON agak.access_group_id = agf.access_group_id "
@@ -58,7 +59,12 @@ def getFlattenedApi(mykey):
     if mykey.__contains__('5'):
         url = url + '&asset_id=dbp-vid'
 #    print(url)
-    response = urlopen(url)
+    try:
+        response = urlopen(url)
+    except IOError:
+        print("caught IOError exception on url:" + url)
+        raise 
+
     apiResult = json.load(response)
     newApi = []
     for el in apiResult['data']:
@@ -97,7 +103,12 @@ def compareFilesets(mykey):
     else:
         print(mykey + ' filesets returned by api: ' + str(apiNum) + ', by db: ' + str(dbFilesets))
 
-    with open('permissions/permissions-'+mykey+'-db.csv', 'w', newline='') as csvfile:
+    try:
+        os.makedirs('results')
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+    with open('results/permissions-'+mykey+'-db.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['access_group_id', 'id', 'asset_id', 'set_type_code', 'set_type_size', 'found_in_api'])
         
@@ -114,11 +125,15 @@ def compareFilesets(mykey):
                     dbRowList.extend(['no']) 
 
             writer.writerow(dbRowList)
-        
-with open('testkeys.csv', newline='') as csvfile:
-    keyreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
-    for row in keyreader:
-        compareFilesets(row[0])
+
+# Casey: add code to attempt read of testkey from the command line. 
+# if there is a testkey on command line, process only that one
+    #compareFilesets(singlekey)
+# else process testkeys.csv
+    # with open('testkeys.csv', newline='') as csvfile:
+    #     keyreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+    #     for row in keyreader:
+    #         compareFilesets(row[0])
 
 #single file        
-#compareFilesets(singlekey)
+compareFilesets(singlekey)
