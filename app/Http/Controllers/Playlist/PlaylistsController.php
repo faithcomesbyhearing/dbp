@@ -858,6 +858,15 @@ class PlaylistsController extends APIController
         $playlist->path = route('v4_playlists.hls', ['playlist_id'  => $playlist->id, 'v' => $this->v, 'key' => $this->key]);
         $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
 
+        $show_details = checkBoolean('show_details');
+        if ($show_details) {
+            $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist_id);
+            foreach ($playlist->items as $item) {
+                $item->verse_text = $item->getVerseText($playlist_text_filesets);
+                $item->item_timestamps = $item->getTimestamps();
+            }
+        }
+
         $playlist->translation_data = $metadata_items;
         $playlist->translated_percentage = $translated_percentage * 100;
 
