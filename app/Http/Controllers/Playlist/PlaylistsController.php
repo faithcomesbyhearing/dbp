@@ -764,6 +764,12 @@ class PlaylistsController extends APIController
      *          @OA\Schema(ref="#/components/schemas/Bible/properties/id"),
      *          description="The id of the bible that will be used to translate the playlist"
      *     ),
+     *     @OA\Parameter(
+     *          name="show_details",
+     *          in="query",
+     *          @OA\Schema(type="boolean"),
+     *          description="Give full details of the playlist"
+     *     ),
      *     @OA\Response(response=200, ref="#/components/responses/playlist")
      * )
      *
@@ -782,6 +788,7 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
+        $show_details = checkBoolean('show_details');
         $bible_id = checkParam('bible_id', true);
         $bible = cacheRemember('bible_translate', [$bible_id], now()->addDay(), function () use ($bible_id) {
             return Bible::whereId($bible_id)->first();
@@ -857,6 +864,14 @@ class PlaylistsController extends APIController
         $playlist = $this->getPlaylist($user, $playlist->id);
         $playlist->path = route('v4_playlists.hls', ['playlist_id'  => $playlist->id, 'v' => $this->v, 'key' => $this->key]);
         $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
+
+        if ($show_details) {
+            $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist_id);
+            foreach ($playlist->items as $item) {
+                $item->verse_text = $item->getVerseText($playlist_text_filesets);
+                $item->item_timestamps = $item->getTimestamps();
+            }
+        }
 
         $playlist->translation_data = $metadata_items;
         $playlist->translated_percentage = $translated_percentage * 100;
