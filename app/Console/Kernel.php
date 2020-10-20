@@ -44,6 +44,8 @@ class Kernel extends ConsoleKernel
         Commands\syncV2Highlights::class,
         Commands\syncV2Notes::class,
         Commands\reSyncV2Notes::class,
+        Commands\translatePlan::class,
+        Commands\translatePlaylist::class,
         Commands\encryptNote::class,
 
         Commands\syncPlaylistDuration::class,

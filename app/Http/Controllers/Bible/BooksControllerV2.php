@@ -420,7 +420,12 @@ class BooksControllerV2 extends APIController
     {
         $testament = [];
 
-        switch ($id[\strlen($id) - 2]) {
+        $len = strlen($id);
+        $substring = '';
+        if ($len === 10) {
+            $substring = $id[$len - 4];
+        }
+        switch ($substring) {
             case 'O':
                 $testament = ['OT', 'C'];
                 break;

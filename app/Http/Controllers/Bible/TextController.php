@@ -130,6 +130,7 @@ class TextController extends APIController
                 ->select([
                     'bible_verses.book_id as book_id',
                     'books.name as book_name',
+                    'books.protestant_order as book_order',
                     'bible_books.name as book_vernacular_name',
                     'bible_verses.chapter',
                     'bible_verses.verse_start',
@@ -567,7 +568,7 @@ class TextController extends APIController
     public function info()
     {
         $fileset_id  = checkParam('dam_id|bible_id', true);
-        $book_id     = checkParam('book_id');
+        $book_id     = checkParam('book_id', true);
         $chapter_id  = checkParam('chapter|chapter_id');
         $verse_start = checkParam('verse_start') ?? 1;
         $verse_end   = checkParam('verse_end');

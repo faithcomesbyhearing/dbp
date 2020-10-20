@@ -257,7 +257,7 @@ class UsersController extends APIController
 
     private function loginWithEmail($email, $password)
     {
-        $user = User::with('accounts')->where('email', $email)->first();
+        $user = User::with('accounts', 'profile')->where('email', $email)->first();
         if (!$user) {
             return false;
         }
@@ -273,7 +273,7 @@ class UsersController extends APIController
 
     private function loginWithSocialProvider($provider_id, $provider_user_id)
     {
-        $user = User::with('accounts')->whereHas('accounts', function ($query) use ($provider_id, $provider_user_id) {
+        $user = User::with('accounts', 'profile')->whereHas('accounts', function ($query) use ($provider_id, $provider_user_id) {
             $query->where('provider_id', $provider_id)->where('provider_user_id', $provider_user_id);
         })->first();
 
@@ -471,6 +471,14 @@ class UsersController extends APIController
 
         // Fetch Data
         $user->fill($request->except(['v', 'key', 'pretty', 'project_id']))->save();
+        if (!$user->profile) {
+            Profile::create(['user_id' => $user->id]);
+            $user = User::with('projects')->whereId($id)->first();
+        }
+
+        if ($request->profile) {
+            $user->profile->fill($request->profile)->save();
+        }
 
         if ($this->api) {
             return $this->reply(['success' => 'User updated', 'user' => $user]);
@@ -618,6 +626,10 @@ class UsersController extends APIController
         }
 
         if ($user_details) {
+            $api_token = $user->api_token;
+            $user = User::with('accounts', 'profile')
+                ->where('id', $user->id)->first();
+            $user->api_token = $api_token;
             $response['user'] = $user;
         }
 
