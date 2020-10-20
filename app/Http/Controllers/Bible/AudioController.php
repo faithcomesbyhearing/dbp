@@ -227,9 +227,6 @@ class AudioController extends APIController
         $book     = checkParam('book|osis_code', false, $book_url_param);
         $chapter  = checkParam('chapter_id|chapter_number', false, $chapter_url_param);
 
-        // account for various book ids
-        $book = optional(Book::where('id_osis', $book)->first())->id;
-
         // Fetch Fileset & Files
         $fileset = BibleFileset::uniqueFileset($id, $asset_id, 'audio', true)->first();
         if (!$fileset) {
