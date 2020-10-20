@@ -41,8 +41,8 @@ class AudioTransformer extends BaseTransformer
              */
             case 'v2_audio_timestamps':
                 return [
-                    'verse_start'    => (string) $audio->verse_start,
-                    'timestamp'      => $audio->timestamp
+                    'verse_id'    => $audio->verse_start,
+                    'verse_start' => $audio->timestamp
                 ];
 
                 /**

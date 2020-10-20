@@ -265,7 +265,7 @@ class AudioController extends APIController
         }
 
         // Return Response
-        return $this->reply(fractal($audioTimestamps, new AudioTransformer()));
+        return $this->reply(fractal($audioTimestamps, new AudioTransformer(), $this->serializer));
     }
 
 

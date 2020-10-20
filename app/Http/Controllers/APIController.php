@@ -15,7 +15,6 @@ use Spatie\ArrayToXml\ArrayToXml;
 use Log;
 use Symfony\Component\Yaml\Yaml;
 use Yosymfony\Toml\TomlBuilder;
-use Illuminate\Support\Str;
 
 class APIController extends Controller
 {
@@ -160,9 +159,15 @@ class APIController extends Controller
 
     public function __construct()
     {
-        $url = url()->current();
-        if (Str::contains($url, '/api')) {
+        $version_name = '';
+        if (request()->route()) {
+            // The api route names start with v2, v3 or v4;
+            $version_name = explode('_', request()->route()->getName())[0];
+        }
+
+        if ($version_name === 'v2' || $version_name === 'v3' ||  $version_name === 'v4') {
             $this->api = true;
+            // If is an api call require the v parameter
             $this->v   = (int) checkParam('v', true, $this->preset_v);
             $this->key = checkParam('key', true);
 

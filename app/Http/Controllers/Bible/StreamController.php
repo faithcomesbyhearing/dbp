@@ -158,12 +158,17 @@ class StreamController extends APIController
             return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)->where('id', $parts[0])->first();
         }
 
+        $where = [
+            'book_id' => $parts[0],
+            'chapter_start' => $parts[1],
+            'verse_start' => $parts[2]
+        ];
+
+        if ($parts[3] !== '') {
+            $where['verse_end'] = $parts[3];
+        }
+
         return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)
-            ->where([
-                'book_id' => $parts[0],
-                'chapter_start' => $parts[1],
-                'verse_start' => $parts[2],
-                'verse_end' => $parts[3] ? $parts[3] : null,
-            ])->first();
+            ->where($where)->first();
     }
 }
