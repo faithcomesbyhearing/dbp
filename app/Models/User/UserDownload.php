@@ -41,6 +41,7 @@ class UserDownload extends Model
      *
      * @property string $fileset_id
      */
+    
     protected $fileset_id;
 
     /**
