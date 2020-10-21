@@ -415,70 +415,6 @@
             }
           },
           "response": []
-        },
-        {
-          "name": "library/volumelanguagefamily Copy",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "id": "554adc95-4225-4d94-9558-d2657d62f2fe",
-                "exec": [
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "id": "ae66c0ea-9301-417c-9946-2dfc9fd206c1",
-                "exec": [
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "_postman_id": "b4ee0607-004a-4992-a2f7-787bec8cae63",
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{basePath}}/library/volumelanguagefamily?v={{version}}&key={{key}}",
-              "host": [
-                "{{basePath}}"
-              ],
-              "path": [
-                "library",
-                "volumelanguagefamily"
-              ],
-              "query": [
-                {
-                  "key": "v",
-                  "value": "{{version}}"
-                },
-                {
-                  "key": "key",
-                  "value": "{{key}}"
-                },
-                {
-                  "key": "delivery",
-                  "value": "mobile",
-                  "disabled": true
-                },
-                {
-                  "key": "rich",
-                  "value": "1",
-                  "disabled": true
-                }
-              ]
-            }
-          },
-          "response": []
         }
       ],
       "_postman_id": "8cc9ce92-9337-4e10-9e93-373463d50349",
@@ -2144,73 +2080,73 @@
   ],
   "variable": [
     {
-      "id": "1cd5501a-f5c6-4125-8f6e-1f2359514d05",
+      "id": "aadef49a-a5af-4178-a96c-865b9389e742",
       "key": "basePath1",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "83e6d097-29f8-40d2-b2b8-2cba4375f055",
+      "id": "ee016be3-be21-40e4-b9eb-99d8fdbb332d",
       "key": "basePath2",
       "value": "https://4.dbt.io",
       "type": "string"
     },
     {
-      "id": "1856ef4b-8815-4d31-b26e-331d4b75d4da",
+      "id": "c7f95312-2583-4db9-baed-5c0cdfbbca4b",
       "key": "key",
       "value": "53355c32fca5f3cac4d7a670d2df2e09",
       "type": "string"
     },
     {
-      "id": "784b5acc-4948-4191-9a2e-e29bdc2a6759",
+      "id": "ee5892d0-ce18-4718-8298-638bed9ad76e",
       "key": "version",
       "value": "2",
       "type": "string"
     },
     {
-      "id": "923ce82a-b23c-460a-990a-7f4835a82aea",
+      "id": "9dc77181-030e-4d83-a105-a1a24d26d5bf",
       "key": "basePath",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "323bc3ca-081d-4279-ab09-0033a6ffa628",
+      "id": "e3e44eb5-483d-4c07-8674-8093d3a38a83",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "24ccdfd6-83a7-45e2-9993-7727a2eb5a0f",
+      "id": "a6c722ea-ee25-4ea7-9c7d-c1e8319568c3",
       "key": "newTestamentBook",
       "value": "Luke",
       "type": "string"
     },
     {
-      "id": "1b722fcc-551c-4b8d-bffa-7f9e10a361fa",
+      "id": "e6cdfd20-9293-4d1f-afd1-d918936f5a45",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "88abe498-843c-49ef-a66b-4c492bc28d2e",
+      "id": "a46e1db7-239c-46c2-9954-7e42d4e6e398",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "c4b9df3f-1e85-458e-bb04-e537b5efcc88",
+      "id": "4b17a791-08ec-45e9-bc6f-51dd14a46c91",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "a536ee8e-70e5-4bda-95f4-6d1ea2dd792f",
+      "id": "b9f0bbaa-8b6a-419a-a19f-51af9d362bfd",
       "key": "basePathLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "2c165a39-80fe-4bb0-a67d-cf79a73d94b6",
+      "id": "a47ea1ce-22ec-4209-8c21-597335cb77dd",
       "key": "languageCode",
       "value": "ENG",
       "type": "string"
