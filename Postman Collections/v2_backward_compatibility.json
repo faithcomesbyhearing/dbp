@@ -602,7 +602,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/text/search?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&query=Saul",
+              "raw": "{{basePath}}/text/search?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&query=Saul&page=1",
               "host": [
                 "{{basePath}}"
               ],
@@ -613,23 +613,89 @@
               "query": [
                 {
                   "key": "v",
-                  "value": "{{version}}",
-                  "type": "text"
+                  "value": "{{version}}"
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
-                  "type": "text"
+                  "value": "{{key}}"
                 },
                 {
                   "key": "dam_id",
-                  "value": "{{newTestamentTextDamId}}",
-                  "type": "text"
+                  "value": "{{newTestamentTextDamId}}"
                 },
                 {
                   "key": "query",
-                  "value": "Saul",
-                  "type": "text"
+                  "value": "Saul"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "text/search Copy",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "d23a058f-c712-4241-b120-741621ca3688",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "cbed4edc-fcd7-49fd-af54-379e77f5d73b",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "2b60a06f-d328-48d6-aa4b-b4d88cddc978",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{basePath}}/text/search?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&query=Saul&page=1",
+              "host": [
+                "{{basePath}}"
+              ],
+              "path": [
+                "text",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentTextDamId}}"
+                },
+                {
+                  "key": "query",
+                  "value": "Saul"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
                 }
               ]
             }
@@ -1995,10 +2061,11 @@
           "    return 'hello';",
           "  },",
           "  allV2PropertiesPresent: function allV2PropertiesPresent(resV2, resV4) {",
+          "    let matches = true",
           "",
           "    function compareByList(listV2, listV4){",
           "        let diff =  _.difference(_.keys(listV2[0]), _.keys(listV4[0]) ).length === 0;",
-          "        if (!diff){return false}",
+          "        if (!diff){ matches = false }",
           "    }",
           "",
           "    //compare top level",
@@ -2010,7 +2077,7 @@
           "            compareByList(resV2[0][name], resV4[0][name])",
           "        }",
           "    })",
-          "    return true",
+          "    return matches",
           "    ",
           "},",
           "  getObjectDiff: function getObjectDiff(obj1, obj2) {",
@@ -2054,7 +2121,9 @@
           "",
           "    try{",
           "        pm.test(\"check for V2 keys\", () =>",
-          "            pm.expect(utils.allV2PropertiesPresent(pm.variables.get(\"responseKeys\"), responseKeys)).to.be.true);",
+          "            pm.expect(utils.allV2PropertiesPresent(pm.variables.get(\"responseObject\"), responseObject)).to.be.true);",
+          "",
+          "        console.log('rk',pm.variables.get(\"responseObject\"), responseObject)",
           "",
           "    } catch (e) {",
           "        console.log(\"caught exception: \" + e);",
@@ -2077,73 +2146,73 @@
   ],
   "variable": [
     {
-      "id": "997121b9-85b4-427c-a43e-3124858f93ab",
+      "id": "b1adeed9-9085-4705-9054-cf8f20c14453",
       "key": "basePath1",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "d0817787-6695-43b7-bf0a-5c8fccb77ecf",
+      "id": "75e7941d-6f13-4c22-b250-0c8482b78c3c",
       "key": "basePath2",
       "value": "https://dev.dbt.io",
       "type": "string"
     },
     {
-      "id": "c3dc69c8-e353-4e11-83d2-1ac2fcdd9a66",
+      "id": "9717c5aa-f3b4-453a-b3d5-a8a2fd661c99",
       "key": "key",
       "value": "53355c32fca5f3cac4d7a670d2df2e09",
       "type": "string"
     },
     {
-      "id": "b0dbb3d2-34bc-4c95-b2e1-caf800a62faa",
+      "id": "06e85826-1a11-4e93-8b91-34039c009a12",
       "key": "version",
       "value": "2",
       "type": "string"
     },
     {
-      "id": "b895fd89-db06-47e8-b06a-7aafd9a58359",
+      "id": "507361c7-304d-4b33-a64b-5e4ae346ef41",
       "key": "basePath",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "4080bf09-082e-4251-9519-a9ba51b054cd",
+      "id": "3edc5b69-ad61-4f4b-86f1-8918c25962e1",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "1b90a0a4-0a3f-4c2c-ad57-f6d74d9814a6",
+      "id": "b410858a-7d37-4894-b2e3-7474ec00ffbb",
       "key": "newTestamentBook",
       "value": "Luke",
       "type": "string"
     },
     {
-      "id": "b7feca8b-8cad-499c-86e2-fa162c9f9321",
+      "id": "54ba44bd-42b7-4693-a4b0-b4504c2f87b9",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "9e738b1f-b1b1-4db4-88c0-5b2d2834e565",
+      "id": "b67d71aa-2f55-4afd-87dc-6063cc888d1c",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "e1384dda-6372-44b4-99ad-ef9b1bf0bcfe",
+      "id": "85537ea5-74e8-49d2-bac6-fbe30c8399bb",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "47dd838d-0996-4287-801f-c46fbc4b57ce",
+      "id": "26b2612f-3593-4e65-9a94-5a5b7d29e463",
       "key": "basePathLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "36a678f9-30ae-4160-b92f-742b69d8c0ed",
+      "id": "3558f6d0-aeec-41c1-8e48-46c47f70757f",
       "key": "languageCode",
       "value": "ENG",
       "type": "string"
