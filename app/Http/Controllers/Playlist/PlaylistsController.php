@@ -866,7 +866,7 @@ class PlaylistsController extends APIController
         $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
 
         if ($show_details) {
-            $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist_id);
+            $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist->id);
             foreach ($playlist->items as $item) {
                 $item->verse_text = $item->getVerseText($playlist_text_filesets);
                 $item->item_timestamps = $item->getTimestamps();
