@@ -2042,9 +2042,7 @@
           "    console.log('ro',responseObject)",
           "if (responseObject != undefined) {",
           "    responseKeys = Object.keys(responseObject);",
-          "}else{",
-          "    console.log('no ro',  pm.variables.get(\"basePath2\") );",
-          "};",
+          "}",
           "",
           "if (pm.environment.get(\"basePath\") == pm.environment.get('basePath1')){",
           "    pm.globals.set(\"responseKeys\", responseKeys);",
@@ -2052,19 +2050,18 @@
           "    //pm.variables.set(\"basePath\", pm.variables.get(\"basePathLocal\"));",
           "    ",
           "    pm.environment.set(\"basePath\", pm.environment.get('basePath2'))",
-          "    //console.log(pm)",
+          "    console.log(pm)",
           "    postman.setNextRequest(request.name); ",
           "    ",
           "}else{",
           "    try{",
           "        if (pm.variables.get(\"ignoreV2Keys\") != \"true\") {",
           "            pm.test(\"check for V2 keys\", () =>",
-          "            pm.expect(utils.allV2PropertiesPresent(pm.variables.get(\"responseObject\"), responseObject)).to.be.true);",
+          "            pm.expect(utils.allV2PropertiesPresent(pm.globals.get(\"responseObject\"), responseObject)).to.be.true);",
           "        } else {",
           "            console.log(\"v2 key check disabled\");",
           "            pm.variables.unset(\"ignoreV2Keys\")",
           "        }",
-          "",
           "",
           "        console.log('rk',pm.variables.get(\"responseObject\"), responseObject)",
           "",
@@ -2081,7 +2078,6 @@
           "    pm.environment.set(\"basePath\", pm.environment.get('basePath2'))",
           "    pm.variables.unset(\"responseKeys\");",
           "    //pm.variables.unset(\"responseObject\");",
-          "        console.log(pm.variables.get(\"version\"))",
           "",
           "}",
           "//console.log(\"Collection.Test:4\");"
@@ -2091,73 +2087,73 @@
   ],
   "variable": [
     {
-      "id": "4b485046-dbd1-45b7-8727-eaaa92560666",
+      "id": "2970c3be-75a3-4c0e-af8b-07c9e52ef692",
       "key": "basePath1",
       "value": "dbt.io",
       "type": "string"
     },
     {
-      "id": "9a86a865-171f-4644-bfde-81bf6c487090",
+      "id": "01ff1a85-2f67-450d-8093-76c5b6a8ee50",
       "key": "basePath2",
       "value": "dev.dbt.io",
       "type": "string"
     },
     {
-      "id": "4abfd544-0c96-4b2d-bd93-5a0d636e14ed",
+      "id": "70e6b73f-7788-4bcf-8803-5d3856037c25",
       "key": "key",
       "value": "53355c32fca5f3cac4d7a670d2df2e09",
       "type": "string"
     },
     {
-      "id": "deb968c3-b3fe-48f0-b65e-fb878572793a",
+      "id": "210b5d95-192e-42a1-bec2-61b9bf976840",
       "key": "version",
       "value": "2",
       "type": "string"
     },
     {
-      "id": "530e8d5f-62ac-4549-a7a2-56e622cb12f2",
+      "id": "c0e42fe9-b888-4693-ab3a-ed1f2d2b81f9",
       "key": "basePath",
       "value": "dbt.io",
       "type": "string"
     },
     {
-      "id": "13fd8659-bec7-4b3a-b82b-6494a9898e6b",
+      "id": "b96813ff-fc23-4a22-b4c9-3cf32479d33b",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "a49d6de7-372b-425f-b4d3-b1b502c7909d",
+      "id": "a65d3648-9fcf-4f74-af9c-55c2f6dfeaed",
       "key": "newTestamentBook",
       "value": "Luke",
       "type": "string"
     },
     {
-      "id": "281f7e71-1d45-4ae0-a404-3c8457a7709f",
+      "id": "7493bf37-e809-440d-b5e8-eb4f2fbfd3fa",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "669519d4-5e61-4918-b574-f3d9342ff42d",
+      "id": "e472ce5c-0ec6-4db5-91ea-b6e4814f02ae",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "d3eb8e27-86af-499f-ab26-e213e68e3614",
+      "id": "412c68e0-c25f-4bd3-8903-738bd9dc62aa",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "53108443-5676-433d-986c-9f0659794772",
+      "id": "e2c0914f-343b-445d-a9fd-2b4dfaf769c6",
       "key": "basePathLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "8875b6da-4686-4a0b-a844-95f4f6e3ec4c",
+      "id": "7435c911-0632-442e-8f38-81cb9e276c75",
       "key": "languageCode",
       "value": "ENG",
       "type": "string"
