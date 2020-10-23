@@ -56,7 +56,7 @@ class Kernel extends HttpKernel
         ],
         'api' => [
             ApiVersion::class,
-            'throttle:150,5',
+            'throttle:2000,1',
             'bindings'
         ],
         //'activated' => [CheckIsUserActivated::class,],
