@@ -2032,7 +2032,7 @@
           "",
           "let response = pm.response.json();",
           "var length = Object.keys(response).length; ",
-          "console.log('var', pm.environment.get('basePath'))",
+          "",
           "if (length > 1) {",
           "   responseObject = response;",
           "   ",
@@ -2044,24 +2044,19 @@
           "    responseKeys = Object.keys(responseObject);",
           "}",
           "",
-          "    console.log('bp=' , pm.environment.get(\"basePath\"))",
-          "    console.log('bp1=' , pm.environment.get(\"basePath1\"))",
-          " ",
           "if (pm.environment.get(\"basePath\") == pm.environment.get('basePath1')){",
           "    pm.globals.set(\"responseKeys\", responseKeys);",
           "    pm.variables.set(\"responseObject\", responseObject);  ",
           "",
-          "   //pm.variables.set(\"basePath\", pm.variables.get(\"basePathLocal\"));",
-          "    ",
           "    pm.environment.set(\"basePath\", pm.environment.get('basePath2'))",
-          "    console.log('bpe ',pm.environment.get('basePath'))",
+          "",
           "    postman.setNextRequest(request.name); ",
           "    ",
           "}else{",
           "    try{",
           "        if (pm.variables.get(\"ignoreV2Keys\") != \"true\") {",
           "            pm.test(\"check for V2 keys\", () =>",
-          "            pm.expect(utils.allV2PropertiesPresent(pm.globals.get(\"responseObject\"), responseObject)).to.be.true);",
+          "            pm.expect(utils.allV2PropertiesPresent(pm.variables.get(\"responseObject\"), responseObject)).to.be.true);",
           "        } else {",
           "            console.log(\"v2 key check disabled\");",
           "            pm.variables.unset(\"ignoreV2Keys\")",
@@ -2074,90 +2069,85 @@
           "    }",
           "",
           " diff = utils.getObjectDiff(pm.variables.get(\"responseObject\"), responseObject);",
-          "        console.log('diff');",
-          "",
-          "   // console.log(utils.getObjectDiff(pm.variables.get(\"responseObject\"),",
-          "   //      responseObject));",
           "",
           "    pm.environment.set(\"basePath\", pm.environment.get('basePath1'))",
           "    pm.variables.unset(\"responseKeys\");",
-          "    //pm.variables.unset(\"responseObject\");",
           "",
           "}",
-          "//console.log(\"Collection.Test:4\");"
+          ""
         ]
       }
     }
   ],
   "variable": [
     {
-      "id": "343c8372-cc77-422e-8a3e-752d35d3ded0",
+      "id": "42d70589-e300-41fe-bc76-182e62814519",
       "key": "basePath1",
       "value": "dbt.io",
       "type": "string"
     },
     {
-      "id": "2561febe-e7ba-4ac1-86e4-4b142707e938",
+      "id": "e21b1b9a-f74a-4526-834d-7d4d2775446f",
       "key": "basePath2",
       "value": "dev.dbt.io",
       "type": "string"
     },
     {
-      "id": "d8700100-d717-40d0-bf75-54316bcee289",
+      "id": "93646b0f-7671-4821-b58f-bf951e603513",
       "key": "key",
       "value": "53355c32fca5f3cac4d7a670d2df2e09",
       "type": "string"
     },
     {
-      "id": "e6d38754-3165-4e41-ab63-18be699d794b",
+      "id": "258712a1-938f-405e-ad9e-1a7cebb39b38",
       "key": "version",
       "value": "2",
       "type": "string"
     },
     {
-      "id": "61acce93-6e46-46ac-9b1e-acb7a2dbb8a0",
+      "id": "fc62d682-3b91-4b93-ac49-455d8c8f9b5a",
       "key": "basePath",
       "value": "dbt.io",
       "type": "string"
     },
     {
-      "id": "d80239ba-d272-47a1-ac12-d27791c5afed",
+      "id": "d63d1e5b-0b92-4ebb-8cb2-d08319d8f699",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "24b64c2e-cf10-46e8-b443-785c02a218ab",
+      "id": "829e1f12-9da0-40e7-a87d-faef66d9b287",
       "key": "newTestamentBook",
       "value": "Luke",
       "type": "string"
     },
     {
-      "id": "c49e41e1-a1d4-4598-b577-76af1ad5c634",
+      "id": "42287d48-5a9f-41ee-9e59-9fb1bf7d51c5",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "2fafdbef-3c42-4f01-b908-0451f4ec2878",
+      "id": "077eca38-dc77-4081-9497-f6a72eb2a9ef",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "de4c4542-5318-41af-8a22-19ea68ec3817",
+      "id": "7946a34c-c6b1-4f72-8f34-ae2d23730024",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "67344a24-74ff-49b9-be05-b5c98fa1048c",
+      "id": "b0b05041-dfcc-4e2c-8631-581e82ffeb33",
       "key": "basePathLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "4d18110d-11e3-429f-a609-1c7aa51b9171",
+      "id": "4ba1c6ab-0deb-4dfa-8ba4-0a29cadba2e4",
       "key": "languageCode",
       "value": "ENG",
       "type": "string"
