@@ -2074,7 +2074,7 @@
           "    }",
           "",
           " diff = utils.getObjectDiff(pm.variables.get(\"responseObject\"), responseObject);",
-          "        console.log(diff);",
+          "        console.log('diff');",
           "",
           "    console.log(utils.getObjectDiff(pm.variables.get(\"responseObject\"),",
           "         responseObject));",
@@ -2091,73 +2091,73 @@
   ],
   "variable": [
     {
-      "id": "2421b1ec-2ded-4491-a40e-0e0f3f7deacf",
+      "id": "04b9a0ae-cb70-4eba-a595-07d08d7b5b64",
       "key": "basePath1",
       "value": "dbt.io",
       "type": "string"
     },
     {
-      "id": "7eb63ca0-00f8-49c1-9989-47dd34c8ea83",
+      "id": "ecb38424-de03-47ba-b8f6-e91735776d62",
       "key": "basePath2",
       "value": "dev.dbt.io",
       "type": "string"
     },
     {
-      "id": "7265a24c-4e9a-49b4-a4e6-b63f6c0068a0",
+      "id": "7e1e60ab-bcbd-4039-8dd2-6474bf7051bc",
       "key": "key",
       "value": "53355c32fca5f3cac4d7a670d2df2e09",
       "type": "string"
     },
     {
-      "id": "925b0abc-caa4-4bdb-8bef-7da622e58914",
+      "id": "c0048d1c-7778-4244-988e-00d920219580",
       "key": "version",
       "value": "2",
       "type": "string"
     },
     {
-      "id": "a0750135-6c3d-43d1-a322-e4ae1b278e36",
+      "id": "67bfeda7-56ba-4122-b524-957f20edcd2e",
       "key": "basePath",
       "value": "dbt.io",
       "type": "string"
     },
     {
-      "id": "2800b185-e49e-4bf3-b8f1-eb256c165370",
+      "id": "26243018-9f9b-4f0b-ab69-1c6a770e6a93",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "3791d5a8-5ef9-434c-987d-2487fbc49f30",
+      "id": "0bd5a758-ca71-485c-8737-3ea6dd8b2331",
       "key": "newTestamentBook",
       "value": "Luke",
       "type": "string"
     },
     {
-      "id": "fac3ebf2-766d-446d-80d7-b2c86e82e00e",
+      "id": "5051ef36-e693-4597-bc22-3883b8abd231",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "57f810d2-4ce9-49e7-9ef3-da1d57ca887f",
+      "id": "20f7997a-f87e-4e70-9921-055065261271",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "7c15aef2-ffe0-4f29-a322-e639d6623ae3",
+      "id": "f62bf277-d253-4e9c-93bb-13db4d76a43f",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "c9b368ca-4b6c-479a-922c-d74ad732c792",
+      "id": "3ff5066f-c1d2-445f-b55f-4b4d67c95fd6",
       "key": "basePathLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "7c016f15-27d4-4386-abc9-010eaeb5c665",
+      "id": "be18e86c-9f17-4c9d-8d91-d8c3b73a98b1",
       "key": "languageCode",
       "value": "ENG",
       "type": "string"
