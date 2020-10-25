@@ -2081,73 +2081,73 @@
   ],
   "variable": [
     {
-      "id": "7b0f2057-9715-4ef2-8905-90060f693517",
+      "id": "88dd760e-5b12-4bc5-b445-86f2c670b53a",
       "key": "basePath1",
       "value": "dbt.io",
       "type": "string"
     },
     {
-      "id": "97db1d5c-1084-4cf8-bac4-9f54dba0471c",
+      "id": "de42bb06-a8d6-4b2d-84cf-1a5defa65cc7",
       "key": "basePath2",
       "value": "dev.dbt.io",
       "type": "string"
     },
     {
-      "id": "cbc72b92-705b-4413-ae00-582edd2dc94f",
+      "id": "3c0e66ab-4203-4b79-80a2-6d28fd30215a",
       "key": "key",
       "value": "53355c32fca5f3cac4d7a670d2df2e09",
       "type": "string"
     },
     {
-      "id": "6a7d7181-5510-46f6-b9a7-255599407845",
+      "id": "ceb46e52-3ff0-42a6-957b-17f9fc84bb0d",
       "key": "version",
       "value": "2",
       "type": "string"
     },
     {
-      "id": "6015cd25-c4c5-4175-9a73-f0c70935e07b",
+      "id": "f85c7285-7fe9-4a4c-bad3-1f459260ef35",
       "key": "basePath",
-      "value": "dbt.io",
+      "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "3ec6f03f-1d54-462d-a921-aecb7832e2ef",
+      "id": "ac7191a5-b2e3-4b8f-b6c2-6d99d88440d3",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "27cf5265-a925-4b0a-8a7e-dfd5fe923418",
+      "id": "ff9f0e4c-b639-4177-91f8-e084b64d1437",
       "key": "newTestamentBook",
       "value": "Luke",
       "type": "string"
     },
     {
-      "id": "0292c9e3-9544-4180-b6e1-ae2da5961761",
+      "id": "1331e684-1779-47cd-a15a-1e3e2b75fc8d",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "1444f51f-a9fa-4c77-8000-d4c6db80d17a",
+      "id": "da184fbe-f2b3-4897-b78d-5d8e7b3e3d7d",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "8260df5b-4cab-4a3d-8608-82c9cbbaa1c6",
+      "id": "84bad319-d433-4edc-9efc-d219aa5f4491",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "df914249-2eb3-47ab-9b56-817521e2bba2",
+      "id": "c7fe71dd-5e74-4d96-8669-65e86aea2f0c",
       "key": "basePathLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "66042911-f7ae-4d36-b137-e77712d6f0ae",
+      "id": "f06d479b-16af-406a-a127-3606cdeaf545",
       "key": "languageCode",
       "value": "ENG",
       "type": "string"
