@@ -779,7 +779,7 @@ class PlaylistsController extends APIController
      *
      *
      */
-    public function translate(Request $request, $playlist_id, $user = false, $compare_projects = true)
+    public function translate(Request $request, $playlist_id, $user = false, $compare_projects = true, $plan_id = 0)
     {
         $user = $user ? $user : $request->user();
 
@@ -843,7 +843,8 @@ class PlaylistsController extends APIController
             'name'              => $playlist->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
             'external_content'  => $playlist->external_content,
             'featured'          => false,
-            'draft'             => true
+            'draft'             => true,
+            'plan_id'           => $plan_id
         ];
 
 
