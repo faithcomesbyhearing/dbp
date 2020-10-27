@@ -947,7 +947,7 @@ class PlansController extends APIController
         $playlists_data = [];
         $order = 1;
         foreach ($plan->days as $day) {
-            $playlist = (object) $playlist_controller->translate($request, $day->playlist_id, $user, $compare_projects)->original;
+            $playlist = (object) $playlist_controller->translate($request, $day->playlist_id, $user, $compare_projects, $new_plan->id)->original;
             $playlists_data[] = [
                 'plan_id'               => $new_plan->id,
                 'playlist_id'           => $playlist->id,
