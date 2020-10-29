@@ -918,6 +918,7 @@ class BiblesController extends APIController
                 $results->audio->$name['fileset'] = $fileset;
                 
                 if (sizeof($fileset_result) > 1) {
+                    $results->audio->$name['chapter_end'] = null;
                     $results->audio->$name['verse_end'] = null;
 
                     $fileset_type = $fileset->set_type_code;
