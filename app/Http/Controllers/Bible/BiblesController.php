@@ -785,7 +785,7 @@ class BiblesController extends APIController
             
             if ($drama === 'non-drama' || $drama_all) {
                 $chapter_filesets = $this->getAudioFilesetData($chapter_filesets, $bible, $book, $chapter, 'audio', 'non_drama', $zip, 'audio_drama', 'drama', !$drama_all && $zip);
-
+                
                 if (!empty($user) && $zip && isset($chapter_filesets->audio->non_drama)) {
                     $fileset_id = $chapter_filesets->audio->non_drama['fileset']['id'];
                     cacheRemember('v4_user_download', [$user->id, $fileset_id], now()->addDay(), function () use ($user, $fileset_id) {
@@ -902,7 +902,7 @@ class BiblesController extends APIController
             $name = $secondary_name;
             $fileset = $this->getStreamNonStreamFileset($download, $bible, $secondary_type, $book);
         }
-
+        
         if ($fileset) {
             $fileset = BibleFileset::where([
                 'id' => $fileset->id,
@@ -916,6 +916,22 @@ class BiblesController extends APIController
             if (!empty($fileset_result)) {
                 $results->audio->$name = $fileset_result[0];
                 $results->audio->$name['fileset'] = $fileset;
+                
+                if (sizeof($fileset_result) > 1) {
+                    $results->audio->$name['verse_end'] = null;
+
+                    $fileset_type = $fileset->set_type_code;
+                    if ($fileset_type && strpos($fileset_type, 'stream') === false) {
+                        $results->audio->$name['fileset']->set_type_code = $fileset_type . '_stream';
+                    }
+
+                    $total_duration = 0;
+                    foreach ($fileset_result as $key => $fileset_elem) {
+                        $total_duration += $fileset_elem['duration'];
+                    }
+                    $results->audio->$name['duration'] = $total_duration;
+                }
+
                 if ($download) {
                     $file_name = $fileset->id . '-' . $book->id . '-' . $chapter . '.mp3';
                     $results->downloads[] = (object) ['path' => $results->audio->$name['path'], 'file_name' => $file_name];

@@ -114,7 +114,7 @@ class BibleFileSetsController extends APIController
             }
 
             $fileset_chapters = $query->get();
-
+            
             if ($fileset_chapters->count() === 0) {
                 return $this->setStatusCode(404)->replyWithError('No Fileset Chapters Found for the provided params');
             }
@@ -445,18 +445,16 @@ class BibleFileSetsController extends APIController
 
         if (!$is_stream) {
             if (sizeof($fileset_chapters) > 1 && !$is_video) {
-                foreach ($fileset_chapters as $key => $fileset_chapter) {
-                    $fileset_chapters[$key]->file_name = route(
-                        'v4_media_stream',
-                        [
-                            'fileset_id' => $fileset->id,
-                            'book_id' => $fileset_chapter->book_id,
-                            'chapter' => $fileset_chapter->chapter_start,
-                            'verse_start' => null,
-                            'verse_end' => null,
-                        ]
-                    );
-                }
+                $fileset_chapters[0]->file_name = route(
+                    'v4_media_stream',
+                    [
+                        'fileset_id' => $fileset->id,
+                        'book_id' => $fileset_chapters[1]->book_id,
+                        'chapter' => $fileset_chapters[1]->chapter_start,
+                        'verse_start' => null,
+                        'verse_end' => null,
+                    ]
+                );
             } else {
                 foreach ($fileset_chapters as $key => $fileset_chapter) {
                     $fileset_chapters[$key]->file_name = $this->signedUrl($this->signedPath($bible, $fileset, $fileset_chapter), $asset_id, random_int(0, 10000000));
