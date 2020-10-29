@@ -36,7 +36,7 @@ class StreamController extends APIController
             }
 
             $is_multiple_mp3 = $this->isMultipleMp3($file_id_location);
-
+            
             if ($is_multiple_mp3) {
                 return $this->generateMultipleMp3HLS($id, $file_id_location);
             }
@@ -157,11 +157,31 @@ class StreamController extends APIController
         return $current_file;
     }
 
+    private function getFileFromLocation($fileset, $file_id_location)
+    {
+        $parts = explode('-', $file_id_location);
+        if (sizeof($parts) === 1) {
+            return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)->where('id', $parts[0])->first();
+        }
+
+        $where = [
+            'book_id' => $parts[0],
+            'chapter_start' => $parts[1],
+            'verse_start' => $parts[2]
+        ];
+
+        if ($parts[3] !== '') {
+            $where['verse_end'] = $parts[3];
+        }
+
+        return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)
+            ->where($where)->first();
+    }
+
     private function generateMultipleMp3HLS($fileset_id, $file_id_location)
     {
         $parts = explode('-', $file_id_location);
         $asset_id = checkParam('asset_id') ?? config('filesystems.disks.s3_fcbh_video.bucket');
-
 
         $audio_fileset = BibleFileset::uniqueFileset($fileset_id, $asset_id, 'audio', true)->select('hash_id', 'id', 'asset_id')->first();
 
@@ -172,12 +192,10 @@ class StreamController extends APIController
         ])->get();
 
         $transaction_id = random_int(0, 10000000);
-
         $current_file = "#EXTM3U\n";
         $current_file .= '#EXT-X-TARGETDURATION:' . ceil($bible_files->sum('duration')) . "\n";
         $current_file .= "#EXT-X-VERSION:4\n";
         $current_file .= '#EXT-X-MEDIA-SEQUENCE:0';
-
 
         $signed_files = [];
         $bible_path =  $audio_fileset->bible->first()->id . '/';
@@ -199,27 +217,6 @@ class StreamController extends APIController
             'Content-Type'        => 'application/x-mpegURL'
         ]);
         ;
-    }
-
-    private function getFileFromLocation($fileset, $file_id_location)
-    {
-        $parts = explode('-', $file_id_location);
-        if (sizeof($parts) === 1) {
-            return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)->where('id', $parts[0])->first();
-        }
-
-        $where = [
-            'book_id' => $parts[0],
-            'chapter_start' => $parts[1],
-            'verse_start' => $parts[2]
-        ];
-
-        if ($parts[3] !== '') {
-            $where['verse_end'] = $parts[3];
-        }
-
-        return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)
-            ->where($where)->first();
     }
 
     private function isMultipleMp3($file_id_location)
