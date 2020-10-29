@@ -54,3 +54,4 @@ fixers/tmp
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 tools/permissionValidation/results/**
+tools/permissionValidation/myconfig.py
