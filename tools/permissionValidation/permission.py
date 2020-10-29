@@ -7,17 +7,47 @@ from urllib.request import urlopen
 import json
 import os
 import errno
-import xlrd
 import csv
-import config
 from myconfig import *
-# you need to add a myconfig.py file
+# you need to add a myconfig.py file with contents similar to this
+#local
+# myconfig = {
+#   'user': xxx,
+#   'password': xxx,
+#   'host': '127.0.0.1',
+#   'port': '3306',
+#   'database': 'dbp_201014',
+#   'raise_on_warnings': True
+# }
 
-singlekey = 'testkey-165';
-apiUrl = 'http://api.dbp.test:80/api/';
+singlekey = 'testkey-165'
+apiUrl = 'http://api.dbp.test:80/api/'
 
+class fileset:
+      def __init__(self, source, access_group_id, fileset_id, media, contentType, size):
+            self.source = source
+            self.access_group_id = access_group_id
+            self.fileset_id = fileset_id
+            self.media = media
+            self.contentType = contentType
+            self.size = size
 
-def keyTest(mykey):
+      def __str__(self):
+            from pprint import pprint
+            return str(vars(self))
+
+      def toJson(self):
+            return json.dumps(self, default=lambda o: o.__dict__)     
+
+      def __eq__(self, other):
+             return self.access_group_id==other.access_group_id and self.fileset_id==other.fileset_id and self.media==other.media \
+                and self.contentType==other.contentType and self.size== other.size
+
+def Diff(li1, li2):
+    li_dif = [i for i in li1 + li2 if i not in li1 or i not in li2]
+    return li_dif
+
+def getDatabaseFilesets(mykey):
 
     try:
         cnx = mysql.connector.connect(**myconfig)
@@ -30,8 +60,6 @@ def keyTest(mykey):
         else:
                 print(err)
     else:
-
-
         cursor = cnx.cursor()
 
         query = ("SELECT agak.access_group_id, bf.id, bf.asset_id, bf.set_type_code, bf.set_size_code "
@@ -42,24 +70,27 @@ def keyTest(mykey):
                 "WHERE uk.key IN ('" + mykey + "') "
                 "ORDER BY bf.id")
 
-#        print(query)
-
         cursor.execute(query)
         myresult = cursor.fetchall()
 
-#        print(myresult)
-    
-        return myresult
-        cursor.close()
+        dbList = []
+        for val in myresult:
+            dbList.append(fileset('db', val[0], val[1],val[2], val[3],val[4]))
 
+        cursor.close() 
+        return dbList
 
     cnx.close()
 
-def getFlattenedApi(mykey):
-    url = apiUrl + 'bibles?key='+ mykey + '&v=4' ;
+def sortApiResponseById(e):
+  return e['abbr']
+
+def getApiFilesets(mykey):
+    access_group_id = int(mykey[-3:])
+    url = apiUrl + 'bibles?key='+ mykey + '&v=4' 
     if mykey.__contains__('5'):
         url = url + '&asset_id=dbp-vid'
-#    print(url)
+    print(url)
     try:
         response = urlopen(url)
     except IOError:
@@ -67,66 +98,55 @@ def getFlattenedApi(mykey):
         raise 
 
     apiResult = json.load(response)
+    apiList = apiResult['data']
+    apiList.sort(key=sortApiResponseById)
+
     newApi = []
-    for el in apiResult['data']:
-        
+    for el in apiList:
         try:
             if el['filesets']['dbp-vid']:
                 for fs in el['filesets']['dbp-vid']:
-                    fs['asset'] = 'dbp-vid'
-                    newApi.append(fs)
+                    newApi.append(fileset('api', access_group_id, fs['id'], 'dbp-vid', fs['type'], fs['size']))
         except KeyError:
-            pass   # doesn't exist
+            pass  
 
         try:
             if el['filesets']['dbp-prod']:
                 for fs in el['filesets']['dbp-prod']:
-                    fs['asset'] = 'dbp-prod'
-                    newApi.append(fs)
+                    newApi.append(fileset('api', access_group_id, fs['id'], 'dbp-prod', fs['type'], fs['size']))
         except KeyError:
-            pass # doesn't exist
+            pass
 
     return newApi
 
 
 def compareFilesets(mykey):
-    
-    apiList = getFlattenedApi(mykey)
-    apiNum = len(apiList)
-
-    #fmtApiResult = json.dumps(apiResult, indent=2)
-
-    dbResult = keyTest(mykey);
-    dbFilesets = len(dbResult)
-
-    if apiNum == dbFilesets:
-        print(mykey + ' has the same number of filesets ' + str(apiNum))
-    else:
-        print(mykey + ' filesets returned by api: ' + str(apiNum) + ', by db: ' + str(dbFilesets))
-
     try:
         os.makedirs('results')
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
-    with open('results/permissions-'+mykey+'-db.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['access_group_id', 'id', 'asset_id', 'set_type_code', 'set_type_size', 'found_in_api'])
-        
-        for dbRow in dbResult:
+    
+    dbList = getDatabaseFilesets(mykey)
+    dbFilesets = len(dbList)
+    
+    apiList = getApiFilesets(mykey)
+    apiNum = len(apiList)
 
-            dbRowList = []
-            for apiEl in apiList:
-                dbRowList = list(dbRow)
+    diff = Diff(dbList, apiList)
 
-                if (apiEl['id'][0:6] == dbRow[1][0:6] and apiEl['asset'] == dbRow[2] and apiEl['type'] == dbRow[3] and apiEl['size'] == dbRow[4]):
-                    dbRowList.extend(['yes'])
-                    break
-                else:
-                    dbRowList.extend(['no']) 
+    print(mykey)
+    print('DB count: ' + str(dbFilesets))
+    print('API count: ' + str(apiNum))
+    print('diff count: ' + str(len(diff)))
 
-            writer.writerow(dbRowList)
-        
+    diffFilename = 'results/diff-'+mykey+'.json'
+    with open(diffFilename, 'w') as outfile:
+      outfile.write('[\n')
+      outfile.write(",\n".join([ fileset.toJson() for fileset in diff]))
+      outfile.write('\n]')
+
+    print ('diff results can be found in '+ diffFilename)  
 
 if len(sys.argv) > 1:
     print('running compareFileset for: ' + sys.argv[1])
