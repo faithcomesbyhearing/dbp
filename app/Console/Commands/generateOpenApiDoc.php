@@ -44,19 +44,6 @@ class generateOpenApiDoc extends Command
         file_put_contents(public_path('openapi.json'), json_encode($swagger));
     }
 
-    private function removeUnusedComponents($swagger, $version)
-    {
-        $schema_regex = '/(?<=schemas\\\\\/)(.*?)(?=\\\\\/|")/m';
-        preg_match_all($schema_regex, json_encode($swagger), $matches);
-        $schemas_used = array_unique($matches[0]);
-        foreach ($swagger->components->schemas as $key => $schema) {
-            if (!in_array($schema->schema, $schemas_used)) {
-                unset($swagger->components->schemas[$key]);
-            }
-        }
-        return $swagger->components;
-    }
-
     private function swaggerVersionTags($tags, $searchVersion)
     {
         foreach ($tags as $key => $tag) {
@@ -83,7 +70,6 @@ class generateOpenApiDoc extends Command
                 unset($paths[$key]);
             }
         }
-
         return $paths;
     }
 
@@ -111,10 +97,23 @@ class generateOpenApiDoc extends Command
         if (gettype($parameters) == 'string') {
             $parameters = [];
         }
-        $parameters[] = new Parameter(['ref' => '#/components/parameters/format']);
         $parameters[] = new Parameter(['ref' => '#/components/parameters/key']);
-        $parameters[] = new Parameter(['ref' => '#/components/parameters/pretty']);
         $parameters[] = new Parameter(['ref' => '#/components/parameters/version_number']);
+        // $parameters[] = new Parameter(['ref' => '#/components/parameters/format']);
+        // $parameters[] = new Parameter(['ref' => '#/components/parameters/pretty']);
         return $parameters;
+    }
+    
+    private function removeUnusedComponents($swagger, $version)
+    {
+        $schema_regex = '/(?<=schemas\\\\\/)(.*?)(?=\\\\\/|")/m';
+        preg_match_all($schema_regex, json_encode($swagger), $matches);
+        $schemas_used = array_unique($matches[0]);
+        foreach ($swagger->components->schemas as $key => $schema) {
+            if (!in_array($schema->schema, $schemas_used)) {
+                unset($swagger->components->schemas[$key]);
+            }
+        }
+        return $swagger->components;
     }
 }
