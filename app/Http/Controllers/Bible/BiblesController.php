@@ -572,11 +572,6 @@ class BiblesController extends APIController
      *   schema="v4_bible.chapter",
      *   title="Bible chapter response",
      *   description="The v4 bible chapter response.",
-     *   @OA\Property(property="annotations", type="object",
-     *      @OA\Property(property="bookmarks", ref="#/components/schemas/v4_user_bookmarks/properties/data"),
-     *      @OA\Property(property="highlights", ref="#/components/schemas/v4_highlights_index/properties/data"),
-     *      @OA\Property(property="notes", ref="#/components/schemas/v4_notes_index/properties/data")
-     *   ),
      *   @OA\Property(property="bible_id", ref="#/components/schemas/Bible/properties/id"),
      *   @OA\Property(property="book_id", ref="#/components/schemas/Book/properties/id"),
      *   @OA\Property(property="chapter", ref="#/components/schemas/BibleFile/properties/chapter_start"),
@@ -1011,11 +1006,6 @@ class BiblesController extends APIController
      *   schema="v4_bible.chapter.annotations",
      *   title="Bible chapter annotations response",
      *   description="The v4 bible chapter annotations response.",
-     *   @OA\Property(property="annotations", type="object",
-     *      @OA\Property(property="bookmarks", ref="#/components/schemas/v4_user_bookmarks/properties/data"),
-     *      @OA\Property(property="highlights", ref="#/components/schemas/v4_highlights_index/properties/data"),
-     *      @OA\Property(property="notes", ref="#/components/schemas/v4_notes_index/properties/data")
-     *   )
      * )
      */
     public function annotations(Request $request, $bible_id)
