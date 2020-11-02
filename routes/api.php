@@ -120,8 +120,8 @@ Route::middleware('APIToken:check')->group(function () {
 });
 
 // VERSION 4 | User Settings
-Route::name('v4_UserSettings.show')->get('users/{user_id}/settings',               'User\UserSettingsController@show');
-Route::name('v4_UserSettings.store')->post('users/{user_id}/settings',             'User\UserSettingsController@store');
+Route::name('v4_internal_UserSettings.show')->get('users/{user_id}/settings',      'User\UserSettingsController@show');
+Route::name('v4_internal_UserSettings.store')->post('users/{user_id}/settings',    'User\UserSettingsController@store');
 
 // VERSION 4 | Community
 Route::name('v4_articles.index')->get('articles',                                  'User\ArticlesController@index');
@@ -162,63 +162,63 @@ Route::name('v4_internal_api.changes')->get('/api/changelog',                   
 Route::name('v4_internal_api.generator')->get('/api/gen/bibles',                    'Connections\GeneratorController@bibles');
 
 // VERSION 4 | Playlists
-Route::name('v4_playlists.index')
+Route::name('v4_internal_playlists.index')
     ->middleware('APIToken')->get('playlists',                                      'Playlist\PlaylistsController@index');
-Route::name('v4_playlists.store')
+Route::name('v4_internal_playlists.store')
     ->middleware('APIToken:check')->post('playlists',                               'Playlist\PlaylistsController@store');
-Route::name('v4_playlists.show')
+Route::name('v4_internal_playlists.show')
     ->middleware('APIToken')->get('playlists/{playlist_id}',                        'Playlist\PlaylistsController@show');
-Route::name('v4_playlists.show_text')
+Route::name('v4_internal_playlists.show_text')
     ->middleware('APIToken')->get('playlists/{playlist_id}/text',                   'Playlist\PlaylistsController@showText');
-Route::name('v4_playlists.update')
+Route::name('v4_internal_playlists.update')
     ->middleware('APIToken:check')->put('playlists/{playlist_id}',                  'Playlist\PlaylistsController@update');
-Route::name('v4_playlists.destroy')
+Route::name('v4_internal_playlists.destroy')
     ->middleware('APIToken:check')->delete('playlists/{playlist_id}',               'Playlist\PlaylistsController@destroy');
-Route::name('v4_playlists.follow')
+Route::name('v4_internal_playlists.follow')
     ->middleware('APIToken:check')->post('playlists/{playlist_id}/follow',          'Playlist\PlaylistsController@follow');
-Route::name('v4_playlists_items.store')
+Route::name('v4_internal_playlists_items.store')
     ->middleware('APIToken:check')->post('playlists/{playlist_id}/item',            'Playlist\PlaylistsController@storeItem');
-Route::name('v4_playlists_items.complete')
+Route::name('v4_internal_playlists_items.complete')
     ->middleware('APIToken:check')->post('playlists/item/{item_id}/complete',       'Playlist\PlaylistsController@completeItem');
-Route::name('v4_playlists.translate')
+Route::name('v4_internal_playlists.translate')
     ->middleware('APIToken:check')->get('playlists/{playlist_id}/translate',        'Playlist\PlaylistsController@translate');
-Route::name('v4_playlists.hls')->get('playlists/{playlist_id}/hls',                 'Playlist\PlaylistsController@hls');
-Route::name('v4_playlists_item.hls')->get('playlists/{playlist_item_id}/item-hls',  'Playlist\PlaylistsController@itemHls');
-Route::name('v4_playlists.draft')
+Route::name('v4_internal_playlists.hls')->get('playlists/{playlist_id}/hls',                 'Playlist\PlaylistsController@hls');
+Route::name('v4_internal_playlists_item.hls')->get('playlists/{playlist_item_id}/item-hls',  'Playlist\PlaylistsController@itemHls');
+Route::name('v4_internal_playlists.draft')
     ->middleware('APIToken:check')->post('playlists/{playlist_id}/draft',           'Playlist\PlaylistsController@draft');
 
 
 // VERSION 4 | Plans
-Route::name('v4_plans.index')
+Route::name('v4_internal_plans.index')
     ->middleware('APIToken')->get('plans',                                          'Plan\PlansController@index');
-Route::name('v4_plans.store')
+Route::name('v4_internal_plans.store')
     ->middleware('APIToken:check')->post('plans',                                   'Plan\PlansController@store');
-Route::name('v4_plans.show')
+Route::name('v4_internal_plans.show')
     ->middleware('APIToken')->get('plans/{plan_id}',                                'Plan\PlansController@show');
-Route::name('v4_plans.update')
+Route::name('v4_internal_plans.update')
     ->middleware('APIToken:check')->put('plans/{plan_id}',                          'Plan\PlansController@update');
-Route::name('v4_plans.destroy')
+Route::name('v4_internal_plans.destroy')
     ->middleware('APIToken:check')->delete('plans/{plan_id}',                       'Plan\PlansController@destroy');
-Route::name('v4_plans.start')
+Route::name('v4_internal_plans.start')
     ->middleware('APIToken:check')->post('plans/{plan_id}/start',                   'Plan\PlansController@start');
-Route::name('v4_plans.reset')
+Route::name('v4_internal_plans.reset')
     ->middleware('APIToken:check')->post('plans/{plan_id}/reset',                   'Plan\PlansController@reset');
-Route::name('v4_plans.stop')
+Route::name('v4_internal_plans.stop')
     ->middleware('APIToken:check')->delete('plans/{plan_id}/stop',                  'Plan\PlansController@stop');
-Route::name('v4_plans.translate')
+Route::name('v4_internal_plans.translate')
     ->middleware('APIToken:check')->get('plans/{plan_id}/translate',                'Plan\PlansController@translate');
-Route::name('v4_plans_days.store')
+Route::name('v4_internal_plans_days.store')
     ->middleware('APIToken:check')->post('plans/{plan_id}/day',                     'Plan\PlansController@storeDay');
-Route::name('v4_plans_days.complete')
+Route::name('v4_internal_plans_days.complete')
     ->middleware('APIToken:check')->post('plans/day/{day_id}/complete',             'Plan\PlansController@completeDay');
-Route::name('v4_plans.draft')
+Route::name('v4_internal_plans.draft')
     ->middleware('APIToken:check')->post('plans/{plan_id}/draft',                   'Plan\PlansController@draft');
 
 // VERSION 4 | Push tokens
 
-Route::name('v4_push_tokens.index')
+Route::name('v4_internal_push_tokens.index')
     ->middleware('APIToken:check')->get('push_notifications',                       'User\PushTokensController@index');
-Route::name('v4_push_tokens.store')
+Route::name('v4_internal_push_tokens.store')
     ->middleware('APIToken:check')->post('push_notifications',                      'User\PushTokensController@store');
-Route::name('v4_push_tokens.destroy')
+Route::name('v4_internal_push_tokens.destroy')
     ->middleware('APIToken:check')->delete('push_notifications/{token}',            'User\PushTokensController@destroy');

@@ -30,7 +30,7 @@ class PlansController extends APIController
      *     path="/plans",
      *     tags={"Plans"},
      *     summary="List a user's plans",
-     *     operationId="v4_plans.index",
+     *     operationId="v4_internal_plans.index",
      *     @OA\Parameter(
      *          name="featured",
      *          in="query",
@@ -150,7 +150,7 @@ class PlansController extends APIController
      *     path="/plans",
      *     tags={"Plans"},
      *     summary="Crete a plan",
-     *     operationId="v4_plans.store",
+     *     operationId="v4_internal_plans.store",
      *     security={{"api_token":{}}},
      *     @OA\RequestBody(required=true, description="Fields for User Plan Creation",
      *           @OA\MediaType(mediaType="application/json",
@@ -226,7 +226,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}",
      *     tags={"Plans"},
      *     summary="A user's plan",
-     *     operationId="v4_plans.show",
+     *     operationId="v4_internal_plans.show",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="plan_id",
@@ -281,7 +281,7 @@ class PlansController extends APIController
         if ($show_details) {
             foreach ($plan->days as $day) {
                 $day_playlist = $playlist_controller->getPlaylist($user, $day->playlist_id);
-                $day_playlist->path = route('v4_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
+                $day_playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
                 if ($show_text) {
                     foreach ($day_playlist->items as $item) {
                         $item->verse_text = $item->getVerseText();
@@ -301,7 +301,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}",
      *     tags={"Plans"},
      *     summary="Update a plan",
-     *     operationId="v4_plans.update",
+     *     operationId="v4_internal_plans.update",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Parameter(name="days", in="query",@OA\Schema(type="string"), description="Comma-separated ids of the days to be sorted or deleted"),
@@ -378,7 +378,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}",
      *     tags={"Plans"},
      *     summary="Delete a plan",
-     *     operationId="v4_plans.destroy",
+     *     operationId="v4_internal_plans.destroy",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Response(
@@ -440,7 +440,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/start",
      *     tags={"Plans"},
      *     summary="Start a plan",
-     *     operationId="v4_plans.start",
+     *     operationId="v4_internal_plans.start",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="application/json",
@@ -498,23 +498,23 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/day",
      *     tags={"Plans"},
      *     summary="Create plan days",
-     *     operationId="v4_plans_days.store",
+     *     operationId="v4_internal_plans_days.store",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Parameter(name="days", in="query", required=true, @OA\Schema(type="integer"), description="Number of days to add to the plan"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plans_days")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_plans_days")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_plans_days")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_plans_days"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_plans_days")),
+     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_plans_days")),
+     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_internal_plans_days")),
+     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_internal_plans_days"))
      *     )
      * )
      *
      * @OA\Schema (
      *   type="array",
-     *   schema="v4_plans_days",
+     *   schema="v4_internal_plans_days",
      *   title="User created plan days",
      *   description="The v4 plan days creation response.",
      *   @OA\Items(ref="#/components/schemas/PlanDay")
@@ -579,7 +579,7 @@ class PlansController extends APIController
      *     path="/plans/day/{day_id}/complete",
      *     tags={"Plans"},
      *     summary="Complete a plan day",
-     *     operationId="v4_plans_days.complete",
+     *     operationId="v4_internal_plans_days.complete",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="day_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/PlanDay/properties/id")),
      *     @OA\Parameter(name="complete", in="query", @OA\Schema(type="boolean")),
@@ -652,7 +652,7 @@ class PlansController extends APIController
      *     tags={"Plans"},
      *     summary="Reset a plan",
      *     description="",
-     *     operationId="v4_plans.reset",
+     *     operationId="v4_internal_plans.reset",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\RequestBody(@OA\MediaType(mediaType="application/json",
@@ -705,7 +705,7 @@ class PlansController extends APIController
      *     tags={"Plans"},
      *     summary="Stop a plan",
      *     description="",
-     *     operationId="v4_plans.stop",
+     *     operationId="v4_internal_plans.stop",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Response(
@@ -754,7 +754,7 @@ class PlansController extends APIController
         $playlist_controller = new PlaylistsController();
         foreach ($plan->days as $day) {
             $day_playlist = $playlist_controller->getPlaylist($user, $day->playlist_id);
-            $day_playlist->path = route('v4_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
+            $day_playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
             $day->playlist = $day_playlist;
         }
         return $this->reply($plan);
@@ -765,7 +765,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/draft",
      *     tags={"Plans"},
      *     summary="Change draft status in a plan.",
-     *     operationId="v4_plans.draft",
+     *     operationId="v4_internal_plans.draft",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Parameter(name="draft", in="query", @OA\Schema(type="boolean")),
@@ -877,7 +877,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/translate",
      *     tags={"Plans"},
      *     summary="Translate a user's plan",
-     *     operationId="v4_plans.translate",
+     *     operationId="v4_internal_plans.translate",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="plan_id",
