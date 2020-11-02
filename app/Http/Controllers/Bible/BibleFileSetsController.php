@@ -351,21 +351,21 @@ class BibleFileSetsController extends APIController
      *     tags={"Bibles"},
      *     summary="Check fileset types",
      *     description="Check Bible File locations if they have audio or video.",
-     *     operationId="v4_bible_filesets.checkTypes",
+     *     operationId="v4_internal_bible_filesets.checkTypes",
      *     @OA\RequestBody(ref="#/components/requestBodies/PlaylistItems"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_fileset_check")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_fileset_check")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_fileset_check")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_fileset_check"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_fileset_check")),
+     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_fileset_check")),
+     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_internal_fileset_check")),
+     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_internal_fileset_check"))
      *     )
      * )
      *
      * @OA\Schema (
      *   type="array",
-     *   schema="v4_fileset_check",
+     *   schema="v4_internal_fileset_check",
      *   title="Fileset check types response",
      *   description="The v4 fileset check types response.",
      *   @OA\Items(

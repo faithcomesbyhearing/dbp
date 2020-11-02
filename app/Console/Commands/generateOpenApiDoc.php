@@ -46,8 +46,9 @@ class generateOpenApiDoc extends Command
 
     private function swaggerVersionTags($tags, $searchVersion)
     {
+        $searchVersionInternal = $searchVersion . '_internal';
         foreach ($tags as $key => $tag) {
-            if (!Str::startsWith($tags[$key]->description, $searchVersion)) {
+            if (Str::startsWith($tags[$key]->description, $searchVersionInternal) || !Str::startsWith($tags[$key]->description, $searchVersion)) {
                 unset($tags[$key]);
             }
         }
