@@ -23,22 +23,22 @@ class APIController extends Controller
     /**
      * @OA\Info(
      *     description="A Bible API",
-     *     version="3.0.0",
+     *     version="4.0-beta",
      *     title="Digital Bible Platform",
-     *     termsOfService="http://dbp4.org/terms/",
-     *     @OA\Contact(email="jon@dbs.org"),
+     *     termsOfService="http://digitalbibleplatform/terms/",
+     *     @OA\Contact(email="support@digitalbibleplatform.com"),
      *     @OA\License(name="Apache 2.0",url="http://www.apache.org/licenses/LICENSE-2.0.html")
      * )
      *
      * @OA\Server(
      *     url=API_URL_DOCS,
-     *     description="Live Server",
+     *     description="Production Server",
      *     @OA\ServerVariable( serverVariable="schema", enum={"https"}, default="https")
      * )
      *
      * @OA\Server(
-     *     url="https://dbp.test/api",
-     *     description="Development server",
+     *     url="TBD",
+     *     description="Postman Mock server",
      *     @OA\ServerVariable( serverVariable="schema", enum={"https"}, default="https")
      * )
      *

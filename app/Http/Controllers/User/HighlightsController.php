@@ -32,7 +32,7 @@ class HighlightsController extends APIController
      *     summary="List a user's highlights",
      *     description="The bible_id, book_id, and chapter parameters are optional but
      *          will allow you to specify which specific highlights you wish returned.",
-     *     operationId="v4_highlights.index",
+     *     operationId="v4_internal_highlights.index",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="user_id",

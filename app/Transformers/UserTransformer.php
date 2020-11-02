@@ -25,11 +25,11 @@ class UserTransformer extends BaseTransformer
        * @see https://api.dbp.test/users?key=test_key&v=4
        *
        * @OA\Schema (
-       *    title="v4_user_index",
+       *    title="v4_internal_user_index",
        *    type="object",
-       *    schema="v4_user_index",
+       *    schema="v4_internal_user_index",
        *    description="The v4 user index response",
-       *    @OA\Xml(name="v4_user_index"),
+       *    @OA\Xml(name="v4_internal_user_index"),
        *    @OA\Property(property="data", type="array",
        *     @OA\Items(
        *        @OA\Property(property="id",       ref="#/components/schemas/User/properties/id"),
@@ -67,10 +67,10 @@ class UserTransformer extends BaseTransformer
             /**
              * @OA\Schema (
              *    type="object",
-             *    schema="v4_user_show",
+             *    schema="v4_internal_user_show",
              *    description="The v4 user show response",
-             *    title="v4_user_show",
-             *    @OA\Xml(name="v4_user_show"),
+             *    title="v4_internal_user_show",
+             *    @OA\Xml(name="v4_internal_user_show"),
              *    @OA\Property(property="data", type="object",
              *       @OA\Property(property="id",       ref="#/components/schemas/User/properties/id"),
              *       @OA\Property(property="name",     ref="#/components/schemas/User/properties/name"),

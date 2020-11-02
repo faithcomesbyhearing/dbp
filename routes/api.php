@@ -76,27 +76,27 @@ Route::name('v4_numbers.range')->get('numbers/range',                           
 Route::name('v4_numbers.one')->get('numbers/{number_id}',                          'Wiki\NumbersController@show');
 
 // VERSION 4 | Users
-Route::name('v4_user.index')->get('users',                                         'User\UsersController@index');
-Route::name('v4_user.store')->post('users',                                        'User\UsersController@store');
-Route::name('v4_user.show')->get('users/{user_id}',                                'User\UsersController@show');
-Route::name('v4_user.update')->put('users/{user_id}',                              'User\UsersController@update');
-Route::name('v4_user.destroy')->middleware('APIToken:check')->delete('users',      'User\UsersController@destroy');
-Route::name('v4_user.login')->post('/login',                                       'User\UsersController@login');
+Route::name('v4_internal_user.index')->get('users',                                'User\UsersController@index');
+Route::name('v4_internal_user.store')->post('users',                               'User\UsersController@store');
+Route::name('v4_internal_user.show')->get('users/{user_id}',                       'User\UsersController@show');
+Route::name('v4_internal_user.update')->put('users/{user_id}',                     'User\UsersController@update');
+Route::name('v4_internal_user.destroy')->middleware('APIToken:check')->delete('users', 'User\UsersController@destroy');
+Route::name('v4_internal_user.login')->post('/login',                              'User\UsersController@login');
 Route::name('v4_user.oAuth')->get('/login/{driver}',                               'User\SocialController@redirect');
 Route::name('v4_user.oAuthCallback')->get('/login/{driver}/callback',              'User\SocialController@callback');
-Route::name('v4_user.password_reset')
+Route::name('v4_internal_user.password_reset')
     ->middleware('APIToken')->post('users/password/reset/{token?}',                'User\PasswordsController@validatePasswordReset');
-Route::name('v4_user.password_email')->post('users/password/email',                'User\PasswordsController@triggerPasswordResetEmail');
-Route::name('v4_user.logout')
+Route::name('v4_internal_user.password_email')->post('users/password/email',       'User\PasswordsController@triggerPasswordResetEmail');
+Route::name('v4_internal_user.logout')
     ->middleware('APIToken:check')->post('/logout',                                'User\UsersController@logout');
-Route::name('v4_api_token.validate')
+Route::name('v4_internal_api_token.validate')
     ->middleware('APIToken')->post('/token/validate',                               'User\UsersController@validateApiToken');
 
 // VERSION 4 | Accounts
-Route::name('v4_user_accounts.index')->get('accounts',                             'User\AccountsController@index');
-Route::name('v4_user_accounts.store')->post('accounts',                            'User\AccountsController@store');
-Route::name('v4_user_accounts.update')->put('accounts',                            'User\AccountsController@update');
-Route::name('v4_user_accounts.destroy')->delete('accounts',                        'User\AccountsController@destroy');
+Route::name('v4_internal_user_accounts.index')->get('accounts',                     'User\AccountsController@index');
+Route::name('v4_internal_user_accounts.store')->post('accounts',                    'User\AccountsController@store');
+Route::name('v4_internal_user_accounts.update')->put('accounts',                    'User\AccountsController@update');
+Route::name('v4_internal_user_accounts.destroy')->delete('accounts',                'User\AccountsController@destroy');
 
 // VERSION 4 | Annotations with api_token
 Route::middleware('APIToken')->group(function () {
@@ -109,7 +109,7 @@ Route::middleware('APIToken')->group(function () {
     Route::name('v4_bookmarks.store')->post('users/{user_id}/bookmarks',               'User\BookmarksController@store');
     Route::name('v4_bookmarks.update')->put('users/{user_id}/bookmarks/{id}',          'User\BookmarksController@update');
     Route::name('v4_bookmarks.destroy')->delete('users/{user_id}/bookmarks/{id}',      'User\BookmarksController@destroy');
-    Route::name('v4_highlights.index')->get('users/{user_id}/highlights',              'User\HighlightsController@index');
+    Route::name('v4_internal_highlights.index')->get('users/{user_id}/highlights',              'User\HighlightsController@index');
     Route::name('v4_highlights.store')->post('users/{user_id}/highlights',             'User\HighlightsController@store');
     Route::name('v4_highlights.update')->put('users/{user_id}/highlights/{id}',        'User\HighlightsController@update');
     Route::name('v4_highlights.destroy')->delete('users/{user_id}/highlights/{id}',    'User\HighlightsController@destroy');
