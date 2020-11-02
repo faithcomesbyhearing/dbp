@@ -1,12 +1,12 @@
 <?php
 
 // VERSION 4 | Access Groups
-Route::name('v4_access_groups.index')->get('access/groups',                        'User\AccessGroupController@index');
-Route::name('v4_access_groups.store')->post('access/groups/',                      'User\AccessGroupController@store');
-Route::name('v4_access_groups.show')->get('access/groups/{group_id}',              'User\AccessGroupController@show');
-Route::name('v4_access_groups.access')->get('access/current',                      'User\AccessGroupController@current');
-Route::name('v4_access_groups.update')->put('access/groups/{group_id}',            'User\AccessGroupController@update');
-Route::name('v4_access_groups.destroy')->delete('access/groups/{group_id}',        'User\AccessGroupController@destroy');
+Route::name('v4_internal_access_groups.index')->get('access/groups',                        'User\AccessGroupController@index');
+Route::name('v4_internal_access_groups.store')->post('access/groups/',                      'User\AccessGroupController@store');
+Route::name('v4_internal_access_groups.show')->get('access/groups/{group_id}',              'User\AccessGroupController@show');
+Route::name('v4_internal_access_groups.access')->get('access/current',                      'User\AccessGroupController@current');
+Route::name('v4_internal_access_groups.update')->put('access/groups/{group_id}',            'User\AccessGroupController@update');
+Route::name('v4_internal_access_groups.destroy')->delete('access/groups/{group_id}',        'User\AccessGroupController@destroy');
 
 // VERSION 4 | Stream
 Route::name('v4_media_stream')->get('bible/filesets/{fileset_id}/{file_id}/playlist.m3u8',    'Bible\StreamController@index');
@@ -46,9 +46,9 @@ Route::name('v4_library_search')->middleware('APIToken:check')->get('search/libr
 
 // VERSION 4 | Commentaries
 
-Route::name('v4_commentary_index')->get('commentaries/',                                       'Bible\Study\CommentaryController@index');
-Route::name('v4_commentary_chapters')->get('commentaries/{commentary_id}/chapters',            'Bible\Study\CommentaryController@chapters');
-Route::name('v4_commentary_chapters')->get('commentaries/{commentary_id}/{book_id}/{chapter}', 'Bible\Study\CommentaryController@sections');
+Route::name('v4_internal_commentary_index')->get('commentaries/',                                       'Bible\Study\CommentaryController@index');
+Route::name('v4_internal_commentary_chapters')->get('commentaries/{commentary_id}/chapters',            'Bible\Study\CommentaryController@chapters');
+Route::name('v4_internal_commentary_chapters')->get('commentaries/{commentary_id}/{book_id}/{chapter}', 'Bible\Study\CommentaryController@sections');
 
 // VERSION 4 | Study Lexicons
 
@@ -132,11 +132,11 @@ Route::name('v4_articles.destroy')->delete('articles/{id}',                     
 Route::name('v4_organizations.compare')->get('organizations/compare/',             'Organization\OrganizationsController@compare');
 Route::name('v4_organizations.one')->get('organizations/{organization_id}',        'Organization\OrganizationsController@show');
 Route::name('v4_organizations.all')->get('organizations/',                         'Organization\OrganizationsController@index');
-Route::name('v4_projects.index')->get('projects',                                  'Organization\ProjectsController@index');
-Route::name('v4_projects.show')->get('projects/{project_id}',                      'Organization\ProjectsController@show');
-Route::name('v4_projects.update')->put('projects/{project_id}',                    'Organization\ProjectsController@update');
-Route::name('v4_projects.store')->post('projects',                                 'Organization\ProjectsController@store');
-Route::name('v4_projects.destroy')->delete('projects/{project_id}',                'Organization\ProjectsController@destroy');
+Route::name('v4_internal_projects.index')->get('projects',                         'Organization\ProjectsController@index');
+Route::name('v4_internal_projects.show')->get('projects/{project_id}',             'Organization\ProjectsController@show');
+Route::name('v4_internal_projects.update')->put('projects/{project_id}',           'Organization\ProjectsController@update');
+Route::name('v4_internal_projects.store')->post('projects',                        'Organization\ProjectsController@store');
+Route::name('v4_internal_projects.destroy')->delete('projects/{project_id}',       'Organization\ProjectsController@destroy');
 Route::name('v4_oAuth.index')->get('projects/{project_id}/oauth/',                 'Organization\OAuthProvidersController@index');
 Route::name('v4_oAuth.update')->put('projects/{project_id}/oauth/{id}',            'Organization\OAuthProvidersController@update');
 Route::name('v4_oAuth.store')->post('projects/{project_id}/oauth',                 'Organization\OAuthProvidersController@store');
@@ -151,16 +151,15 @@ Route::name('v4_video_jesus_film_chapters')->get('arclight/jesus-film/chapters',
 Route::name('v4_video_jesus_film_file')->get('arclight/jesus-film',                'Bible\VideoStreamController@jesusFilmFile');
 
 // VERSION 4 | API METADATA
-Route::name('v4_api.versions')->get('/api/versions',                               'HomeController@versions');
-Route::name('v4_api.buckets')->get('/api/buckets',                                 'HomeController@buckets');
-Route::name('v4_api.stats')->get('/stats',                                         'HomeController@stats');
-Route::name('v4_api.gitVersion')->get('/api/git/version',                          'ApiMetadataController@gitVersion');
-Route::name('v4_api.refreshDevCache')->get('/refresh-dev-cache',               'ApiMetadataController@refreshDevCache');
-
-Route::name('v4_api.changes')->get('/api/changelog',                               'ApiMetadataController@changelog');
+Route::name('v4_internal_api.versions')->get('/api/versions',                       'HomeController@versions');
+Route::name('v4_internal_api.buckets')->get('/api/buckets',                         'HomeController@buckets');
+Route::name('v4_internal_api.stats')->get('/stats',                                 'HomeController@stats');
+Route::name('v4_internal_api.gitVersion')->get('/api/git/version',                  'ApiMetadataController@gitVersion');
+Route::name('v4_internal_api.refreshDevCache')->get('/refresh-dev-cache',           'ApiMetadataController@refreshDevCache');
+Route::name('v4_internal_api.changes')->get('/api/changelog',                       'ApiMetadataController@changelog');
 
 // VERSION 4 | GENERATOR
-Route::name('v4_api.generator')->get('/api/gen/bibles',                            'Connections\GeneratorController@bibles');
+Route::name('v4_internal_api.generator')->get('/api/gen/bibles',                    'Connections\GeneratorController@bibles');
 
 // VERSION 4 | Playlists
 Route::name('v4_playlists.index')
