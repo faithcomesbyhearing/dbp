@@ -339,19 +339,6 @@ class TextController extends APIController
      *   schema="v4_library_search",
      *   description="The v4 library search response.",
      *   title="Library Search plans",
-     *   @OA\Property(property="bookmarks", ref="#/components/schemas/v4_user_bookmarks"),
-     *   @OA\Property(property="highlights", ref="#/components/schemas/v4_highlights_index"),
-     *   @OA\Property(property="notes", ref="#/components/schemas/v4_notes_index"),
-     *   @OA\Property(
-     *      property="plans",
-     *      type="array",
-     *      @OA\Items(ref="#/components/schemas/v4_plan_index_detail")
-     *   ),
-     *   @OA\Property(
-     *      property="playlists",
-     *      type="array",
-     *      @OA\Items(ref="#/components/schemas/v4_playlist")
-     *   )
      * )
      */
     public function searchLibrary(Request $request)
@@ -502,6 +489,7 @@ class TextController extends APIController
      * @version 2
      * @category v2_library_book
      * @category v2_library_bookOrder
+
      * @link https://dbt.io/library/verseinfo?key=TEST_KEY&v=2&dam_id=ENGKJV&book_id=GEN&chapter=1&verse_start=11 - V2 Access
      * @link https://api.dbp.test/library/verseinfo?key=TEST_KEY&v=2&dam_id=ENGKJV&book_id=GEN&chapter=1&verse_start=11 - V2 Test
      * @link https://dbp.test/eng/docs/swagger/v2#/Library/v2_library_verseinfo - V2 Test Docs

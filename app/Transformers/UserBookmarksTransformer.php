@@ -10,10 +10,10 @@ class UserBookmarksTransformer extends TransformerAbstract
     /**
      * @OA\Schema (
      *        type="object",
-     *        schema="v4_user_bookmarks",
+     *        schema="v4_internal_user_bookmarks",
      *        description="The transformed user bookmarks",
-     *        title="v4_user_bookmarks",
-     *      @OA\Xml(name="v4_user_bookmarks"),
+     *        title="v4_internal_user_bookmarks",
+     *      @OA\Xml(name="v4_internal_user_bookmarks"),
      *      allOf={
      *        @OA\Schema(ref="#/components/schemas/pagination.alternate"),
      *      },
