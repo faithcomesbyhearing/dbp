@@ -466,7 +466,7 @@ class PlaylistItems extends Model implements Sortable
      */
     public function getPathAttribute()
     {
-        return route('v4_playlists_item.hls', ['playlist_item_id'  => $this->attributes['id'], 'v' => checkParam('v'), 'key' => checkParam('key')]);
+        return route('v4_internal_playlists_item.hls', ['playlist_item_id'  => $this->attributes['id'], 'v' => checkParam('v'), 'key' => checkParam('key')]);
     }
 
     /**
