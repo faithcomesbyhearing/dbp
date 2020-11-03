@@ -110,7 +110,8 @@ class Bible extends Model
      *   type="integer",
      *   description="The year the Bible was originally published",
      *   minimum=1,
-     *   maximum=2030
+     *   maximum=2030,
+     *   example=1963
      * )
      *
      */
@@ -124,7 +125,7 @@ class Bible extends Model
 
     /**
      *
-     * @OA\Property(ref="#/components/schemas/Alphabet/properties/script")
+     * Dramatized Audio
      *
      */
     protected $script;
@@ -135,7 +136,8 @@ class Bible extends Model
      *   title="derived",
      *   type="string",
      *   nullable=true,
-     *   description="This field indicates the `bible_id` of the Scriptures that the current Scriptures being described are derived. For example, because the NIrV (New International Reader's Version) was created from / inspired by the NIV (New International Version). If this model was describing ENGNIRV the derived field would be ENGNIV.",
+     *   description="This field indicates the Bible from which the current Scriptures being described are derived.",
+     *   example="English New Revised Standard Version"
      * )
      *
      */

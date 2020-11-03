@@ -57,7 +57,8 @@ class BibleOrganization extends Model
      * @OA\Property(
      *   title="relationship_type",
      *   type="string",
-     *   description=""
+     *   example="publisher",
+     *   description="Relationship between Bible and Organization"
      * )
      * @var
      */

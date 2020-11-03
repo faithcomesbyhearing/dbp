@@ -50,6 +50,7 @@ class BibleBook extends Model
      *     title="name",
      *     description="The name of the book in the language of the bible",
      *     type="string",
+     *     example="1 Corinthians",
      *     maxLength=191
      * )
      *
@@ -65,6 +66,7 @@ class BibleBook extends Model
      *     title="name_short",
      *     description="If the vernacular name has an abbreviated form, it will be stored hre",
      *     type="string",
+     *     example="1 Corinthians",
      *     maxLength=191
      * )
      *
@@ -80,6 +82,7 @@ class BibleBook extends Model
      *     title="chapters",
      *     description="A string of the chapters in the book separated by a comma",
      *     type="string",
+     *     example="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16",
      *     maxLength=491
      * )
      *
