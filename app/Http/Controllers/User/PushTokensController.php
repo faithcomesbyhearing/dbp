@@ -24,10 +24,7 @@ class PushTokensController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_push_token_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_push_token_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_internal_push_token_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_internal_push_token_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_push_token_index"))
      *     )
      * )
      *
@@ -80,10 +77,7 @@ class PushTokensController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_push_token_detail")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_push_token_detail")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_internal_push_token_detail")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_internal_push_token_detail"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_push_token_detail"))
      *     )
      * )
      *
@@ -136,10 +130,7 @@ class PushTokensController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *

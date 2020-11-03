@@ -46,10 +46,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
      *     )
      * )
      *
@@ -84,10 +81,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_show")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_user_show")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_internal_user_show")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_internal_user_show"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_show"))
      *     )
      * )
      *
@@ -152,10 +146,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
      *     )
      * )
      *
@@ -225,10 +216,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -306,10 +294,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
      *     )
      * )
      *
@@ -412,10 +397,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_internal_user_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
      *     )
      * )
      *
@@ -505,10 +487,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -579,18 +558,12 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean")))
      *     ),
      *     @OA\Response(
      *         response=401,
      *         description="unsuccessful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false)))
      *     )
      * )
      * @param Request $request
