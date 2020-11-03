@@ -107,6 +107,7 @@ class Language extends Model
      *     title="glotto_id",
      *     description="The glottolog ID for the language",
      *     type="string",
+     *     example="abkh1244",
      *     @OA\ExternalDocumentation(
      *         description="For more info please refer to the Glottolog",
      *         url="http://glottolog.org/"
@@ -124,6 +125,7 @@ class Language extends Model
      *     title="iso",
      *     description="The iso 639-3 for the language",
      *     type="string",
+     *     example="abk",
      *     @OA\ExternalDocumentation(
      *         description="For more info",
      *         url="https://en.wikipedia.org/wiki/ISO_639-3"
@@ -140,7 +142,9 @@ class Language extends Model
      * @OA\Property(
      *     title="iso 2b",
      *     description="The iso 639-2, B variant for the language",
-     *     type="integer"
+     *     type="string",
+     *     example="abk"
+
      * )
      *
      */
@@ -152,7 +156,8 @@ class Language extends Model
      * @OA\Property(
      *     title="iso 2t",
      *     description="The iso 639-2, T variant for the language",
-     *     type="integer"
+     *     type="string",
+     *     example="abk"
      * )
      *
      */
@@ -162,7 +167,8 @@ class Language extends Model
      * @OA\Property(
      *     title="iso1",
      *     description="The iso 639-1 for the language",
-     *     type="integer"
+     *     type="string",
+     *     example="ab"
      * )
      *
      */
@@ -172,7 +178,8 @@ class Language extends Model
      * @OA\Property(
      *     title="Name",
      *     description="The name of the language",
-     *     type="string"
+     *     type="string",
+     *     example="Abkhazian"
      * )
      *
      */

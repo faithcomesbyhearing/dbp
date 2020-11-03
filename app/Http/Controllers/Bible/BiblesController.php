@@ -82,22 +82,10 @@ class BiblesController extends APIController
      *          description="Will filter bibles based upon the size type of their filesets"
      *     ),
      *     @OA\Parameter(
-     *          name="bitrate",
-     *          in="query",
-     *          @OA\Schema(type="string",example="64kps"),
-     *          description="Will filter bibles based upon the bitrate of their filesets, the current values available are 16kbps & 64kbps"
-     *     ),
-     *     @OA\Parameter(
      *          name="size_exclude",
      *          in="query",
      *          @OA\Schema(type="string"),
      *          description="Will exclude bibles based upon the size type of their filesets"
-     *     ),
-     *     @OA\Parameter(
-     *          name="show_all",
-     *          in="query",
-     *          @OA\Schema(type="boolean"),
-     *          description="Will show all entries"
      *     ),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
@@ -229,7 +217,7 @@ class BiblesController extends APIController
      *     @OA\Parameter(
      *          name="asset_id",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Schema(type="string", example="dbp-prod"),
      *          description="The asset_id to filter results by. There are three buckets provided `dbp-prod`, `dbp-vid` & `dbs-web`"
      *     ),
      *     @OA\Response(

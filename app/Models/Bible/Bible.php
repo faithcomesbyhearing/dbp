@@ -147,7 +147,8 @@ class Bible extends Model
      *   title="copyright",
      *   type="string",
      *   description="A short copyright description for the bible text.",
-     *   maxLength=191
+     *   maxLength=191,
+     *   example="© 1999 Bible Society of Ghana"
      * )
      *
      */
