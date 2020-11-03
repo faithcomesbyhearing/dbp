@@ -68,10 +68,7 @@ class PlaylistsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_playlist_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_playlist_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_playlist_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_playlist_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_playlist_index"))
      *     )
      * )
      *
@@ -437,10 +434,7 @@ class PlaylistsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -536,10 +530,7 @@ class PlaylistsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_playlist_items")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_playlist_items")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_playlist_items")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_playlist_items"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_playlist_items"))
      *     )
      * )
      *
@@ -680,10 +671,7 @@ class PlaylistsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_complete_playlist_item")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_complete_playlist_item")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_complete_playlist_item")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_complete_playlist_item"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_complete_playlist_item"))
      *     )
      * )
      *
@@ -892,10 +880,7 @@ class PlaylistsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      */
@@ -1170,10 +1155,7 @@ class PlaylistsController extends APIController
      * @OA\Response(
      *   response="playlist",
      *   description="Playlist Object",
-     *   @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_playlist_detail")),
-     *   @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_playlist_detail")),
-     *   @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_playlist_detail")),
-     *   @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_playlist_detail"))
+     *   @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_playlist_detail"))
      * )
      */
 

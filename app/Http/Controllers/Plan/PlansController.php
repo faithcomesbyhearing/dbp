@@ -51,10 +51,7 @@ class PlansController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_plan_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_plan_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_plan_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_index"))
      *     )
      * )
      *
@@ -384,10 +381,7 @@ class PlansController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -505,10 +499,7 @@ class PlansController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_plans_days")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_plans_days")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_internal_plans_days")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_internal_plans_days"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_plans_days"))
      *     )
      * )
      *
@@ -586,10 +577,7 @@ class PlansController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_complete_day")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_complete_day")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_complete_day")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_complete_day"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_complete_day"))
      *     )
      * )
      *
@@ -711,10 +699,7 @@ class PlansController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -772,10 +757,7 @@ class PlansController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      */
@@ -845,10 +827,7 @@ class PlansController extends APIController
      * @OA\Response(
      *   response="plan",
      *   description="Plan Object",
-     *   @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_detail")),
-     *   @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_plan_detail")),
-     *   @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_plan_detail")),
-     *   @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_plan_detail"))
+     *   @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_detail"))
      * )
      */
 

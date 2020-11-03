@@ -39,10 +39,7 @@ class BibleFilesetsManagementController extends APIController
      *     @OA\Response(
      *         response=201,
      *         description="The fileset just edited",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/BibleFileset")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/BibleFileset")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/BibleFileset")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/BibleFileset"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/BibleFileset"))
      *     )
      * )
      *
@@ -149,10 +146,7 @@ class BibleFilesetsManagementController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="The completed fileset",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/BibleFileset")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/BibleFileset")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/BibleFileset")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/BibleFileset"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/BibleFileset"))
      *     )
      * )
      *

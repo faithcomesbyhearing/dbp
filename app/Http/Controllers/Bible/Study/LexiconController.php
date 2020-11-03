@@ -40,11 +40,7 @@ class LexiconController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_lexicon_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_lexicon_index")),
-     *         @OA\MediaType(mediaType="application/toml", @OA\Schema(ref="#/components/schemas/v4_lexicon_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_lexicon_index")),
-     *         @OA\MediaType(mediaType="text/csv",  @OA\Schema(ref="#/components/schemas/v4_lexicon_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_lexicon_index"))
      *     )
      * )
      *

@@ -20,10 +20,7 @@ class CommentaryController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="The fileset types",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_commentary_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_internal_commentary_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",  @OA\Schema(ref="#/components/schemas/v4_internal_commentary_index")),
-     *         @OA\MediaType(mediaType="text/csv",  @OA\Schema(ref="#/components/schemas/v4_internal_commentary_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_commentary_index"))
      *     )
      * )
      *
@@ -66,10 +63,7 @@ class CommentaryController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="The fileset types",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_commentaries_chapter_response")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v4_commentaries_chapter_response")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_commentaries_chapter_response")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_commentaries_chapter_response"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_commentaries_chapter_response"))
      *     )
      * )
      *
@@ -141,10 +135,7 @@ class CommentaryController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="The fileset types",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_commentaries_section_response")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_commentaries_section_response")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_commentaries_section_response")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_commentaries_section_response"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_commentaries_section_response"))
      *     )
      * )
      *
