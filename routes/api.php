@@ -51,8 +51,7 @@ Route::name('v4_internal_commentary_chapters')->get('commentaries/{commentary_id
 Route::name('v4_internal_commentary_chapters')->get('commentaries/{commentary_id}/{book_id}/{chapter}', 'Bible\Study\CommentaryController@sections');
 
 // VERSION 4 | Study Lexicons
-
-Route::name('v4_lexicon_index')->get('lexicons',                                   'Bible\Study\LexiconController@index');
+Route::name('v4_internal_lexicon_index')->get('lexicons',                                   'Bible\Study\LexiconController@index');
 
 // VERSION 4 | Timestamps
 Route::name('v4_timestamps')->get('timestamps',                                    'Bible\AudioController@availableTimestamps');
