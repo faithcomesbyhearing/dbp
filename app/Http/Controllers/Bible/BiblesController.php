@@ -53,38 +53,38 @@ class BiblesController extends APIController
      *     @OA\Parameter(
      *          name="organization_id",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Schema(ref="#/components/schemas/Organization/properties/id"),
      *          description="The owning organization to return bibles for. For a complete list of ids see the route
      *              `/organizations`."
      *     ),
      *     @OA\Parameter(
      *          name="asset_id",
      *          in="query",
-     *          @OA\Schema(type="string"),
-     *          description="The asset_id to filter results by. There are three buckets provided `dbp-prod`, `dbp-vid` & `dbs-web`"
+     *          @OA\Schema(ref="#/components/schemas/Asset/properties/id"),
+     *          description="The asset_id to filter results by"
      *     ),
      *     @OA\Parameter(
      *          name="media",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Property(ref="#/components/schemas/BibleFilesetType/properties/set_type_code"),
      *          description="Will filter bibles based upon the media type of their filesets"
      *     ),
      *     @OA\Parameter(
      *          name="media_exclude",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Property(ref="#/components/schemas/BibleFilesetType/properties/set_type_code"),
      *          description="Will exclude bibles based upon the media type of their filesets"
      *     ),
      *     @OA\Parameter(
      *          name="size",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Property(ref="#/components/schemas/BibleFilesetSize/properties/set_size_code"),
      *          description="Will filter bibles based upon the size type of their filesets"
      *     ),
      *     @OA\Parameter(
      *          name="size_exclude",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Property(ref="#/components/schemas/BibleFilesetSize/properties/set_size_code"),
      *          description="Will exclude bibles based upon the size type of their filesets"
      *     ),
      *     @OA\Parameter(ref="#/components/parameters/page"),
@@ -217,8 +217,8 @@ class BiblesController extends APIController
      *     @OA\Parameter(
      *          name="asset_id",
      *          in="query",
-     *          @OA\Schema(type="string", example="dbp-prod"),
-     *          description="The asset_id to filter results by. There are three buckets provided `dbp-prod`, `dbp-vid` & `dbs-web`"
+     *          @OA\Schema(ref="#/components/schemas/Asset/properties/id"),
+     *          description="The asset_id to filter results by. "
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -384,7 +384,7 @@ class BiblesController extends APIController
      *     @OA\Parameter(
      *          name="language_code",
      *          in="query",
-     *          @OA\Schema(type="string",example="en"),
+     *          @OA\Schema(type="string",example="en", maxLength=6),
      *          description="The language code to filter results by"
      *     ),
      *     @OA\Response(
@@ -498,7 +498,7 @@ class BiblesController extends APIController
      *     tags={"Bibles"},
      *     summary="Bible chapter information",
      *     description="All bible chapter information",
-     *     operationId="v4_bible.chapter",
+     *     operationId="v4_internal_bible.chapter",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="bible_id",
@@ -958,7 +958,7 @@ class BiblesController extends APIController
      *     tags={"Bibles"},
      *     summary="Bible chapter annotations",
      *     description="Bible chapter annotations",
-     *     operationId="v4_bible.chapter.annotations",
+     *     operationId="v4_internal_bible.chapter.annotations",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="bible_id",

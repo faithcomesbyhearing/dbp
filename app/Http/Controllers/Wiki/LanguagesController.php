@@ -39,7 +39,7 @@ class LanguagesController extends APIController
      *     @OA\Parameter(
      *          name="language_name",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
      *          description="The language_name field will filter results by a specific language name"
      *     ),
      *     @OA\Parameter(
