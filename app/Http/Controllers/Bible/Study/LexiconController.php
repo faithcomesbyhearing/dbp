@@ -16,7 +16,7 @@ class LexiconController extends APIController
      *     tags={"StudyBible"},
      *     summary="",
      *     description="",
-     *     operationId="v4_lexicon_index",
+     *     operationId="v4_internal_lexicon_index",
      *     @OA\Parameter(
      *         name="word",
      *         in="query",

@@ -74,13 +74,7 @@ class BibleFileset extends Model
 
     /**
      *
-     * @OA\Property(
-     *   title="asset_id",
-     *   type="string",
-     *   description="The asset id of the AWS Bucket or CloudFront instance",
-     *   example="dbp-prod",
-     *   maxLength=64
-     * )
+     * @OA\Property(property="asset_id", ref="#/components/schemas/Asset/properties/id"),
      *
      */
     protected $asset_id;

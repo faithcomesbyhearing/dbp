@@ -35,7 +35,7 @@ class BibleFilesetCopyright extends Model
      *   description="The hash value for the created fileset",
      *   minLength=12,
      *   maxLength=12,
-     *   example="ENGESV"
+     *   example="1248f044fe62"
      * )
      *
      * @method static BibleFilesetCopyright whereHashId($value)
