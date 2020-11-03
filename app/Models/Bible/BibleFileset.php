@@ -87,26 +87,16 @@ class BibleFileset extends Model
 
     /**
      *
-     * @OA\Property(
-     *   title="set_type_code",
-     *   type="string",
-     *   description="The set_type_code indicating the type of the fileset",
-     *   example="audio_stream,audio_drama",
-     *   maxLength=16
-     * )
+     * @OA\Property(ref="#/components/schemas/BibleFilesetType/properties/set_type_code")
+     *
      *
      */
     protected $set_type_code;
 
     /**
      *
-     * @OA\Property(
-     *   title="set_size_code",
-     *   type="string",
-     *   description="The set_size_code indicating the size of the fileset",
-     *   example="C,NT,OT,NTP",
-     *   maxLength=9
-     * )
+     * @OA\Property(ref="#/components/schemas/BibleFilesetSize/properties/set_size_code")
+     *
      *
      */
     protected $set_size_code;

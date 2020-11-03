@@ -43,8 +43,11 @@ class BibleFilesetType extends Model
      * @OA\Property(
      *   title="set_type_code",
      *   type="string",
-     *   description=""
+     *   example="audio_drama",
+     *   description="The set_type_code indicating the type of the fileset",
+     *   maxLength=18
      * )
+     *
      *
      * @method static BibleFilesetType whereSetTypeCode($value)
      * @property string $set_type_code
@@ -55,7 +58,8 @@ class BibleFilesetType extends Model
      * @OA\Property(
      *   title="name",
      *   type="string",
-     *   description=""
+     *   example="Dramatized Audio",
+     *   description="The name of the fileset type"
      * )
      *
      * @method static BibleFilesetType whereName($value)

@@ -48,6 +48,7 @@ class BibleFilesetTag extends Model
      *   title="name",
      *   type="string",
      *   description="The name of the tag, serves as the key/category",
+     *   example="bitrate",
      *   maxLength=191
      * )
      *
@@ -62,6 +63,7 @@ class BibleFilesetTag extends Model
      * @OA\Property(
      *   title="description",
      *   type="string",
+     *   example="64kbps",
      *   description="The content of the tag, serves as the value of the key value pair of name/description"
      * )
      *
