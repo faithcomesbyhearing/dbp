@@ -74,7 +74,7 @@ class BibleFileTimestamp extends Model
      *
      * @OA\Property(
      *   title="timestamp",
-     *   type="float",
+     *   type="number",
      *   description="The time (in seconds) represented by the timestamp",
      *   example=10.19,
      *   minimum=1
