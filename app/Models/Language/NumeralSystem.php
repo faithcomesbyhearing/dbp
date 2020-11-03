@@ -28,8 +28,9 @@ class NumeralSystem extends Model
      *
      * @OA\Property(
      *     title="Numeral System Id",
-     *     description="The url to the font file",
+     *     description="The id of the numberal system",
      *     type="string",
+     *     example="western-arabic",
      *     maxLength=20
      * )
      *
