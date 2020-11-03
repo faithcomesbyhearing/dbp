@@ -47,8 +47,7 @@ class BiblesController extends APIController
      *          name="language_code",
      *          in="query",
      *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
-     *          description="The iso code to filter results by. This will return results only in the language specified.
-     *          For a complete list see the `iso` field in the `/languages` route",
+     *          description="The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `/languages` route",
      *     ),
      *     @OA\Parameter(
      *          name="organization_id",
@@ -266,9 +265,7 @@ class BiblesController extends APIController
      *     path="/bibles/{id}/book",
      *     tags={"Bibles"},
      *     summary="Returns a list of translated book names and general information for the given Bible",
-     *     description="The actual list of books may vary from fileset to fileset. For example, a King James Fileset may
-     *          contain deuterocanonical books that are missing from one of it's sibling filesets nested within the bible
-     *          parent.",
+     *     description="The actual list of books may vary from fileset to fileset. For example, a King James Fileset may contain deuterocanonical books that are missing from one of it's sibling filesets nested within the bible parent.",
      *     operationId="v4_bible.books",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
      *     @OA\Parameter(name="book_id",in="query", description="The book id. For a complete list see the `book_id` field in the `/bibles/books` route.",@OA\Schema(ref="#/components/schemas/Book/properties/id")),

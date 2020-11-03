@@ -32,9 +32,7 @@ class CountriesController extends APIController
      *          name="l10n",
      *          in="query",
      *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
-     *          description="When set to a valid three letter language iso, the returning results will be localized in
-     *                       the language matching that iso. (If an applicable translation exists).
-     *                       For a complete list see the `iso` field in the `/languages` route"
+     *          description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route"
      *     ),
      *     @OA\Parameter(
      *          name="has_filesets",
@@ -52,8 +50,7 @@ class CountriesController extends APIController
      *          name="include_languages",
      *          in="query",
      *          @OA\Schema(type="string"),
-     *          description="When set to true, the return will include the major languages used in each country.
-     *                       You may optionally also include the language names by setting it to `with_names`",
+     *          description="When set to true, the return will include the major languages used in each country. You may optionally also include the language names by setting it to `with_names`",
      *     ),
      *     @OA\Response(
      *         response=200,

@@ -23,9 +23,7 @@ class AlphabetsController extends APIController
      *     path="/alphabets",
      *     tags={"Languages"},
      *     summary="Returns Alphabets",
-     *     description="Returns a list of the world's known scripts. This route might be useful to you if you'd like to
-     *     you if you'd like to query information about fonts, alphabets, and the world's writing systems. Some fileset
-     *     returns may not display correctly without a font delivered by these via the `alphabets/{id}` routes.",
+     *     description="Returns a list of the world's known scripts. This route might be useful to you if you'd like to you if you'd like to query information about fonts, alphabets, and the world's writing systems. Some fileset returns may not display correctly without a font delivered by these via the `alphabets/{id}` routes.",
      *     operationId="v4_alphabets.all",
      *     @OA\Response(
      *         response=200,
