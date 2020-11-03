@@ -23,15 +23,15 @@ Route::name('v4_bible.one')->get('bibles/{bible_id}',                           
 Route::name('v4_bible.all')->get('bibles',                                         'Bible\BiblesController@index');
 Route::name('v4_bible.defaults')->get('bibles/defaults/types',                     'Bible\BiblesController@defaults');
 Route::name('v4_bible.copyright')->get('bibles/{bible_id}/copyright',              'Bible\BiblesController@copyright');
-Route::name('v4_bible.chapter')
+Route::name('v4_interenal_bible.chapter')
     ->middleware('APIToken')->get('bibles/{bible_id}/chapter',                     'Bible\BiblesController@chapter');
-Route::name('v4_bible.chapter.annotations')
+Route::name('v4_internal_bible.chapter.annotations')
     ->middleware('APIToken:check')->get('bibles/{bible_id}/chapter/annotations',          'Bible\BiblesController@annotations');
 
 // VERSION 4 | Filesets
 Route::name('v4_filesets.types')->get('bibles/filesets/media/types',               'Bible\BibleFileSetsController@mediaTypes');
 Route::name('v4_internal_filesets.checkTypes')->post('bibles/filesets/check/types', 'Bible\BibleFileSetsController@checkTypes');
-Route::name('v4_filesets.podcast')->get('bibles/filesets/{fileset_id}/podcast',    'Bible\BibleFilesetsPodcastController@index');
+Route::name('v4_internal_filesets.podcast')->get('bibles/filesets/{fileset_id}/podcast',    'Bible\BibleFilesetsPodcastController@index');
 Route::name('v4_filesets.download')->get('bibles/filesets/{fileset_id}/download',  'Bible\BibleFileSetsController@download');
 Route::name('v4_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
 Route::name('v4_filesets.show')->get('bibles/filesets/{fileset_id?}',              'Bible\BibleFileSetsController@show');
@@ -42,7 +42,7 @@ Route::name('v4_filesets.books')->get('bibles/filesets/{fileset_id}/books',     
 // VERSION 4 | Text
 Route::name('v4_filesets.chapter')->get('bibles/filesets/{fileset_id}/{book}/{chapter}', 'Bible\TextController@index');
 Route::name('v4_text_search')->get('search',                                             'Bible\TextController@search');
-Route::name('v4_library_search')->middleware('APIToken:check')->get('search/library',    'Bible\TextController@searchLibrary');
+Route::name('v4_internal_library_search')->middleware('APIToken:check')->get('search/library',    'Bible\TextController@searchLibrary');
 
 // VERSION 4 | Commentaries
 

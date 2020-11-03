@@ -31,9 +31,9 @@ class Asset extends Model
      * @OA\Property(
      *   title="id",
      *   type="string",
+     *   example="dbp-prod",
      *   description="The id of the Bucket",
-     *   maxLength=64,
-     *   minLength=24
+     *   maxLength=64
      * )
      *
      * @method static Asset whereId($value)
@@ -57,8 +57,9 @@ class Asset extends Model
      * @OA\Property(
      *   title="asset_type",
      *   type="string",
+     *   example="cloudfront",
      *   description="The type of asset being provided",
-     *   maxLength=24
+     *   maxLength=12
      * )
      *
      * @method static Asset whereAssetType($value)

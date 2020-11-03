@@ -50,7 +50,7 @@ class BibleFileset extends Model
      *   title="id",
      *   type="string",
      *   description="The fileset id",
-     *   example="ENGESV,ENGESVN1DA,ENGESVN2SA,ENGESVP2DV",
+     *   example="ENGESV",
      *   minLength=6,
      *   maxLength=16
      * )

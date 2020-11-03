@@ -312,7 +312,7 @@ class TextController extends APIController
      *     path="/search/library",
      *     tags={"Text"},
      *     summary="Search Playlist, Plans, Notes, Highlights and Bookmarks",
-     *     operationId="v4_library_search",
+     *     operationId="v4_internal_library_search",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="query",
