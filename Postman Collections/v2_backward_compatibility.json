@@ -162,9 +162,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/book?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&language_code={{languageCode}}",
+              "raw": "{{baseUrl}}/library/book?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&language_code={{languageCode}}",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -1695,9 +1695,9 @@
                   "",
                   "let responseKeys = Object.keys(pm.response.json()[0]);",
                   "",
-                  "if (pm.environment.get(\"basePath\") == pm.environment.get('basePath1')){",
+                  "if (pm.environment.get(\"baseUrl\") == pm.environment.get('baseUrl1')){",
                   "    pm.globals.set(\"responseKeys\", responseKeys);",
-                  "    pm.environment.set(\"basePath\", pm.environment.get('basePath2'))",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl2'))",
                   "    postman.setNextRequest(request.name);",
                   "    ",
                   "}else{",
@@ -1705,7 +1705,7 @@
                   "    pm.test(\"compare environment object names\", () =>",
                   "        pm.expect(responseKeys).to.eql(pm.globals.get(\"responseKeys\")));",
                   "        ",
-                  "    pm.environment.set(\"basePath\", pm.environment.get('basePath1'))",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl1'))",
                   "    pm.globals.unset(\"responseKeys\");",
                   "}",
                   "",
@@ -1738,9 +1738,9 @@
               }
             ],
             "url": {
-              "raw": "{{basePath}}/library/organization",
+              "raw": "{{baseUrl}}/library/organization",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -2050,79 +2050,79 @@
   ],
   "variable": [
     {
-      "id": "a066b94a-f113-4404-84f2-041b9dacc8de",
+      "id": "363b8d76-3ef4-4115-8690-763da023a9f5",
       "key": "baseUrl",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "3bb59d0e-734c-4603-9e59-0f56124d4209",
+      "id": "8442224f-8507-411f-988d-679136b7dbdf",
       "key": "baseUrl1",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "c300147a-4933-46e9-8929-aae8f213b407",
+      "id": "b8f357a5-a608-4d62-89d4-b535afe5b420",
       "key": "baseUrl2",
       "value": "https://dev.dbt.io",
       "type": "string"
     },
     {
-      "id": "c2487c80-86f6-4f87-9904-09d3c94a1b98",
+      "id": "50fab1b2-b18b-41be-a104-f0a2a43451f4",
       "key": "key",
       "value": "53355c32fca5f3cac4d7a670d2df2e09",
       "type": "string"
     },
     {
-      "id": "05889e6f-1464-461a-a0ab-6c06c2136117",
+      "id": "e0fc3c77-960e-4aa8-a3ed-8fad7ca96dd1",
       "key": "version",
       "value": "2",
       "type": "string"
     },
     {
-      "id": "2604ca52-9328-400e-9885-02ac41480586",
+      "id": "3f6a75d9-e253-4af5-81b8-71f657b29f55",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "288883a8-805e-428b-b997-2916ce916f77",
+      "id": "cab113e6-74af-4c1a-936c-7aa99423237f",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "d0130986-ce30-4209-a66f-64333245af19",
+      "id": "cecb99b7-67bd-4535-aea7-5dae9e289381",
       "key": "languageCode",
       "value": "ENG",
       "type": "string"
     },
     {
-      "id": "d463e4ce-e801-491b-9d2f-3781f5574c30",
+      "id": "5f9df300-bd8f-4f04-bc3a-242c5f0962fb",
       "key": "newTestamentBook",
       "value": "Luke",
       "type": "string"
     },
     {
-      "id": "7c699641-021c-44cf-9a82-93bddeaad7e5",
+      "id": "26859553-146e-4189-8575-b0fbb48e22ad",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "957a8538-5bc2-46b7-9c5b-afd9bfca57cd",
+      "id": "ad57e578-2f60-4b47-93b0-69587838652c",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "34b832f4-4760-4d4d-99a9-f7a5c93f142b",
+      "id": "b9214f39-9db8-4040-8f0d-2b26cec0931c",
       "key": "baseUrlLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "4ddbc560-5776-46b9-8dfd-ad86820a1bd2",
+      "id": "9ccc1ba0-806d-4ee3-80e6-632874d342b3",
       "key": "ignoreV2Keys",
       "value": "",
       "type": "string"
