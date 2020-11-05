@@ -85,9 +85,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/audio/path?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
+              "raw": "{{baseUrl}}/audio/path?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "audio",
@@ -224,9 +224,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=1",
+              "raw": "{{baseUrl}}/library/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=1",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -298,9 +298,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/volume?v={{version}}&key={{key}}&media=audio&language_code={{languageCode}}&delivery=web",
+              "raw": "{{baseUrl}}/library/volume?v={{version}}&key={{key}}&media=audio&language_code={{languageCode}}&delivery=web",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -369,9 +369,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/volumelanguagefamily?v={{version}}&key={{key}}",
+              "raw": "{{baseUrl}}/library/volumelanguagefamily?v={{version}}&key={{key}}",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -440,9 +440,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/text/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=3",
+              "raw": "{{baseUrl}}/text/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=3",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "text",
@@ -514,9 +514,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/chapter?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}",
+              "raw": "{{baseUrl}}/library/chapter?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -580,9 +580,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/text/search?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&query=Saul&page=1",
+              "raw": "{{baseUrl}}/text/search?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&query=Saul&page=1",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "text",
@@ -783,9 +783,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/bookorder?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}",
+              "raw": "{{baseUrl}}/library/bookorder?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -973,9 +973,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/country/countrylang?v={{version}}&key={{key}}&lang_code={{languageCode}}&country_code=US",
+              "raw": "{{baseUrl}}/country/countrylang?v={{version}}&key={{key}}&lang_code={{languageCode}}&country_code=US",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "country",
@@ -1039,9 +1039,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
+              "raw": "{{baseUrl}}/library/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -1177,9 +1177,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/text/volume?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}",
+              "raw": "{{baseUrl}}/text/volume?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "text",
@@ -1262,9 +1262,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/numbers?v={{version}}&key={{key}}&language_code={{languageCode}}&start=0&end=10",
+              "raw": "{{baseUrl}}/library/numbers?v={{version}}&key={{key}}&language_code={{languageCode}}&start=0&end=10",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -1333,9 +1333,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/video/videopath?v={{version}}&key={{key}}&dam_id={{newTestamentVideoDamId}}&encoding=m3u8",
+              "raw": "{{baseUrl}}/video/videopath?v={{version}}&key={{key}}&dam_id={{newTestamentVideoDamId}}&encoding=m3u8",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "video",
@@ -1399,9 +1399,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/version?v={{version}}&key={{key}}&code=ESV",
+              "raw": "{{baseUrl}}/library/version?v={{version}}&key={{key}}&code=ESV",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -1456,9 +1456,9 @@
                   "",
                   "// let responseKeys = Object.keys(pm.response.json()[0]);",
                   "",
-                  "// if (pm.environment.get(\"basePath\") == pm.environment.get('basePath1')){",
+                  "// if (pm.environment.get(\"baseUrl\") == pm.environment.get('baseUrl1')){",
                   "//     pm.globals.set(\"responseKeys\", responseKeys);",
-                  "//     pm.environment.set(\"basePath\", pm.environment.get('basePath2'))",
+                  "//     pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl2'))",
                   "//     postman.setNextRequest(request.name);",
                   "    ",
                   "// }else{",
@@ -1466,7 +1466,7 @@
                   "//     pm.test(\"compare environment object names\", () =>",
                   "//         pm.expect(responseKeys).to.eql(pm.globals.get(\"responseKeys\")));",
                   "        ",
-                  "//     pm.environment.set(\"basePath\", pm.environment.get('basePath1'))",
+                  "//     pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl1'))",
                   "//     pm.globals.unset(\"responseKeys\");",
                   "// }",
                   "",
@@ -1499,9 +1499,9 @@
               }
             ],
             "url": {
-              "raw": "{{basePath}}/library/asset?dam_id={{newTestamentAudioDamId}}",
+              "raw": "{{baseUrl}}/library/asset?dam_id={{newTestamentAudioDamId}}",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -1625,9 +1625,9 @@
                   "",
                   "let responseKeys = Object.keys(pm.response.json()[0]);",
                   "",
-                  "if (pm.environment.get(\"basePath\") == pm.environment.get('basePath1')){",
+                  "if (pm.environment.get(\"baseUrl\") == pm.environment.get('baseUrl1')){",
                   "    pm.globals.set(\"responseKeys\", responseKeys);",
-                  "    pm.environment.set(\"basePath\", pm.environment.get('basePath2'))",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl2'))",
                   "    postman.setNextRequest(request.name);",
                   "    ",
                   "}else{",
@@ -1635,7 +1635,7 @@
                   "    pm.test(\"compare environment object names\", () =>",
                   "        pm.expect(responseKeys).to.eql(pm.globals.get(\"responseKeys\")));",
                   "        ",
-                  "    pm.environment.set(\"basePath\", pm.environment.get('basePath1'))",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl1'))",
                   "    pm.globals.unset(\"responseKeys\");",
                   "}",
                   "",
@@ -1667,7 +1667,7 @@
                 "type": "text"
               }
             ],
-            "url": "{{basePath}}/library/language"
+            "url": "{{baseUrl}}/library/language"
           },
           "response": []
         },
@@ -1865,9 +1865,9 @@
                   "",
                   "let responseKeys = Object.keys(pm.response.json()[0]);",
                   "",
-                  "if (pm.environment.get(\"basePath\") == pm.environment.get('basePath1')){",
+                  "if (pm.environment.get(\"baseUrl\") == pm.environment.get('baseUrl1')){",
                   "    pm.globals.set(\"responseKeys\", responseKeys);",
-                  "    pm.environment.set(\"basePath\", pm.environment.get('basePath2'))",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl2'))",
                   "    postman.setNextRequest(request.name);",
                   "    ",
                   "}else{",
@@ -1875,7 +1875,7 @@
                   "    pm.test(\"compare environment object names\", () =>",
                   "        pm.expect(responseKeys).to.eql(pm.globals.get(\"responseKeys\")));",
                   "        ",
-                  "    pm.environment.set(\"basePath\", pm.environment.get('basePath1'))",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl1'))",
                   "    pm.globals.unset(\"responseKeys\");",
                   "}",
                   "",
@@ -1908,9 +1908,9 @@
               }
             ],
             "url": {
-              "raw": "{{basePath}}/text/searchgroup?dam_id={{newTestamentTextDamId}}&query=Saul",
+              "raw": "{{baseUrl}}/text/searchgroup?dam_id={{newTestamentTextDamId}}&query=Saul",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "text",
@@ -2050,79 +2050,79 @@
   ],
   "variable": [
     {
-      "id": "c6461590-a3de-4111-9054-5acce52605ee",
+      "id": "7334bac8-1f75-4351-908e-0083256a4456",
       "key": "baseUrl",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "6711ecaf-fca9-41ed-ae37-b2cc23478159",
+      "id": "731904aa-51f9-4dde-8c16-c038d96fff6d",
       "key": "baseUrl1",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "eea84218-e3e6-4d08-ab28-158b8128118f",
+      "id": "34f415df-307a-4a9e-b855-14ae33536d63",
       "key": "baseUrl2",
       "value": "https://dev.dbt.io",
       "type": "string"
     },
     {
-      "id": "c95f361c-c46f-48ba-9a01-cdab75981322",
+      "id": "70f9a308-16df-47b7-8343-341a65a4bfa5",
       "key": "key",
       "value": "53355c32fca5f3cac4d7a670d2df2e09",
       "type": "string"
     },
     {
-      "id": "a781e245-52fb-49e5-8a1f-11eae993742a",
+      "id": "a5d547eb-48f0-4740-b2b4-c431d5e388be",
       "key": "version",
       "value": "2",
       "type": "string"
     },
     {
-      "id": "07fd77a2-b45f-4bbe-9e86-9492b440926d",
+      "id": "c4ee8da8-84db-46e8-a845-b4241a7bda96",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "ac5bc1a6-baa7-4240-a9c3-13d1693653d1",
+      "id": "fda9e3fb-a622-4c1f-be2e-d6dc789462d2",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "d2382ad4-4d93-45b7-86df-866ed73b6aaa",
+      "id": "a6323145-137d-474c-b5ab-6aa49fbd79e8",
       "key": "languageCode",
       "value": "ENG",
       "type": "string"
     },
     {
-      "id": "6a6830af-4911-4986-98bc-cd55577d7415",
+      "id": "09e15059-9190-4e28-a00e-da749ab70402",
       "key": "newTestamentBook",
       "value": "Luke",
       "type": "string"
     },
     {
-      "id": "1019e7b9-8932-47de-aa55-b418e8cd29c2",
+      "id": "cea0f359-e8a1-4022-965a-87144fd15e64",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "9cdcfde1-9dfb-471b-8ebf-1213602ea646",
+      "id": "ad786891-2d61-459b-bb0e-bb4e7558c808",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "c27735cf-7473-4021-bdc5-946bd721ebf1",
+      "id": "bb406529-a3ad-43ba-8ad3-e2a1351474dc",
       "key": "baseUrlLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "8a28882d-41ab-4932-951d-2521963db5f4",
+      "id": "00130c24-b1b3-427b-9789-1c843992ab3e",
       "key": "ignoreV2Keys",
       "value": "",
       "type": "string"
