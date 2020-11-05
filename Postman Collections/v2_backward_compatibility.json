@@ -224,9 +224,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=1",
+              "raw": "{{basePath}}/library/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=1",
               "host": [
-                "{{baseUrl}}"
+                "{{basePath}}"
               ],
               "path": [
                 "library",
@@ -440,9 +440,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/text/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=3",
+              "raw": "{{basePath}}/text/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=3",
               "host": [
-                "{{baseUrl}}"
+                "{{basePath}}"
               ],
               "path": [
                 "text",
@@ -783,9 +783,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/bookorder?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}",
+              "raw": "{{basePath}}/library/bookorder?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}",
               "host": [
-                "{{baseUrl}}"
+                "{{basePath}}"
               ],
               "path": [
                 "library",
@@ -1039,9 +1039,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
+              "raw": "{{basePath}}/library/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
               "host": [
-                "{{baseUrl}}"
+                "{{basePath}}"
               ],
               "path": [
                 "library",
@@ -2050,79 +2050,79 @@
   ],
   "variable": [
     {
-      "id": "8b6c6fa6-0fe2-4be3-a2e5-4c7b2b5d4266",
+      "id": "c6461590-a3de-4111-9054-5acce52605ee",
       "key": "baseUrl",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "d188e5d4-22e3-442a-b09f-f3b431be6b68",
+      "id": "6711ecaf-fca9-41ed-ae37-b2cc23478159",
       "key": "baseUrl1",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "bed673a4-dc26-4c7d-95dd-da215756a289",
+      "id": "eea84218-e3e6-4d08-ab28-158b8128118f",
       "key": "baseUrl2",
       "value": "https://dev.dbt.io",
       "type": "string"
     },
     {
-      "id": "8b8ace4f-c746-4e6c-ae99-678dbe9602ba",
+      "id": "c95f361c-c46f-48ba-9a01-cdab75981322",
       "key": "key",
       "value": "53355c32fca5f3cac4d7a670d2df2e09",
       "type": "string"
     },
     {
-      "id": "01c8b87e-955f-41d9-bf81-764a02ccf6ad",
+      "id": "a781e245-52fb-49e5-8a1f-11eae993742a",
       "key": "version",
       "value": "2",
       "type": "string"
     },
     {
-      "id": "55aa03c5-4b3c-460d-8553-aba09e99f1e4",
+      "id": "07fd77a2-b45f-4bbe-9e86-9492b440926d",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "1a8486d3-1632-4b84-958f-5370c3ee634e",
+      "id": "ac5bc1a6-baa7-4240-a9c3-13d1693653d1",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "b5b359e6-c68d-48e5-8352-5b7851070c8d",
+      "id": "d2382ad4-4d93-45b7-86df-866ed73b6aaa",
       "key": "languageCode",
       "value": "ENG",
       "type": "string"
     },
     {
-      "id": "cfeebf13-203f-4f9c-abe7-811dba63b9d9",
+      "id": "6a6830af-4911-4986-98bc-cd55577d7415",
       "key": "newTestamentBook",
       "value": "Luke",
       "type": "string"
     },
     {
-      "id": "739cd31c-e8c3-4a4a-8370-a8f45f35b9b0",
+      "id": "1019e7b9-8932-47de-aa55-b418e8cd29c2",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "b64f4309-8c96-4555-9645-71fedd8d170d",
+      "id": "9cdcfde1-9dfb-471b-8ebf-1213602ea646",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "5aae8e60-1879-45b3-953b-27ce082659a3",
+      "id": "c27735cf-7473-4021-bdc5-946bd721ebf1",
       "key": "baseUrlLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "50a9fd2b-e3ca-4b2b-8409-d922f777e2bb",
+      "id": "8a28882d-41ab-4932-951d-2521963db5f4",
       "key": "ignoreV2Keys",
       "value": "",
       "type": "string"
