@@ -31,9 +31,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/audio/location?v={{version}}&key={{key}}",
+              "raw": "{{baseUrl}}/audio/location?v={{version}}&key={{key}}",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "audio",
@@ -849,9 +849,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/metadata?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}",
+              "raw": "{{baseUrl}}/library/metadata?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "library",
@@ -907,9 +907,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/audio/versestart?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&chapter_number=1&osis_code=Mark",
+              "raw": "{{baseUrl}}/audio/versestart?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&chapter_number=1&osis_code=Mark",
               "host": [
-                "{{basePath}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "audio",
@@ -2050,79 +2050,79 @@
   ],
   "variable": [
     {
-      "id": "363b8d76-3ef4-4115-8690-763da023a9f5",
+      "id": "959ef22e-02c1-41c3-8048-1653e29f4425",
       "key": "baseUrl",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "8442224f-8507-411f-988d-679136b7dbdf",
+      "id": "2f6ef68e-5745-4b74-8ce7-21f46a21aa9d",
       "key": "baseUrl1",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "b8f357a5-a608-4d62-89d4-b535afe5b420",
+      "id": "52a254f5-d9e1-4306-90df-f56ed352bb3d",
       "key": "baseUrl2",
       "value": "https://dev.dbt.io",
       "type": "string"
     },
     {
-      "id": "50fab1b2-b18b-41be-a104-f0a2a43451f4",
+      "id": "f6d7d2d0-b278-4556-bc89-5f172bb44e97",
       "key": "key",
       "value": "53355c32fca5f3cac4d7a670d2df2e09",
       "type": "string"
     },
     {
-      "id": "e0fc3c77-960e-4aa8-a3ed-8fad7ca96dd1",
+      "id": "36f098d9-de9c-4775-959b-db73578a87c7",
       "key": "version",
       "value": "2",
       "type": "string"
     },
     {
-      "id": "3f6a75d9-e253-4af5-81b8-71f657b29f55",
+      "id": "31a0fce5-08ff-43cb-ac51-cab4506e1026",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "cab113e6-74af-4c1a-936c-7aa99423237f",
+      "id": "2e824d51-6d20-4f1f-a5ce-36c352bc50c4",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "cecb99b7-67bd-4535-aea7-5dae9e289381",
+      "id": "4434def2-3bb0-4547-ab77-03fe7322c53b",
       "key": "languageCode",
       "value": "ENG",
       "type": "string"
     },
     {
-      "id": "5f9df300-bd8f-4f04-bc3a-242c5f0962fb",
+      "id": "c4c68d20-7c1d-43b4-b86a-a302288fb4ec",
       "key": "newTestamentBook",
       "value": "Luke",
       "type": "string"
     },
     {
-      "id": "26859553-146e-4189-8575-b0fbb48e22ad",
+      "id": "8069bc12-4ec6-4404-8269-68241dd076bb",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "ad57e578-2f60-4b47-93b0-69587838652c",
+      "id": "2ed66763-33eb-487e-aa3a-700ddbd6e1cd",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "b9214f39-9db8-4040-8f0d-2b26cec0931c",
+      "id": "9be15724-8ffa-4796-b574-4121d594b11e",
       "key": "baseUrlLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "9ccc1ba0-806d-4ee3-80e6-632874d342b3",
+      "id": "b1f41648-51c3-42e6-904d-3af0b1464fb7",
       "key": "ignoreV2Keys",
       "value": "",
       "type": "string"
