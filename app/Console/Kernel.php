@@ -35,6 +35,8 @@ class Kernel extends ConsoleKernel
 
         Commands\StudyFormats\fetchTyndalePeople::class,
 
+        Commands\generateOpenApiDoc::class,
+
         Commands\loaderPush::class,
 
         Commands\syncV2Database::class,
