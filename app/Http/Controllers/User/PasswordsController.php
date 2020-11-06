@@ -43,7 +43,7 @@ class PasswordsController extends APIController
      *     tags={"Users"},
      *     summary="Trigger a reset email",
      *     description="",
-     *     operationId="v4_user.reset",
+     *     operationId="v4_internal_user.reset",
      *     @OA\RequestBody(
      *         required=true,
      *         description="Information supplied for password reset",
@@ -60,10 +60,7 @@ class PasswordsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -117,7 +114,7 @@ class PasswordsController extends APIController
      *          If the password is known to the your users you can reset their passwords without the requirement to send
      *          them a verification email by setting the optional fields `password` and `new_password` fields within the
      *          request.",
-     *     operationId="v4_user.resetPassword",
+     *     operationId="v4_internal_user.resetPassword",
      *     security={{"api_token":{}}},
      *     @OA\RequestBody(
      *         required=true,
@@ -136,10 +133,7 @@ class PasswordsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_user_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
      *     )
      * )
      *

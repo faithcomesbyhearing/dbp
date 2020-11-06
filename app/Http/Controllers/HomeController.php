@@ -43,24 +43,21 @@ class HomeController extends APIController
      *     tags={"Bibles"},
      *     summary="Returns the asset paths currently being used by the api",
      *     description="",
-     *     operationId="v4_api.assets",
+     *     operationId="v4_internal_api.assets",
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_api_assets")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_api_assets")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_api_assets")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_api_assets"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_api_assets")),
      *     )
      * )
      *
      * @OA\Schema (
      *     type="array",
-     *     schema="v4_api_assets",
+     *     schema="v4_internal_api_assets",
      *     description="The aws assets currently being used by the api",
      *     title="The assets response",
      *     required={"id","organization_id"},
-     *     @OA\Xml(name="v4_api_assets"),
+     *     @OA\Xml(name="v4_internal_api_assets"),
      *     @OA\Items(
      *          @OA\Property(property="id",               ref="#/components/schemas/Asset/properties/id"),
      *          @OA\Property(property="asset_type",       ref="#/components/schemas/Asset/properties/asset_type"),
@@ -77,7 +74,7 @@ class HomeController extends APIController
      */
     public function buckets()
     {
-        $assets = cacheRemember('v4_api_assets', [], now()->addDay(), function () {
+        $assets = cacheRemember('v4_internal_api_assets', [], now()->addDay(), function () {
             return Asset::select('id', 'asset_type', 'organization_id')->with([
                 'organization' => function ($query) {
                     $query->select('slug', 'email', 'id');
@@ -90,7 +87,7 @@ class HomeController extends APIController
 
     public function stats()
     {
-        $counts = cacheRemember('v4_api_counts', [], now()->addDay(), function () {
+        $counts = cacheRemember('v4_internal_api_counts', [], now()->addDay(), function () {
             $count['languages']      = Language::count();
             $count['countries']      = Country::count();
             $count['alphabets']      = Alphabet::count();

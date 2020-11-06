@@ -47,67 +47,51 @@ class BiblesController extends APIController
      *          name="language_code",
      *          in="query",
      *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
-     *          description="The iso code to filter results by. This will return results only in the language specified.
-     *          For a complete list see the `iso` field in the `/languages` route",
+     *          description="The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `/languages` route",
      *     ),
      *     @OA\Parameter(
      *          name="organization_id",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Schema(ref="#/components/schemas/Organization/properties/id"),
      *          description="The owning organization to return bibles for. For a complete list of ids see the route
      *              `/organizations`."
      *     ),
      *     @OA\Parameter(
      *          name="asset_id",
      *          in="query",
-     *          @OA\Schema(type="string"),
-     *          description="The asset_id to filter results by. There are three buckets provided `dbp-prod`, `dbp-vid` & `dbs-web`"
+     *          @OA\Schema(ref="#/components/schemas/Asset/properties/id"),
+     *          description="The asset_id to filter results by"
      *     ),
      *     @OA\Parameter(
      *          name="media",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Property(ref="#/components/schemas/BibleFilesetType/properties/set_type_code"),
      *          description="Will filter bibles based upon the media type of their filesets"
      *     ),
      *     @OA\Parameter(
      *          name="media_exclude",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Property(ref="#/components/schemas/BibleFilesetType/properties/set_type_code"),
      *          description="Will exclude bibles based upon the media type of their filesets"
      *     ),
      *     @OA\Parameter(
      *          name="size",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Property(ref="#/components/schemas/BibleFilesetSize/properties/set_size_code"),
      *          description="Will filter bibles based upon the size type of their filesets"
-     *     ),
-     *     @OA\Parameter(
-     *          name="bitrate",
-     *          in="query",
-     *          @OA\Schema(type="string",example="64kps"),
-     *          description="Will filter bibles based upon the bitrate of their filesets, the current values available are 16kbps & 64kbps"
      *     ),
      *     @OA\Parameter(
      *          name="size_exclude",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Property(ref="#/components/schemas/BibleFilesetSize/properties/set_size_code"),
      *          description="Will exclude bibles based upon the size type of their filesets"
-     *     ),
-     *     @OA\Parameter(
-     *          name="show_all",
-     *          in="query",
-     *          @OA\Schema(type="boolean"),
-     *          description="Will show all entries"
      *     ),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.all")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_bible.all")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_bible.all")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_bible.all"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.all"))
      *     )
      * )
      *
@@ -229,15 +213,13 @@ class BiblesController extends APIController
      *     @OA\Parameter(
      *          name="asset_id",
      *          in="query",
-     *          @OA\Schema(type="string"),
-     *          description="The asset_id to filter results by. There are three buckets provided `dbp-prod`, `dbp-vid` & `dbs-web`"
+     *          @OA\Schema(ref="#/components/schemas/Asset/properties/id"),
+     *          description="The asset_id to filter results by. "
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.one")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_bible.one")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_bible.one"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.one"))
      *     )
      * )
      *
@@ -278,9 +260,7 @@ class BiblesController extends APIController
      *     path="/bibles/{id}/book",
      *     tags={"Bibles"},
      *     summary="Returns a list of translated book names and general information for the given Bible",
-     *     description="The actual list of books may vary from fileset to fileset. For example, a King James Fileset may
-     *          contain deuterocanonical books that are missing from one of it's sibling filesets nested within the bible
-     *          parent.",
+     *     description="The actual list of books may vary from fileset to fileset. For example, a King James Fileset may contain deuterocanonical books that are missing from one of it's sibling filesets nested within the bible parent.",
      *     operationId="v4_bible.books",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
      *     @OA\Parameter(name="book_id",in="query", description="The book id. For a complete list see the `book_id` field in the `/bibles/books` route.",@OA\Schema(ref="#/components/schemas/Book/properties/id")),
@@ -294,10 +274,7 @@ class BiblesController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.books")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v4_bible.books")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_bible.books")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_bible.books"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.books"))
      *     )
      * )
      *
@@ -396,16 +373,13 @@ class BiblesController extends APIController
      *     @OA\Parameter(
      *          name="language_code",
      *          in="query",
-     *          @OA\Schema(type="string",example="en"),
+     *          @OA\Schema(type="string",example="en", maxLength=6),
      *          description="The language code to filter results by"
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bibles_defaults")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_bibles_defaults")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_bibles_defaults")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_bibles_defaults"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bibles_defaults"))
      *     )
      * )
      *
@@ -463,10 +437,7 @@ class BiblesController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="The requested bible copyrights",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.copyright")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v4_bible.copyright")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_bible.copyright")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_bible.copyright"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.copyright"))
      *     )
      * )
      *
@@ -510,7 +481,7 @@ class BiblesController extends APIController
      *     tags={"Bibles"},
      *     summary="Bible chapter information",
      *     description="All bible chapter information",
-     *     operationId="v4_bible.chapter",
+     *     operationId="v4_internal_bible.chapter",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="bible_id",
@@ -560,10 +531,7 @@ class BiblesController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="The requested bible chapter",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.chapter")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v4_bible.chapter")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_bible.chapter")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_bible.chapter"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.chapter"))
      *     )
      * )
      *
@@ -572,11 +540,6 @@ class BiblesController extends APIController
      *   schema="v4_bible.chapter",
      *   title="Bible chapter response",
      *   description="The v4 bible chapter response.",
-     *   @OA\Property(property="annotations", type="object",
-     *      @OA\Property(property="bookmarks", ref="#/components/schemas/v4_user_bookmarks/properties/data"),
-     *      @OA\Property(property="highlights", ref="#/components/schemas/v4_highlights_index/properties/data"),
-     *      @OA\Property(property="notes", ref="#/components/schemas/v4_notes_index/properties/data")
-     *   ),
      *   @OA\Property(property="bible_id", ref="#/components/schemas/Bible/properties/id"),
      *   @OA\Property(property="book_id", ref="#/components/schemas/Book/properties/id"),
      *   @OA\Property(property="chapter", ref="#/components/schemas/BibleFile/properties/chapter_start"),
@@ -975,7 +938,7 @@ class BiblesController extends APIController
      *     tags={"Bibles"},
      *     summary="Bible chapter annotations",
      *     description="Bible chapter annotations",
-     *     operationId="v4_bible.chapter.annotations",
+     *     operationId="v4_internal_bible.chapter.annotations",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="bible_id",
@@ -999,10 +962,7 @@ class BiblesController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="The requested bible chapter annotations",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.chapter.annotations")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v4_bible.chapter.annotations")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_bible.chapter.annotations")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_bible.chapter.annotations"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.chapter.annotations"))
      *     )
      * )
      *
@@ -1011,11 +971,6 @@ class BiblesController extends APIController
      *   schema="v4_bible.chapter.annotations",
      *   title="Bible chapter annotations response",
      *   description="The v4 bible chapter annotations response.",
-     *   @OA\Property(property="annotations", type="object",
-     *      @OA\Property(property="bookmarks", ref="#/components/schemas/v4_user_bookmarks/properties/data"),
-     *      @OA\Property(property="highlights", ref="#/components/schemas/v4_highlights_index/properties/data"),
-     *      @OA\Property(property="notes", ref="#/components/schemas/v4_notes_index/properties/data")
-     *   )
      * )
      */
     public function annotations(Request $request, $bible_id)

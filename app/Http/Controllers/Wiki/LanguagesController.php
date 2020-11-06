@@ -39,7 +39,7 @@ class LanguagesController extends APIController
      *     @OA\Parameter(
      *          name="language_name",
      *          in="query",
-     *          @OA\Schema(type="string"),
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
      *          description="The language_name field will filter results by a specific language name"
      *     ),
      *     @OA\Parameter(
@@ -80,10 +80,7 @@ class LanguagesController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_languages.all")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v4_languages.all")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_languages.all")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_languages.all"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_languages.all"))
      *     )
      * )
      * @link https://api.dbp.test/languages?key=1234&v=4&pretty
@@ -208,10 +205,7 @@ class LanguagesController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_languages.one")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v4_languages.one")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_languages.one")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_languages.one"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_languages.one"))
      *     )
      * )
      *

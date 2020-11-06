@@ -50,6 +50,7 @@ class BibleFileset extends Model
      *   title="id",
      *   type="string",
      *   description="The fileset id",
+     *   example="ENGESV",
      *   minLength=6,
      *   maxLength=16
      * )
@@ -63,6 +64,7 @@ class BibleFileset extends Model
      *   title="hash_id",
      *   type="string",
      *   description="The hash_id generated from the `asset_id`, `set_type_code`, and `id`",
+     *   example="c2d2ad3e5983",
      *   minLength=12,
      *   maxLength=12
      * )
@@ -72,36 +74,23 @@ class BibleFileset extends Model
 
     /**
      *
-     * @OA\Property(
-     *   title="asset_id",
-     *   type="string",
-     *   description="The asset id of the AWS Bucket or CloudFront instance",
-     *   maxLength=64
-     * )
+     * @OA\Property(property="asset_id", ref="#/components/schemas/Asset/properties/id"),
      *
      */
     protected $asset_id;
 
     /**
      *
-     * @OA\Property(
-     *   title="set_type_code",
-     *   type="string",
-     *   description="The set_type_code indicating the type of the fileset",
-     *   maxLength=16
-     * )
+     * @OA\Property(ref="#/components/schemas/BibleFilesetType/properties/set_type_code")
+     *
      *
      */
     protected $set_type_code;
 
     /**
      *
-     * @OA\Property(
-     *   title="set_size_code",
-     *   type="string",
-     *   description="The set_size_code indicating the size of the fileset",
-     *   maxLength=9
-     * )
+     * @OA\Property(ref="#/components/schemas/BibleFilesetSize/properties/set_size_code")
+     *
      *
      */
     protected $set_size_code;

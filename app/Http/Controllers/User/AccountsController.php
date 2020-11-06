@@ -18,7 +18,7 @@ class AccountsController extends APIController
      *     tags={"Users"},
      *     summary="List the Accounts",
      *     description="",
-     *     operationId="v4_user_accounts.index",
+     *     operationId="v4_internal_user_accounts.index",
      *     @OA\Parameter(name="project_id", in="query", description="The Project ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Parameter(name="user_id", in="query", description="The User ID", required=true,
@@ -26,19 +26,16 @@ class AccountsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_user_accounts.index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_user_accounts.index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_user_accounts.index")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_user_accounts.index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_accounts.index"))
      *     )
      * )
      *
      * @OA\Schema(
-     *     title="v4_user_accounts.index",
+     *     title="v4_internal_user_accounts.index",
      *     type="array",
-     *     description="v4_user_accounts.index",
-     *     schema="v4_user_accounts.index",
-     *     @OA\Xml(name="v4_user_accounts.index"),
+     *     description="v4_internal_user_accounts.index",
+     *     schema="v4_internal_user_accounts.index",
+     *     @OA\Xml(name="v4_internal_user_accounts.index"),
      *     @OA\Items(
      *          @OA\Property(property="project_id",       ref="#/components/schemas/Project/properties/id"),
      *          @OA\Property(property="provider_id",      ref="#/components/schemas/Account/properties/provider_id"),
@@ -68,7 +65,7 @@ class AccountsController extends APIController
      *     tags={"Users"},
      *     summary="Create a new Account",
      *     description="Associate a social media account with a different user.",
-     *     operationId="v4_user_accounts.store",
+     *     operationId="v4_internal_user_accounts.store",
      *     @OA\Parameter(name="project_id", in="query", description="The Project ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Parameter(name="user_id", in="query", description="The User ID", required=true,
@@ -84,10 +81,7 @@ class AccountsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/Account")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/Account")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/Account")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/Account"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/Account"))
      *     )
      * )
      *
@@ -118,7 +112,7 @@ class AccountsController extends APIController
      *     tags={"Users"},
      *     summary="Update a specific Account",
      *     description="",
-     *     operationId="v4_user_accounts.update",
+     *     operationId="v4_internal_user_accounts.update",
      *     @OA\Parameter(name="project_id", in="query", description="The Project ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Parameter(name="user_id", in="query", description="The User ID", required=true,
@@ -130,10 +124,7 @@ class AccountsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/Account")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/Account")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/Account")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/Account"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/Account"))
      *     )
      * )
      *
@@ -177,7 +168,7 @@ class AccountsController extends APIController
      *     tags={"Users"},
      *     summary="Delete an account",
      *     description="",
-     *     operationId="v4_user_accounts.delete",
+     *     operationId="v4_internal_user_accounts.delete",
      *     @OA\Parameter(name="project_id", in="query", description="The Project ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Parameter(name="user_id", in="query", description="The User ID", required=true,
@@ -187,10 +178,7 @@ class AccountsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/Account")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/Account")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/Account")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/Account"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/Account"))
      *     )
      * )
      *
