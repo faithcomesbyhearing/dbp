@@ -97,8 +97,9 @@ class Organization extends Model
      *
      * @OA\Property(
      *     title="slug",
-     *     description="The Organization's slug",
+     *     description="The Organization's name",
      *     type="string",
+     *     example="american-bible-society",
      *     maxLength=191
      * )
      *
@@ -122,6 +123,7 @@ class Organization extends Model
      *     title="notes",
      *     description="Archivist notes about the organization being described",
      *     type="string",
+     *     example="freetext archivist note",
      *     nullable=true
      * )
      *
@@ -133,6 +135,7 @@ class Organization extends Model
      *     title="primaryColor",
      *     description="The Organization's primary color derived from their logo",
      *     type="string",
+     *     example="#004b85",
      *     maxLength=7,
      *     minLength=7,
      *     nullable=true
@@ -146,6 +149,7 @@ class Organization extends Model
      *     title="secondaryColor",
      *     description="The Organization's secondary color derived from their logo",
      *     type="string",
+     *     example="#e2383f",
      *     maxLength=7,
      *     minLength=7,
      *     nullable=true
@@ -170,6 +174,7 @@ class Organization extends Model
      *     title="url_facebook",
      *     description="The URL to the organization's facebook page",
      *     type="string",
+     *     example="https://facebook.com",
      *     maxLength=191
      * )
      *
@@ -181,6 +186,7 @@ class Organization extends Model
      *     title="url_website",
      *     description="The url to the Organization's website",
      *     type="string",
+     *     example="https://someorg.com",
      *     maxLength=191
      * )
      *
@@ -192,6 +198,7 @@ class Organization extends Model
      *     title="url_donate",
      *     description="The url to the organization's donation page",
      *     type="string",
+     *     example="https://donate.someorg.com",
      *     maxLength=191
      * )
      *
@@ -203,6 +210,7 @@ class Organization extends Model
      *     title="url_twitter",
      *     description="The url to the organization's twitter page",
      *     type="string",
+     *     example="https://twitter.com",
      *     maxLength=191
      * )
      *
@@ -214,6 +222,7 @@ class Organization extends Model
      *     title="address",
      *     description="The Organization's address",
      *     type="string",
+     *     example="123 Main Street",
      *     maxLength=191
      * )
      *
@@ -225,6 +234,7 @@ class Organization extends Model
      *     title="address2",
      *     description="The Organization's second line of the address",
      *     type="string",
+     *     example="",
      *     maxLength=191
      * )
      *
@@ -236,6 +246,7 @@ class Organization extends Model
      *     title="city",
      *     description="The organization's city",
      *     type="string",
+     *     example="Any City",
      *     maxLength=191
      * )
      *
@@ -247,6 +258,7 @@ class Organization extends Model
      *     title="state",
      *     description="The Organization's state",
      *     type="string",
+     *     example="Some State",
      *     maxLength=191
      * )
      *
@@ -258,6 +270,7 @@ class Organization extends Model
      *     title="country",
      *     description="ThThe Organization's country",
      *     type="string",
+     *     example="00000-000",
      *     maxLength=191
      * )
      *
@@ -269,6 +282,7 @@ class Organization extends Model
      *     title="zip",
      *     description="The Organization's zip",
      *     type="string",
+     *     example="Some Country",
      *     maxLength=191
      * )
      *
@@ -280,6 +294,7 @@ class Organization extends Model
      *     title="phone",
      *     description="The Organization's phone number",
      *     type="string",
+     *     example="999-999-9999",
      *     maxLength=191
      * )
      *
@@ -291,6 +306,7 @@ class Organization extends Model
      *     title="email",
      *     description="The Organization's email address",
      *     type="string",
+     *     example="contact@organization.com",
      *     maxLength=191
      * )
      *

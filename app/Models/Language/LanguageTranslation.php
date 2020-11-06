@@ -41,6 +41,7 @@ class LanguageTranslation extends Model
      * @OA\Property(
      *   title="language_source_id",
      *   type="integer",
+     *   example=17,
      *   description="The incrementing id of the language_source",
      *   minimum=0
      * )
@@ -54,6 +55,7 @@ class LanguageTranslation extends Model
      * @OA\Property(
      *   title="language_translation_id",
      *   type="integer",
+     *   example=68,
      *   description="The incrementing id of the language_translation",
      *   minimum=0
      * )
@@ -66,8 +68,9 @@ class LanguageTranslation extends Model
      *
      * @OA\Property(
      *   title="name",
-     *   type="integer",
-     *   description="The incrementing id of the name",
+     *   type="string",
+     *   example="Abkasies",
+     *   description="The language translation name",
      *   minimum=0
      * )
      *
@@ -81,7 +84,7 @@ class LanguageTranslation extends Model
      *     title="Priority",
      *     description="The priority of the language translation",
      *     type="integer",
-     *     format="int32",
+     *     example=0,
      *     minimum=0,
      *     maximum=255
      * )

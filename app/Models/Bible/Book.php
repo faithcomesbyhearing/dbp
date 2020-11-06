@@ -85,6 +85,7 @@ class Book extends Model
      *   title="id",
      *   type="string",
      *   description="The USFM 2.4 id for the books of the Bible",
+     *   example="MAT",
      *   minLength=3,
      *   maxLength=3
      * )

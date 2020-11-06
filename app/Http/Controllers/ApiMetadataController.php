@@ -43,7 +43,7 @@ class ApiMetadataController extends APIController
 
     /**
      *
-     * @category v4_api.gitVersion
+     * @category v4_internal_api.gitVersion
      * @link http://api.dbp.test/api/git/version?key={key}&v=4
      *
      * @return mixed

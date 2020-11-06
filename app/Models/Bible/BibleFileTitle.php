@@ -37,11 +37,7 @@ class BibleFileTitle extends Model
     protected $file_id;
     /**
      *
-     * @OA\Property(
-     *   title="iso",
-     *   type="string",
-     *   description="The translation language of the title"
-     * )
+     * @OA\Property(ref="#/components/schemas/Language/properties/iso")
      *
      * @method static BibleFileTitle whereIso($value)
      * @property string $iso
@@ -53,6 +49,7 @@ class BibleFileTitle extends Model
      * @OA\Property(
      *   title="title",
      *   type="string",
+     *   example="Kwaro Yecu Kricito",
      *   description="The title of the file"
      * )
      *

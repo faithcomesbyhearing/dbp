@@ -86,9 +86,9 @@ class CountryTransformer extends BaseTransformer
             *
              *          @OA\Property(property="name",              ref="#/components/schemas/Country/properties/name"),
              *          @OA\Property(property="continent_code",    ref="#/components/schemas/Country/properties/continent"),
-             *          @OA\Property(property="languages",         @OA\Schema(type="array",
-             *          @OA\Items(@OA\Schema(description="A key value pair consisting of an iso code and language name", example={"eng"="English"}))))
-             *
+             *          @OA\Property(property="languages",
+             *              @OA\Schema(type="array", @OA\Items(@OA\Schema(ref="#/components/schemas/Language/properties/id")))
+             *          )
              *   )
              * )
              */
@@ -133,8 +133,9 @@ class CountryTransformer extends BaseTransformer
              *    @OA\Items(
              *          @OA\Property(property="name",              ref="#/components/schemas/Country/properties/name"),
              *          @OA\Property(property="continent_code",    ref="#/components/schemas/Country/properties/continent"),
-             *          @OA\Property(property="languages",         @OA\Schema(type="array",
-             *              @OA\Items(@OA\Schema(type="string", description="A key value pair consisting of an iso code and language name", example={"eng"="English"}))))
+             *          @OA\Property(property="languages",
+             *              @OA\Schema(type="array", @OA\Items(@OA\Schema(ref="#/components/schemas/Language/properties/id")))
+             *          )
              *      )
              *    )
              *   )

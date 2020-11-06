@@ -44,6 +44,7 @@ class BibleFileTimestamp extends Model
      *   title="verse_start",
      *   type="integer",
      *   description="The starting verse for the file timestamp",
+     *   example=1,
      *   minimum=1
      * )
      *
@@ -58,6 +59,7 @@ class BibleFileTimestamp extends Model
      * @OA\Property(
      *   title="verse_end",
      *   type="integer",
+     *   example=10,
      *   description="The ending verse for the file timestamp",
      *   minimum=1
      * )
@@ -72,8 +74,9 @@ class BibleFileTimestamp extends Model
      *
      * @OA\Property(
      *   title="timestamp",
-     *   type="integer",
-     *   description="The ending verse for the file timestamp",
+     *   type="number",
+     *   description="The time (in seconds) represented by the timestamp",
+     *   example=10.19,
      *   minimum=1
      * )
      *
