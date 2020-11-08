@@ -779,7 +779,7 @@ class PlaylistsController extends APIController
      *
      *
      */
-    public function translate(Request $request, $playlist_id, $user = false, $compare_projects = true, $plan_id = 0)
+    public function translate(Request $request, $playlist_id, $user = false, $compare_projects = true)
     {
         $user = $user ? $user : $request->user();
 
@@ -843,8 +843,7 @@ class PlaylistsController extends APIController
             'name'              => $playlist->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
             'external_content'  => $playlist->external_content,
             'featured'          => false,
-            'draft'             => true,
-            'plan_id'           => $plan_id
+            'draft'             => true
         ];
 
 
@@ -867,7 +866,7 @@ class PlaylistsController extends APIController
         $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
 
         if ($show_details) {
-            $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist->id);
+            $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist_id);
             foreach ($playlist->items as $item) {
                 $item->verse_text = $item->getVerseText($playlist_text_filesets);
                 $item->item_timestamps = $item->getTimestamps();
