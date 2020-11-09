@@ -17,17 +17,7 @@
               "script": {
                 "id": "36c7541e-e0ba-4092-94d5-f26f65d84057",
                 "exec": [
-                  ""
-                ],
-                "type": "text/javascript"
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "id": "7b62886c-d6db-4642-8184-ac77e29fd493",
-                "exec": [
-                  ""
+                  "pm.variables.set(\"ignoreV2Keys\", \"true\")"
                 ],
                 "type": "text/javascript"
               }
@@ -52,13 +42,11 @@
               "query": [
                 {
                   "key": "v",
-                  "value": "{{version}}",
-                  "type": "text"
+                  "value": "{{version}}"
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
-                  "type": "text"
+                  "value": "{{key}}"
                 }
               ]
             }
@@ -97,7 +85,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/audio/path?v={{version}}&key={{key}}&chapter_id=1&book_id=Ps&dam_id=ENGKJVO1DA",
+              "raw": "{{basePath}}/audio/path?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
               "host": [
                 "{{basePath}}"
               ],
@@ -116,13 +104,11 @@
                 },
                 {
                   "key": "dam_id",
-                  "value": "{{newTestamentAudioDamId}}",
-                  "disabled": true
+                  "value": "{{newTestamentAudioDamId}}"
                 },
                 {
                   "key": "book_id",
-                  "value": "{{newTestamentBook}}",
-                  "disabled": true
+                  "value": "{{newTestamentBook}}"
                 },
                 {
                   "key": "chapter_id",
@@ -131,12 +117,12 @@
                 {
                   "key": "book_id",
                   "value": "Ps",
-                  "type": "text"
+                  "disabled": true
                 },
                 {
                   "key": "dam_id",
                   "value": "ENGKJVO1DA",
-                  "type": "text"
+                  "disabled": true
                 }
               ]
             },
@@ -238,7 +224,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id=Matt&chapter_id=26&verse_start=1&verse_end=1",
+              "raw": "{{basePath}}/library/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=1",
               "host": [
                 "{{basePath}}"
               ],
@@ -261,11 +247,11 @@
                 },
                 {
                   "key": "book_id",
-                  "value": "Matt"
+                  "value": "{{newTestamentBook}}"
                 },
                 {
                   "key": "chapter_id",
-                  "value": "26"
+                  "value": "1"
                 },
                 {
                   "key": "verse_start",
@@ -273,8 +259,7 @@
                 },
                 {
                   "key": "verse_end",
-                  "value": "1",
-                  "type": "text"
+                  "value": "1"
                 }
               ]
             }
@@ -455,7 +440,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/text/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=7&verse_start=1&verse_end=3",
+              "raw": "{{basePath}}/text/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=3",
               "host": [
                 "{{basePath}}"
               ],
@@ -466,38 +451,31 @@
               "query": [
                 {
                   "key": "v",
-                  "value": "{{version}}",
-                  "type": "text"
+                  "value": "{{version}}"
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
-                  "type": "text"
+                  "value": "{{key}}"
                 },
                 {
                   "key": "dam_id",
-                  "value": "{{newTestamentTextDamId}}",
-                  "type": "text"
+                  "value": "{{newTestamentTextDamId}}"
                 },
                 {
                   "key": "book_id",
-                  "value": "{{newTestamentBook}}",
-                  "type": "text"
+                  "value": "{{newTestamentBook}}"
                 },
                 {
                   "key": "chapter_id",
-                  "value": "7",
-                  "type": "text"
+                  "value": "1"
                 },
                 {
                   "key": "verse_start",
-                  "value": "1",
-                  "type": "text"
+                  "value": "1"
                 },
                 {
                   "key": "verse_end",
-                  "value": "3",
-                  "type": "text"
+                  "value": "3"
                 }
               ]
             }
@@ -578,7 +556,7 @@
               "script": {
                 "id": "eb206c20-c158-470c-892e-7ebdc6be055d",
                 "exec": [
-                  ""
+                  "pm.variables.set(\"ignoreV2Keys\", \"true\")"
                 ],
                 "type": "text/javascript"
               }
@@ -602,7 +580,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/text/search?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&query=Saul",
+              "raw": "{{basePath}}/text/search?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&query=Saul&page=1",
               "host": [
                 "{{basePath}}"
               ],
@@ -613,23 +591,23 @@
               "query": [
                 {
                   "key": "v",
-                  "value": "{{version}}",
-                  "type": "text"
+                  "value": "{{version}}"
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
-                  "type": "text"
+                  "value": "{{key}}"
                 },
                 {
                   "key": "dam_id",
-                  "value": "{{newTestamentTextDamId}}",
-                  "type": "text"
+                  "value": "{{newTestamentTextDamId}}"
                 },
                 {
                   "key": "query",
-                  "value": "Saul",
-                  "type": "text"
+                  "value": "Saul"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
                 }
               ]
             }
@@ -1061,7 +1039,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id=Matt&chapter_id=26",
+              "raw": "{{basePath}}/library/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
               "host": [
                 "{{basePath}}"
               ],
@@ -1072,28 +1050,23 @@
               "query": [
                 {
                   "key": "v",
-                  "value": "{{version}}",
-                  "type": "text"
+                  "value": "{{version}}"
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
-                  "type": "text"
+                  "value": "{{key}}"
                 },
                 {
                   "key": "dam_id",
-                  "value": "{{newTestamentTextDamId}}",
-                  "type": "text"
+                  "value": "{{newTestamentTextDamId}}"
                 },
                 {
                   "key": "book_id",
-                  "value": "Matt",
-                  "type": "text"
+                  "value": "{{newTestamentBook}}"
                 },
                 {
                   "key": "chapter_id",
-                  "value": "26",
-                  "type": "text"
+                  "value": "1"
                 }
               ]
             }
@@ -1138,7 +1111,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/text/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id=Matt&chapter_id=26",
+              "raw": "{{basePath}}/text/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
               "host": [
                 "{{basePath}}"
               ],
@@ -1149,28 +1122,23 @@
               "query": [
                 {
                   "key": "v",
-                  "value": "{{version}}",
-                  "type": "text"
+                  "value": "{{version}}"
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
-                  "type": "text"
+                  "value": "{{key}}"
                 },
                 {
                   "key": "dam_id",
-                  "value": "{{newTestamentTextDamId}}",
-                  "type": "text"
+                  "value": "{{newTestamentTextDamId}}"
                 },
                 {
                   "key": "book_id",
-                  "value": "Matt",
-                  "type": "text"
+                  "value": "{{newTestamentBook}}"
                 },
                 {
                   "key": "chapter_id",
-                  "value": "26",
-                  "type": "text"
+                  "value": "1"
                 }
               ]
             }
@@ -1995,10 +1963,11 @@
           "    return 'hello';",
           "  },",
           "  allV2PropertiesPresent: function allV2PropertiesPresent(resV2, resV4) {",
+          "    let matches = true",
           "",
           "    function compareByList(listV2, listV4){",
           "        let diff =  _.difference(_.keys(listV2[0]), _.keys(listV4[0]) ).length === 0;",
-          "        if (!diff){return false}",
+          "        if (!diff){ matches = false }",
           "    }",
           "",
           "    //compare top level",
@@ -2010,7 +1979,7 @@
           "            compareByList(resV2[0][name], resV4[0][name])",
           "        }",
           "    })",
-          "    return true",
+          "    return matches",
           "    ",
           "},",
           "  getObjectDiff: function getObjectDiff(obj1, obj2) {",
@@ -2036,116 +2005,126 @@
           "",
           "if (length > 1) {",
           "   responseObject = response;",
+          "   ",
           "} else {",
           "   responseObject = response[0];",
           "}",
-          "",
+          "console.log('ro',responseObject)",
           "if (responseObject != undefined) {",
           "    responseKeys = Object.keys(responseObject);",
-          "};",
+          "}",
           "",
-          "if (pm.variables.get(\"basePath\") == pm.variables.get('basePath1')){",
+          "if (pm.collectionVariables.get(\"basePath\") == pm.collectionVariables.get('basePath1')){",
           "    pm.variables.set(\"responseKeys\", responseKeys);",
           "    pm.variables.set(\"responseObject\", responseObject);  ",
-          "    pm.variables.set(\"basePath\", pm.variables.get(\"basePath2\"));",
-          "    //pm.variables.set(\"basePath\", pm.variables.get(\"basePathLocal\"));",
-          "    postman.setNextRequest(request.name); ",
-          "}else{",
           "",
+          "    pm.collectionVariables.set(\"basePath\", pm.collectionVariables.get('basePath2'))",
+          "    postman.setNextRequest(request.name); ",
+          "    ",
+          "}else{",
           "    try{",
-          "        pm.test(\"check for V2 keys\", () =>",
-          "            pm.expect(utils.allV2PropertiesPresent(pm.variables.get(\"responseKeys\"), responseKeys)).to.be.true);",
+          "        if (pm.variables.get(\"ignoreV2Keys\") != \"true\") {",
+          "            pm.test(\"check for V2 keys\", () =>",
+          "            pm.expect(utils.allV2PropertiesPresent(pm.variables.get(\"responseObject\"), responseObject)).to.be.true);",
+          "        } else {",
+          "            console.log(\"v2 key check disabled\");",
+          "            pm.variables.set(\"ignoreV2Keys\", \"false\")",
+          "        }",
+          "",
+          "        console.log('rk',pm.variables.get(\"responseObject\"), responseObject)",
           "",
           "    } catch (e) {",
           "        console.log(\"caught exception: \" + e);",
           "    }",
+          "",
           " diff = utils.getObjectDiff(pm.variables.get(\"responseObject\"), responseObject);",
-          "        console.log(diff);",
           "",
-          "    console.log(utils.getObjectDiff(pm.variables.get(\"responseObject\"),",
-          "         responseObject));",
-          "",
-          "    pm.variables.set(\"basePath\", pm.variables.get('basePath1'))",
-          "    //console.log(\"basePath set to : \"+pm.variables.get(\"basePath\"));",
+          "    pm.collectionVariables.set(\"basePath\", pm.collectionVariables.get('basePath1'))",
           "    pm.variables.unset(\"responseKeys\");",
-          "    pm.variables.unset(\"responseObject\");",
+          "",
           "}",
-          "//console.log(\"Collection.Test:4\");"
+          ""
         ]
       }
     }
   ],
   "variable": [
     {
-      "id": "997121b9-85b4-427c-a43e-3124858f93ab",
-      "key": "basePath1",
-      "value": "https://dbt.io",
-      "type": "string"
-    },
-    {
-      "id": "d0817787-6695-43b7-bf0a-5c8fccb77ecf",
-      "key": "basePath2",
-      "value": "https://dev.dbt.io",
-      "type": "string"
-    },
-    {
-      "id": "c3dc69c8-e353-4e11-83d2-1ac2fcdd9a66",
-      "key": "key",
-      "value": "53355c32fca5f3cac4d7a670d2df2e09",
-      "type": "string"
-    },
-    {
-      "id": "b0dbb3d2-34bc-4c95-b2e1-caf800a62faa",
-      "key": "version",
-      "value": "2",
-      "type": "string"
-    },
-    {
-      "id": "b895fd89-db06-47e8-b06a-7aafd9a58359",
+      "id": "a13ed9a7-552f-42b1-aa14-16b8bcb5cc86",
       "key": "basePath",
       "value": "https://dbt.io",
       "type": "string"
     },
     {
-      "id": "4080bf09-082e-4251-9519-a9ba51b054cd",
+      "id": "b1b05eff-a631-4032-bf50-19d764111829",
+      "key": "basePath1",
+      "value": "https://dbt.io",
+      "type": "string"
+    },
+    {
+      "id": "9086597a-82a1-4f2c-985e-47b7cff1b85b",
+      "key": "basePath2",
+      "value": "https://dev.dbt.io",
+      "type": "string"
+    },
+    {
+      "id": "f1a6dbd9-3285-4b47-a27b-ae0ac8017c9b",
+      "key": "key",
+      "value": "53355c32fca5f3cac4d7a670d2df2e09",
+      "type": "string"
+    },
+    {
+      "id": "ed4dacd2-8557-4acf-9427-7cf6d9f30cdb",
+      "key": "version",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "id": "39ab7604-01b9-4368-aa90-57efc00e8e8e",
       "key": "newTestamentTextDamId",
       "value": "ENGESVN2ET",
       "type": "string"
     },
     {
-      "id": "1b90a0a4-0a3f-4c2c-ad57-f6d74d9814a6",
-      "key": "newTestamentBook",
-      "value": "Luke",
-      "type": "string"
-    },
-    {
-      "id": "b7feca8b-8cad-499c-86e2-fa162c9f9321",
+      "id": "1be46b2e-96c5-4a1c-9ff3-0cc2d6412aed",
       "key": "newTestamentAudioDamId",
       "value": "ENGESVN2DA",
       "type": "string"
     },
     {
-      "id": "9e738b1f-b1b1-4db4-88c0-5b2d2834e565",
+      "id": "f9449516-c4bc-4ef7-a1c5-9a4b306a88e8",
+      "key": "languageCode",
+      "value": "ENG",
+      "type": "string"
+    },
+    {
+      "id": "bcd006d6-f3ad-4fc3-9e99-d633ea2f4b1f",
+      "key": "newTestamentBook",
+      "value": "Luke",
+      "type": "string"
+    },
+    {
+      "id": "92dc1631-5143-4efa-bdb6-b8f54f1b6d93",
       "key": "newTestamentVideoDamId",
       "value": "ENGESBN2DV",
       "type": "string"
     },
     {
-      "id": "e1384dda-6372-44b4-99ad-ef9b1bf0bcfe",
+      "id": "c3d52c14-1a19-493f-94a6-9f72ed79acfd",
       "key": "jesusFilmDamId",
       "value": "XXXXX",
       "type": "string"
     },
     {
-      "id": "47dd838d-0996-4287-801f-c46fbc4b57ce",
+      "id": "d39e849d-b32d-4c51-b7c2-a8700187c815",
       "key": "basePathLocal",
       "value": "http://api.dbp.test",
       "type": "string"
     },
     {
-      "id": "36a678f9-30ae-4160-b92f-742b69d8c0ed",
-      "key": "languageCode",
-      "value": "ENG",
+      "id": "407851f6-1df2-4358-b12f-6bbb2385fc40",
+      "key": "ignoreV2Keys",
+      "value": "",
       "type": "string"
     }
   ]
