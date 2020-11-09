@@ -13,6 +13,8 @@ use App\Models\Plan\PlanDay;
 use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 class PlansController extends APIController
 {
@@ -794,6 +796,12 @@ class PlansController extends APIController
         }
 
         $draft = checkBoolean('draft');
+        $playlist_ids = DB::connection('dbp_users')->select('select playlist_id from plan_days where plan_id = ?', [$plan_id]);
+        DB::connection('dbp_users')
+            ->table('user_playlists')
+            ->whereIn('id', Arr::pluck($playlist_ids, 'playlist_id'))
+            ->update(['draft' => $draft]);
+
         $plan->draft = $draft;
 
         $plan->save();
@@ -939,7 +947,7 @@ class PlansController extends APIController
         $playlists_data = [];
         $order = 1;
         foreach ($plan->days as $day) {
-            $playlist = (object) $playlist_controller->translate($request, $day->playlist_id, $user, $compare_projects)->original;
+            $playlist = (object) $playlist_controller->translate($request, $day->playlist_id, $user, $compare_projects, $new_plan->id)->original;
             $playlists_data[] = [
                 'plan_id'               => $new_plan->id,
                 'playlist_id'           => $playlist->id,
