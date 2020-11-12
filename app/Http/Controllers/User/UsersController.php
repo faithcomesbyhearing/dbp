@@ -293,7 +293,6 @@ class UsersController extends APIController
 
 
         return User::with('accounts', 'profile')->whereId($account->user_id)->first();
-        ;
     }
 
     /**
