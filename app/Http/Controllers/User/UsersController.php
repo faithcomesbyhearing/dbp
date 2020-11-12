@@ -291,7 +291,6 @@ class UsersController extends APIController
             'provider_user_id' => $provider_user_id,
         ]);
 
-
         return User::with('accounts', 'profile')->whereId($user->id)->first();
     }
 
