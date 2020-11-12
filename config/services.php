@@ -29,6 +29,12 @@ return [
         'secret' => env('SPARKPOST_SECRET'),
     ],
 
+    'apple' => [
+        'client_id' => env('APPLE_ID'),
+        'client_secret' => env('APPLE_SECRET'),
+        'redirect'      => env('APPLE_REDIRECT'),
+    ],
+
     'facebook' => [
         'client_id'     => env('FB_ID'),
         'client_secret' => env('FB_SECRET'),
