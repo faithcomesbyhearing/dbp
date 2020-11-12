@@ -14,7 +14,6 @@ use Laravel\Socialite\Two\BitbucketProvider;
 use Laravel\Socialite\Two\FacebookProvider;
 use Laravel\Socialite\Two\GithubProvider;
 use Laravel\Socialite\Two\GoogleProvider;
-use Laravel\Socialite\Two\AppleProvider;
 
 use Socialite;
 use Illuminate\Support\Str;
@@ -74,9 +73,6 @@ class SocialController extends APIController
             case 'google':
                 $providerClass = GoogleProvider::class;
                 break;
-            case 'apple':
-                $providerClass = AppleProvider::class;
-                break;
             default:
                 $providerClass = null;
         }
@@ -116,9 +112,9 @@ class SocialController extends APIController
             ]);
 
             ProjectMember::create([
-                'user_id'    => $user->id,
-                'project_id' => $project_id,
-                'role_id'    => Role::where('slug', 'user')->first()->id
+               'user_id'    => $user->id,
+               'project_id' => $project_id,
+               'role_id'    => Role::where('slug', 'user')->first()->id
             ]);
 
             return $user;
