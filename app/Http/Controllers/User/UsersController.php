@@ -171,10 +171,11 @@ class UsersController extends APIController
 
         $email = checkParam('email');
         $social_provider_id = checkParam('social_provider_id');
+        $project_id = checkParam('project_id');
 
         if ($social_provider_id) {
             $social_provider_user_id = checkParam('social_provider_user_id');
-            $user = $this->loginWithSocialProvider($social_provider_id, $social_provider_user_id);
+            $user = $this->loginWithSocialProvider($social_provider_id, $social_provider_user_id, $request);
         } elseif ($email) {
             $password = checkParam('password');
             $user = $this->loginWithEmail($email, $password);
@@ -185,7 +186,6 @@ class UsersController extends APIController
         }
 
         // Associate user with Project
-        $project_id = checkParam('project_id');
         if ($project_id) {
             $connection_exists = ProjectMember::where(['user_id' => $user->id, 'project_id' => $project_id])->exists();
             if (!$connection_exists) {
@@ -271,17 +271,39 @@ class UsersController extends APIController
         return $user;
     }
 
-    private function loginWithSocialProvider($provider_id, $provider_user_id)
+    private function loginWithSocialProvider($provider_id, $provider_user_id, $request)
     {
         $account = Account::where('provider_id', $provider_id)
             ->where('provider_user_id', $provider_user_id)->first();
-        if (!$account) {
-            return null;
+        if ($account) {
+            return User::with('accounts', 'profile')->whereId($account->user_id)->first();
+        }
+        // Verify a user with the email exist
+        $user = User::with('accounts', 'profile')->where('email', $request->email)->first();
+        // Create user if not exists
+        if (!$user) {
+            $user = User::create([
+                'name'          => $request->name,
+                'first_name'    => $request->first_name,
+                'last_name'     => $request->last_name,
+                'email'         => $request->email,
+                'activated'     => 0,
+                'password'      => \Hash::make(Str::random(10)),
+            ]);
+
+            Profile::create([
+                'user_id' => $user->id
+            ]);
         }
 
-        $user = User::with('accounts', 'profile')->whereId($account->user_id)->first();
+        // Link the social account provider
+        $user->accounts()->create([
+            'project_id' => $request->project_id,
+            'provider_id'      => $provider_id,
+            'provider_user_id' => $provider_user_id,
+        ]);
 
-        return $user;
+        return User::with('accounts', 'profile')->whereId($user->id)->first();
     }
 
     /**
