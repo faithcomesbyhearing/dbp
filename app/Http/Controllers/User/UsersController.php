@@ -708,4 +708,31 @@ class UsersController extends APIController
         }
         return false;
     }
+
+    public function adminLogin(Request $request)
+    {
+        if (!$this->api && $request->method() !== 'POST') {
+            if (!Auth::guest()) {
+                return redirect()->to(route('admin.dashboard'));
+            }
+            return view('v4.admin.login');
+        }
+
+        $email = checkParam('email');
+        $password = checkParam('password');
+        $user = $this->loginWithEmail($email, $password);
+
+        if (!$user) {
+            return $this->setStatusCode(401)->replyWithError(trans('auth.failed'));
+        }
+
+        Auth::login($user, true);
+        return redirect()->to(route('admin.dashboard'));
+    }
+
+    public function adminLogout()
+    {
+        Auth::logout();
+        return redirect()->to(route('admin.login'));
+    }
 }
