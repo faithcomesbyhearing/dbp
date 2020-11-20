@@ -41,7 +41,7 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->mapWebRoutes();
 
-        //
+        $this->mapV4WebRoutes();
     }
 
     /**
@@ -56,6 +56,18 @@ class RouteServiceProvider extends ServiceProvider
         Route::middleware('web')
             ->namespace($this->namespace)
             ->group(base_path('routes/web.php'));
+    }
+
+    /**
+     * Define the "v4 web" routes for the application.
+     *
+     * @return void
+     */
+    protected function mapV4WebRoutes()
+    {
+        Route::middleware('web')
+            ->namespace($this->namespace)
+            ->group(base_path('routes/webV4.php'));
     }
 
     /**
