@@ -5,6 +5,8 @@
 
 @section('content')
 <form method="POST" action="{{ route('admin.login') }}">
+    <h2>Authentication Required</h2>
+    <p>The server requires an username and password</p>
     @if($errors->has('auth.failed'))
     <div>{{ $errors->first('auth.failed') }}</div>
     @endif
