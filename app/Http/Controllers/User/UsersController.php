@@ -723,7 +723,10 @@ class UsersController extends APIController
         $user = $this->loginWithEmail($email, $password);
 
         if (!$user) {
-            return $this->setStatusCode(401)->replyWithError(trans('auth.failed'));
+            return redirect()
+                ->back()
+                ->withErrors(['auth.failed' => trans('auth.failed')])
+                ->withInput();
         }
 
         Auth::login($user, true);
