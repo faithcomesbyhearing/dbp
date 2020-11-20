@@ -1,12 +1,13 @@
 <nav>
     <div>
-        <div class="navbar-start">
+        <div>
             Digital Bible Platform
         </div>
-        <div class="navbar-end">
+        <div>
             @if(Auth::user())
             <div>{{ Auth::user()->email }}</div>
             <a href="{{ route('admin.logout') }}">Log Out</a>
             @endif
         </div>
+    </div>
 </nav>
