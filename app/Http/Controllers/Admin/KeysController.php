@@ -13,10 +13,6 @@ class KeysController extends APIController
         if ($request->method() !== 'POST') {
             return view('v4.admin.request_key');
         }
-
-        $email = checkParam('email');
-        $password = checkParam('password');
-
         $rules = [
             'name' => 'required|string',
             'email' => 'required|email',
