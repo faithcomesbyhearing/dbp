@@ -15,44 +15,50 @@
 @endsection
 
 @section('content')
-<form id="key_request" method="POST" action="{{ route('admin.key.request') }}">
-    <h2>Request your API key</h2>
-    <div>
-        <label for="name">Name</label>
-        <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus placeholder="Type your name...">
-        @if($errors->has('name')) <p>{{ $errors->first('name') }}</p> @endif
+<div class="second-bg">
+    <div class="card request-card">
+        <p class="card-header request-title">Request your API Key</p>
+        <form id="key_request" method="POST" action="{{ route('admin.key.request') }}">
+            <div class="col input-request">
+                <label for="name">Name</label>
+                <input class="input no-icon-input" id="name" type="text" name="name" value="{{ old('name') }}" required autofocus placeholder="Type your name...">
+                @if($errors->has('name')) <p>{{ $errors->first('name') }}</p> @endif
+            </div>
+            <div class="col input-request">
+                <label for="email">E-mail Address</label>
+                <input class="input no-icon-input" id="email" type="text" autocomplete="email" name="email" value="{{ old('email') }}" required placeholder="Type your e-mail address...">
+                @if($errors->has('email')) <p>{{ $errors->first('email') }}</p> @endif
+            </div>
+            <div class="col input-request">
+                <label for="intention">How will you use the key?</label>
+                <textarea class="input no-icon-input" id="intention" type="text" name="intention" required placeholder="Please describe how the key will be user, include any relevant URL's">{{ old('intention') }}</textarea>
+                @if($errors->has('intention')) <p>{{ $errors->first('intention') }}</p> @endif
+            </div>
+            <div class="col input-request last">
+                <label for="questions">Do you have any comments or questions?</label>
+                <textarea class="input no-icon-input" id="questions" type="text" name="questions" placeholder="Please describe...">{{ old('questions') }}</textarea>
+                @if($errors->has('questions')) <p>{{ $errors->first('questions') }}</p> @endif
+            </div>
+            <div class="input-request checkbox">
+                <input id="agreement" name="agreement" type="checkbox" {{ old('agreement') ? 'checked' : '' }} required>
+                <label for="agreement">I have read and agreed to the <a href="javascript:showAgreement(true);">DBP License Agreement</a></label>
+                @if($errors->has('agreement')) <p>{{ $errors->first('agreement') }}</p> @endif
+            </div>
+            <div class="col input-request">
+                <button class="btn btn-success btn-request" type="submit">Submit</button>
+            </div>
+            <input name="_token" value="{{ csrf_token() }}" type="hidden" />
+        </form>
     </div>
-    <div>
-        <label for="email">E-mail Address</label>
-        <input id="email" type="text" autocomplete="email" name="email" value="{{ old('email') }}" required placeholder="Type your e-mail address...">
-        @if($errors->has('email')) <p>{{ $errors->first('email') }}</p> @endif
-    </div>
-    <div>
-        <label for="intention">How will you use the key?</label>
-        <textarea id="intention" type="text" name="intention" required placeholder="Please describe how the key will be user, include any relevant URL's">{{ old('intention') }}</textarea>
-        @if($errors->has('intention')) <p>{{ $errors->first('intention') }}</p> @endif
-    </div>
-    <div>
-        <label for="questions">Do you have any comments or questions?</label>
-        <textarea id="questions" type="text" name="questions" placeholder="Please describe...">{{ old('questions') }}</textarea>
-        @if($errors->has('questions')) <p>{{ $errors->first('questions') }}</p> @endif
-    </div>
-    <div>
-        <input id="agreement" name="agreement" type="checkbox" {{ old('agreement') ? 'checked' : '' }} required>
-        <label for="agreement">Please read and agree to the <a href="javascript:showAgreement(true);">DBP License Agreement</a></label>
-        @if($errors->has('agreement')) <p>{{ $errors->first('agreement') }}</p> @endif
-    </div>
-    <div>
-        <button type="submit">Submit</button>
-    </div>
-    <input name="_token" value="{{ csrf_token() }}" type="hidden" />
-</form>
+</div>
 
-<div id="agreement_modal" style="background-color: white; position:fixed; width: 100%; top:0px; bottom: 0px; overflow:auto; display:none">
-    <div style=" padding: 30px;">
-        <button onclick="showAgreement(false);">X</button>
-        <h1>Digital Bible Platform End-User License Agreement</h1>
-        <div>
+<div class="modal-container" id="agreement_modal" >
+    <div class="card agreement-modal">
+        <div class="agreement-header">
+            <a href="#" class="close" onclick="showAgreement(false);"></a>
+            <p class="card-header agreement-title">Digital Bible Platform End-User License Agreement</p>
+        </div>
+        <div class="agreement-content">
             <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. </p>
 
             <p>Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis. Sed convallis tristique sem. Proin ut ligula vel nunc egestas porttitor. Morbi lectus risus, iaculis vel, suscipit quis, luctus non, massa. Fusce ac turpis quis ligula lacinia aliquet. </p>
@@ -63,7 +69,7 @@
 
             <p>Integer lacinia sollicitudin massa. Cras metus. Sed aliquet risus a tortor. Integer id quam. Morbi mi. Quisque nisl felis, venenatis tristique, dignissim in, ultrices sit amet, augue. Proin sodales libero eget ante. Nulla quam. Aenean laoreet. Vestibulum nisi lectus, commodo ac, facilisis ac, ultricies eu, pede. Ut orci risus, accumsan porttitor, cursus quis, aliquet eget, justo. Sed pretium blandit orci. </p>
         </div>
-        <button onclick="acceptAgreement();">I Agree</button>
+        <button class="btn btn-success agreement-btn" onclick="acceptAgreement();">I Agree</button>
     </div>
 </div>
 @endsection

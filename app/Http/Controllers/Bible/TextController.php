@@ -106,7 +106,7 @@ class TextController extends APIController
         if ($access_blocked) {
             return $access_blocked;
         }
-
+  
         $cache_params = [$asset_id, $fileset_id, $book_id, $chapter, $verse_start, $verse_end];
         $verses = cacheRemember('bible_text', $cache_params, now()->addDay(), function () use ($fileset, $bible, $book, $chapter, $verse_start, $verse_end) {
             return BibleVerse::withVernacularMetaData($bible)
@@ -138,7 +138,8 @@ class TextController extends APIController
                     'glyph_end.glyph as verse_end_vernacular',
                 ])->get();
         });
-
+        echo json_encode($verses);
+        die();
         return $this->reply(fractal($verses, new TextTransformer(), $this->serializer));
     }
 
