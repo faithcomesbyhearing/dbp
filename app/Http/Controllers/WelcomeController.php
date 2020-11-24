@@ -9,11 +9,6 @@ class WelcomeController extends APIController
         return view('welcome');
     }
 
-    public function overview()
-    {
-        return view('about.overview');
-    }
-
     // Legal
 
     public function legal()
@@ -34,22 +29,5 @@ class WelcomeController extends APIController
     public function eula()
     {
         return view('about.legal.eula');
-    }
-
-    // about
-
-    public function relations()
-    {
-        return view('about.relations');
-    }
-
-    public function join()
-    {
-        return view('about.joining_user');
-    }
-
-    public function partnering()
-    {
-        return view('about.partnering');
     }
 }

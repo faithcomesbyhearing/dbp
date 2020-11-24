@@ -38,7 +38,6 @@
             <p>The DBP is made possible by strong partnerships between Hosanna/Faith Comes By Hearing , Bible Agencies and Bible Cause donors. The DBP’s Application Programming Interface (API) allows approved USERS (you) to integrate its database of rich Bible content with your software, applications, and/or websites. These services are free to use and available to approved users.</p>
 
         </section>
-        {{--
                 <section class="box">
 
                     Ownership
@@ -79,7 +78,6 @@
                     Indemnification
                     You agree to defend, indemnify and hold harmless Hosanna/Faith Comes By Hearing (and its wholly owned subsidiaries, its officers, directors, employees and agents) from and against any third party claims, actions or demands (including, without limitation, costs, damages and reasonable legal and accounting fees) alleging or resulting from or in connection with your use of the DBP and its Content, or your breach of this Agreement. Hosanna/Faith Comes By Hearing shall use reasonable efforts to provide you prompt notice of any such claim, suit, or proceeding and may assist you, at your expense, in defending any such claim.
         </section>
-        --}}
     </div>
 
 @endsection
