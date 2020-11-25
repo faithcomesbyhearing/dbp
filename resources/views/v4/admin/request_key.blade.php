@@ -28,9 +28,9 @@
         @if($errors->has('email')) <p>{{ $errors->first('email') }}</p> @endif
     </div>
     <div>
-        <label for="intention">How will you use the key?</label>
-        <textarea id="intention" type="text" name="intention" required placeholder="Please describe how the key will be user, include any relevant URL's">{{ old('intention') }}</textarea>
-        @if($errors->has('intention')) <p>{{ $errors->first('intention') }}</p> @endif
+        <label for="description">How will you use the key?</label>
+        <textarea id="description" type="text" name="description" required placeholder="Please describe how the key will be user, include any relevant URL's">{{ old('description') }}</textarea>
+        @if($errors->has('description')) <p>{{ $errors->first('description') }}</p> @endif
     </div>
     <div>
         <label for="questions">Do you have any comments or questions?</label>
