@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\APIController;
+use App\Models\User\KeyRequest as UserKeyRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -16,7 +17,7 @@ class KeysController extends APIController
         $rules = [
             'name' => 'required|string',
             'email' => 'required|email',
-            'intention' => 'required|string',
+            'description' => 'required|string',
             'question' => 'string',
             'agreement' => 'required',
         ];
@@ -29,7 +30,9 @@ class KeysController extends APIController
                 ->withInput();
         }
 
-        // TODO on 2606 store data on the DB
+        $key_request = UserKeyRequest::make(request()->all());
+        $key_request->generateKey();
+        $key_request->save();
         return redirect()->to(route('admin.key.requested'));
     }
     public function requested()
