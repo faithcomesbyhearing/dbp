@@ -103,11 +103,6 @@ hr {
   margin: 1.5rem 0;
 }
 
-img {
-  height: auto;
-  max-width: 100%;
-}
-
 input[type="checkbox"],
 input[type="radio"] {
   vertical-align: baseline;
@@ -4433,7 +4428,7 @@ a.has-text-danger:focus {
 .request-title {
   text-align: center;
   margin-bottom: 9%;
-  font-size: 2vmax;
+  font-size: 2rem;
 }
 
 .input-row {
@@ -4521,9 +4516,22 @@ textarea {
   letter-spacing: 0.4px;
 }
 
+.btn-link {
+  text-align: center;
+  line-height: 25px;
+  height: 25px;
+}
+
 .btn-request {
   width: 85%;
   margin: 5% 0;
+}
+
+.btn-requested {
+  width: 40%;
+  margin: 10% auto;
+  font-size: 1.6vh;
+  min-width: 160px;
 }
 
 .btn-cancel {
@@ -4535,7 +4543,6 @@ textarea {
 
   font-weight: 400;
   letter-spacing: 0.4px;
-  height: 28px;
 }
 
 .agreement-btn {
@@ -4643,6 +4650,10 @@ textarea {
   padding: 2% 12%;
 }
 
+.congrats-content {
+  padding: 2% 14%;
+}
+
 .agreement-modal {
   background: #fff;
   height: 85vh;
@@ -4676,4 +4687,13 @@ textarea {
 }
 .close:after {
   transform: rotate(-45deg);
+}
+
+.center {
+  text-align: center;
+}
+
+.congrats-img {
+  width: 20%;
+  margin-bottom: 5%;
 }
