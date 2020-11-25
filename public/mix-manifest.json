@@ -1,7 +1,7 @@
 {
   "/js/app.js": "/js/app.js",
   "/css/app.css": "/css/app.css",
-  "/css/v4_app.css": "/css/v4_app.css",
+  "/css/app_api_key.css": "/css/app_api_key.css",
   "/js/docs.js": "/js/docs.js",
   "/js/bulma.js": "/js/bulma.js"
 }

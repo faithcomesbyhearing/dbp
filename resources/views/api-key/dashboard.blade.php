@@ -1,4 +1,4 @@
-@extends('v4.layouts.app')
+@extends('layouts.app-api-key')
 
 @section('head')
 <title>{{ $user->name }}'s Dashboard</title>

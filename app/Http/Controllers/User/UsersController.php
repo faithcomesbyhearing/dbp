@@ -713,9 +713,9 @@ class UsersController extends APIController
     {
         if (!$this->api && $request->method() !== 'POST') {
             if (!Auth::guest()) {
-                return redirect()->to(route('admin.dashboard'));
+                return redirect()->to(route('api-key.dashboard'));
             }
-            return view('v4.admin.login');
+            return view('api-key.login');
         }
 
         $email = checkParam('email');
@@ -730,12 +730,12 @@ class UsersController extends APIController
         }
 
         Auth::login($user, true);
-        return redirect()->to(route('admin.dashboard'));
+        return redirect()->to(route('api-key.dashboard'));
     }
 
     public function adminLogout()
     {
         Auth::logout();
-        return redirect()->to(route('admin.login'));
+        return redirect()->to(route('api-key.login'));
     }
 }

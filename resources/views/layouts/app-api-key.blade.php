@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta property="og:site_name" content="{{ trans('app.site_name') }}" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,900" rel="stylesheet">
-    <link rel="stylesheet" href="{{ mix('css/v4_app.css') }}" />
+    <link rel="stylesheet" href="{{ mix('css/app_api_key.css') }}" />
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
     @if(env('APP_DEBUG') == 'true')
     <link rel="shortcut icon" href="/favicon_test.ico" type="image/x-icon">
@@ -23,7 +23,7 @@
 </head>
 
 <body>
-    @include('v4.layouts.partials.nav', [
+    @include('layouts.partials.nav-api-key', [
         'image'     => '/images/dbp_icon_v4.svg',
         'image_text'     => trans('app.site_name'),
     ])

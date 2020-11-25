@@ -73,6 +73,14 @@ Localization::localizedRoutesGroup(function () {
     Route::name('wiki_bibles.one')->get('/wiki/bibles/{id}', 'WikiController@bible');
     Route::name('wiki_bibles.all')->get('/wiki/bibles',      'WikiController@bibles');
 
+    Route::name('api-key.login')->match(['get', 'post'], 'api-key/login', 'User\UsersController@adminLogin');
+    Route::name('api-key.logout')->get('/api-key/logout', 'User\UsersController@adminLogout');
+    Route::name('api-key.dashboard')->get('/api-key/dashboard', 'Api_key\DashboardController@home');
+    Route::name('api-key.request')->match(['get', 'post'], '/api-key/request', 'Api_key\KeysController@request');
+    Route::name('api-key.requested')->get('/api-key/requested', 'Api_key\KeysController@requested');
+    Route::name('api-key.dashboard')->get('/api-key/dashboard', 'User\Dashboard\DashboardController@adminHome');
+
+
     // Public Routes
     Route::group(['middleware' => ['web']], function () {
         Route::name('validate.index')->get('/validate',                                  'ValidateController@index');

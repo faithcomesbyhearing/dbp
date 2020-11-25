@@ -1,11 +1,11 @@
-@extends('v4.layouts.app')
+@extends('layouts.app-api-key')
 @section('head')
 <title>Login</title>
 @endsection
 
 @section('content')
 <div class="card">
-    <form method="POST" action="{{ route('admin.login') }}">
+    <form method="POST" action="{{ route('api-key.login') }}">
         <p class="card-header">Authentication Required</p>
         <p class = "card-subtitle">The server https://dbp.com/admin requires a username 
             <br> and password</p>

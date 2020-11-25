@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api_key;
 
 use App\Http\Controllers\APIController;
 use Illuminate\Http\Request;
@@ -11,7 +11,7 @@ class KeysController extends APIController
     public function request(Request $request)
     {
         if ($request->method() !== 'POST') {
-            return view('v4.admin.request_key');
+            return view('api-key.request_key');
         }
         $rules = [
             'name' => 'required|string',
@@ -30,10 +30,10 @@ class KeysController extends APIController
         }
 
         // TODO on 2606 store data on the DB
-        return redirect()->to(route('admin.key.requested'));
+        return redirect()->to(route('api-key.requested'));
     }
     public function requested()
     {
-        return view('v4.admin.requested_key');
+        return view('api-key.requested_key');
     }
 }
