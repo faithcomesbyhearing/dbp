@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api_key;
 
 use App\Http\Controllers\APIController;
+use App\Models\User\KeyRequest as UserKeyRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -14,22 +15,24 @@ class KeysController extends APIController
             return view('api-key.request_key');
         }
         $rules = [
-            'name' => 'required|string',
-            'email' => 'required|email',
-            'intention' => 'required|string',
-            'question' => 'string',
-            'agreement' => 'required',
-        ];
+      'name' => 'required|string',
+      'email' => 'required|email',
+      'description' => 'required|string',
+      'question' => 'string',
+      'agreement' => 'required'
+    ];
 
         $validator = Validator::make(request()->all(), $rules);
         if ($validator->fails()) {
             return redirect()
-                ->back()
-                ->withErrors($validator)
-                ->withInput();
+        ->back()
+        ->withErrors($validator)
+        ->withInput();
         }
 
-        // TODO on 2606 store data on the DB
+        $key_request = UserKeyRequest::make(request()->all());
+        $key_request->generateKey();
+        $key_request->save();
         return redirect()->to(route('api-key.requested'));
     }
     public function requested()
