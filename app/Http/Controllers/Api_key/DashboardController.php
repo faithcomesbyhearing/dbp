@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api_key;
 
 use App\Http\Controllers\APIController;
 use Auth;
@@ -21,6 +21,6 @@ class DashboardController extends APIController
     public function home()
     {
         $user = Auth::user() ?? $this->user;
-        return view('v4.admin.dashboard', compact('user'));
+        return view('api-key.dashboard', compact('user'));
     }
 }

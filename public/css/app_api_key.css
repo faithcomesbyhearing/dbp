@@ -4535,9 +4535,7 @@ textarea {
 
   font-weight: 400;
   letter-spacing: 0.4px;
-}
-
-.btn-close {
+  height: 28px;
 }
 
 .agreement-btn {

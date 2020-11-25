@@ -138,8 +138,7 @@ class TextController extends APIController
                     'glyph_end.glyph as verse_end_vernacular',
                 ])->get();
         });
-        echo json_encode($verses);
-        die();
+
         return $this->reply(fractal($verses, new TextTransformer(), $this->serializer));
     }
 
