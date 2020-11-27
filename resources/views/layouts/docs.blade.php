@@ -40,7 +40,7 @@
 <div id="footer-wrap">
 	<div id="footer">
 		<div id="footer-logo">
-			<a href="/"><img src="/site/wp-content/themes/dbp/images/footer-logo.png" alt="The Digital Bible Platform" /></a>
+			<a href="/"><img src="/images/footer-logo.png" alt="The Digital Bible Platform" /></a>
 		</div>
 		<div id="copyrights">
 			<p>

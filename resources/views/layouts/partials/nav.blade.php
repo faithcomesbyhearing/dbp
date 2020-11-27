@@ -6,7 +6,7 @@
 <nav class="navbar ">
     <div id="header" class="navbar-brand">
         <div id="logo">
-					<a href="/"><img src="/site/wp-content/themes/dbp/images/logo.svg" style="height:44px; fill:#ca4316;" onerror="this.onerror=null; this.src='logo.png'" alt="The Digital Bible Platform" /></a>
+					<a href="/"><img src="/images/logo.svg" style="height:44px; fill:#ca4316;" onerror="this.onerror=null; this.src='logo.png'" alt="The Digital Bible Platform" /></a>
 		</div>
 			<div id="nav">
 				<ul>
