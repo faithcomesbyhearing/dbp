@@ -21,19 +21,12 @@ Localization::localizedRoutesGroup(function () {
 
     // Legal Overview
     // site note: the API license doc will contain a link the license agreement. This route needs to match the link in the document
-    Route::get('/about/legal', 'WelcomeController@legal')->name('legal');
-
-    // Legal | Eula Page
-    Route::get('/about/eula', 'WelcomeController@eula')->name('eula');
-
-    // Legal | License Page
-    Route::get('/about/license', 'WelcomeController@license')->name('license');
-
-    // Legal | Privacy Policy
-    Route::get('/about/privacy-policy', 'WelcomeController@privacyPolicy')->name('privacy_policy');
+    Route::get('/about/legal', 'WelcomeController@legal')->name('legal_overview');
+    Route::get('/about/license', 'WelcomeController@license')->name('legal_license');
+    Route::get('/about/terms', 'WelcomeController@terms')->name('legal_terms');    
+    Route::get('/privacy', 'WelcomeController@privacyPolicy')->name('privacy_policy'); // send it directly to FCBH site
 
     Route::get('/about/contact', 'User\ContactController@create')->name('contact.create');
-    Route::post('/about/contact', 'User\ContactController@store')->name('contact.store');
 
     // About
     Route::get('/organizations', 'Organization\OrganizationsController@index')->name('organizations.index');

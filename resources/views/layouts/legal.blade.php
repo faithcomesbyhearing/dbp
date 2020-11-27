@@ -21,15 +21,15 @@
 		<div id="developer">
             <div id="wrap">
                 <div class="subnav">
-                     <li class="page_item page-item-1888"><a href="{{ route('core_concepts')}}">Core Concepts</a></li>
-                     <li class="page_item"><a href="{{ route('available_content')}}">Available Content</a></li>              
-                     <li class="page_item"><a href="{{ route('api_reference')}}">API Reference</a></li>    
-                     <li class="page_item"><a href="{{ route('user_flows')}}">User Flows</a></li>      
+                     <li class="page_item"><a href="{{ route('legal_overview')}}">Overview</a></li>
+                     <li class="page_item"><a href="{{ route('legal_license')}}">License</a></li>              
+                     <li class="page_item"><a href="{{ route('legal_terms')}}">Terms & Conditions</a></li>    
+                     <li class="page_item"><a href="{{ route('privacy_policy')}}">Privacy Policy</a></li>      
                 </div>
-                <div class="dev-docs">
-                    @yield('docs-content')
+                <div class="legal">
+                    @yield('legal-content')
 					<div class="clear"></div>
-                </div> <!-- end dev-docs -->
+                </div> <!-- end legal -->
             </div> <!-- end wrap -->
         </div>
     </div>
@@ -56,7 +56,7 @@
 	    			<a href="mailto:support@digitalbibleplatform.com">Support</a>
 				</li>
 				<li>
-					<a href="https://www.faithcomesbyhearing.com/privacy-policy">Privacy Policy</a>
+				<a href="{{ route('privacy_policy')}}">Privacy Policy</a>
 				</li>	
 			</ul>
 		</div>

@@ -10,16 +10,16 @@
     <meta property="og:site_name" content="{{ trans('app.site_name') }}" />
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
 
-    <link rel="stylesheet" href="css/style.css" type="text/css" media="screen, print" />
-    <link rel="stylesheet" type="text/css" media="print" href="css/print.css" />
+    <link rel="stylesheet" href="/css/style.css" type="text/css" media="screen, print" />
+    <link rel="stylesheet" type="text/css" media="print" href="/css/print.css" />
     <link rel="shortcut icon" href="/favicon.ico" />
-    <link rel='stylesheet' id='dataTable-css'  href='css/dataTable.css' type='text/css' media='all' />
-    <link rel='stylesheet' id='bibles-common-css'  href='css/bibles-common.css?ver=4.0.1' type='text/css' media='all' />
-    <link rel='stylesheet' id='load-mask-css'  href='css/jquery.loadmask.css?ver=4.0.1' type='text/css' media='all' />
-    <link rel='stylesheet' id='facebox-css'  href='css/facebox.css?ver=4.0.1' type='text/css' media='all' />
-    <link rel='stylesheet' id='divbox-css'  href='css/divbox.css?ver=4.0.1' type='text/css' media='all' />
-    <link rel='stylesheet' id='uploadprogressbar-css'  href='css/uploadprogressbar.css?ver=4.0.1' type='text/css' media='all' />
-    <link rel='stylesheet' id='nyroModal-css'  href='css/nyroModal.css?ver=4.0.1' type='text/css' media='all' />
+    <link rel='stylesheet' id='dataTable-css'  href='/css/dataTable.css' type='text/css' media='all' />
+    <link rel='stylesheet' id='bibles-common-css'  href='/css/bibles-common.css?ver=4.0.1' type='text/css' media='all' />
+    <link rel='stylesheet' id='load-mask-css'  href='/css/jquery.loadmask.css?ver=4.0.1' type='text/css' media='all' />
+    <link rel='stylesheet' id='facebox-css'  href='/css/facebox.css?ver=4.0.1' type='text/css' media='all' />
+    <link rel='stylesheet' id='divbox-css'  href='/css/divbox.css?ver=4.0.1' type='text/css' media='all' />
+    <link rel='stylesheet' id='uploadprogressbar-css'  href='/css/uploadprogressbar.css?ver=4.0.1' type='text/css' media='all' />
+    <link rel='stylesheet' id='nyroModal-css'  href='/css/nyroModal.css?ver=4.0.1' type='text/css' media='all' />
 
 <!--
     These appear to be tied to Wordpress; unsure if they are needed
@@ -82,6 +82,6 @@
 
 <script src="{{ mix('js/app.js') }}"></script>
 <script src="{{ mix('js/bulma.js') }}"></script>
-{{-- @yield('footer') --}}
+@yield('footer')
 </body>
 </html>
