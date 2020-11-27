@@ -29,7 +29,7 @@
             
         <div class="row login-btns">
             <button class="btn btn-success" type="submit">Log In</button>
-            <a class="btn btn-cancel" href="{{ route('welcome') }}">Cancel</a>
+            <a class="btn btn-cancel btn-link" href="{{ route('welcome') }}">Cancel</a>
         </div>
         <input name="_token" value="{{ csrf_token() }}" type="hidden" />
     </form>
