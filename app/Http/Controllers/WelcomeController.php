@@ -26,8 +26,8 @@ class WelcomeController extends APIController
         return view('about.legal.privacy_policy');
     }
 
-    public function eula()
+    public function terms()
     {
-        return view('about.legal.eula');
+        return view('about.legal.terms');
     }
 }

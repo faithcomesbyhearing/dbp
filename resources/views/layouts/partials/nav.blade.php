@@ -3,8 +3,7 @@
     this is the main shell definition  for site navigation
 
 --}}
-<nav class="navbar ">
-    <div id="header" class="navbar-brand">
+    <div id="header" class="user">
         <div id="logo">
 					<a href="/"><img src="/images/logo.svg" style="height:44px; fill:#ca4316;" onerror="this.onerror=null; this.src='logo.png'" alt="The Digital Bible Platform" /></a>
 		</div>
@@ -23,5 +22,4 @@
                                         					
 				</ul>
 			</div>    
-	</div>
-</nav>
+	</div><!--end header-->
