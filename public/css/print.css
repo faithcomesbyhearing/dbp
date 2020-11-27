@@ -1,0 +1,6 @@
+body { background: white; }
+
+/* SECTIONS */
+#content { width: auto; border: 0; background: white; }
+#content #main { width: auto; padding: 0; border: 0; float: none !important; color: black; background: transparent; }
+#footer { display: none; }
