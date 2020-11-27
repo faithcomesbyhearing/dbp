@@ -16,7 +16,8 @@
 Localization::localizedRoutesGroup(function () {
 
     // Homepage Route
-    Route::get('/', 'WelcomeController@welcome')->name('welcome');
+    //Route::get('/', 'WelcomeController@welcome')->name('welcome');
+    Route::name('docs')->get('/', 'User\DocsController@index');
 
     // Legal Overview
     // site note: the API license doc will contain a link the license agreement. This route needs to match the link in the document
