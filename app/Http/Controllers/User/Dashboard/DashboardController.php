@@ -7,7 +7,6 @@ use Auth;
 
 class DashboardController extends APIController
 {
-
     /**
      * Create a new controller instance.
      *
@@ -27,6 +26,6 @@ class DashboardController extends APIController
     public function adminHome()
     {
         $user = Auth::user() ?? $this->user;
-        return view('api-key.dashboard', compact('user'));
+        return view('api_key.dashboard', compact('user'));
     }
 }
