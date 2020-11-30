@@ -55,7 +55,7 @@ class User extends Authenticatable
 
     protected $connection = 'dbp_users';
     protected $table     = 'users';
-    protected $fillable  = ['id','v2_id','name', 'first_name', 'last_name', 'created_at', 'updated_at', 'last_login', 'email', 'password', 'activated', 'token', 'notes', 'signup_ip_address', 'signup_confirmation_ip_address', 'signup_sm_ip_address', 'admin_ip_address', 'updated_ip_address', 'deleted_ip_address', 'freshchat_restore_id'];
+    protected $fillable  = ['id', 'v2_id', 'name', 'first_name', 'last_name', 'created_at', 'updated_at', 'last_login', 'email', 'password', 'activated', 'token', 'notes', 'signup_ip_address', 'signup_confirmation_ip_address', 'signup_sm_ip_address', 'admin_ip_address', 'updated_ip_address', 'deleted_ip_address', 'freshchat_restore_id'];
     protected $hidden    = ['password', 'remember_token', 'activated', 'token'];
     protected $dates     = ['deleted_at'];
 
@@ -256,9 +256,14 @@ class User extends Authenticatable
         return $this->hasOne(Role::class)->where('name', 'archivist')->where('organization_id', $id);
     }
 
+    public function roles()
+    {
+        return $this->hasManyThrough(Role::class, RoleUser::class, 'user_id', 'id', 'id', 'role_id');
+    }
+
     public function role($role = null, $organization = null)
     {
-        return $this->hasOne(Role::class)->where('role_id', $role)->when($organization, function ($q) use ($organization) {
+        return $this->hasOne(RoleUser::class)->where('role_id', $role)->when($organization, function ($q) use ($organization) {
             $q->where('organization_id', '=', $organization);
         });
     }

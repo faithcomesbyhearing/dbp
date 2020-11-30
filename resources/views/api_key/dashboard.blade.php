@@ -6,10 +6,11 @@
 
 @section('content')
 
-@if($user->projectMembers->where('role_id',2)->first())
-<p>You are an admin</p>
+@if($user->roles->where('slug','admin')->first())
+<h2>Key Management</h2>
 @else
 <p>You are not an admin</p>
 @endif
+
 
 @endsection
