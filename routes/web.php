@@ -134,33 +134,6 @@ Localization::localizedRoutesGroup(function () {
   );
     Route::name('wiki_bibles.all')->get('/wiki/bibles', 'WikiController@bibles');
 
-    Route::name('api_key.login')->match(
-    ['get', 'post'],
-    'api_key/login',
-    'User\UsersController@adminLogin'
-  );
-    Route::name('api_key.logout')->get(
-    '/api_key/logout',
-    'User\UsersController@adminLogout'
-  );
-    Route::name('api_key.dashboard')->get(
-    '/api_key/dashboard',
-    'ApiKey\DashboardController@home'
-  );
-    Route::name('api_key.request')->match(
-    ['get', 'post'],
-    '/api_key/request',
-    'ApiKey\KeysController@request'
-  );
-    Route::name('api_key.requested')->get(
-    '/api_key/requested',
-    'ApiKey\KeysController@requested'
-  );
-    Route::name('api_key.dashboard')->get(
-    '/api_key/dashboard',
-    'User\Dashboard\DashboardController@adminHome'
-  );
-
     // Public Routes
     Route::group(['middleware' => ['web']], function () {
         Route::name('validate.index')->get('/validate', 'ValidateController@index');
@@ -379,3 +352,10 @@ Route::name('status')->get(
   '/status/cache',
   'ApiMetadataController@getCacheStatus'
 );
+
+
+Route::name('api_key.login')->match(['get', 'post'], 'api_key/login', 'User\UsersController@adminLogin');
+Route::name('api_key.logout')->get('/api_key/logout', 'User\UsersController@adminLogout');
+Route::name('api_key.dashboard')->get('/api_key/dashboard', 'ApiKey\DashboardController@home');
+Route::name('api_key.request')->match(['get', 'post'], '/api_key/request', 'ApiKey\KeysController@request');
+Route::name('api_key.requested')->get('/api_key/requested', 'ApiKey\KeysController@requested');
