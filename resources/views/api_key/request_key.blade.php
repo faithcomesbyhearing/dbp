@@ -18,7 +18,7 @@
 <div class="second-bg">
     <div class="card request-card">
         <p class="card-header request-title">Request your API Key</p>
-        <form id="key_request" method="POST" action="{{ route('api-key.request') }}">
+        <form id="key_request" method="POST" action="{{ route('api_key.request') }}">
             <div class="col input-request">
                 <label for="name">Name</label>
                 <input class="input no-icon-input" id="name" type="text" name="name" value="{{ old('name') }}" required autofocus placeholder="Type your name...">

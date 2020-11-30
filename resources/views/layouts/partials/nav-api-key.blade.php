@@ -9,7 +9,7 @@
         <i class="fa fa-user circle-icon" aria-hidden="true"></i>
         <div>
           <div class='user-email'>{{ Auth::user()->email }}</div>
-          <a class="logout-a" href="{{ route('api-key.logout') }}">Log Out</a>
+          <a class="logout-a" href="{{ route('api_key.logout') }}">Log Out</a>
         </div>
     </div>
     @endif

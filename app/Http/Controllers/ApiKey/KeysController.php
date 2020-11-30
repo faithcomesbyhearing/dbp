@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api_key;
+namespace App\Http\Controllers\ApiKey;
 
 use App\Http\Controllers\APIController;
 use App\Models\User\KeyRequest as UserKeyRequest;
@@ -12,7 +12,7 @@ class KeysController extends APIController
     public function request(Request $request)
     {
         if ($request->method() !== 'POST') {
-            return view('api-key.request_key');
+            return view('api_key.request_key');
         }
         $rules = [
       'name' => 'required|string',
@@ -33,10 +33,10 @@ class KeysController extends APIController
         $key_request = UserKeyRequest::make(request()->all());
         $key_request->generateKey();
         $key_request->save();
-        return redirect()->to(route('api-key.requested'));
+        return redirect()->to(route('api_key.requested'));
     }
     public function requested()
     {
-        return view('api-key.requested_key');
+        return view('api_key.requested_key');
     }
 }
