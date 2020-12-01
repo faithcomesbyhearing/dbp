@@ -157,3 +157,4 @@ Route::name('api_key.logout')->get('/api_key/logout', 'User\UsersController@admi
 Route::name('api_key.dashboard')->get('/api_key/dashboard', 'ApiKey\DashboardController@home');
 Route::name('api_key.request')->match(['get', 'post'], '/api_key/request', 'ApiKey\KeysController@request');
 Route::name('api_key.requested')->get('/api_key/requested', 'ApiKey\KeysController@requested');
+Route::name('api_key.send_email')->post('/api_key/send_email', 'ApiKey\DashboardController@sendEmail');
