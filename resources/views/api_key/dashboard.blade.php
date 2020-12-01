@@ -8,22 +8,21 @@
         console.log(id, state);
     }
 
-    function addNote(id, note) {
-        showModal(true);
-        console.log(id, note);
-    }
-
-    function showEmailForm(id, email) {
-        $("#email_error").css('display', 'none');
-        $("#email_error").html('');
-        $("#to_email").val(email);
-        $("#subject").val("Your API Key request for Digital Bible Platform");
-        $("#email_modal").data('id', id);
-        $("#email_modal").css('display', 'flex');
-    }
-
     $(document).ready(function() {
         var loading = false;
+        var keys = <?php echo json_encode(collect($key_requests->items())->mapWithKeys(function ($item) {
+    return [$item['id'] => $item];
+})) ?>;
+        $(".email_row").click(function(e) {
+            var id = $(this).data('id');
+            var email = keys[id].email;
+            $("#email_error").css('display', 'none');
+            $("#email_error").html('');
+            $("#to_email").val(email);
+            $("#subject").val("Your API Key request for Digital Bible Platform");
+            $("#email_modal").data('id', id);
+            $("#email_modal").css('display', 'flex');
+        });
 
         $("#button_send_email").click(function(e) {
             e.preventDefault();
@@ -68,6 +67,85 @@
                 });
             }
         });
+
+        $(".note_row").click(function(e) {
+            e.preventDefault();
+            var id = $(this).data('id');
+            var note = keys[parseInt(id)].notes;
+            var info = $(this).data('info');
+
+            $("#note_error, #note_info").css('display', 'none');
+            $("#note_error, #note_info").html('');
+            $("#button_save_note").data('id', id);
+
+            if (note) {
+                $("#note_modal h3").html('Revise a note');
+                $("#note_content").attr('disabled', true);
+                $("#note_content").val(note);
+                $("#button_save_note").val('OK');
+                $("#button_save_note").data('isNew', false);
+            } else {
+                if (info) {
+                    $("#note_info").show();
+                    $("#note_info").html(info);
+                }
+                $("#note_modal h3").html('Add a note');
+                $("#note_content").val('{{date("m/d/Y", time())}}\n');
+                $("#note_content").attr('disabled', false);
+                $("#button_save_note").val('Save');
+                $("#button_save_note").data('isNew', true);
+            }
+            $("#note_modal").css('display', 'flex');
+        });
+
+        $("#button_save_note").click(function(e) {
+            e.preventDefault();
+            var id = $("#button_save_note").data('id');
+            var isNew = $("#button_save_note").data('isNew');
+            if (!isNew) {
+                $("#note_modal").hide();
+                return;
+            }
+
+            var note = $("#note_content").val();
+            $("#note_error").html('');
+            if (!id || !note) {
+                $("#note_error").html('Please add a note');
+                $("#note_error").show();
+            } else {
+                loading = true;
+                $("#note_modal input, #note_modal textarea").attr('disabled', true);
+                $("#button_save_note").val('Saving...');
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+                var formData = {
+                    id: id,
+                    note: note,
+                };
+                $.ajax({
+                    type: "POST",
+                    url: "{{route('api_key.save_note')}}",
+                    data: formData,
+                    dataType: 'json',
+                    success: function(data) {
+                        keys[data.id] = data;
+                        $("#note-" + data.id).html(data.notes);
+                        resetNoteFields();
+                        $("#note_modal").hide();
+                    },
+                    error: function(xhr) {
+                        resetNoteFields();
+                        var error = JSON.parse(xhr.responseText);
+                        $("#note_error").html(error.error.message ? error.error.message : 'An error happened, please try again later');
+                        $("#note_error").show();
+                    }
+                });
+            }
+        });
+
         $(".close_modal").click(function(e) {
             e.preventDefault();
             if (!loading) {
@@ -79,6 +157,12 @@
             loading = false;
             $("#email_modal input, #email_modal textarea").attr('disabled', false);
             $("#button_send_email").val('Send');
+        }
+
+        function resetNoteFields() {
+            loading = false;
+            $("#note_modal input, #note_modal textarea").attr('disabled', false);
+            $("#button_save_note").val('Save');
         }
     });
 </script>
@@ -97,6 +181,10 @@
     .dashboard_modal .field_error {
         display: none;
         color: red;
+    }
+
+    .note_row {
+        cursor: pointer;
     }
 </style>
 @endsection
@@ -119,7 +207,6 @@
         </form>
     </div>
     @if(!$key_requests->isEmpty())
-
     <table>
         <thead>
             <tr>
@@ -138,14 +225,11 @@
             <tr>
                 <td>{{ $key_request->created_at }}</th>
                 <td>{{ $key_request->name }}</td>
-                <td><button onclick="showEmailForm({{ $key_request->id }},'{{$key_request->email}}')">{{ $key_request->email }}</button></td>
+                <td><a href="#" class="email_row" data-id="{{ $key_request->id }}">{{ $key_request->email }}</a></td>
                 <td>{{ $key_request->description }}</td>
                 <td>{{ $key_request->questions }}</td>
-                <td>@if($key_request->notes)
-                    {{$key_request->notes}}
-                    @else
-                    <button onclick="addNote({{ $key_request->id }},'{{$key_request->notes}}')">Add note</button>
-                    @endif
+                <td>
+                    <div id="note-{{$key_request->id}}" data-id="{{$key_request->id}}" class="note_row">{{ $key_request->notes ?? 'Add a note' }}</div>
                 </td>
                 <td>{{ $key_request->temporary_key }}</td>
                 <td>
@@ -187,6 +271,20 @@
             <textarea id="email_message" name="email_message" required>Hi! Your API Key...</textarea>
         </div>
         <input id="button_send_email" type="button" value="Send" />
+    </div>
+</div>
+
+<div class="dashboard_modal" id="note_modal">
+    <div class="card">
+        <div>
+            <h3></h3><a class="close_modal" href="#">X</a>
+        </div>
+        <p class="field_error" id="note_error"></p>
+        <p id="note_info"></p>
+        <div>
+            <textarea id="note_content" required></textarea>
+        </div>
+        <input id="button_save_note" type="button" value="Save" />
     </div>
 </div>
 

@@ -158,3 +158,4 @@ Route::name('api_key.dashboard')->get('/api_key/dashboard', 'ApiKey\DashboardCon
 Route::name('api_key.request')->match(['get', 'post'], '/api_key/request', 'ApiKey\KeysController@request');
 Route::name('api_key.requested')->get('/api_key/requested', 'ApiKey\KeysController@requested');
 Route::name('api_key.send_email')->post('/api_key/send_email', 'ApiKey\DashboardController@sendEmail');
+Route::name('api_key.save_note')->post('/api_key/save_note', 'ApiKey\DashboardController@saveNote');
