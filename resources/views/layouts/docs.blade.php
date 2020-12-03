@@ -72,7 +72,7 @@
                    <a href="http://faithcomesbyhearing.com" target="_blank">© 2020 Faith Comes By Hearing</a>
                 </li>
                 <li>
-                  <a href="/eula">Terms &amp; Conditions</a>
+                  <a href="{{ route('legal_terms') }}">Terms &amp; Conditions</a>
                 </li>
                 <li>
                   <a href="mailto:support@digitalbibleplatform.com">Support</a>

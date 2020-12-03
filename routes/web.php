@@ -23,7 +23,7 @@ Localization::localizedRoutesGroup(function () {
     // site note: the API license doc will contain a link the license agreement. This route needs to match the link in the document
     Route::get('/about/legal', 'WelcomeController@legal')->name('legal_overview');
     Route::get('/about/license', 'WelcomeController@license')->name('legal_license');
-    Route::get('/about/terms', 'WelcomeController@terms')->name('legal_terms');    
+    Route::get('/terms', 'WelcomeController@terms')->name('legal_terms');    
     Route::get('/privacy', 'WelcomeController@privacyPolicy')->name('privacy_policy'); // send it directly to FCBH site
     
     
