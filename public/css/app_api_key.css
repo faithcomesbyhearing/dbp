@@ -144,6 +144,12 @@ table td,
 table th {
   text-align: left;
   vertical-align: top;
+  width: 26vmax;
+  height: 2vmax;
+  border-bottom: solid thin #d1d1d1;
+  padding: 1% 2%;
+  white-space: nowrap;
+  margin-right: 50px;
 }
 
 table th {
@@ -2689,6 +2695,7 @@ a.has-text-danger:focus {
   list-style: disc outside;
   margin-left: 2em;
   margin-top: 1em;
+  padding-inline-start: 40px;
 }
 
 .content ul ul {
@@ -4697,4 +4704,89 @@ textarea {
 .congrats-img {
   width: 20%;
   margin-bottom: 5%;
+}
+
+.dashboard_modal {
+  display: none;
+  background-color: #34343488;
+  position: fixed;
+  z-index: 2;
+  width: 100%;
+  top: 0px;
+  bottom: 0px;
+  overflow: hidden;
+}
+
+.dashboard_modal .field_error {
+  display: none;
+  color: red;
+}
+
+.note_row {
+  cursor: pointer;
+}
+
+.dashboard-title {
+  margin: 1vmax 0 1vmax 4%;
+}
+
+.dashboard-card {
+  background: linear-gradient(180deg, #dfe6ed 4vmax, #fff 0%);
+  -webkit-box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1),
+    0 0 0 1px rgba(10, 10, 10, 0.1);
+  box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
+  color: #313131;
+  width: 92%;
+  height: 500px;
+  position: relative;
+  margin: auto;
+  padding: 1.2% 0 1.5% 0;
+  overflow: scroll;
+}
+
+.key-table {
+  border-spacing: 0px 0.2vmax;
+}
+
+.key-filter {
+  margin: 0 1.8vmax 1.2vmax;
+  white-space: nowrap;
+}
+
+.search-filter {
+  margin-left: 4%;
+}
+
+.pagination {
+  display: flex;
+  flex-direction: row;
+  text-align: center;
+  margin-left: 4%;
+}
+
+.pagination .page-item {
+  padding: 1.2% 2.4%;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  border: 0.4vmax solid #fff;
+  background-color: #fff;
+}
+
+.pagination .page-item.active {
+  background-color: #f7f9fa;
+  color: #695df5;
+}
+
+.pagination a:hover:not(.active) {
+  background-color: #ddd;
+}
+
+.pagination ul {
+  padding-inline-start: 0;
+  list-style-type: none;
+  margin-block-start: 0.6em;
+  margin-block-end: 0.6em;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
 }

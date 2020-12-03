@@ -1,7 +1,6 @@
 @extends('layouts.app-api-key')
 
 @section('head')
-<title>{{ $user->name }}'s Dashboard</title>
 <script>
     function changeItemState(id, state) {
         showModal(true);
@@ -10,9 +9,11 @@
 
     $(document).ready(function() {
         var loading = false;
-        var keys = <?php echo json_encode(collect($key_requests->items())->mapWithKeys(function ($item) {
-    return [$item['id'] => $item];
-})) ?>;
+        var keys = <?php echo json_encode(
+          collect($key_requests->items())->mapWithKeys(function ($item) {
+              return [$item['id'] => $item];
+          })
+        ); ?>;
         $(".email_row").click(function(e) {
             var id = $(this).data('id');
             var email = keys[id].email;
@@ -166,48 +167,25 @@
         }
     });
 </script>
-<style>
-    .dashboard_modal {
-        display: none;
-        background-color: #34343488;
-        position: fixed;
-        z-index: 2;
-        width: 100%;
-        top: 0px;
-        bottom: 0px;
-        overflow: hidden;
-    }
-
-    .dashboard_modal .field_error {
-        display: none;
-        color: red;
-    }
-
-    .note_row {
-        cursor: pointer;
-    }
-</style>
 @endsection
 
-@section('content')
-<div style="margin-top:100px">
-    @if($user->roles->where('slug','admin')->first())
-    <h2>Key Management</h2>
-    <div>
+@section('content') 
+<h2 class="dashboard-title">Key Management</h2>
+<div class="dashboard-card">
+    <div class="key-filter">
         <form method="GET" action="{{ route('api_key.dashboard') }}">
             <label for="state_filter">Filter By State</label>
             <select name="state" id="state_filter" onchange="this.form.submit()">
-                <option value=""></option>
                 @foreach($options as $option)
                 <option value="{{$option['value']}}" {{$option['selected'] ? 'selected':''  }}>{{$option['name']}}</option>
                 @endforeach
             </select>
-            <label for="search_filter">Search</label>
+            <label class="search-filter" for="search_filter">Search</label>
             <input type="text" name="search" id="search_filter" placeholder="Filter by name, email or key" value="{{ $search }}" />
         </form>
     </div>
     @if(!$key_requests->isEmpty())
-    <table>
+    <table class="key-table">
         <thead>
             <tr>
                 <th scope="col">Data Requested</th>
@@ -222,7 +200,7 @@
         </thead>
         <tbody>
             @foreach($key_requests as $key_request)
-            <tr>
+            <tr >
                 <td>{{ $key_request->created_at }}</th>
                 <td>{{ $key_request->name }}</td>
                 <td><a href="#" class="email_row" data-id="{{ $key_request->id }}">{{ $key_request->email }}</a></td>
@@ -243,16 +221,13 @@
             @endforeach
         </tbody>
     </table>
-    <div>
-        {{ $key_requests->appends(['state' => $state,'search' => $search])->links() }}
-    </div>
-
     @else
     <p>Empty Results</p>
     @endif
-    @else
-    <p>You are not an admin</p>
-    @endif
+</div>
+
+<div class="pagination">
+    {{$key_requests->appends(['state' => $state,'search' => $search])->links()}}
 </div>
 
 <div class="dashboard_modal" id="email_modal">
