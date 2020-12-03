@@ -3,6 +3,6 @@
 @section('docs-content')
 <!-- docs Content Area -->
 <div class="col-9 content-column">
-Put Core Concepts here
+Glossary goes here
 </div>
 @endsection
