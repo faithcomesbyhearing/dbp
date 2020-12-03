@@ -231,21 +231,22 @@
 </div>
 
 <div class="dashboard_modal" id="email_modal">
-    <div class="card">
-        <div>
-            <h3>Send E-mail</h3><a class="close_modal" href="#">X</a>
-        </div>
+    <div class="card email-card">
+        <a class="close_modal close" href="#"></a>
+        <p class="card-header email-title">Send E-mail</p>
         <p class="field_error" id="email_error"></p>
-        <div>
-            <label for="to_email">To</label><input id="to_email" name="to_email" type="text" value="" required />
+        <div class="row input-request">
+            <label class="email-label" for="to_email">To</label>
+            <input class="input email-input" id="to_email" name="to_email" type="text" value="" required />
         </div>
-        <div>
-            <label for="subject">Subject</label><input id="subject" name="subject" type="text" value="" required />
+        <div class="row input-request">
+            <label class="email-label" for="subject">Subject</label>
+            <input class="input email-input" id="subject" name="subject" type="text" value="" required />
         </div>
-        <div>
-            <textarea id="email_message" name="email_message" required>Hi! Your API Key...</textarea>
+        <div class="row input-request">
+            <textarea class="input email-input comment" id="email_message" name="email_message" required>Hi! Your API Key...</textarea>
         </div>
-        <input id="button_send_email" type="button" value="Send" />
+        <input class="btn btn-success agreement-btn" id="button_send_email" type="button" value="Send" />
     </div>
 </div>
 

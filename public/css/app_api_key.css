@@ -4423,6 +4423,13 @@ a.has-text-danger:focus {
   background-color: #fff;
 }
 
+.email-card {
+  background-color: #f7f9fa;
+  padding: 1% 4% 0 4%;
+  width: 30%;
+  min-height: 32vh;
+}
+
 .card-header {
   margin: 0;
   font-size: 1.5rem;
@@ -4789,4 +4796,23 @@ textarea {
   margin-block-end: 0.6em;
   margin-inline-start: 0;
   margin-inline-end: 0;
+}
+
+.card-header.email-title {
+  margin-bottom: 8%;
+}
+
+.input-request .email-input {
+  padding-left: 4%;
+  width: 65%;
+}
+
+.input-request .email-label {
+  width: 20%;
+}
+
+.input.email-input.comment {
+  margin: auto;
+  width: 100%;
+  height: 8vmax;
 }
