@@ -21,7 +21,7 @@
     <div class="wrapper">
       <header>
         <nav class="navbar navbar-expand-lg">
-          <a class="navbar-brand" href="#"><img src="/images/dbp logo.png"></a>
+          <a class="navbar-brand" href="#"><img src="/images/dbp_logo.png"></a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
@@ -29,16 +29,10 @@
           <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
             <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
               <li class="nav-item active">
-                <a class="nav-link" href="{{ route('docs') }}">Developer Docs.1654</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">Radio Access</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">Sign Up</a>
+                <a class="nav-link" href="{{ route('docs') }}">Developer Docs</a>
               </li>
             </ul>
-            <button class="btn my-2 my-sm-0" type="submit">Log In</button>
+            <button class="btn my-2 my-sm-0" type="submit">Sign Up</button>
           </div>
         </nav>
       </header>
@@ -71,7 +65,7 @@
     <footer class="class="container-fluid"">
       <div class="container foot-wrapper">
         <div class="row">
-          <div class="col-6 footer-left"><a href="#"><img src="/images/dbp logo.png"></a></div>
+          <div class="col-6 footer-left"><a href="#"><img src="/images/dbp_logo.png"></a></div>
           <div class="col-6 footer-right">
               <ul>
                 <li>
