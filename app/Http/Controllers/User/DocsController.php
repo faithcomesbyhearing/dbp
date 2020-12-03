@@ -24,13 +24,17 @@ class DocsController extends APIController
     {
         return view('docs.routes.availableContent');
     }
-    public function apiReference()
-    {
-        return view('docs.routes.apiReference');
-    }
     public function userFlows()
     {
         return view('docs.routes.userFlows');
+    }
+    public function glossary()
+    {
+        return view('docs.routes.glossary');
+    }    
+    public function apiReference()
+    {
+        return view('docs.routes.apiReference');
     }
 
     public function start()

@@ -25,7 +25,8 @@ Localization::localizedRoutesGroup(function () {
     Route::get('/about/license', 'WelcomeController@license')->name('legal_license');
     Route::get('/about/terms', 'WelcomeController@terms')->name('legal_terms');    
     Route::get('/privacy', 'WelcomeController@privacyPolicy')->name('privacy_policy'); // send it directly to FCBH site
-
+    
+    
     Route::get('/about/contact', 'User\ContactController@create')->name('contact.create');
 
     // About
@@ -72,8 +73,9 @@ Localization::localizedRoutesGroup(function () {
         Route::name('docs')->get('docs', 'User\DocsController@index');
         Route::name('core_concepts')->get('docs/core-concepts', 'User\DocsController@coreConcepts');
         Route::name('available_content')->get('docs/available-content', 'User\DocsController@availableContent');
-        Route::name('api_reference')->get('docs/api-reference', 'User\DocsController@apiReference');
         Route::name('user_flows')->get('docs/user-flows', 'User\DocsController@userFlows');
+        Route::name('glossary')->get('docs/glossary', 'User\DocsController@glossary');
+        Route::name('api_reference')->get('docs/api-reference', 'User\DocsController@apiReference');
 
 
         Route::name('swagger')->get('docs/swagger/{version?}', 'User\DocsController@swagger');

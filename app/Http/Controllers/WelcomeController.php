@@ -23,7 +23,8 @@ class WelcomeController extends APIController
 
     public function privacyPolicy()
     {
-        return view('about.legal.privacy_policy');
+        //return view('about.legal.privacy_policy');
+        Redirect::to("https://www.faithcomesbyhearing.com/privacy-policy");
     }
 
     public function terms()
