@@ -21,13 +21,13 @@ class Handler extends ExceptionHandler
      * @var array
      */
     protected $dontReport = [
-        \Illuminate\Auth\AuthenticationException::class,
-        \Illuminate\Auth\Access\AuthorizationException::class,
-        \Symfony\Component\HttpKernel\Exception\HttpException::class,
-        \Illuminate\Database\Eloquent\ModelNotFoundException::class,
-        \Illuminate\Session\TokenMismatchException::class,
-        \Illuminate\Validation\ValidationException::class,
-    ];
+    \Illuminate\Auth\AuthenticationException::class,
+    \Illuminate\Auth\Access\AuthorizationException::class,
+    \Symfony\Component\HttpKernel\Exception\HttpException::class,
+    \Illuminate\Database\Eloquent\ModelNotFoundException::class,
+    \Illuminate\Session\TokenMismatchException::class,
+    \Illuminate\Validation\ValidationException::class
+  ];
 
     /**
      * Report or log an exception.
@@ -44,7 +44,9 @@ class Handler extends ExceptionHandler
         $enableEmailExceptions = config('exceptions.emailExceptionEnabled');
 
         if ($enableEmailExceptions === '') {
-            $enableEmailExceptions = config('exceptions.emailExceptionEnabledDefault');
+            $enableEmailExceptions = config(
+        'exceptions.emailExceptionEnabledDefault'
+      );
         }
 
         if ($enableEmailExceptions && $this->shouldReport($exception)) {
@@ -52,7 +54,12 @@ class Handler extends ExceptionHandler
         }
         $sentry_dsn = config('sentry.dsn');
 
-        if ($sentry_dsn && config('app.env') == 'production' && $this->shouldReport($exception) && app()->bound('sentry')) {
+        if (
+      $sentry_dsn &&
+      config('app.env') == 'production' &&
+      $this->shouldReport($exception) &&
+      app()->bound('sentry')
+    ) {
             app('sentry')->captureException($exception);
         }
 
@@ -80,7 +87,9 @@ class Handler extends ExceptionHandler
     {
         $exception = $this->prepareException($exception);
 
-        if ($exception instanceof \Illuminate\Http\Exception\HttpResponseException) {
+        if (
+      $exception instanceof \Illuminate\Http\Exception\HttpResponseException
+    ) {
             $exception = $exception->getResponse();
         }
 
@@ -92,7 +101,10 @@ class Handler extends ExceptionHandler
         }
 
         if ($exception instanceof \Illuminate\Validation\ValidationException) {
-            $exception = $this->convertValidationExceptionToResponse($exception, $request);
+            $exception = $this->convertValidationExceptionToResponse(
+        $exception,
+        $request
+      );
         }
 
         return $this->customApiResponse($exception);
@@ -116,7 +128,9 @@ class Handler extends ExceptionHandler
         $class = new ReflectionClass(new Response());
         $constants = array_flip($class->getConstants());
 
-        $response['type'] = $constants[$statusCode] ?? $constants[Response::HTTP_INTERNAL_SERVER_ERROR];
+        $response['type'] =
+      $constants[$statusCode] ??
+      $constants[Response::HTTP_INTERNAL_SERVER_ERROR];
 
         if ($statusCode === Response::HTTP_UNPROCESSABLE_ENTITY) {
             $message = $exception->getMessage();
@@ -145,9 +159,14 @@ class Handler extends ExceptionHandler
      *
      * @return \Illuminate\Http\Response
      */
-    protected function unauthenticated($request, AuthenticationException $exception)
-    {
-        if ($request->expectsJson() || $exception->api_response) {
+    protected function unauthenticated(
+    $request,
+    AuthenticationException $exception
+  ) {
+        if (
+      $request->expectsJson() ||
+      (isset($exception->api_response) && $exception->api_response)
+    ) {
             $response = [];
             $response['error'] = Response::$statusTexts[Response::HTTP_UNAUTHORIZED];
             if (config('app.debug')) {
@@ -157,8 +176,11 @@ class Handler extends ExceptionHandler
             $response['host_name'] = gethostname();
             return response()->json($response, Response::HTTP_UNAUTHORIZED);
         }
+        $route_keys = explode('/', $_SERVER['REQUEST_URI']);
+        $is_api_key_route = in_array('api_key', $route_keys);
+        $route_login = $is_api_key_route ? 'api_key.login' : 'login';
 
-        return redirect()->guest(route('login'));
+        return redirect()->guest(route($route_login));
     }
 
     /**
