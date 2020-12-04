@@ -17,15 +17,19 @@ Localization::localizedRoutesGroup(function () {
 
     // Homepage Route
     //Route::get('/', 'WelcomeController@welcome')->name('welcome');
-    Route::name('docs')->get('/', 'User\DocsController@index');
+    Route::name('home')->get('/', 'User\DocsController@index');
+
+    
+    Route::name('docs')->get('/docs', 'User\DocsController@index');
 
     // Legal Overview
     // site note: the API license doc will contain a link the license agreement. This route needs to match the link in the document
     Route::get('/about/legal', 'WelcomeController@legal')->name('legal_overview');
     Route::get('/about/license', 'WelcomeController@license')->name('legal_license');
-    Route::get('/about/terms', 'WelcomeController@terms')->name('legal_terms');    
+    Route::get('/terms', 'WelcomeController@terms')->name('legal_terms');    
     Route::get('/privacy', 'WelcomeController@privacyPolicy')->name('privacy_policy'); // send it directly to FCBH site
-
+    
+    
     Route::get('/about/contact', 'User\ContactController@create')->name('contact.create');
 
     // About
@@ -72,8 +76,9 @@ Localization::localizedRoutesGroup(function () {
         Route::name('docs')->get('docs', 'User\DocsController@index');
         Route::name('core_concepts')->get('docs/core-concepts', 'User\DocsController@coreConcepts');
         Route::name('available_content')->get('docs/available-content', 'User\DocsController@availableContent');
-        Route::name('api_reference')->get('docs/api-reference', 'User\DocsController@apiReference');
         Route::name('user_flows')->get('docs/user-flows', 'User\DocsController@userFlows');
+        Route::name('glossary')->get('docs/glossary', 'User\DocsController@glossary');
+        Route::name('api_reference')->get('docs/api-reference', 'User\DocsController@apiReference');
 
 
         Route::name('swagger')->get('docs/swagger/{version?}', 'User\DocsController@swagger');
