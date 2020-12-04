@@ -15,38 +15,25 @@
 
 Localization::localizedRoutesGroup(function () {
 
-  // Homepage Route
-    Route::get('/', 'WelcomeController@welcome')->name('welcome');
+    // Homepage Route
+    //Route::get('/', 'WelcomeController@welcome')->name('welcome');
+    Route::name('home')->get('/', 'User\DocsController@index');
 
-    // Overview Page
-    Route::get('/about/', 'WelcomeController@overview')->name('overview');
+    
+    Route::name('docs')->get('/docs', 'User\DocsController@index');
 
     // Legal Overview
-    Route::get('/about/legal', 'WelcomeController@legal')->name('legal');
-    Route::get('/acerca-de/legal', 'WelcomeController@legal')->name('es.legal')->localization('es');
-
-    // Legal | Eula Page
-    Route::get('/about/eula', 'WelcomeController@eula')->name('eula');
-    Route::get('/acerca-de/eula', 'WelcomeController@eula')->name('es.eula')->localization('es');
-
-    // Legal | License Page
-    Route::get('/about/license', 'WelcomeController@license')->name('license');
-    Route::get('/acerca-de/licencia', 'WelcomeController@license')->name('es.license')->localization('es');
-
-    // Legal | Privacy Policy
-    Route::get('/about/privacy-policy', 'WelcomeController@privacyPolicy')->name('privacy_policy');
-    Route::get('/acerca-de/politica-de-privacidad', 'WelcomeController@privacyPolicy')->name('es.privacy_policy')->localization('es');
-
+    // site note: the API license doc will contain a link the license agreement. This route needs to match the link in the document
+    Route::get('/about/legal', 'WelcomeController@legal')->name('legal_overview');
+    Route::get('/about/license', 'WelcomeController@license')->name('legal_license');
+    Route::get('/terms', 'WelcomeController@terms')->name('legal_terms');    
+    Route::get('/privacy', 'WelcomeController@privacyPolicy')->name('privacy_policy'); // send it directly to FCBH site
+    
+    
     Route::get('/about/contact', 'User\ContactController@create')->name('contact.create');
-    Route::post('/about/contact', 'User\ContactController@store')->name('contact.store');
 
     // About
-    Route::get('/about/relations', 'WelcomeController@relations')->name('relations');
     Route::get('/organizations', 'Organization\OrganizationsController@index')->name('organizations.index');
-
-    // About | Joining
-    Route::get('/about/join', 'WelcomeController@join')->name('about.join');
-    Route::get('/about/partnering', 'WelcomeController@partnering')->name('about.partnering');
 
     // Reader
     Route::get('/reader', 'Bible\ReaderController@languages')->name('reader.languages');
@@ -87,11 +74,15 @@ Localization::localizedRoutesGroup(function () {
 
         // Docs Routes
         Route::name('docs')->get('docs', 'User\DocsController@index');
+        Route::name('core_concepts')->get('docs/core-concepts', 'User\DocsController@coreConcepts');
+        Route::name('available_content')->get('docs/available-content', 'User\DocsController@availableContent');
+        Route::name('user_flows')->get('docs/user-flows', 'User\DocsController@userFlows');
+        Route::name('glossary')->get('docs/glossary', 'User\DocsController@glossary');
+        Route::name('api_reference')->get('docs/api-reference', 'User\DocsController@apiReference');
+
+
         Route::name('swagger')->get('docs/swagger/{version?}', 'User\DocsController@swagger');
-        Route::name('history')->get('docs/history', 'User\DocsController@history');
-        Route::name('docs.sdk')->get('sdk', 'User\DocsController@sdk');
         Route::name('docs.getting_started')->get('guides/getting-started', 'User\DocsController@start');
-        Route::name('docs_team')->get('docs/team', 'User\DocsController@team');
         Route::name('docs_bible_equivalents')->get('docs/bibles/equivalents', 'User\DocsController@bibleEquivalents');
         Route::name('docs_bible_books')->get('docs/bibles/books', 'User\DocsController@books');
         Route::name('docs_bibles')->get('docs/bibles', 'User\DocsController@bibles');
@@ -100,12 +91,9 @@ Localization::localizedRoutesGroup(function () {
         Route::name('docs_languages')->get('docs/languages', 'User\DocsController@languages');
         Route::name('docs_countries')->get('docs/countries', 'User\DocsController@countries');
         Route::name('docs_alphabets')->get('docs/alphabets', 'User\DocsController@alphabets');
-        Route::name('docs_analysis')->get('docs/code-analysis', 'User\DocsController@codeAnalysis');
 
         // Docs Generator Routes
         Route::name('swagger_docs_gen')->get('open-api-{version}.json',          'User\SwaggerDocsController@swaggerDocsGen');
-        Route::name('swagger_database')->get('docs/swagger/database',            'User\SwaggerDocsController@swaggerDatabase');
-        Route::name('swagger_database_model')->get('docs/swagger/database/{id}', 'User\SwaggerDocsController@swaggerDatabase_model');
 
         // Activation Routes
         Route::name('projects.connect')->get('/connect/{token}', 'Organization\ProjectsController@connect');
