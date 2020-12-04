@@ -16,12 +16,13 @@
     
     
     <title>Digital Bible Platform</title>
+    @yield('head')
   </head>
   <body>
     <div class="wrapper">
       <header>
         <nav class="navbar navbar-expand-lg">
-          <a class="navbar-brand" href="{{ route('home') }}"><img src="/images/dbp_logo.png"></a>
+          <a class="navbar-brand" href="{{ route('welcome') }}"><img src="/images/dbp_logo.png"></a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
@@ -32,7 +33,15 @@
                 <a class="nav-link" href="{{ route('docs') }}">Developer Docs</a>
               </li>
             </ul>
+            @if(Auth::user())
+            <li class="nav-item active">
+              {{ Auth::user()->email }}
+            </li>                 
+            <a class="logout-a" href="{{ route('api_key.logout') }}">Log Out</a>
+            
+          @else
             <button class="btn my-2 my-sm-0" type="submit">Sign Up</button>
+          @endif
           </div>
         </nav>
       </header>
@@ -60,7 +69,7 @@
     <footer class="class="container-fluid"">
       <div class="container foot-wrapper">
         <div class="row">
-          <div class="col-6 footer-left"><a href="{{ route('home') }}"><img src="/images/dbp_logo.png"></a></div>
+          <div class="col-6 footer-left"><a href="{{ route('welcome') }}"><img src="/images/dbp_logo.png"></a></div>
           <div class="col-6 footer-right">
               <ul>
                 <li>

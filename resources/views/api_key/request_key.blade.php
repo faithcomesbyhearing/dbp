@@ -1,4 +1,4 @@
-@extends('layouts.app-api-key')
+@extends('layouts.apiKey')
 @section('head')
 <title>Request your API key</title>
 <script>
@@ -12,6 +12,7 @@
         document.getElementById("agreement").checked = true;
     }
 </script>
+<link rel="stylesheet" href="{{ mix('css/app_api_key.css') }}" />
 @endsection
 
 @section('content')
@@ -56,7 +57,7 @@
     <div class="card agreement-modal">
         <div class="agreement-header">
             <a href="#" class="close" onclick="showAgreement(false);"></a>
-            <p class="card-header agreement-title">Digital Bible Platform End-User License Agreement</p>
+            <p class="card-header agreement-title">Digital Bible Platform License Agreement</p>
         </div>
         <div class="agreement-content">
             <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. </p>
