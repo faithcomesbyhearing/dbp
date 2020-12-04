@@ -18,10 +18,12 @@ class DashboardController extends APIController
     public function __construct()
     {
         parent::__construct();
+        $this->middleware('auth');
     }
 
     public function home()
     {
+        $user = Auth::user() ?? $this->user;
         $search = checkParam('search');
         $state = checkParam('state');
         $page = checkParam('page');
@@ -52,6 +54,10 @@ class DashboardController extends APIController
 
     public function sendEmail()
     {
+        if (!$this->isAdmin()) {
+            return $this->setStatusCode(403)->replyWithError('Unauthorized');
+        }
+
         $rules = [
       'id' => 'required',
       'email' => 'required|email',
@@ -80,6 +86,10 @@ class DashboardController extends APIController
 
     public function saveNote()
     {
+        if (!$this->isAdmin()) {
+            return $this->setStatusCode(403)->replyWithError('Unauthorized');
+        }
+
         $rules = [
       'id' => 'required',
       'note' => 'required|string'
