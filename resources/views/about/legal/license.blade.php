@@ -1,6 +1,6 @@
 @extends('layouts.legal')
 
-@section('legal-content')
+@section('content')
 
 API license agreement goes here
 

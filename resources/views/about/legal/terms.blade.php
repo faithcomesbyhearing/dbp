@@ -2,6 +2,6 @@
 
 
 
-@section('legal-content')
+@section('content')
 Terms & Conditions go here
 @endsection

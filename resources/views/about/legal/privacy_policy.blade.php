@@ -1,9 +1,5 @@
 @extends('layouts.legal')
 
-@section('legal-content')
-
-
-Privacy policy is governed by parent organization FCBH: <a href="https://www.faithcomesbyhearing.com/privacy-policy">Privacy Policy</a>
-
-
+@section('content')
+Privacy policy is governed by parent organization FCBH: <a href="https://www.faithcomesbyhearing.com/privacy-policy" target="_blank">Privacy Policy</a>
 @endsection
