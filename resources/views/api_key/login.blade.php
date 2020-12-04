@@ -1,4 +1,4 @@
-@extends('layouts.app-api-key')
+@extends('layouts.apiKey')
 @section('head')
 <title>Login</title>
 @endsection
@@ -7,8 +7,6 @@
 <div class="card">
     <form method="POST" action="{{ route('api_key.login') }}">
         <p class="card-header">Authentication Required</p>
-        <p class = "card-subtitle">The server https://dbp.com/admin requires a username 
-            <br> and password</p>
             @if($errors->has('auth.failed'))
                 <div>{{ $errors->first('auth.failed') }}</div>
             @endif

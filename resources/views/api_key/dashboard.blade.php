@@ -1,4 +1,4 @@
-@extends('layouts.app-api-key')
+@extends('layouts.apiKey')
 
 @section('head')
 <script>
@@ -10,10 +10,10 @@
     $(document).ready(function() {
         var loading = false;
         var keys = <?php echo json_encode(
-          collect($key_requests->items())->mapWithKeys(function ($item) {
+    collect($key_requests->items())->mapWithKeys(function ($item) {
               return [$item['id'] => $item];
           })
-        ); ?>;
+); ?>;
         $(".email_row").click(function(e) {
             var id = $(this).data('id');
             var email = keys[id].email;
@@ -167,6 +167,7 @@
         }
     });
 </script>
+<link rel="stylesheet" href="{{ mix('css/app_api_key.css') }}" />
 @endsection
 
 @section('content') 
