@@ -31,7 +31,7 @@ class DocsController extends APIController
     public function glossary()
     {
         return view('docs.routes.glossary');
-    }    
+    }
     public function apiReference()
     {
         return view('docs.routes.apiReference');
