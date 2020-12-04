@@ -106,7 +106,7 @@ class TextController extends APIController
         if ($access_blocked) {
             return $access_blocked;
         }
-
+  
         $cache_params = [$asset_id, $fileset_id, $book_id, $chapter, $verse_start, $verse_end];
         $verses = cacheRemember('bible_text', $cache_params, now()->addDay(), function () use ($fileset, $bible, $book, $chapter, $verse_start, $verse_end) {
             return BibleVerse::withVernacularMetaData($bible)

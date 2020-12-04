@@ -63,7 +63,7 @@
 
             <div class="row">
               <div class="col-8"><p class="txt-subtitle">Before you begin building with the DBP you’ll need to ensure you have an API Key.</p></div>
-              <div class="col-4"><a href="#" class="btn btn-lg">Get Your API Key</a></div>
+              <div class="col-4"><a href="{{ route('api_key.request') }}" class="btn btn-lg">Get Your API Key</a></div>
             </div>
 
 
