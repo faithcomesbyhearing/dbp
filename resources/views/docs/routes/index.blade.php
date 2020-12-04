@@ -1,6 +1,6 @@
 @extends('layouts.docs')
      
-@section('docs-content')
+@section('content')
           <!-- Right Content Area -->
           <div class="col-9 content-column">
             <h2>Developer Documentation</h2>
