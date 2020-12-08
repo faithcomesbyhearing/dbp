@@ -23,22 +23,22 @@ class APIController extends Controller
     /**
      * @OA\Info(
      *     description="A Bible API",
-     *     version="3.0.0",
+     *     version="4.0-beta",
      *     title="Digital Bible Platform",
-     *     termsOfService="http://dbp4.org/terms/",
-     *     @OA\Contact(email="jon@dbs.org"),
+     *     termsOfService="http://digitalbibleplatform/terms/",
+     *     @OA\Contact(email="support@digitalbibleplatform.com"),
      *     @OA\License(name="Apache 2.0",url="http://www.apache.org/licenses/LICENSE-2.0.html")
      * )
      *
      * @OA\Server(
      *     url=API_URL_DOCS,
-     *     description="Live Server",
+     *     description="Production Server",
      *     @OA\ServerVariable( serverVariable="schema", enum={"https"}, default="https")
      * )
      *
      * @OA\Server(
-     *     url="https://dbp.test/api",
-     *     description="Development server",
+     *     url="TBD",
+     *     description="Postman Mock server",
      *     @OA\ServerVariable( serverVariable="schema", enum={"https"}, default="https")
      * )
      *
@@ -58,7 +58,8 @@ class APIController extends Controller
      * @OA\Parameter(name="page",  in="query", description="The current page of the results", @OA\Schema(type="integer",default=1))
      * @OA\Parameter(name="sort_by", in="query", description="The field to sort by", @OA\Schema(type="string"))
      * @OA\Parameter(name="sort_dir", in="query", description="The direction to sort by", @OA\Schema(type="string",enum={"asc","desc"}))
-     * @OA\Parameter(name="l10n", in="query", description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route", @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
+     * @OA\Parameter(name="l10n", in="query", description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route",
+     *      @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
      *
      */
 
@@ -136,9 +137,9 @@ class APIController extends Controller
      *     )
      * )
      * @OA\Tag(name="Bibles",          description="v4 Routes for obtaining Bibles Data")
-     * @OA\Tag(name="Users",           description="v4 Routes for obtaining Users Data")
-     * @OA\Tag(name="Playlists",       description="v4 Routes for obtaining Playlists Data")
-     * @OA\Tag(name="Plans",           description="v4 Routes for obtaining Plans Data")
+     * @OA\Tag(name="Users",           description="v4_internal Routes for obtaining Users Data")
+     * @OA\Tag(name="Playlists",       description="v4_internal Routes for obtaining Playlists Data")
+     * @OA\Tag(name="Plans",           description="v4_internal Routes for obtaining Plans Data")
      *
      */
 

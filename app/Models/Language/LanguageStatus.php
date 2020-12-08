@@ -38,6 +38,7 @@ class LanguageStatus extends Model
      * @OA\Property(
      *   title="id",
      *   type="string",
+     *   example="0",
      *   description="The id for the language status",
      *   minimum=0
      * )
@@ -50,6 +51,7 @@ class LanguageStatus extends Model
      * @OA\Property(
      *   title="title",
      *   type="string",
+     *   example="International",
      *   description="The title"
      * )
      *
@@ -61,6 +63,7 @@ class LanguageStatus extends Model
      * @OA\Property(
      *   title="description",
      *   type="string",
+     *   example="The language is widely used between nations in trade, knowledge exchange, and international policy.",
      *   description="The description"
      * )
      *

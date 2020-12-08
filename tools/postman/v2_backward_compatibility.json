@@ -1,0 +1,2132 @@
+{
+  "info": {
+    "_postman_id": "0a0af4e5-a4c3-49e5-9c7e-571dc9b81cd4",
+    "name": "v2 backward compatibility",
+    "description": "Ensure that current DBP2 users can access their endpoints without disruption after the underlying server is updated to DBP4. ",
+    "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Priority Group 1",
+      "item": [
+        {
+          "name": "audio/location",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "36c7541e-e0ba-4092-94d5-f26f65d84057",
+                "exec": [
+                  "pm.variables.set(\"ignoreV2Keys\", \"true\")"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "222b1fb0-9d1a-42bc-897c-f9c814be4e17",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audio/location?v={{version}}&key={{key}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audio",
+                "location"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                }
+              ]
+            },
+            "description": "note that audio/location will return a different CDN location, so do not evaluate values"
+          },
+          "response": []
+        },
+        {
+          "name": "audio/path",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "8db1a23e-0e40-4a9f-8fbb-326ffcb69a1e",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "d4e8e62a-0b64-46e8-b359-4a34c53ddf7a",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "ae571ef9-5d79-42cc-a983-51bd16d0d7cc",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audio/path?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audio",
+                "path"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentAudioDamId}}"
+                },
+                {
+                  "key": "book_id",
+                  "value": "{{newTestamentBook}}"
+                },
+                {
+                  "key": "chapter_id",
+                  "value": "1"
+                },
+                {
+                  "key": "book_id",
+                  "value": "Ps",
+                  "disabled": true
+                },
+                {
+                  "key": "dam_id",
+                  "value": "ENGKJVO1DA",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Note: audio/path has trouble with book_id = \"Ps.\"\n(Reference SimplySwift typical usage)\ndam_id: ENGKJVO1DA\nbook_id: Ps.\nresponse size is 21.23KB regardless of whether book_id is provided\n\nIf book_id is \"Ps\", it returns the correct info\nsolution on DBP4 is to strip the dot. The osis_id for Psalms is \"Ps\""
+          },
+          "response": []
+        },
+        {
+          "name": "library/book",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "6ac099b5-fd59-47a6-bfdc-328bd8c86b25",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "933930f4-ade5-4c4a-a4ca-977e9141bcaf",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "001f6e62-6516-4958-bb7b-654dcaaabd67",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/book?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&language_code={{languageCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "book"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentAudioDamId}}"
+                },
+                {
+                  "key": "language_code",
+                  "value": "{{languageCode}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/verse",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "5efef6a4-a965-47a4-8655-6f0fa5073156",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "1156b6ab-4bd5-4889-b4c9-bb3e08d1ae13",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "79f0907f-b0fb-4431-899b-78f25b8b31da",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "verse"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentTextDamId}}"
+                },
+                {
+                  "key": "book_id",
+                  "value": "{{newTestamentBook}}"
+                },
+                {
+                  "key": "chapter_id",
+                  "value": "1"
+                },
+                {
+                  "key": "verse_start",
+                  "value": "1"
+                },
+                {
+                  "key": "verse_end",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/volume",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "e83ce6b4-1587-4dd3-b970-ed585fcfef70",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "48624492-0981-499b-84a8-40214689b786",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "af13bfaf-e960-440f-9b19-baa12c3e8978",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/volume?v={{version}}&key={{key}}&media=audio&language_code={{languageCode}}&delivery=web",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "volume"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "media",
+                  "value": "audio"
+                },
+                {
+                  "key": "language_code",
+                  "value": "{{languageCode}}"
+                },
+                {
+                  "key": "media",
+                  "value": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "delivery",
+                  "value": "web"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/volumelanguagefamily",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "9b97538b-3ea7-43eb-9293-487ad1d76f43",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "d1be076e-80df-4e39-a055-937ba206feb2",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "da0f2aac-99bd-4700-9066-00c07e098571",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/volumelanguagefamily?v={{version}}&key={{key}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "volumelanguagefamily"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "delivery",
+                  "value": "mobile",
+                  "disabled": true
+                },
+                {
+                  "key": "rich",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "_postman_id": "8cc9ce92-9337-4e10-9e93-373463d50349",
+      "description": "Priority Group 1 represents the most frequently used DBP2 endpoints, as measured for the trailing 12 months (roughly Sept 2019 to Sept 2020)"
+    },
+    {
+      "name": "Priority Group 2",
+      "item": [
+        {
+          "name": "text/verse",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "d1793629-7b53-4856-8964-cfe0846c7f53",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "388b5f0a-f5c6-42de-b15f-956523978530",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "7332601f-3beb-4a18-a2ca-ea0d9f7f6cfe",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/text/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "text",
+                "verse"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentTextDamId}}"
+                },
+                {
+                  "key": "book_id",
+                  "value": "{{newTestamentBook}}"
+                },
+                {
+                  "key": "chapter_id",
+                  "value": "1"
+                },
+                {
+                  "key": "verse_start",
+                  "value": "1"
+                },
+                {
+                  "key": "verse_end",
+                  "value": "3"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/chapter",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "b8fa4810-f4a1-43c8-acda-0360ccacea6e",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "ddb71c47-7dc8-4f0e-bf92-cf38501ad463",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "abe6564b-9b7b-4079-9b2d-189fbbba3031",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/chapter?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "chapter"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}",
+                  "type": "text"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}",
+                  "type": "text"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentAudioDamId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "book_id",
+                  "value": "{{newTestamentBook}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "text/search",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "eb206c20-c158-470c-892e-7ebdc6be055d",
+                "exec": [
+                  "pm.variables.set(\"ignoreV2Keys\", \"true\")"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "1e656d2e-7237-48ee-a241-d42fd092c531",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "89db8fdb-8506-4880-ad4a-15ef2d523614",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/text/search?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&query=Saul&page=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "text",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentTextDamId}}"
+                },
+                {
+                  "key": "query",
+                  "value": "Saul"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/bookname",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "19b7e4fc-d272-499d-bf0e-abef9cecbba6",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "2b6c3cd0-1d4e-4225-a2f1-d83f8e23a359",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "fc36f4c5-b182-46a5-87b4-257627802d5f",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/bookname?v={{version}}&key={{key}}&organization_id=225&language_code={{languageCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "bookname"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "organization_id",
+                  "value": "225"
+                },
+                {
+                  "key": "language_code",
+                  "value": "{{languageCode}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/volumelanguage",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "cb06c7dc-b028-41e3-a3d8-2af52ee82446",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "9d7d6306-5a20-43ec-b334-3ec08b9d7f75",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "edd6b007-cf5c-48bb-bb90-103d059e9d4a",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/volumelanguage?v={{version}}&key={{key}}&language_code={{languageCode}}&media=text&delivery=web",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "volumelanguage"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "language_code",
+                  "value": "{{languageCode}}",
+                  "type": "text"
+                },
+                {
+                  "key": "media",
+                  "value": "text",
+                  "type": "text"
+                },
+                {
+                  "key": "delivery",
+                  "value": "web",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "_postman_id": "c06b7c37-f85e-4901-bf16-666949e6f915"
+    },
+    {
+      "name": "Priority Group 3",
+      "item": [
+        {
+          "name": "library/bookorder",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "7e1668e2-2659-4235-a94a-af7ad534d9e8",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "8d1a82d0-71f6-4a0a-ad5f-e06dc8fa4959",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "80ee2c9e-2dd6-492e-9e8d-d047622af6a5",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/bookorder?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "bookorder"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}",
+                  "type": "text"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}",
+                  "type": "text"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentTextDamId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "book_id",
+                  "value": "{{newTestamentBook}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/metadata",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "99702230-3e6c-414b-a237-4c4639d12256",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "9a860fe1-6633-45b8-970d-e69393a18db6",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "320eacad-a06d-4bc5-9590-aa5366b8ba82",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/metadata?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "metadata"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentAudioDamId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "audio/versestart",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "4a3d62bc-b341-4b5b-977e-8874760b2f6d",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "c6519851-7d16-492f-a87b-1666bccc9ed3",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "0b36cf14-48fd-4f2a-ace8-a194a3dbceef",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audio/versestart?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&chapter_number=1&osis_code=Mark",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audio",
+                "versestart"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentAudioDamId}}"
+                },
+                {
+                  "key": "chapter_number",
+                  "value": "1"
+                },
+                {
+                  "key": "osis_code",
+                  "value": "Mark"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "country/countrylang",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "e48d5ed5-5140-4763-9e17-a33f51849379",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "843c9289-2dbf-46ab-a3c6-367d57d5b41a",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "dedf0d9d-a407-4aa4-82c7-a79a924882f8",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/country/countrylang?v={{version}}&key={{key}}&lang_code={{languageCode}}&country_code=US",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "country",
+                "countrylang"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}",
+                  "type": "text"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}",
+                  "type": "text"
+                },
+                {
+                  "key": "lang_code",
+                  "value": "{{languageCode}}",
+                  "type": "text"
+                },
+                {
+                  "key": "country_code",
+                  "value": "US",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/verseinfo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "252ca96f-cc44-478c-a5fc-f85c8b56dc86",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "39cfb725-71d4-4252-84f8-06b3df895795",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "75412f15-4a60-4e0a-b289-ed627719bcf9",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "verseinfo"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentTextDamId}}"
+                },
+                {
+                  "key": "book_id",
+                  "value": "{{newTestamentBook}}"
+                },
+                {
+                  "key": "chapter_id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "_postman_id": "450fb79b-2ac0-4297-a426-63cc07a3cb92"
+    },
+    {
+      "name": "Priority Group 4",
+      "item": [
+        {
+          "name": "text/verseinfo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "6ff03429-c699-45f4-864b-819856c3ce50",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "a39eaaec-a85c-4d05-9abd-2db5c5ff1169",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "ebece1f9-053e-4ac5-beb1-06bfdc70906c",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/text/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "text",
+                "verseinfo"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentTextDamId}}"
+                },
+                {
+                  "key": "book_id",
+                  "value": "{{newTestamentBook}}"
+                },
+                {
+                  "key": "chapter_id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "text/volume",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "b67425ab-9b18-450e-90a6-3102083856cc",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "bc96fdf6-baff-4cb0-98b4-7da637d7b01a",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "a21fc367-b55c-4be9-b684-a40afeb35e37",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/text/volume?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "text",
+                "volume"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}",
+                  "type": "text"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}",
+                  "type": "text"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentTextDamId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "book_id",
+                  "value": "{{book_id}}",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "chapter_id",
+                  "value": "{{chapter_id}}",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "verse_start",
+                  "value": "{{verse_start}}",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "verse_end",
+                  "value": "{{verse_end}}",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/numbers",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "3dfbeae1-6ad8-4eaa-8bff-3d67fa53e918",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "c5b47878-20a8-434d-be57-1c373d393b96",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "cfbd611e-127a-46de-be54-80ab56e07716",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/numbers?v={{version}}&key={{key}}&language_code={{languageCode}}&start=0&end=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "numbers"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}",
+                  "type": "text"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}",
+                  "type": "text"
+                },
+                {
+                  "key": "language_code",
+                  "value": "{{languageCode}}",
+                  "type": "text"
+                },
+                {
+                  "key": "start",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "end",
+                  "value": "10",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "video/videopath",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "11e4ed96-8c1a-4efd-88f9-a41a6c515a2f",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "5d53aff2-9cb2-4897-8fbe-6b7a12d550bc",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "e96f9fe9-120d-4e61-8789-a2baad39bba4",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/video/videopath?v={{version}}&key={{key}}&dam_id={{newTestamentVideoDamId}}&encoding=m3u8",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "video",
+                "videopath"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}",
+                  "type": "text"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}",
+                  "type": "text"
+                },
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentVideoDamId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "encoding",
+                  "value": "m3u8",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/version",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "efdb1e8b-b733-409a-8db1-5c9f09421fb5",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "86db7cce-fa83-467f-8579-734f31f46976",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "bcf45f00-3fb5-42f9-8f4e-c83061c07966",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/library/version?v={{version}}&key={{key}}&code=ESV",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "version"
+              ],
+              "query": [
+                {
+                  "key": "v",
+                  "value": "{{version}}"
+                },
+                {
+                  "key": "key",
+                  "value": "{{key}}"
+                },
+                {
+                  "key": "code",
+                  "value": "ESV",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "_postman_id": "6f6e6321-1a76-4351-a2b8-f70aedc98415"
+    },
+    {
+      "name": "Priority Group 5",
+      "item": [
+        {
+          "name": "library/asset",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "ff0c7eb8-d258-40e1-af40-220a5dbfc238",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "5eb85a99-b934-4e11-9671-73cecd08352f",
+                "exec": [
+                  "// pm.test(\"Status code is 200\", function () {",
+                  "//     pm.response.to.have.status(200);",
+                  "// });",
+                  "",
+                  "// let responseKeys = Object.keys(pm.response.json()[0]);",
+                  "",
+                  "// if (pm.environment.get(\"baseUrl\") == pm.environment.get('baseUrl1')){",
+                  "//     pm.globals.set(\"responseKeys\", responseKeys);",
+                  "//     pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl2'))",
+                  "//     postman.setNextRequest(request.name);",
+                  "    ",
+                  "// }else{",
+                  "    ",
+                  "//     pm.test(\"compare environment object names\", () =>",
+                  "//         pm.expect(responseKeys).to.eql(pm.globals.get(\"responseKeys\")));",
+                  "        ",
+                  "//     pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl1'))",
+                  "//     pm.globals.unset(\"responseKeys\");",
+                  "// }",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "83560da0-2200-4540-b5ac-81d5dea10c86",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "v",
+                "value": "{{version}}",
+                "type": "text"
+              },
+              {
+                "key": "key",
+                "value": "{{key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/library/asset?dam_id={{newTestamentAudioDamId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "asset"
+              ],
+              "query": [
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentAudioDamId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "video/videolocation",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "fdd3e8dd-0bb7-413f-a95d-3cfff3fd2894",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "9a6ca330-2ac6-4770-b8fe-8d412ee7ebac",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.environment.get(\"baseUrl\") == pm.environment.get('baseUrl1')){",
+                  "    pm.globals.set(\"aResponseAsJson\", pm.response.json());",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl2'))",
+                  "    postman.setNextRequest(request.name);",
+                  "    ",
+                  "}else{",
+                  "    ",
+                  "    pm.test(\"compare environment responses\", () =>",
+                  "        pm.expect(pm.response.json()).to.deep.equal(pm.globals.get(\"aResponseAsJson\"))",
+                  "    );",
+                  "        ",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl1'))",
+                  "    pm.globals.unset(\"aResponseAsJson\");",
+                  "}",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "fab5ece9-3b32-4e3d-8be9-19a8793d6e77",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "v",
+                "value": "{{version}}",
+                "type": "text"
+              },
+              {
+                "key": "key",
+                "value": "{{key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/video/videolocation?dam_id={{newTestamentVideoDamId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "video",
+                "videolocation"
+              ],
+              "query": [
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentVideoDamId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "library/language",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "62face48-937c-4f61-bb0c-29f1d2e1402d",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "ada40a5d-4d6c-4826-9b2d-970b49b2993b",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "let responseKeys = Object.keys(pm.response.json()[0]);",
+                  "",
+                  "if (pm.environment.get(\"baseUrl\") == pm.environment.get('baseUrl1')){",
+                  "    pm.globals.set(\"responseKeys\", responseKeys);",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl2'))",
+                  "    postman.setNextRequest(request.name);",
+                  "    ",
+                  "}else{",
+                  "    ",
+                  "    pm.test(\"compare environment object names\", () =>",
+                  "        pm.expect(responseKeys).to.eql(pm.globals.get(\"responseKeys\")));",
+                  "        ",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl1'))",
+                  "    pm.globals.unset(\"responseKeys\");",
+                  "}",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "c29652ee-8509-48e4-b4e5-d7dbe3d4f3c4",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "v",
+                "value": "{{version}}",
+                "type": "text"
+              },
+              {
+                "key": "key",
+                "value": "{{key}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/library/language"
+          },
+          "response": []
+        },
+        {
+          "name": "library/organization",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "0597fa14-864a-44d9-8bdd-a52cb0ab3630",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "4d268428-26b4-4c28-97a1-3135ece0cb28",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "let responseKeys = Object.keys(pm.response.json()[0]);",
+                  "",
+                  "if (pm.environment.get(\"baseUrl\") == pm.environment.get('baseUrl1')){",
+                  "    pm.globals.set(\"responseKeys\", responseKeys);",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl2'))",
+                  "    postman.setNextRequest(request.name);",
+                  "    ",
+                  "}else{",
+                  "    ",
+                  "    pm.test(\"compare environment object names\", () =>",
+                  "        pm.expect(responseKeys).to.eql(pm.globals.get(\"responseKeys\")));",
+                  "        ",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl1'))",
+                  "    pm.globals.unset(\"responseKeys\");",
+                  "}",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "0b1f5af6-bdf7-4e6e-a525-a49c4757bc0d",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "v",
+                "value": "{{version}}",
+                "type": "text"
+              },
+              {
+                "key": "key",
+                "value": "{{key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/library/organization",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "library",
+                "organization"
+              ],
+              "query": [
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentAudioDamId}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "video/jesusfilm",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "d84c7bd0-0b03-4969-86f1-a78de7569500",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "d8b5156a-575a-4ba2-87da-3f66d9a5311e",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "if (pm.environment.get(\"baseUrl\") == pm.environment.get('baseUrl1')){",
+                  "    pm.globals.set(\"aResponseAsJson\", pm.response.json());",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl2'))",
+                  "    postman.setNextRequest(request.name);",
+                  "    ",
+                  "}else{",
+                  "    ",
+                  "    pm.test(\"compare environment responses\", () =>",
+                  "        pm.expect(pm.response.json()).to.deep.equal(pm.globals.get(\"aResponseAsJson\"))",
+                  "    );",
+                  "        ",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl1'))",
+                  "    pm.globals.unset(\"aResponseAsJson\");",
+                  "}",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "55885759-c908-4313-b10a-340c94af7b84",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "v",
+                "value": "{{version}}",
+                "type": "text"
+              },
+              {
+                "key": "key",
+                "value": "{{key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/video/jesusfilm?dam_id={{jesusFilmDamId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "video",
+                "jesusfilm"
+              ],
+              "query": [
+                {
+                  "key": "dam_id",
+                  "value": "{{jesusFilmDamId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "text/searchgroup",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "8466d843-9054-4af6-905f-80367a515c05",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "751e4fa2-149e-4832-af23-159759d616b4",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "let responseKeys = Object.keys(pm.response.json()[0]);",
+                  "",
+                  "if (pm.environment.get(\"baseUrl\") == pm.environment.get('baseUrl1')){",
+                  "    pm.globals.set(\"responseKeys\", responseKeys);",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl2'))",
+                  "    postman.setNextRequest(request.name);",
+                  "    ",
+                  "}else{",
+                  "    ",
+                  "    pm.test(\"compare environment object names\", () =>",
+                  "        pm.expect(responseKeys).to.eql(pm.globals.get(\"responseKeys\")));",
+                  "        ",
+                  "    pm.environment.set(\"baseUrl\", pm.environment.get('baseUrl1'))",
+                  "    pm.globals.unset(\"responseKeys\");",
+                  "}",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "_postman_id": "e35cbfc6-2c50-4b79-bd81-05543e57e7f9",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "v",
+                "value": "{{version}}",
+                "type": "text"
+              },
+              {
+                "key": "key",
+                "value": "{{key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/text/searchgroup?dam_id={{newTestamentTextDamId}}&query=Saul",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "text",
+                "searchgroup"
+              ],
+              "query": [
+                {
+                  "key": "dam_id",
+                  "value": "{{newTestamentTextDamId}}"
+                },
+                {
+                  "key": "query",
+                  "value": "Saul"
+                },
+                {
+                  "key": "chapter_id",
+                  "value": "{{chapter_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "verse_start",
+                  "value": "{{verse_start}}",
+                  "disabled": true
+                },
+                {
+                  "key": "verse_end",
+                  "value": "{{verse_end}}",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "_postman_id": "03fa10f7-619b-4f11-8e97-69662f8109e5"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "id": "45a80903-4fcc-45f8-8910-83a9442f0fe2",
+        "type": "text/javascript",
+        "exec": [
+          "var _ = require('lodash');",
+          "",
+          "utils = {",
+          "  myFunc: function() {",
+          "    return 'hello';",
+          "  },",
+          "  allV2PropertiesPresent: function allV2PropertiesPresent(resV2, resV4) {",
+          "    let matches = true",
+          "",
+          "    function compareByList(listV2, listV4){",
+          "        let diff =  _.difference(_.keys(listV2[0]), _.keys(listV4[0]) ).length === 0;",
+          "        if (!diff){ matches = false }",
+          "    }",
+          "",
+          "    //compare top level",
+          "    compareByList(resV2, resV4)",
+          "",
+          "",
+          "    _.forEach((resV2[0]), function(obj, name) { ",
+          "        if(_.isObject(obj)){// tests for objects and arrays",
+          "            compareByList(resV2[0][name], resV4[0][name])",
+          "        }",
+          "    })",
+          "    return matches",
+          "    ",
+          "},",
+          "  getObjectDiff: function getObjectDiff(obj1, obj2) {",
+          "        return _(obj1).xorWith(obj2, _.isEqual).isEmpty();",
+          "",
+          "  }",
+          "};"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "id": "899cc215-b1b2-4abc-8a1d-dd4581e99f98",
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Status code is 200\", function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "let response = pm.response.json();",
+          "var length = Object.keys(response).length; ",
+          "",
+          "if (length > 1) {",
+          "   responseObject = response;",
+          "   ",
+          "} else {",
+          "   responseObject = response[0];",
+          "}",
+          "console.log('ro',responseObject)",
+          "if (responseObject != undefined) {",
+          "    responseKeys = Object.keys(responseObject);",
+          "}",
+          "",
+          "if (pm.collectionVariables.get(\"baseUrl\") == pm.collectionVariables.get('baseUrl1')){",
+          "    pm.variables.set(\"responseKeys\", responseKeys);",
+          "    pm.variables.set(\"responseObject\", responseObject);  ",
+          "",
+          "    pm.collectionVariables.set(\"baseUrl\", pm.collectionVariables.get('baseUrl2'))",
+          "    postman.setNextRequest(request.name); ",
+          "    ",
+          "}else{",
+          "    try{",
+          "        if (pm.variables.get(\"ignoreV2Keys\") != \"true\") {",
+          "            pm.test(\"check for V2 keys\", () =>",
+          "            pm.expect(utils.allV2PropertiesPresent(pm.variables.get(\"responseObject\"), responseObject)).to.be.true);",
+          "        } else {",
+          "            console.log(\"v2 key check disabled\");",
+          "            pm.variables.set(\"ignoreV2Keys\", \"false\")",
+          "        }",
+          "",
+          "        console.log('rk',pm.variables.get(\"responseObject\"), responseObject)",
+          "",
+          "    } catch (e) {",
+          "        console.log(\"caught exception: \" + e);",
+          "    }",
+          "",
+          " diff = utils.getObjectDiff(pm.variables.get(\"responseObject\"), responseObject);",
+          "",
+          "    pm.collectionVariables.set(\"baseUrl\", pm.collectionVariables.get('baseUrl1'))",
+          "    pm.variables.unset(\"responseKeys\");",
+          "",
+          "}",
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "id": "5e4e122c-eb2d-406b-b3ab-a03c15d998a0",
+      "key": "baseUrl",
+      "value": "https://dbt.io",
+      "type": "string"
+    },
+    {
+      "id": "564f3eb9-be27-4a49-aaf9-34f7701b1f0b",
+      "key": "baseUrl1",
+      "value": "https://dbt.io",
+      "type": "string"
+    },
+    {
+      "id": "9e486612-f091-46d0-a32d-b7c6bddc8edc",
+      "key": "baseUrl2",
+      "value": "https://dev.dbt.io",
+      "type": "string"
+    },
+    {
+      "id": "df4745fa-2798-4489-a8cd-361cf58ad573",
+      "key": "key",
+      "value": "53355c32fca5f3cac4d7a670d2df2e09",
+      "type": "string"
+    },
+    {
+      "id": "2785964c-a87a-4bb0-a949-d87027d78c9b",
+      "key": "version",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "id": "73a2b9d8-0c6d-4e76-bded-2dbe2ec7f8f0",
+      "key": "newTestamentTextDamId",
+      "value": "ENGESVN2ET",
+      "type": "string"
+    },
+    {
+      "id": "adad87fc-2297-4ff8-b611-f215d6db27da",
+      "key": "newTestamentAudioDamId",
+      "value": "ENGESVN2DA",
+      "type": "string"
+    },
+    {
+      "id": "ed1eacec-b119-492a-b595-11d58a871881",
+      "key": "languageCode",
+      "value": "ENG",
+      "type": "string"
+    },
+    {
+      "id": "72a9b72a-7e1c-4de0-b11a-d3535bf2eaba",
+      "key": "newTestamentBook",
+      "value": "Luke",
+      "type": "string"
+    },
+    {
+      "id": "dca7d758-e146-4bc7-895e-f04a15eb13bc",
+      "key": "newTestamentVideoDamId",
+      "value": "ENGESBN2DV",
+      "type": "string"
+    },
+    {
+      "id": "b3e52708-75c8-4216-91e2-d9c19abe1c1e",
+      "key": "jesusFilmDamId",
+      "value": "XXXXX",
+      "type": "string"
+    },
+    {
+      "id": "a3c549b3-99de-4f2d-bb88-197217ef3257",
+      "key": "baseUrlLocal",
+      "value": "http://api.dbp.test",
+      "type": "string"
+    },
+    {
+      "id": "cda276b5-422a-4d76-b3e2-8686baafdacb",
+      "key": "ignoreV2Keys",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

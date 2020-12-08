@@ -125,18 +125,13 @@ class AudioController extends APIController
      *     path="/timestamps",
      *     tags={"Bibles"},
      *     summary="Returns Bible Filesets which have Audio timestamps",
-     *     description="This call returns a list of fileset that have timestamp metadata associated
-     *         with them. This data could be used to search audio bibles for a specific term, make
-     *         karaoke verse & audio readings, or to jump to a specific location in an audio file.",
+     *     description="This call returns a list of fileset that have timestamp metadata associated with them. This data could be used to search audio bibles for a specific term, make karaoke verse & audio readings, or to jump to a specific location in an audio file.",
      *     operationId="v4_timestamps",
      *     @OA\Response(response=204, description="No timestamps are available at this time"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_timestamps")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_bible_timestamps")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_bible_timestamps")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_bible_timestamps"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_timestamps"))
      *     )
      * )
      *
@@ -177,9 +172,7 @@ class AudioController extends APIController
      *     path="/audio/versestart",
      *     tags={"Library Audio"},
      *     summary="Returns Audio timestamps for a specific reference",
-     *     description="This route will return timestamps restricted to specific book and chapter
-     *         combination for a fileset. Note that the fileset id must be available via the path
-     *        `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
+     *     description="This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
      *     operationId="v2_audio_timestamps",
      *     @OA\Parameter(name="fileset_id", in="query", description="The specific fileset to return references for", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
      *     @OA\Parameter(name="book", in="query", description="The Book ID for which to return timestamps. For a complete list see the `book_id` field in the `/bibles/books` route.", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
@@ -199,9 +192,7 @@ class AudioController extends APIController
      *     path="/timestamps/{fileset_id}/{book}/{chapter}",
      *     tags={"Bible"},
      *     summary="Returns Audio timestamps for a specific reference",
-     *     description="This route will return timestamps restricted to specific book and chapter
-     *         combination for a fileset. Note that the fileset id must be available via the path
-     *        `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
+     *     description="This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
      *     operationId="v4_timestamps.verse",
      *     @OA\Parameter(name="fileset_id", in="path", description="The specific fileset to return references for", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
      *     @OA\Parameter(name="book", in="path", required=true, description="The Book ID for which to return timestamps. For a complete list see the `book_id` field in the `/bibles/books` route.", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
@@ -209,10 +200,7 @@ class AudioController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_audio_timestamps")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_audio_timestamps")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_audio_timestamps")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_audio_timestamps"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_audio_timestamps"))
      *     )
      * )
      *
@@ -265,7 +253,7 @@ class AudioController extends APIController
         }
 
         // Return Response
-        return $this->reply(fractal($audioTimestamps, new AudioTransformer()));
+        return $this->reply(fractal($audioTimestamps, new AudioTransformer(), $this->serializer));
     }
 
 
@@ -276,8 +264,7 @@ class AudioController extends APIController
      *     path="/timestamps/search",
      *     tags={"Bibles"},
      *     summary="Returns audio timestamps for a specific word",
-     *     description="This route will search the text for a specific word or phrase and return a
-     *         collection of timestamps associated with the verse references connected to the term",
+     *     description="This route will search the text for a specific word or phrase and return a collection of timestamps associated with the verse references connected to the term",
      *     operationId="v4_timestamps.tag",
      *     @OA\Parameter(name="audio_fileset_id", in="query", description="The specific audio fileset to return references for", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
      *     @OA\Parameter(name="audio_asset_id", in="query", description="The specific audio asset id to return references for", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")),
@@ -288,10 +275,7 @@ class AudioController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_timestamps_tag")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_timestamps_tag")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_timestamps_tag")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_timestamps_tag")),
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_timestamps_tag"))
      *     )
      * )
      *
@@ -357,9 +341,7 @@ class AudioController extends APIController
      *     path="/audio/location",
      *     tags={"Library Audio"},
      *     summary="Returns Audio Server Information",
-     *     description="This route offers information about the media distribution servers and the
-     *         protocols they support. It is currently depreciated and only remains to account for
-     *         the possibility that someone might still be using this old method of uri generation",
+     *     description="This route offers information about the media distribution servers and the protocols they support. It is currently depreciated and only remains to account for the possibility that someone might still be using this old method of uri generation",
      *     operationId="v2_audio_location",
      *     @OA\Response(
      *         response=200,

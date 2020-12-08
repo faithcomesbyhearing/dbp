@@ -43,10 +43,7 @@ class NumbersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_numbers_range")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_numbers_range")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_numbers_range")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_numbers_range"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_numbers_range"))
      *     )
      * )
      *
@@ -95,14 +92,7 @@ class NumbersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json",
-     *         @OA\Schema(ref="#/components/schemas/v4_numbers.index")),
-     *         @OA\MediaType(mediaType="application/xml",
-     *         @OA\Schema(ref="#/components/schemas/v4_numbers.index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",
-     *         @OA\Schema(ref="#/components/schemas/v4_numbers.index")),
-     *         @OA\MediaType(mediaType="text/csv",
-     *         @OA\Schema(ref="#/components/schemas/v4_numbers.index"))
+     *         @OA\MediaType(mediaType="application/json",@OA\Schema(ref="#/components/schemas/v4_numbers.index"))
      *     )
      * )
      *
@@ -146,14 +136,7 @@ class NumbersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json",
-     *              @OA\Schema(ref="#/components/schemas/v4_numbers.show")),
-     *         @OA\MediaType(mediaType="application/xml",
-     *              @OA\Schema(ref="#/components/schemas/v4_numbers.show")),
-     *         @OA\MediaType(mediaType="text/x-yaml",
-     *              @OA\Schema(ref="#/components/schemas/v4_numbers.show")),
-     *         @OA\MediaType(mediaType="text/csv",
-     *              @OA\Schema(ref="#/components/schemas/v4_numbers.show"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_numbers.show"))
      *     )
      * )
      *

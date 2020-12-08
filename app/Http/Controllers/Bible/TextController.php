@@ -60,10 +60,7 @@ class TextController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter"))
      *     )
      * )
      *
@@ -109,7 +106,7 @@ class TextController extends APIController
         if ($access_blocked) {
             return $access_blocked;
         }
-
+  
         $cache_params = [$asset_id, $fileset_id, $book_id, $chapter, $verse_start, $verse_end];
         $verses = cacheRemember('bible_text', $cache_params, now()->addDay(), function () use ($fileset, $bible, $book, $chapter, $verse_start, $verse_end) {
             return BibleVerse::withVernacularMetaData($bible)
@@ -130,6 +127,7 @@ class TextController extends APIController
                 ->select([
                     'bible_verses.book_id as book_id',
                     'books.name as book_name',
+                    'books.protestant_order as book_order',
                     'bible_books.name as book_vernacular_name',
                     'bible_verses.chapter',
                     'bible_verses.verse_start',
@@ -231,10 +229,7 @@ class TextController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_text_search")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_text_search")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_text_search")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_text_search"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_text_search"))
      *     )
      * )
      *
@@ -311,7 +306,7 @@ class TextController extends APIController
      *     path="/search/library",
      *     tags={"Text"},
      *     summary="Search Playlist, Plans, Notes, Highlights and Bookmarks",
-     *     operationId="v4_library_search",
+     *     operationId="v4_internal_library_search",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="query",
@@ -323,10 +318,7 @@ class TextController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_library_search")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_library_search")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_library_search")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_library_search"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_library_search"))
      *     )
      * )
      *
@@ -338,19 +330,6 @@ class TextController extends APIController
      *   schema="v4_library_search",
      *   description="The v4 library search response.",
      *   title="Library Search plans",
-     *   @OA\Property(property="bookmarks", ref="#/components/schemas/v4_user_bookmarks"),
-     *   @OA\Property(property="highlights", ref="#/components/schemas/v4_highlights_index"),
-     *   @OA\Property(property="notes", ref="#/components/schemas/v4_notes_index"),
-     *   @OA\Property(
-     *      property="plans",
-     *      type="array",
-     *      @OA\Items(ref="#/components/schemas/v4_plan_index_detail")
-     *   ),
-     *   @OA\Property(
-     *      property="playlists",
-     *      type="array",
-     *      @OA\Items(ref="#/components/schemas/v4_playlist")
-     *   )
      * )
      */
     public function searchLibrary(Request $request)
@@ -501,6 +480,7 @@ class TextController extends APIController
      * @version 2
      * @category v2_library_book
      * @category v2_library_bookOrder
+
      * @link https://dbt.io/library/verseinfo?key=TEST_KEY&v=2&dam_id=ENGKJV&book_id=GEN&chapter=1&verse_start=11 - V2 Access
      * @link https://api.dbp.test/library/verseinfo?key=TEST_KEY&v=2&dam_id=ENGKJV&book_id=GEN&chapter=1&verse_start=11 - V2 Test
      * @link https://dbp.test/eng/docs/swagger/v2#/Library/v2_library_verseinfo - V2 Test Docs
@@ -567,7 +547,7 @@ class TextController extends APIController
     public function info()
     {
         $fileset_id  = checkParam('dam_id|bible_id', true);
-        $book_id     = checkParam('book_id');
+        $book_id     = checkParam('book_id', true);
         $chapter_id  = checkParam('chapter|chapter_id');
         $verse_start = checkParam('verse_start') ?? 1;
         $verse_end   = checkParam('verse_end');

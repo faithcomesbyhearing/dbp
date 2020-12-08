@@ -23,14 +23,11 @@ class ProjectsController extends APIController
      *     tags={"Users"},
      *     summary="Returns the projects currently using the DBP",
      *     description="Returns the projects currently registered that aren't labeled as sensitive",
-     *     operationId="v4_projects.index",
+     *     operationId="v4_internal_projects.index",
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_projects_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_projects_index"))
      *     )
      * )
      *
@@ -64,15 +61,12 @@ class ProjectsController extends APIController
      *     tags={"Users"},
      *     summary="Apply for a project_id",
      *     description="It is recommended that you create a distinct project_id for each app using the API",
-     *     operationId="v4_projects.store",
+     *     operationId="v4_internal_projects.store",
      *     @OA\RequestBody(ref="#/components/requestBodies/ProjectStore"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_projects_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_projects_index"))
      *     )
      * )
      *
@@ -141,15 +135,12 @@ class ProjectsController extends APIController
      *     tags={"Users"},
      *     summary="Get the details for a project",
      *     description="",
-     *     operationId="v4_projects.show",
+     *     operationId="v4_internal_projects.show",
      *     @OA\Parameter(name="project_id", in="path", required=true, description="The project id", @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_projects_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_projects_index"))
      *     )
      * )
      *
@@ -201,16 +192,13 @@ class ProjectsController extends APIController
      *     tags={"Users"},
      *     summary="Update the details for a project",
      *     description="",
-     *     operationId="v4_projects.update",
+     *     operationId="v4_internal_projects.update",
      *     @OA\Parameter(name="project_id", in="path", required=true, description="The project id", @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\RequestBody(ref="#/components/requestBodies/ProjectStore"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_projects_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_projects_index"))
      *     )
      * )
      *
@@ -250,15 +238,12 @@ class ProjectsController extends APIController
      *     tags={"Users"},
      *     summary="Remove a project",
      *     description="",
-     *     operationId="v4_projects.destroy",
+     *     operationId="v4_internal_projects.destroy",
      *     @OA\Parameter(name="project_id", in="path", required=true, description="The project id", @OA\Schema(ref="#/components/schemas/Project/properties/id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_projects_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_projects_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_projects_index"))
      *     )
      * )
      *

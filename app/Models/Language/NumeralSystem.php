@@ -28,8 +28,9 @@ class NumeralSystem extends Model
      *
      * @OA\Property(
      *     title="Numeral System Id",
-     *     description="The url to the font file",
+     *     description="The id of the numberal system",
      *     type="string",
+     *     example="western-arabic",
      *     maxLength=20
      * )
      *
@@ -42,12 +43,16 @@ class NumeralSystem extends Model
      *
      * @OA\Property(
      *     title="The integer value of the glyph",
-     *     description="The url to the font file",
-     *     type="integer"
+     *     description="The integer value of the glyph",
+     *     type="integer",
+     *     minimum=0,
+     *     maximum=200,
+     *     example=9
      * )
      *
      */
     protected $value;
+    
     /**
      * @property string numeral_vernacular
      * @method static NumeralSystem whereNumeralVernacular($value)
@@ -56,7 +61,8 @@ class NumeralSystem extends Model
      *     title="The Vernacular Numeral",
      *     description="The numeral in the vernacular of the writing system",
      *     type="string",
-     *     maxLength=12
+     *     example="੧",
+     *     maxLength=8
      * )
      *
      */
@@ -69,7 +75,7 @@ class NumeralSystem extends Model
      *     title="Alphabet Numeral Written",
      *     description="The word for the numeral in the vernacular of the writing system",
      *     type="string",
-     *     maxLength=24
+     *     maxLength=8
      * )
      *
      */
