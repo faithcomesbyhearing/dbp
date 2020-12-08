@@ -35,6 +35,8 @@ class Kernel extends ConsoleKernel
 
         Commands\StudyFormats\fetchTyndalePeople::class,
 
+        Commands\generateOpenApiDoc::class,
+
         Commands\loaderPush::class,
 
         Commands\syncV2Database::class,
@@ -45,6 +47,7 @@ class Kernel extends ConsoleKernel
         Commands\syncV2Notes::class,
         Commands\reSyncV2Notes::class,
         Commands\translatePlan::class,
+        Commands\translatePlaylist::class,
         Commands\encryptNote::class,
 
         Commands\syncPlaylistDuration::class,

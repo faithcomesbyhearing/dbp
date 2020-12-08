@@ -41,8 +41,8 @@ class AudioTransformer extends BaseTransformer
              */
             case 'v2_audio_timestamps':
                 return [
-                    'verse_start'    => (string) $audio->verse_start,
-                    'timestamp'      => $audio->timestamp
+                    'verse_id'    => $audio->verse_start,
+                    'verse_start' => $audio->timestamp
                 ];
 
                 /**
@@ -86,7 +86,7 @@ class AudioTransformer extends BaseTransformer
              *              @OA\Property(property="book", ref="#/components/schemas/BibleFile/properties/book_id"),
              *              @OA\Property(property="chapter", ref="#/components/schemas/BibleFile/properties/chapter_start"),
              *              @OA\Property(property="verse_start", ref="#/components/schemas/BibleFile/properties/verse_start"),
-             *              @OA\Property(property="timestamp", type="string",example="1",description="The duration of the timestamp in seconds")
+             *              @OA\Property(property="timestamp", type="string",example="13",description="The duration of the timestamp in seconds")
              *    )
              *   )
              * )
@@ -98,7 +98,7 @@ class AudioTransformer extends BaseTransformer
                     'verse_start'    => (string) $audio->verse_start,
                     'timestamp'      => $audio->timestamp
                 ];
-            case 'v4_bible.chapter':
+            case 'v4_internal_bible.chapter':
                 return [
                     'verse_start'    => (string) $audio->verse_start,
                     'timestamp'      => $audio->timestamp

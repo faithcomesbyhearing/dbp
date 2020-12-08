@@ -19,15 +19,12 @@ class PushTokensController extends APIController
      *     path="/push_notifications",
      *     tags={"Push Notifications"},
      *     summary="List a user's push notification tokens",
-     *     operationId="v4_push_tokens.index",
+     *     operationId="v4_internal_push_tokens.index",
      *     security={{"api_token":{}}},
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_push_token_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_push_token_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_push_token_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_push_token_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_push_token_index"))
      *     )
      * )
      *
@@ -36,9 +33,9 @@ class PushTokensController extends APIController
      *
      * @OA\Schema (
      *    type="array",
-     *    schema="v4_push_token_index",
+     *    schema="v4_internal_push_token_index",
      *    description="The v4 push tokens index response.",
-     *    title="v4_push_token_index",
+     *    title="v4_internal_push_token_index",
      *    @OA\Items(
      *         @OA\Property(property="push_token", ref="#/components/schemas/PushToken/properties/push_token"),
      *         @OA\Property(property="platform", ref="#/components/schemas/PushToken/properties/platform")
@@ -67,7 +64,7 @@ class PushTokensController extends APIController
      *     path="/push_notifications",
      *     tags={"Push Notifications"},
      *     summary="Crete a push token",
-     *     operationId="v4_push_tokens.store",
+     *     operationId="v4_internal_push_tokens.store",
      *     security={{"api_token":{}}},
      *     @OA\RequestBody(required=true, description="Fields for User Push Token Creation",
      *           @OA\MediaType(mediaType="application/json",
@@ -80,18 +77,15 @@ class PushTokensController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_push_token_detail")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_push_token_detail")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_push_token_detail")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_push_token_detail"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_push_token_detail"))
      *     )
      * )
      *
      * @OA\Schema (
      *     type="object",
-     *     schema="v4_push_token_detail",
-     *     description="v4_push_token_detail",
-     *     title="v4_push_token_detail",
+     *     schema="v4_internal_push_token_detail",
+     *     description="v4_internal_push_token_detail",
+     *     title="v4_internal_push_token_detail",
      *     @OA\Property(property="push_token", ref="#/components/schemas/PushToken/properties/push_token"),
      *     @OA\Property(property="platform", ref="#/components/schemas/PushToken/properties/platform")
      * )
@@ -130,16 +124,13 @@ class PushTokensController extends APIController
      *     path="/push_notifications/{token}",
      *     tags={"Push Notifications"},
      *     summary="Delete a push token",
-     *     operationId="v4_push_tokens.destroy",
+     *     operationId="v4_internal_push_tokens.destroy",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="token", in="path", required=true, @OA\Schema(ref="#/components/schemas/PushToken/properties/push_token")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *

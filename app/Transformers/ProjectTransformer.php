@@ -20,10 +20,10 @@ class ProjectTransformer extends BaseTransformer
     /**
      * @OA\Schema (
      *    type="object",
-     *    schema="v4_projects_index",
+     *    schema="v4_internal_projects_index",
      *    description="The minimized alphabet return for the all alphabets route",
-     *    title="v4_projects_index",
-     *    @OA\Xml(name="v4_projects_index"),
+     *    title="v4_internal_projects_index",
+     *    @OA\Xml(name="v4_internal_projects_index"),
      *    @OA\Property(property="data", type="array",
      *      @OA\Items(
      *        @OA\Property(property="id",                ref="#/components/schemas/Project/properties/id"),

@@ -213,8 +213,8 @@ class LanguageControllerV2 extends APIController
      *         in="query",
      *         @OA\Schema(type="boolean"),
      *         description="Consider the language name as being a full word. For instance, when false, `cat` will return
-                   volumes where the string cat is anywhere in the language name like `catalan` and `Cuicatec, Teutila`.
-                   This value defaults to false."
+     *              volumes where the string cat is anywhere in the language name like `catalan` and `Cuicatec, Teutila`.
+     *              This value defaults to false."
      *     ),
      *     @OA\Parameter(
      *         name="status",
@@ -265,14 +265,16 @@ class LanguageControllerV2 extends APIController
                     ->includeAutonymTranslation()
                     ->filterableByIsoCode($iso)
                     ->filterableByName($root, $full_word)
-                    ->when($organization_id, function ($query) use ($organization_id) {
-                        return $query->whereHas('filesets', function ($q) use ($organization_id) {
-                            $q->where('organization_id', $organization_id);
-                        });
-                    })->when($media, function ($query) use ($media) {
-                        return $query->whereHas(['bibles.filesets' => function ($query) use ($media) {
+                    // Note: the organization clause results in a 500 error. This may come back into the mix later, so want to keep the code available until we have time to investigate
+                    // ->when($organization_id, function ($query) use ($organization_id) {
+                    //     return $query->whereHas('filesets', function ($q) use ($organization_id) {
+                    //         $q->where('organization_id', $organization_id);
+                    //     });
+                    // })
+                    ->when($media, function ($query) use ($media) {
+                        return $query->whereHas('bibles.filesets', function ($query) use ($media) {
                             return $query->where('set_type_code', 'LIKE', $media . '%');
-                        }]);
+                        });
                     })->select([
                         'languages.id',
                         'languages.glotto_id',

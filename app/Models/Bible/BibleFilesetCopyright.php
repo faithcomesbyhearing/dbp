@@ -35,7 +35,7 @@ class BibleFilesetCopyright extends Model
      *   description="The hash value for the created fileset",
      *   minLength=12,
      *   maxLength=12,
-     *   example="ENGESV"
+     *   example="1248f044fe62"
      * )
      *
      * @method static BibleFilesetCopyright whereHashId($value)
@@ -50,8 +50,7 @@ class BibleFilesetCopyright extends Model
      *   title="copyright_date",
      *   type="string",
      *   description="The copyright date created copyright",
-
-     *   example="ENGESV"
+     *   example="2014"
      * )
      *
      * @method static BibleFilesetCopyright whereCopyrightDate($value)
@@ -65,7 +64,8 @@ class BibleFilesetCopyright extends Model
      * @OA\Property(
      *   title="copyright",
      *   type="string",
-     *   description="The copyright"
+     *   description="The copyright",
+     *   example="© Ethnos360"
      * )
      *
      * @method static BibleFilesetCopyright whereCopyright($value)
@@ -79,7 +79,8 @@ class BibleFilesetCopyright extends Model
      * @OA\Property(
      *   title="copyright_description",
      *   type="string",
-     *   description="The copyright description",
+     *   example="© Ethnos360",
+     *   description="The copyright description"
      * )
      *
      * @method static BibleFilesetCopyright whereCopyrightDescription($value)
@@ -92,8 +93,9 @@ class BibleFilesetCopyright extends Model
      *
      * @OA\Property(
      *   title="open_access",
-     *   type="string",
-     *   description="The open_access description",
+     *   type="integer",
+     *   example=1,
+     *   description="The open_access description"
      * )
      *
      * @method static BibleFilesetCopyright whereOpenAccess($value)

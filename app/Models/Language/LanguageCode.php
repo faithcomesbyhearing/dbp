@@ -58,6 +58,7 @@ class LanguageCode extends Model
      * @OA\Property(
      *   title="source",
      *   type="string",
+     *   example="Iso 639-2",
      *   description="The source pointing to the incrementing id of the language"
      * )
      *
@@ -71,6 +72,7 @@ class LanguageCode extends Model
      * @OA\Property(
      *   title="code",
      *   type="string",
+     *   example="ab",
      *   description="The foreign code for the language"
      * )
      *

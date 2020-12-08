@@ -1,66 +1,99 @@
-<!DOCTYPE html>
-<html class="no-js" lang="{{ config('app.locale') }}">
-<head>
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css?family=Roboto:400,900" rel="stylesheet">
-    <link rel="stylesheet" href="{{ mix('css/app.css') }}" />
-    <meta property="og:site_name" content="{{ trans('app.site_name') }}" />
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
-    @if(env('APP_DEBUG') == 'true')
-        <link rel="shortcut icon" href="/favicon_test.ico" type="image/x-icon">
-        <link rel="icon" href="/favicon_test.ico" type="image/x-icon">
-    @else
-        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-        <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    @endif
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    @if(Localization::isLocalizedRoute())
-        @foreach(Localization::getLocales() as $localeCode => $properties)
-            @if(Route::current()->getLocalization() === $localeCode)
-                <meta property="og:locale" content="{{ $localeCode }}" />
-            @else
-                <meta property="og:locale:alternate" content="{{ $localeCode }}" />
-                <link rel="alternate" hreflang="{{ $localeCode }}" href="{{ Localization::getLocaleUrl($localeCode) }}">
-            @endif
-        @endforeach
-    @endif
-
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+    
+    <!-- Fonts hosted at Google CSS -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway|Roboto">
+    
+    <!-- Bible.is CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    
+    <title>Digital Bible Platform</title>
     @yield('head')
-    <style>
-        #translation-dropdown .navbar-link {
-            text-align: center;
-            font-size: 20px;
-            margin:0 auto;
-            display: block;
-            padding: 10px 20px;
-        }
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <nav class="navbar navbar-expand-lg">
+          <a class="navbar-brand" href="{{ route('welcome') }}"><img src="/images/dbp_logo.png"></a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+        
+          <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+            <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
+              <li class="nav-item active">
+                <a class="nav-link" href="{{ route('docs') }}">Developer Docs</a>
+              </li>
+            </ul>
+            @if(Auth::user())
+            <li class="nav-item active">
+              {{ Auth::user()->email }}
+            </li>                 
+            <a class="logout-a" href="{{ route('api_key.logout') }}">Log Out</a>
+            
+          @else
+            <button class="btn my-2 my-sm-0" type="submit">Sign Up</button>
+          @endif
+          </div>
+        </nav>
+      </header>
 
-        #translation-dropdown .navbar-link:after {
-            display: none;
-        }
-    </style>
-    <script>
-        var App = {
-        	apiParams: {
-        		'key': '{{ config('services.bibleIs.key') }}',
-                'v': '4',
-        	}
-        };
-    </script>
-</head>
-<body>
-@include('layouts.partials.nav')
+      <div class="container">
+        <div class="row">
+          <!-- Left Side Navigation -->
+          <div class="col-3 nav-column">
 
-<main id="app">
+          @yield('left-nav')
+
+		  </div> <!-- end div col-3 nav-column -->
+<!-- there are two open divs that need to be closed after docs content -->
+<!-- there is another div for the wrapper that needs to be closed -->
+
 @yield('content')
-</main>
 
-<script src="{{ mix('js/app.js') }}"></script>
-<script src="{{ mix('js/bulma.js') }}"></script>
-@yield('footer')
-</body>
-</html>
+<!-- close out divs for left nav -->
+		</div>
+      </div>
+    </div>
+<!-- end close out divs for left nav -->      
+
+
+    <footer class="class="container-fluid"">
+      <div class="container foot-wrapper">
+        <div class="row">
+          <div class="col-6 footer-left"><a href="{{ route('welcome') }}"><img src="/images/dbp_logo.png"></a></div>
+          <div class="col-6 footer-right">
+              <ul>
+                <li>
+                   <a href="http://faithcomesbyhearing.com" target="_blank">© 2020 Faith Comes By Hearing</a>
+                </li>
+                <li>
+                  <a href="{{ route('legal_terms') }}">Terms &amp; Conditions</a>
+                </li>
+                <li>
+                  <a href="mailto:support@digitalbibleplatform.com">Support</a>
+                </li>
+                
+              </ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </footer>
+
+
+    <!-- jQuery and Bootstrap Bundle (includes Popper) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+  </body>
+</html>          

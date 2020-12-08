@@ -62,7 +62,8 @@ class LanguageClassification extends Model
      * @OA\Property(
      *   title="classification_id",
      *   description="The foreign key matching the incrementing language ID",
-     *   type="integer",
+     *   type="string",
+     *   example="sout2845",
      *   minimum=0
      * )
      *
@@ -79,6 +80,7 @@ class LanguageClassification extends Model
      *   title="order",
      *   description="Creates an increasing level of specificity for the classification of the language dialect",
      *   type="integer",
+     *   example=0,
      *   minimum=0
      * )
      *
