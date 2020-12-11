@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Bible;
 
 use Illuminate\Support\Str;
-use App\Models\Organization\Asset;
 use App\Traits\AccessControlAPI;
 use App\Traits\CallsBucketsTrait;
 use App\Http\Controllers\APIController;
@@ -12,7 +11,6 @@ use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFilesetType;
 use App\Models\Bible\Book;
-use App\Models\Language\Language;
 
 use App\Transformers\FileSetTransformer;
 use Illuminate\Http\Request;
@@ -54,67 +52,112 @@ class BibleFileSetsController extends APIController
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
      * @throws \Exception
      */
-    public function show($id = null,  $set_type_code = null, $cache_key = 'bible_filesets_show')
-    {
-        $fileset_id    = checkParam('dam_id|fileset_id', true, $id);
-        $book_id       = checkParam('book_id');
-        $chapter_id    = checkParam('chapter_id|chapter');
-        $type          = checkParam('type', $set_type_code !== null, $set_type_code);
+    public function show(
+        $id = null,
+        $set_type_code = null,
+        $cache_key = 'bible_filesets_show'
+    ) {
+        $fileset_id = checkParam('dam_id|fileset_id', true, $id);
+        $book_id = checkParam('book_id');
+        $chapter_id = checkParam('chapter_id|chapter');
+        $type = checkParam('type', $set_type_code !== null, $set_type_code);
 
         $cache_params = [$this->v, $fileset_id, $book_id, $type, $chapter_id];
 
-        $fileset_chapters = cacheRemember($cache_key, $cache_params, now()->addHours(12), function () use ($fileset_id, $book_id, $type, $chapter_id) {
-            $book = Book::where('id', $book_id)->orWhere('id_osis', $book_id)->orWhere('id_usfx', $book_id)->first();
-            $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, $type)->first();
-            if (!$fileset) {
-                return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404'));
+        $fileset_chapters = cacheRemember(
+            $cache_key,
+            $cache_params,
+            now()->addHours(12),
+            function () use ($fileset_id, $book_id, $type, $chapter_id) {
+                $book = Book::where('id', $book_id)
+                    ->orWhere('id_osis', $book_id)
+                    ->orWhere('id_usfx', $book_id)
+                    ->first();
+                $fileset = BibleFileset::with('bible')
+                    ->uniqueFileset($fileset_id, $type)
+                    ->first();
+                if (!$fileset) {
+                    return $this->setStatusCode(404)->replyWithError(
+                        trans('api.bible_fileset_errors_404')
+                    );
+                }
+
+                $access_blocked = $this->blockedByAccessControl($fileset);
+                if ($access_blocked) {
+                    return $access_blocked;
+                }
+                $asset_id = $fileset->asset_id;
+                $bible = optional($fileset->bible)->first();
+                $query = BibleFile::where('hash_id', $fileset->hash_id)
+                    ->leftJoin(
+                        config('database.connections.dbp.database') .
+                            '.bible_books',
+                        function ($q) use ($bible) {
+                            $q
+                                ->on(
+                                    'bible_books.book_id',
+                                    'bible_files.book_id'
+                                )
+                                ->where('bible_books.bible_id', $bible->id);
+                        }
+                    )
+                    ->leftJoin(
+                        config('database.connections.dbp.database') . '.books',
+                        'books.id',
+                        'bible_files.book_id'
+                    )
+                    ->when($chapter_id, function ($query) use ($chapter_id) {
+                        return $query->where(
+                            'bible_files.chapter_start',
+                            $chapter_id
+                        );
+                    })
+                    ->when($book, function ($query) use ($book) {
+                        return $query->where('bible_files.book_id', $book->id);
+                    })
+                    ->select([
+                        'bible_files.duration',
+                        'bible_files.hash_id',
+                        'bible_files.id',
+                        'bible_files.book_id',
+                        'bible_files.chapter_start',
+                        'bible_files.chapter_end',
+                        'bible_files.verse_start',
+                        'bible_files.verse_end',
+                        'bible_files.file_name',
+                        'bible_books.name as book_name',
+                        'books.protestant_order as book_order'
+                    ]);
+
+                if ($type === 'video_stream') {
+                    $query
+                        ->orderByRaw(
+                            "FIELD(bible_files.book_id, 'MAT', 'MRK', 'LUK', 'JHN') ASC"
+                        )
+                        ->orderBy('chapter_start', 'ASC')
+                        ->orderBy('verse_start', 'ASC');
+                }
+
+                $fileset_chapters = $query->get();
+
+                if ($fileset_chapters->count() === 0) {
+                    return $this->setStatusCode(404)->replyWithError(
+                        'No Fileset Chapters Found for the provided params'
+                    );
+                }
+
+                return fractal(
+                    $this->generateFilesetChapters(
+                        $fileset,
+                        $fileset_chapters,
+                        $bible,
+                        $asset_id
+                    ),
+                    new FileSetTransformer(),
+                    $this->serializer
+                );
             }
-
-            $access_blocked = $this->blockedByAccessControl($fileset);
-            if ($access_blocked) {
-                return $access_blocked;
-            }
-            $asset_id = $fileset->asset_id;
-            $bible = optional($fileset->bible)->first();
-            $query = BibleFile::where('hash_id', $fileset->hash_id)
-                ->leftJoin(config('database.connections.dbp.database') . '.bible_books', function ($q) use ($bible) {
-                    $q->on('bible_books.book_id', 'bible_files.book_id')->where('bible_books.bible_id', $bible->id);
-                })
-                ->leftJoin(config('database.connections.dbp.database') . '.books', 'books.id', 'bible_files.book_id')
-                ->when($chapter_id, function ($query) use ($chapter_id) {
-                    return $query->where('bible_files.chapter_start', $chapter_id);
-                })->when($book, function ($query) use ($book) {
-                    return $query->where('bible_files.book_id', $book->id);
-                })
-                ->select([
-                    'bible_files.duration',
-                    'bible_files.hash_id',
-                    'bible_files.id',
-                    'bible_files.book_id',
-                    'bible_files.chapter_start',
-                    'bible_files.chapter_end',
-                    'bible_files.verse_start',
-                    'bible_files.verse_end',
-                    'bible_files.file_name',
-                    'bible_books.name as book_name',
-                    'books.protestant_order as book_order'
-                ]);
-
-            if ($type === 'video_stream') {
-                $query->orderByRaw("FIELD(bible_files.book_id, 'MAT', 'MRK', 'LUK', 'JHN') ASC")
-                    ->orderBy('chapter_start', 'ASC')
-                    ->orderBy('verse_start', 'ASC');
-            }
-
-            $fileset_chapters = $query->get();
-
-            if ($fileset_chapters->count() === 0) {
-                return $this->setStatusCode(404)->replyWithError('No Fileset Chapters Found for the provided params');
-            }
-
-            return fractal($this->generateFilesetChapters($fileset, $fileset_chapters, $bible, $asset_id), new FileSetTransformer(), $this->serializer);
-        });
-
+        );
 
         return $this->reply($fileset_chapters, [], $transaction_id ?? '');
     }
@@ -142,9 +185,13 @@ class BibleFileSetsController extends APIController
                 break;
         }
 
-        return $fileset_type . '/' . ($bible ? $bible->id . '/' : '') . $fileset->id . '/' . $fileset_chapter->file_name;
+        return $fileset_type .
+            '/' .
+            ($bible ? $bible->id . '/' : '') .
+            $fileset->id .
+            '/' .
+            $fileset_chapter->file_name;
     }
-
 
     /**
      * Returns the Available Media Types for Filesets within the API.
@@ -170,7 +217,9 @@ class BibleFileSetsController extends APIController
      */
     public function mediaTypes()
     {
-        return $this->reply(BibleFilesetType::all()->pluck('name', 'set_type_code'));
+        return $this->reply(
+            BibleFilesetType::all()->pluck('name', 'set_type_code')
+        );
     }
 
     /**
@@ -211,30 +260,75 @@ class BibleFileSetsController extends APIController
         $result = [];
         foreach ($bible_locations as $bible_location) {
             $cache_params = [$bible_location->fileset_id];
-            $hashes = cacheRemember('v4_bible_filesets.checkTypes', $cache_params, now()->addMonth(), function () use ($bible_location) {
-                $filesets = BibleFileset::where('id', $bible_location->fileset_id)
-                    ->whereNotIn('set_type_code', ['text_format'])
-                    ->first()
-                    ->bible
-                    ->first()->filesets;
-                $audio_filesets_hashes = $filesets->whereIn('set_type_code', ['audio_drama', 'audio', 'audio_stream', 'audio_drama_stream'])->pluck('hash_id')->flatten();
-                $video_filesets_hashes = $filesets->where('set_type_code', 'video_stream')->flatten();
-                return ['audio' => $audio_filesets_hashes, 'video' => $video_filesets_hashes];
-            });
+            $hashes = cacheRemember(
+                'v4_bible_filesets.checkTypes',
+                $cache_params,
+                now()->addMonth(),
+                function () use ($bible_location) {
+                    $filesets = BibleFileset::where(
+                        'id',
+                        $bible_location->fileset_id
+                    )
+                        ->whereNotIn('set_type_code', ['text_format'])
+                        ->first()
+                        ->bible->first()->filesets;
+                    $audio_filesets_hashes = $filesets
+                        ->whereIn('set_type_code', [
+                            'audio_drama',
+                            'audio',
+                            'audio_stream',
+                            'audio_drama_stream'
+                        ])
+                        ->pluck('hash_id')
+                        ->flatten();
+                    $video_filesets_hashes = $filesets
+                        ->where('set_type_code', 'video_stream')
+                        ->flatten();
+                    return [
+                        'audio' => $audio_filesets_hashes,
+                        'video' => $video_filesets_hashes
+                    ];
+                }
+            );
             $where_fields = [
                 ['book_id', $bible_location->book_id],
                 ['chapter_start', '>=', $bible_location->chapter_start],
-                [\DB::raw('IFNULL( chapter_end, chapter_start)'), '<=', $bible_location->chapter_end],
+                [
+                    \DB::raw('IFNULL( chapter_end, chapter_start)'),
+                    '<=',
+                    $bible_location->chapter_end
+                ]
             ];
             if (isset($bible_location->verse_start)) {
-                $where_fields[] = ['verse_start', '<=', (int) $bible_location->verse_start];
-                $where_fields[] = [\DB::raw('IFNULL( chapter_end, ' . (int) $bible_location->verse_end . ')'), '>=', $bible_location->verse_end];
+                $where_fields[] = [
+                    'verse_start',
+                    '<=',
+                    (int) $bible_location->verse_start
+                ];
+                $where_fields[] = [
+                    \DB::raw(
+                        'IFNULL( chapter_end, ' .
+                            (int) $bible_location->verse_end .
+                            ')'
+                    ),
+                    '>=',
+                    $bible_location->verse_end
+                ];
             }
-            $bible_location->has_audio = BibleFile::whereIn('hash_id', $hashes['audio'])->where($where_fields)->exists();
-            $bible_location->has_video = BibleFile::whereIn('hash_id', $hashes['video'])->where($where_fields)->exists();
+            $bible_location->has_audio = BibleFile::whereIn(
+                'hash_id',
+                $hashes['audio']
+            )
+                ->where($where_fields)
+                ->exists();
+            $bible_location->has_video = BibleFile::whereIn(
+                'hash_id',
+                $hashes['video']
+            )
+                ->where($where_fields)
+                ->exists();
             $result[] = $bible_location;
         }
-
 
         return $this->reply($result);
     }
@@ -248,36 +342,56 @@ class BibleFileSetsController extends APIController
      * @throws \Exception
      * @return array
      */
-    private function generateFilesetChapters($fileset, $fileset_chapters, $bible, $asset_id)
-    {
-        $is_stream = $fileset->set_type_code === 'video_stream' || $fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream';
+    private function generateFilesetChapters(
+        $fileset,
+        $fileset_chapters,
+        $bible,
+        $asset_id
+    ) {
+        $is_stream =
+            $fileset->set_type_code === 'video_stream' ||
+            $fileset->set_type_code === 'audio_stream' ||
+            $fileset->set_type_code === 'audio_drama_stream';
         $is_video = Str::contains($fileset->set_type_code, 'video');
 
         if ($is_stream) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
-                $fileset_chapters[$key]->file_name = route(
-                    'v4_media_stream',
-                    [
-                        'fileset_id' => $fileset->id,
-                        'book_id' => $fileset_chapter->book_id,
-                        'chapter' => $fileset_chapter->chapter_start,
-                        'verse_start' => $fileset_chapter->verse_start,
-                        'verse_end' => $fileset_chapter->verse_end,
-                    ]
-                );
+                $fileset_chapters[$key]->file_name = route('v4_media_stream', [
+                    'fileset_id' => $fileset->id,
+                    'book_id' => $fileset_chapter->book_id,
+                    'chapter' => $fileset_chapter->chapter_start,
+                    'verse_start' => $fileset_chapter->verse_start,
+                    'verse_end' => $fileset_chapter->verse_end
+                ]);
             }
         }
 
         if (!$is_stream) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
-                $fileset_chapters[$key]->file_name = $this->signedUrl($this->signedPath($bible, $fileset, $fileset_chapter), $asset_id, random_int(0, 10000000));
+                $fileset_chapters[$key]->file_name = $this->signedUrl(
+                    $this->signedPath($bible, $fileset, $fileset_chapter),
+                    $asset_id,
+                    random_int(0, 10000000)
+                );
             }
         }
 
-
         if ($is_video) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
-                $fileset_chapters[$key]->thumbnail = $this->signedUrl('video/thumbnails/' . $fileset_chapters[$key]->book_id . '_' . str_pad($fileset_chapter->chapter_start, 2, '0', STR_PAD_LEFT) . '.jpg', $asset_id, random_int(0, 10000000));
+                $fileset_chapters[$key]->thumbnail = $this->signedUrl(
+                    'video/thumbnails/' .
+                        $fileset_chapters[$key]->book_id .
+                        '_' .
+                        str_pad(
+                            $fileset_chapter->chapter_start,
+                            2,
+                            '0',
+                            STR_PAD_LEFT
+                        ) .
+                        '.jpg',
+                    $asset_id,
+                    random_int(0, 10000000)
+                );
             }
         }
 
