@@ -91,7 +91,7 @@ class AudioTransformer extends BaseTransformer
              *   )
              * )
              */
-            case 'v4_timestamps.verse':
+            case 'v4_internal_timestamps.verse':
                 return [
                     'book'           => (string) $audio->bibleFile->book_id,
                     'chapter'        => (string) $audio->bibleFile->chapter_start,
@@ -107,10 +107,10 @@ class AudioTransformer extends BaseTransformer
                 /**
                  * @OA\Schema (
                  *   type="object",
-                 *   schema="v4_timestamps_tag",
+                 *   schema="v4_internal_timestamps_tag",
                  *   description="The v4 timestamps tag",
-                 *   title="v4_timestamps_tag",
-                 *   @OA\Xml(name="v4_timestamps_tag"),
+                 *   title="v4_internal_timestamps_tag",
+                 *   @OA\Xml(name="v4_internal_timestamps_tag"),
                  *   @OA\Property(
                  *      property="data",
                  *      type="array",

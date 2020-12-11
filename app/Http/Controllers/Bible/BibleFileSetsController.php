@@ -39,9 +39,6 @@ class BibleFileSetsController extends APIController
      *     @OA\Parameter(name="chapter_id", in="query", description="Will filter the results by the given chapter",
      *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")
      *     ),
-     *     @OA\Parameter(name="asset_id", in="query", description="Will filter the results by the given Asset",
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")
-     *     ),
      *     @OA\Parameter(name="type", in="query", description="The fileset type", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/set_type_code")
      *     ),
@@ -57,19 +54,18 @@ class BibleFileSetsController extends APIController
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
      * @throws \Exception
      */
-    public function show($id = null, $asset_id = null, $set_type_code = null, $cache_key = 'bible_filesets_show')
+    public function show($id = null,  $set_type_code = null, $cache_key = 'bible_filesets_show')
     {
         $fileset_id    = checkParam('dam_id|fileset_id', true, $id);
         $book_id       = checkParam('book_id');
         $chapter_id    = checkParam('chapter_id|chapter');
-        $asset_id      = checkParam('bucket|bucket_id|asset_id', false, $asset_id) ?? config('filesystems.disks.s3_fcbh.bucket');
         $type          = checkParam('type', $set_type_code !== null, $set_type_code);
 
-        $cache_params = [$this->v, $fileset_id, $book_id, $type, $chapter_id, $asset_id];
+        $cache_params = [$this->v, $fileset_id, $book_id, $type, $chapter_id];
 
-        $fileset_chapters = cacheRemember($cache_key, $cache_params, now()->addHours(12), function () use ($fileset_id, $book_id, $type, $chapter_id, $asset_id) {
+        $fileset_chapters = cacheRemember($cache_key, $cache_params, now()->addHours(12), function () use ($fileset_id, $book_id, $type, $chapter_id) {
             $book = Book::where('id', $book_id)->orWhere('id_osis', $book_id)->orWhere('id_usfx', $book_id)->first();
-            $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, $asset_id, $type)->first();
+            $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, $type)->first();
             if (!$fileset) {
                 return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404'));
             }
@@ -78,7 +74,7 @@ class BibleFileSetsController extends APIController
             if ($access_blocked) {
                 return $access_blocked;
             }
-
+            $asset_id = $fileset->asset_id;
             $bible = optional($fileset->bible)->first();
             $query = BibleFile::where('hash_id', $fileset->hash_id)
                 ->leftJoin(config('database.connections.dbp.database') . '.bible_books', function ($q) use ($bible) {
@@ -148,156 +144,6 @@ class BibleFileSetsController extends APIController
 
         return $fileset_type . '/' . ($bible ? $bible->id . '/' : '') . $fileset->id . '/' . $fileset_chapter->file_name;
     }
-
-    /**
-     *
-     * @OA\Get(
-     *     path="/bibles/filesets/{fileset_id}/download",
-     *     tags={"Bibles"},
-     *     summary="Download a Fileset",
-     *     description="Returns a an entire fileset or a selected portion of a fileset for download",
-     *     operationId="v4_bible_filesets.download",
-     *     @OA\Parameter(name="fileset_id", in="path", required=true, description="The fileset ID",
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
-     *     ),
-     *     @OA\Parameter(name="asset_id", in="query", required=true, description="The asset id",
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")
-     *     ),
-     *     @OA\Parameter(name="fileset_type", in="query", description="The type of fileset being queried",
-     *         @OA\Schema(ref="#/components/schemas/BibleFileset/properties/set_type_code")
-     *     ),
-     *     @OA\Parameter(name="book_ids", in="query", required=true,
-     *          description="The list of book ids to download content for, separated by commas. For a complete list see the `book_id` field in the `/bibles/books` route.",
-     *          example="GEN,EXO,MAT,REV",
-     *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="The requested fileset as a zipped download",
-     *         @OA\MediaType(mediaType="application/zip")
-     *     )
-     * )
-     *
-     * @param $id
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
-     */
-    public function download($id)
-    {
-        $id        = checkParam('fileset_id', true, $id);
-        $asset_id  = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
-        $type      = checkParam('fileset_type');
-        $books     = checkParam('book_ids');
-        $files     = null;
-
-        $fileset = BibleFileset::uniqueFileset($id, $asset_id, $type)->first();
-        if (!$fileset) {
-            return $this->replyWithError('Fileset ID not found');
-        }
-
-        // Filter Download By Books
-        if ($books) {
-            $books = explode(',', $books);
-            $files = BibleFile::with('book')->where('hash_id', $fileset->hash_id)->whereIn('book_id', $books)->get();
-            if (!$files) {
-                return $this->setStatusCode(404)->replyWithError('Files not found');
-            }
-            $books = $files->map(function ($file) {
-                $testamentLetter = ($file->book->book_testament === 'NT') ? 'B' : 'A';
-                return $testamentLetter . str_pad($file->book->testament_order, 2, 0, STR_PAD_LEFT);
-            })->unique();
-        }
-
-        Asset::download($files, 's3_fcbh', 'dbp.test', 5, $books);
-        return $this->reply('download successful');
-    }
-
-    /**
-     *
-     * Copyright
-     *
-     * @OA\Get(
-     *     path="/bibles/filesets/{fileset_id}/copyright",
-     *     tags={"Bibles"},
-     *     summary="Fileset Copyright information",
-     *     description="A fileset's copyright information and organizational connections",
-     *     operationId="v4_bible_filesets.copyright",
-     *     @OA\Parameter(
-     *          name="fileset_id",
-     *          in="path",
-     *          required=true,
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id"),
-     *          description="The fileset ID to retrieve the copyright information for"
-     *     ),
-     *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          required=true,
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id"),
-     *          description="The asset id which contains the Fileset"
-     *     ),
-     *     @OA\Parameter(
-     *          name="type",
-     *          in="query",
-     *          required=true,
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/set_type_code"),
-     *          description="The set type code for the fileset"
-     *     ),
-     *     @OA\Parameter(
-     *          name="iso",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso", default="eng"),
-     *          description="The iso code to filter organization translations by. For a complete list see the `iso` field in the `/languages` route."
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="The requested fileset copyright",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.copyright"))
-     *     )
-     * )
-     *
-     * @OA\Schema (
-     *     type="object",
-     *     schema="v4_bible_filesets.copyright",
-     *     description="v4_bible_filesets.copyright",
-     *     title="v4_bible_filesets.copyright",
-     *     @OA\Xml(name="v4_bible_filesets.copyright"),
-     *     @OA\Property(property="id", ref="#/components/schemas/BibleFileset/properties/id"),
-     *     @OA\Property(property="asset_id", ref="#/components/schemas/BibleFileset/properties/asset_id"),
-     *     @OA\Property(property="type", ref="#/components/schemas/BibleFileset/properties/set_type_code"),
-     *     @OA\Property(property="size", ref="#/components/schemas/BibleFileset/properties/set_size_code"),
-     *     @OA\Property(property="copyright", ref="#/components/schemas/BibleFilesetCopyright")
-     * )
-     *
-     * @see https://api.dbp.test/bibles/filesets/ENGESV/copyright?key=API_KEY&v=4&type=text_plain&pretty
-     * @param string $id
-     * @return mixed
-     */
-    public function copyright($id)
-    {
-        $iso = checkParam('iso') ?? 'eng';
-        $type = checkParam('type', true);
-        $asset_id = checkParam('bucket|bucket_id|asset_id') ?? 'dbp-prod';
-
-        $cache_params = [$asset_id, $id, $type, $iso];
-        $fileset = cacheRemember('bible_fileset_copyright', $cache_params, now()->addDay(), function () use ($iso, $type, $asset_id, $id) {
-            $language_id = optional(Language::where('iso', $iso)->select('id')->first())->id;
-            return BibleFileset::where('id', $id)->with([
-                'copyright.organizations.logos',
-                'copyright.organizations.translations' => function ($q) use ($language_id) {
-                    $q->where('language_id', $language_id);
-                }
-            ])
-                ->when($asset_id, function ($q) use ($asset_id) {
-                    $q->where('asset_id', $asset_id);
-                })
-                ->when($type, function ($q) use ($type) {
-                    $q->where('set_type_code', $type);
-                })->select(['hash_id', 'id', 'asset_id', 'set_type_code as type', 'set_size_code as size'])->first();
-        });
-
-        return $this->reply($fileset);
-    }
-
 
 
     /**

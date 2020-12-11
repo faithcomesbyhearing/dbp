@@ -57,12 +57,6 @@ class BiblesController extends APIController
      *              `/organizations`."
      *     ),
      *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Asset/properties/id"),
-     *          description="The asset_id to filter results by"
-     *     ),
-     *     @OA\Parameter(
      *          name="media",
      *          in="query",
      *          @OA\Property(ref="#/components/schemas/BibleFilesetType/properties/set_type_code"),
@@ -102,7 +96,6 @@ class BiblesController extends APIController
         $language_code      = checkParam('language_id|language_code');
         $organization_id    = checkParam('organization_id');
         $country            = checkParam('country');
-        $asset_id           = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
         $media              = checkParam('media');
         $media_exclude      = checkParam('media_exclude');
         $size               = checkParam('size');
@@ -122,12 +115,11 @@ class BiblesController extends APIController
 
         $access_control = (!$show_restricted) ? $this->accessControl($this->key) : (object) ['string' => null, 'hashes' => null];
         $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
-        $cache_params = [$language_code, $organization, $country, $asset_id, $access_control->string, $media, $media_exclude, $size, $size_exclude, $bitrate, $limit, $page];
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $asset_id, $access_control, $media, $media_exclude, $size, $size_exclude, $bitrate, $show_restricted, $limit, $page) {
-            $bibles = Bible::when(!$show_restricted, function ($query) use ($access_control, $asset_id, $media, $media_exclude, $size, $size_exclude, $bitrate) {
+        $cache_params = [$language_code, $organization, $country, $access_control->string, $media, $media_exclude, $size, $size_exclude, $bitrate, $limit, $page];
+        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $bitrate, $show_restricted, $limit, $page) {
+            $bibles = Bible::when(!$show_restricted, function ($query) use ($access_control, $media, $media_exclude, $size, $size_exclude, $bitrate) {
                 $query->withRequiredFilesets([
                     'access_control' => $access_control,
-                    'asset_id'       => $asset_id,
                     'media'          => $media,
                     'media_exclude'  => $media_exclude,
                     'size'           => $size,
@@ -210,12 +202,6 @@ class BiblesController extends APIController
      *     description="",
      *     operationId="v4_bible.one",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
-     *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Asset/properties/id"),
-     *          description="The asset_id to filter results by. "
-     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -229,7 +215,6 @@ class BiblesController extends APIController
      */
     public function show($id)
     {
-        $asset_id = checkParam('asset_id');
         $access_control = $this->accessControl($this->key);
         $cache_params = [$id, $access_control->string];
         $bible = cacheRemember('bibles_show', $cache_params, now()->addDay(), function () use ($access_control, $id) {
@@ -245,19 +230,13 @@ class BiblesController extends APIController
             return $this->setStatusCode(404)->replyWithError(trans('api.bibles_errors_404', ['bible_id' => $id]));
         }
 
-        if ($asset_id) {
-            $bible->filesets = $bible->filesets->filter(function ($fileset) use ($asset_id) {
-                return in_array($fileset->asset_id, explode(',', $asset_id));
-            });
-        }
-
         return $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
     }
 
     /**
      *
      * @OA\Get(
-     *     path="/bibles/{id}/book",
+     *     path="/bibles/{id}/book/{book?}",
      *     tags={"Bibles"},
      *     summary="Returns a list of translated book names and general information for the given Bible",
      *     description="The actual list of books may vary from fileset to fileset. For example, a King James Fileset may contain deuterocanonical books that are missing from one of it's sibling filesets nested within the bible parent.",
@@ -288,23 +267,19 @@ class BiblesController extends APIController
         $book_id   = checkParam('book_id', false, $book_id);
         $testament = checkParam('testament');
 
-        $asset_id = checkParam('asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
         $verify_content = checkBoolean('verify_content');
 
         $bible = Bible::find($bible_id);
         $access_control = $this->accessControl($this->key);
-        $cache_params = [$bible_id, $access_control->string, $verify_content, $asset_id];
-        $bible = cacheRemember('bible_books_bible', $cache_params, now()->addDay(), function () use ($access_control, $bible_id, $asset_id, $verify_content) {
+        $cache_params = [$bible_id, $access_control->string, $verify_content];
+        $bible = cacheRemember('bible_books_bible', $cache_params, now()->addDay(), function () use ($access_control, $bible_id, $verify_content) {
             if (!$verify_content) {
                 return Bible::find($bible_id);
             }
 
             return  Bible::with([
-                'filesets' => function ($query) use ($access_control, $asset_id) {
+                'filesets' => function ($query) use ($access_control) {
                     $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
-                    if ($asset_id) {
-                        $query->whereIn('bible_filesets.asset_id', explode(',', $asset_id));
-                    }
                 }
             ])->find($bible_id);
         });
@@ -331,12 +306,12 @@ class BiblesController extends APIController
         });
 
         if ($verify_content) {
-            $cache_params = [$bible_id, $access_control->string, $verify_content, $asset_id, $testament, $book_id];
+            $cache_params = [$bible_id, $access_control->string, $verify_content, $testament, $book_id];
             $books = cacheRemember('bible_books_books_verified', $cache_params, now()->addDay(), function () use ($books, $bible) {
                 $book_controller = new BooksController();
                 $active_books = [];
                 foreach ($bible->filesets as $fileset) {
-                    $books_fileset = $book_controller->getActiveBooksFromFileset($fileset->id, $fileset->asset_id, $fileset->set_type_code)->pluck('id');
+                    $books_fileset = $book_controller->getActiveBooksFromFileset($fileset->id, $fileset->set_type_code)->pluck('id');
                     $active_books = $this->processActiveBooks($books_fileset, $active_books, $fileset->set_type_code);
                 }
 
@@ -449,6 +424,19 @@ class BiblesController extends APIController
      *   @OA\Items(ref="#/components/schemas/v4_bible_filesets.copyright")
      * )
      *
+     * * @OA\Schema (
+     *     type="object",
+     *     schema="v4_bible_filesets.copyright",
+     *     description="v4_bible_filesets.copyright",
+     *     title="v4_bible_filesets.copyright",
+     *     @OA\Xml(name="v4_bible_filesets.copyright"),
+     *     @OA\Property(property="id", ref="#/components/schemas/BibleFileset/properties/id"),
+     *     @OA\Property(property="type", ref="#/components/schemas/BibleFileset/properties/set_type_code"),
+     *     @OA\Property(property="size", ref="#/components/schemas/BibleFileset/properties/set_size_code"),
+     *     @OA\Property(property="copyright", ref="#/components/schemas/BibleFilesetCopyright")
+     * )
+  
+     * 
      */
     public function copyright($bible_id)
     {
@@ -468,7 +456,7 @@ class BiblesController extends APIController
                     'copyright.organizations.translations' => function ($q) use ($language_id) {
                         $q->where('language_id', $language_id);
                     }
-                ])->select(['hash_id', 'id', 'asset_id', 'set_type_code as type', 'set_size_code as size'])->first();
+                ])->select(['hash_id', 'id', 'set_type_code as type', 'set_size_code as size'])->first();
             });
         });
 
@@ -546,7 +534,6 @@ class BiblesController extends APIController
      *   @OA\Property(property="copyrights",  type="array",
      *      @OA\Items(
      *          @OA\Property(property="id", ref="#/components/schemas/BibleFileset/properties/id"),
-     *          @OA\Property(property="asset_id", ref="#/components/schemas/BibleFileset/properties/asset_id"),
      *          @OA\Property(property="type", ref="#/components/schemas/BibleFileset/properties/set_type_code"),
      *          @OA\Property(property="size", ref="#/components/schemas/BibleFileset/properties/set_size_code"),
      *          @OA\Property(property="copyright", ref="#/components/schemas/v4_bible_filesets.copyright")
@@ -586,7 +573,6 @@ class BiblesController extends APIController
      *      @OA\Property(property="duration",       ref="#/components/schemas/BibleFile/properties/duration"),
      *      @OA\Property(property="fileset", type="object",
      *          @OA\Property(property="id", ref="#/components/schemas/BibleFileset/properties/id"),
-     *          @OA\Property(property="asset_id", ref="#/components/schemas/BibleFileset/properties/asset_id"),
      *          @OA\Property(property="type", ref="#/components/schemas/BibleFileset/properties/set_type_code"),
      *          @OA\Property(property="size", ref="#/components/schemas/BibleFileset/properties/set_size_code"),
      *      )
