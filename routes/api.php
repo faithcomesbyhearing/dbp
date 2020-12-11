@@ -31,7 +31,7 @@ Route::name('v4_internal_bible.chapter.annotations')
 // VERSION 4 | Filesets
 Route::name('v4_filesets.types')->get('bibles/filesets/media/types',               'Bible\BibleFileSetsController@mediaTypes');
 Route::name('v4_internal_filesets.checkTypes')->post('bibles/filesets/check/types', 'Bible\BibleFileSetsController@checkTypes');
-Route::name('v4_internal_filesets.podcast')->get('bibles/filesets/{fileset_id}/podcast',    'Bible\BibleFilesetsPodcastController@index');
+#Route::name('v4_internal_filesets.podcast')->get('bibles/filesets/{fileset_id}/podcast',    'Bible\BibleFilesetsPodcastController@index');
 Route::name('v4_filesets.show')->get('bibles/filesets/{fileset_id?}',              'Bible\BibleFileSetsController@show');
 Route::name('v4_filesets.books')->get('bibles/filesets/{fileset_id}/books',        'Bible\BooksController@show');
 
