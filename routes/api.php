@@ -32,11 +32,7 @@ Route::name('v4_internal_bible.chapter.annotations')
 Route::name('v4_filesets.types')->get('bibles/filesets/media/types',               'Bible\BibleFileSetsController@mediaTypes');
 Route::name('v4_internal_filesets.checkTypes')->post('bibles/filesets/check/types', 'Bible\BibleFileSetsController@checkTypes');
 Route::name('v4_internal_filesets.podcast')->get('bibles/filesets/{fileset_id}/podcast',    'Bible\BibleFilesetsPodcastController@index');
-Route::name('v4_filesets.download')->get('bibles/filesets/{fileset_id}/download',  'Bible\BibleFileSetsController@download');
-Route::name('v4_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
 Route::name('v4_filesets.show')->get('bibles/filesets/{fileset_id?}',              'Bible\BibleFileSetsController@show');
-Route::name('v4_internal_filesets.update')->put('bibles/filesets/{fileset_id}',     'User\Dashboard\BibleFilesetsManagementController@update');
-Route::name('v4_internal_filesets.store')->post('bibles/filesets',             'User\Dashboard\BibleFilesetsManagementController@store');
 Route::name('v4_filesets.books')->get('bibles/filesets/{fileset_id}/books',        'Bible\BooksController@show');
 
 // VERSION 4 | Text
@@ -54,9 +50,9 @@ Route::name('v4_internal_commentary_chapters')->get('commentaries/{commentary_id
 Route::name('v4_internal_lexicon_index')->get('lexicons',                                   'Bible\Study\LexiconController@index');
 
 // VERSION 4 | Timestamps
-Route::name('v4_timestamps')->get('timestamps',                                    'Bible\AudioController@availableTimestamps');
-Route::name('v4_timestamps.tag')->get('timestamps/search',                         'Bible\AudioController@timestampsByTag');
-Route::name('v4_timestamps.verse')->get('timestamps/{id}/{book}/{chapter}',        'Bible\AudioController@timestampsByReference');
+Route::name('v4_internal_timestamps')->get('timestamps',                                    'Bible\AudioController@availableTimestamps');
+Route::name('v4_internal_timestamps.tag')->get('timestamps/search',                         'Bible\AudioController@timestampsByTag');
+Route::name('v4_internal_timestamps.verse')->get('timestamps/{id}/{book}/{chapter}',        'Bible\AudioController@timestampsByReference');
 
 // VERSION 4 | Countries
 Route::name('v4_countries.all')->get('countries',                                  'Wiki\CountriesController@index');

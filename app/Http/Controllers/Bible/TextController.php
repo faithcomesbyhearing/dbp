@@ -56,7 +56,6 @@ class TextController extends APIController
      *     @OA\Parameter(name="verse_end", in="query", description="Will filter the results by the given end verse",
      *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_end")
      *     ),
-     *     @OA\Parameter(name="asset_id", in="query", description="Will filter the results by the given Asset", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -92,11 +91,10 @@ class TextController extends APIController
         $chapter     = checkParam('chapter_id', false, $chapter_url_param);
         $verse_start = checkParam('verse_start') ?? 1;
         $verse_end   = checkParam('verse_end');
-        $asset_id    = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3.bucket');
 
         $book = Book::where('id', $book_id)->orWhere('id_osis', $book_id)->first();
 
-        $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, $asset_id, 'text_plain')->first();
+        $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, 'text_plain')->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }
@@ -106,7 +104,7 @@ class TextController extends APIController
         if ($access_blocked) {
             return $access_blocked;
         }
-  
+        $asset_id = $fileset->asset_id;
         $cache_params = [$asset_id, $fileset_id, $book_id, $chapter, $verse_start, $verse_end];
         $verses = cacheRemember('bible_text', $cache_params, now()->addDay(), function () use ($fileset, $bible, $book, $chapter, $verse_start, $verse_end) {
             return BibleVerse::withVernacularMetaData($bible)
@@ -210,12 +208,6 @@ class TextController extends APIController
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
      *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          description="The Bible fileset asset_id", required=false,
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")
-     *     ),
-     *     @OA\Parameter(
      *          name="relevance_order",
      *          in="query",
      *          description="When set to true the returned result will be ordered by relevance",
@@ -254,12 +246,11 @@ class TextController extends APIController
         $query      = checkParam('query', true);
         $fileset_id = checkParam('fileset_id|dam_id', true);
         $book_id    = checkParam('book|book_id|books');
-        $asset_id   = checkParam('asset_id') ?? config('filesystems.disks.s3.bucket');
         $relevance_order   = checkParam('relevance_order');
         $limit      = checkParam('limit') ?? 15;
         $page       = checkParam('page');
 
-        $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, $asset_id, 'text_plain')->first();
+        $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, 'text_plain')->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }

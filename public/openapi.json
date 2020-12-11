@@ -3,19 +3,19 @@
     "info": {
         "title": "Digital Bible Platform",
         "description": "A Bible API",
-        "termsOfService": "http://digitalbibleplatform/terms/",
+        "termsOfService": "http:\/\/digitalbibleplatform\/terms\/",
         "contact": {
             "email": "support@digitalbibleplatform.com"
         },
         "license": {
             "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+            "url": "http:\/\/www.apache.org\/licenses\/LICENSE-2.0.html"
         },
         "version": "4.0-beta"
     },
     "servers": [
         {
-            "url": "http://api.dbp.test",
+            "url": "https:\/\/api.dbp4.org",
             "description": "Production Server",
             "variables": {
                 "schema": {
@@ -40,194 +40,7 @@
         }
     ],
     "paths": {
-        "/timestamps": {
-            "get": {
-                "tags": [
-                    "Bibles"
-                ],
-                "summary": "Returns Bible Filesets which have Audio timestamps",
-                "description": "This call returns a list of fileset that have timestamp metadata associated with them. This data could be used to search audio bibles for a specific term, make karaoke verse & audio readings, or to jump to a specific location in an audio file.",
-                "operationId": "v4_timestamps",
-                "parameters": [
-                    {
-                        "$ref": "#/components/parameters/version_number"
-                    },
-                    {
-                        "$ref": "#/components/parameters/key"
-                    },
-                    {
-                        "$ref": "#/components/parameters/format"
-                    },
-                    {
-                        "$ref": "#/components/parameters/pretty"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/v4_bible_timestamps"
-                                }
-                            }
-                        }
-                    },
-                    "204": {
-                        "description": "No timestamps are available at this time"
-                    }
-                }
-            }
-        },
-        "/timestamps/{fileset_id}/{book}/{chapter}": {
-            "get": {
-                "tags": [
-                    "Bible"
-                ],
-                "summary": "Returns Audio timestamps for a specific reference",
-                "description": "This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
-                "operationId": "v4_timestamps.verse",
-                "parameters": [
-                    {
-                        "name": "fileset_id",
-                        "in": "path",
-                        "description": "The specific fileset to return references for",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/id"
-                        }
-                    },
-                    {
-                        "name": "book",
-                        "in": "path",
-                        "description": "The Book ID for which to return timestamps. For a complete list see the `book_id` field in the `/bibles/books` route.",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/Book/properties/id"
-                        }
-                    },
-                    {
-                        "name": "chapter",
-                        "in": "path",
-                        "description": "The chapter for which to return timestamps",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
-                        }
-                    },
-                    {
-                        "$ref": "#/components/parameters/version_number"
-                    },
-                    {
-                        "$ref": "#/components/parameters/key"
-                    },
-                    {
-                        "$ref": "#/components/parameters/format"
-                    },
-                    {
-                        "$ref": "#/components/parameters/pretty"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/v4_audio_timestamps"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/timestamps/search": {
-            "get": {
-                "tags": [
-                    "Bibles"
-                ],
-                "summary": "Returns audio timestamps for a specific word",
-                "description": "This route will search the text for a specific word or phrase and return a collection of timestamps associated with the verse references connected to the term",
-                "operationId": "v4_timestamps.tag",
-                "parameters": [
-                    {
-                        "name": "audio_fileset_id",
-                        "in": "query",
-                        "description": "The specific audio fileset to return references for",
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/id"
-                        }
-                    },
-                    {
-                        "name": "audio_asset_id",
-                        "in": "query",
-                        "description": "The specific audio asset id to return references for",
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/asset_id"
-                        }
-                    },
-                    {
-                        "name": "text_fileset_id",
-                        "in": "query",
-                        "description": "The specific text fileset to return references for",
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/id"
-                        }
-                    },
-                    {
-                        "name": "text_asset_id",
-                        "in": "query",
-                        "description": "The specific text asset id to return references for",
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/asset_id"
-                        }
-                    },
-                    {
-                        "name": "book_id",
-                        "in": "query",
-                        "description": "The specific book id to return references for.  For a complete list see the `book_id` field in the `/bibles/books` route.",
-                        "schema": {
-                            "$ref": "#/components/schemas/Book/properties/id"
-                        }
-                    },
-                    {
-                        "name": "query",
-                        "in": "query",
-                        "description": "The tag for which to return timestamps",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "$ref": "#/components/parameters/version_number"
-                    },
-                    {
-                        "$ref": "#/components/parameters/key"
-                    },
-                    {
-                        "$ref": "#/components/parameters/format"
-                    },
-                    {
-                        "$ref": "#/components/parameters/pretty"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/v4_timestamps_tag"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/bible/equivalents": {
+        "\/bible\/equivalents": {
             "get": {
                 "tags": [
                     "Bibles"
@@ -241,7 +54,7 @@
                         "in": "query",
                         "description": "The organization id to filter equivalents by",
                         "schema": {
-                            "$ref": "#/components/schemas/Organization/properties/id"
+                            "$ref": "#\/components\/schemas\/Organization\/properties\/id"
                         }
                     },
                     {
@@ -249,29 +62,29 @@
                         "in": "query",
                         "description": "The Bible id to return equivalents for",
                         "schema": {
-                            "$ref": "#/components/schemas/Bible/properties/id"
+                            "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_bible_equivalents.all"
+                                    "$ref": "#\/components\/schemas\/v4_bible_equivalents.all"
                                 }
                             }
                         }
@@ -279,14 +92,14 @@
                 }
             }
         },
-        "/bibles/filesets/{fileset_id}/download": {
+        "\/bibles\/filesets\/{fileset_id}": {
             "get": {
                 "tags": [
                     "Bibles"
                 ],
-                "summary": "Download a Fileset",
-                "description": "Returns a an entire fileset or a selected portion of a fileset for download",
-                "operationId": "v4_bible_filesets.download",
+                "summary": "Returns Bibles Filesets",
+                "description": "Returns a list of bible filesets",
+                "operationId": "v4_bible_filesets.show",
                 "parameters": [
                     {
                         "name": "fileset_id",
@@ -294,124 +107,54 @@
                         "description": "The fileset ID",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/id"
+                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/id"
                         }
                     },
                     {
-                        "name": "asset_id",
+                        "name": "book_id",
                         "in": "query",
-                        "description": "The asset id",
-                        "required": true,
+                        "description": "Will filter the results by the given book. For a complete list see the `book_id` field in the `\/bibles\/books` route.",
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/asset_id"
+                            "$ref": "#\/components\/schemas\/Book\/properties\/id"
                         }
                     },
                     {
-                        "name": "fileset_type",
+                        "name": "chapter_id",
                         "in": "query",
-                        "description": "The type of fileset being queried",
+                        "description": "Will filter the results by the given chapter",
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/set_type_code"
-                        }
-                    },
-                    {
-                        "name": "book_ids",
-                        "in": "query",
-                        "description": "The list of book ids to download content for, separated by commas. For a complete list see the `book_id` field in the `/bibles/books` route.",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/Book/properties/id"
-                        },
-                        "example": "GEN,EXO,MAT,REV"
-                    },
-                    {
-                        "$ref": "#/components/parameters/version_number"
-                    },
-                    {
-                        "$ref": "#/components/parameters/key"
-                    },
-                    {
-                        "$ref": "#/components/parameters/format"
-                    },
-                    {
-                        "$ref": "#/components/parameters/pretty"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "The requested fileset as a zipped download",
-                        "content": {
-                            "application/zip": {}
-                        }
-                    }
-                }
-            }
-        },
-        "/bibles/filesets/{fileset_id}/copyright": {
-            "get": {
-                "tags": [
-                    "Bibles"
-                ],
-                "summary": "Fileset Copyright information",
-                "description": "A fileset's copyright information and organizational connections",
-                "operationId": "v4_bible_filesets.copyright",
-                "parameters": [
-                    {
-                        "name": "fileset_id",
-                        "in": "path",
-                        "description": "The fileset ID to retrieve the copyright information for",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/id"
-                        }
-                    },
-                    {
-                        "name": "asset_id",
-                        "in": "query",
-                        "description": "The asset id which contains the Fileset",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/asset_id"
+                            "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                         }
                     },
                     {
                         "name": "type",
                         "in": "query",
-                        "description": "The set type code for the fileset",
+                        "description": "The fileset type",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/set_type_code"
+                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/set_type_code"
                         }
                     },
                     {
-                        "name": "iso",
-                        "in": "query",
-                        "description": "The iso code to filter organization translations by. For a complete list see the `iso` field in the `/languages` route.",
-                        "schema": {
-                            "default": "eng",
-                            "$ref": "#/components/schemas/Language/properties/iso"
-                        }
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
-                    },
-                    {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "The requested fileset copyright",
+                        "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_bible_filesets.copyright"
+                                    "$ref": "#\/components\/schemas\/v4_bible_filesets.show"
                                 }
                             }
                         }
@@ -419,7 +162,7 @@
                 }
             }
         },
-        "/bibles/filesets/media/types": {
+        "\/bibles\/filesets\/media\/types": {
             "get": {
                 "tags": [
                     "Bibles"
@@ -429,23 +172,23 @@
                 "operationId": "v4_bible_filesets.types",
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "The fileset types",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
                                     "type": "object",
                                     "example": {
@@ -463,7 +206,7 @@
                 }
             }
         },
-        "/bibles": {
+        "\/bibles": {
             "get": {
                 "tags": [
                     "Bibles"
@@ -475,89 +218,65 @@
                     {
                         "name": "language_code",
                         "in": "query",
-                        "description": "The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `/languages` route",
+                        "description": "The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `\/languages` route",
                         "schema": {
-                            "$ref": "#/components/schemas/Language/properties/iso"
+                            "$ref": "#\/components\/schemas\/Language\/properties\/iso"
                         }
                     },
                     {
                         "name": "organization_id",
                         "in": "query",
-                        "description": "The owning organization to return bibles for. For a complete list of ids see the route\n     *              `/organizations`.",
+                        "description": "The owning organization to return bibles for. For a complete list of ids see the route\n     *              `\/organizations`.",
                         "schema": {
-                            "$ref": "#/components/schemas/Organization/properties/id"
-                        }
-                    },
-                    {
-                        "name": "asset_id",
-                        "in": "query",
-                        "description": "The asset_id to filter results by",
-                        "schema": {
-                            "$ref": "#/components/schemas/Asset/properties/id"
+                            "$ref": "#\/components\/schemas\/Organization\/properties\/id"
                         }
                     },
                     {
                         "name": "media",
                         "in": "query",
-                        "description": "Will filter bibles based upon the media type of their filesets",
-                        "schema": {
-                            "property": null,
-                            "$ref": "#/components/schemas/BibleFilesetType/properties/set_type_code"
-                        }
+                        "description": "Will filter bibles based upon the media type of their filesets"
                     },
                     {
                         "name": "media_exclude",
                         "in": "query",
-                        "description": "Will exclude bibles based upon the media type of their filesets",
-                        "schema": {
-                            "property": null,
-                            "$ref": "#/components/schemas/BibleFilesetType/properties/set_type_code"
-                        }
+                        "description": "Will exclude bibles based upon the media type of their filesets"
                     },
                     {
                         "name": "size",
                         "in": "query",
-                        "description": "Will filter bibles based upon the size type of their filesets",
-                        "schema": {
-                            "property": null,
-                            "$ref": "#/components/schemas/BibleFilesetSize/properties/set_size_code"
-                        }
+                        "description": "Will filter bibles based upon the size type of their filesets"
                     },
                     {
                         "name": "size_exclude",
                         "in": "query",
-                        "description": "Will exclude bibles based upon the size type of their filesets",
-                        "schema": {
-                            "property": null,
-                            "$ref": "#/components/schemas/BibleFilesetSize/properties/set_size_code"
-                        }
+                        "description": "Will exclude bibles based upon the size type of their filesets"
                     },
                     {
-                        "$ref": "#/components/parameters/page"
+                        "$ref": "#\/components\/parameters\/page"
                     },
                     {
-                        "$ref": "#/components/parameters/limit"
+                        "$ref": "#\/components\/parameters\/limit"
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_bible.all"
+                                    "$ref": "#\/components\/schemas\/v4_bible.all"
                                 }
                             }
                         }
@@ -565,7 +284,7 @@
                 }
             }
         },
-        "/bibles/{id}": {
+        "\/bibles\/{id}": {
             "get": {
                 "tags": [
                     "Bibles"
@@ -579,37 +298,29 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/Bible/properties/id"
+                            "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                         }
                     },
                     {
-                        "name": "asset_id",
-                        "in": "query",
-                        "description": "The asset_id to filter results by. ",
-                        "schema": {
-                            "$ref": "#/components/schemas/Asset/properties/id"
-                        }
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
-                    },
-                    {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_bible.one"
+                                    "$ref": "#\/components\/schemas\/v4_bible.one"
                                 }
                             }
                         }
@@ -617,7 +328,7 @@
                 }
             }
         },
-        "/bibles/{id}/book": {
+        "\/bibles\/{id}\/book\/{book?}": {
             "get": {
                 "tags": [
                     "Bibles"
@@ -631,22 +342,22 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/Bible/properties/id"
+                            "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                         }
                     },
                     {
                         "name": "book_id",
                         "in": "query",
-                        "description": "The book id. For a complete list see the `book_id` field in the `/bibles/books` route.",
+                        "description": "The book id. For a complete list see the `book_id` field in the `\/bibles\/books` route.",
                         "schema": {
-                            "$ref": "#/components/schemas/Book/properties/id"
+                            "$ref": "#\/components\/schemas\/Book\/properties\/id"
                         }
                     },
                     {
                         "name": "testament",
                         "in": "query",
                         "schema": {
-                            "$ref": "#/components/schemas/Book/properties/book_testament"
+                            "$ref": "#\/components\/schemas\/Book\/properties\/book_testament"
                         }
                     },
                     {
@@ -658,25 +369,25 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_bible.books"
+                                    "$ref": "#\/components\/schemas\/v4_bible.books"
                                 }
                             }
                         }
@@ -684,7 +395,7 @@
                 }
             }
         },
-        "/bibles/defaults/types": {
+        "\/bibles\/defaults\/types": {
             "get": {
                 "tags": [
                     "Bibles"
@@ -704,25 +415,25 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_bibles_defaults"
+                                    "$ref": "#\/components\/schemas\/v4_bibles_defaults"
                                 }
                             }
                         }
@@ -730,7 +441,7 @@
                 }
             }
         },
-        "/bibles/{bible_id}/copyright": {
+        "\/bibles\/{bible_id}\/copyright": {
             "get": {
                 "tags": [
                     "Bibles"
@@ -745,38 +456,37 @@
                         "description": "The Bible ID to retrieve the copyright information for",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/Bible/properties/id"
+                            "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                         }
                     },
                     {
                         "name": "iso",
                         "in": "query",
-                        "description": "The iso code to filter organization translations by. For a complete list see the `iso` field in the `/languages` route.",
+                        "description": "The iso code to filter organization translations by. For a complete list see the `iso` field in the `\/languages` route.",
                         "schema": {
-                            "default": "eng",
-                            "$ref": "#/components/schemas/Language/properties/iso"
+                            "$ref": "#\/components\/schemas\/Language\/properties\/iso"
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "The requested bible copyrights",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_bible.copyright"
+                                    "$ref": "#\/components\/schemas\/v4_bible.copyright"
                                 }
                             }
                         }
@@ -784,7 +494,7 @@
                 }
             }
         },
-        "/bibles/books": {
+        "\/bibles\/books": {
             "get": {
                 "tags": [
                     "Bibles"
@@ -794,25 +504,25 @@
                 "operationId": "v4_bible_books_all",
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_bible_books_all"
+                                    "$ref": "#\/components\/schemas\/v4_bible_books_all"
                                 }
                             }
                         }
@@ -820,7 +530,7 @@
                 }
             }
         },
-        "/bibles/filesets/{fileset_id}/books": {
+        "\/bibles\/filesets\/{fileset_id}\/books": {
             "get": {
                 "tags": [
                     "Bibles"
@@ -834,7 +544,7 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/id"
+                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/id"
                         }
                     },
                     {
@@ -843,38 +553,29 @@
                         "description": "The type of fileset being queried",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/set_type_code"
+                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/set_type_code"
                         }
                     },
                     {
-                        "name": "asset_id",
-                        "in": "query",
-                        "description": "The asset id to select the fileset by",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/asset_id"
-                        }
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
-                    },
-                    {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_bible.books"
+                                    "$ref": "#\/components\/schemas\/v4_bible.books"
                                 }
                             }
                         }
@@ -882,7 +583,7 @@
                 }
             }
         },
-        "/bibles/filesets/{id}/{book}/{chapter}": {
+        "\/bibles\/filesets\/{id}\/{book}\/{chapter}": {
             "get": {
                 "tags": [
                     "Text"
@@ -897,16 +598,16 @@
                         "description": "The Bible fileset ID",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/id"
+                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/id"
                         }
                     },
                     {
                         "name": "book",
                         "in": "path",
-                        "description": "The Book ID. For a complete list see the `book_id` field in the `/bibles/books` route.",
+                        "description": "The Book ID. For a complete list see the `book_id` field in the `\/bibles\/books` route.",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/Book/properties/id"
+                            "$ref": "#\/components\/schemas\/Book\/properties\/id"
                         }
                     },
                     {
@@ -915,7 +616,7 @@
                         "description": "The chapter number",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
+                            "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                         }
                     },
                     {
@@ -923,7 +624,7 @@
                         "in": "query",
                         "description": "Will filter the results by the given start verse",
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                            "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                         }
                     },
                     {
@@ -931,37 +632,29 @@
                         "in": "query",
                         "description": "Will filter the results by the given end verse",
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFile/properties/verse_end"
+                            "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_end"
                         }
                     },
                     {
-                        "name": "asset_id",
-                        "in": "query",
-                        "description": "Will filter the results by the given Asset",
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/asset_id"
-                        }
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
-                    },
-                    {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_bible_filesets_chapter"
+                                    "$ref": "#\/components\/schemas\/v4_bible_filesets_chapter"
                                 }
                             }
                         }
@@ -969,7 +662,7 @@
                 }
             }
         },
-        "/search": {
+        "\/search": {
             "get": {
                 "tags": [
                     "Text"
@@ -993,16 +686,7 @@
                         "description": "The Bible fileset ID",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/id"
-                        }
-                    },
-                    {
-                        "name": "asset_id",
-                        "in": "query",
-                        "description": "The Bible fileset asset_id",
-                        "required": false,
-                        "schema": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/asset_id"
+                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/id"
                         }
                     },
                     {
@@ -1024,7 +708,7 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/page"
+                        "$ref": "#\/components\/parameters\/page"
                     },
                     {
                         "name": "books",
@@ -1036,25 +720,25 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_text_search"
+                                    "$ref": "#\/components\/schemas\/v4_text_search"
                                 }
                             }
                         }
@@ -1062,35 +746,35 @@
                 }
             }
         },
-        "/alphabets": {
+        "\/alphabets": {
             "get": {
                 "tags": [
                     "Languages"
                 ],
                 "summary": "Returns Alphabets",
-                "description": "Returns a list of the world's known scripts. This route might be useful to you if you'd like to you if you'd like to query information about fonts, alphabets, and the world's writing systems. Some fileset returns may not display correctly without a font delivered by these via the `alphabets/{id}` routes.",
+                "description": "Returns a list of the world's known scripts. This route might be useful to you if you'd like to you if you'd like to query information about fonts, alphabets, and the world's writing systems. Some fileset returns may not display correctly without a font delivered by these via the `alphabets\/{id}` routes.",
                 "operationId": "v4_alphabets.all",
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_alphabets_all_response"
+                                    "$ref": "#\/components\/schemas\/v4_alphabets_all_response"
                                 }
                             }
                         }
@@ -1098,7 +782,7 @@
                 }
             }
         },
-        "/alphabets/{id}": {
+        "\/alphabets\/{id}": {
             "get": {
                 "tags": [
                     "Languages"
@@ -1113,29 +797,29 @@
                         "description": "The alphabet ID",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/Alphabet/properties/script"
+                            "$ref": "#\/components\/schemas\/Alphabet\/properties\/script"
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_alphabets_one_response"
+                                    "$ref": "#\/components\/schemas\/v4_alphabets_one_response"
                                 }
                             }
                         }
@@ -1143,7 +827,7 @@
                 }
             }
         },
-        "/countries": {
+        "\/countries": {
             "get": {
                 "tags": [
                     "Countries"
@@ -1155,9 +839,9 @@
                     {
                         "name": "l10n",
                         "in": "query",
-                        "description": "When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route",
+                        "description": "When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `\/languages` route",
                         "schema": {
-                            "$ref": "#/components/schemas/Language/properties/iso"
+                            "$ref": "#\/components\/schemas\/Language\/properties\/iso"
                         }
                     },
                     {
@@ -1169,14 +853,6 @@
                         }
                     },
                     {
-                        "name": "asset_id",
-                        "in": "query",
-                        "description": "Filter the returned countries to only those containing filesets for a specific asset",
-                        "schema": {
-                            "$ref": "#/components/schemas/Asset/properties/id"
-                        }
-                    },
-                    {
                         "name": "include_languages",
                         "in": "query",
                         "description": "When set to true, the return will include the major languages used in each country. You may optionally also include the language names by setting it to `with_names`",
@@ -1185,25 +861,25 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_countries.all"
+                                    "$ref": "#\/components\/schemas\/v4_countries.all"
                                 }
                             }
                         }
@@ -1211,7 +887,7 @@
                 }
             }
         },
-        "/countries/{id}": {
+        "\/countries\/{id}": {
             "get": {
                 "tags": [
                     "Countries"
@@ -1225,29 +901,29 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/Country/properties/id"
+                            "$ref": "#\/components\/schemas\/Country\/properties\/id"
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_countries.one"
+                                    "$ref": "#\/components\/schemas\/v4_countries.one"
                                 }
                             }
                         }
@@ -1255,7 +931,7 @@
                 }
             }
         },
-        "/languages": {
+        "\/languages": {
             "get": {
                 "tags": [
                     "Languages"
@@ -1269,15 +945,15 @@
                         "in": "query",
                         "description": "The country",
                         "schema": {
-                            "$ref": "#/components/schemas/Country/properties/id"
+                            "$ref": "#\/components\/schemas\/Country\/properties\/id"
                         }
                     },
                     {
                         "name": "iso",
                         "in": "query",
-                        "description": "The iso code to filter languages by. For a complete list see the `iso` field in the `/languages` route",
+                        "description": "The iso code to filter languages by. For a complete list see the `iso` field in the `\/languages` route",
                         "schema": {
-                            "$ref": "#/components/schemas/Language/properties/iso"
+                            "$ref": "#\/components\/schemas\/Language\/properties\/iso"
                         }
                     },
                     {
@@ -1285,15 +961,7 @@
                         "in": "query",
                         "description": "The language_name field will filter results by a specific language name",
                         "schema": {
-                            "$ref": "#/components/schemas/Language/properties/iso"
-                        }
-                    },
-                    {
-                        "name": "asset_id",
-                        "in": "query",
-                        "description": "The bucket_id",
-                        "schema": {
-                            "$ref": "#/components/schemas/Asset/properties/id"
+                            "$ref": "#\/components\/schemas\/Language\/properties\/iso"
                         }
                     },
                     {
@@ -1301,7 +969,7 @@
                         "in": "query",
                         "description": "The include_alt_names",
                         "schema": {
-                            "$ref": "#/components/schemas/Language/properties/name"
+                            "$ref": "#\/components\/schemas\/Language\/properties\/name"
                         }
                     },
                     {
@@ -1329,40 +997,40 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/l10n"
+                        "$ref": "#\/components\/parameters\/l10n"
                     },
                     {
-                        "$ref": "#/components/parameters/sort_by"
+                        "$ref": "#\/components\/parameters\/sort_by"
                     },
                     {
-                        "$ref": "#/components/parameters/sort_dir"
+                        "$ref": "#\/components\/parameters\/sort_dir"
                     },
                     {
-                        "$ref": "#/components/parameters/page"
+                        "$ref": "#\/components\/parameters\/page"
                     },
                     {
-                        "$ref": "#/components/parameters/limit"
+                        "$ref": "#\/components\/parameters\/limit"
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_languages.all"
+                                    "$ref": "#\/components\/schemas\/v4_languages.all"
                                 }
                             }
                         }
@@ -1370,12 +1038,12 @@
                 }
             }
         },
-        "/languages/{id}": {
+        "\/languages\/{id}": {
             "get": {
                 "tags": [
                     "Languages"
                 ],
-                "summary": "Return a single Languages",
+                "summary": "Returns a single Language",
                 "description": "Returns a single Language",
                 "operationId": "v4_languages.one",
                 "parameters": [
@@ -1385,29 +1053,29 @@
                         "description": "The language ID",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/Language/properties/id"
+                            "$ref": "#\/components\/schemas\/Language\/properties\/id"
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_languages.one"
+                                    "$ref": "#\/components\/schemas\/v4_languages.one"
                                 }
                             }
                         }
@@ -1415,7 +1083,7 @@
                 }
             }
         },
-        "/numbers/range": {
+        "\/numbers\/range": {
             "get": {
                 "tags": [
                     "Languages"
@@ -1430,7 +1098,7 @@
                         "description": "The script_id to return numbers for",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/NumeralSystem/properties/id"
+                            "$ref": "#\/components\/schemas\/NumeralSystem\/properties\/id"
                         }
                     },
                     {
@@ -1452,25 +1120,25 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_numbers_range"
+                                    "$ref": "#\/components\/schemas\/v4_numbers_range"
                                 }
                             }
                         }
@@ -1478,7 +1146,7 @@
                 }
             }
         },
-        "/numbers": {
+        "\/numbers": {
             "get": {
                 "tags": [
                     "Languages"
@@ -1488,25 +1156,25 @@
                 "operationId": "v4_numbers.index",
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_numbers.index"
+                                    "$ref": "#\/components\/schemas\/v4_numbers.index"
                                 }
                             }
                         }
@@ -1514,7 +1182,7 @@
                 }
             }
         },
-        "/numbers/{id}": {
+        "\/numbers\/{id}": {
             "get": {
                 "tags": [
                     "Languages"
@@ -1529,29 +1197,29 @@
                         "description": "The NumeralSystem id",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/NumeralSystem/properties/id"
+                            "$ref": "#\/components\/schemas\/NumeralSystem\/properties\/id"
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/version_number"
+                        "$ref": "#\/components\/parameters\/version_number"
                     },
                     {
-                        "$ref": "#/components/parameters/key"
+                        "$ref": "#\/components\/parameters\/key"
                     },
                     {
-                        "$ref": "#/components/parameters/format"
+                        "$ref": "#\/components\/parameters\/format"
                     },
                     {
-                        "$ref": "#/components/parameters/pretty"
+                        "$ref": "#\/components\/parameters\/pretty"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "successful operation",
                         "content": {
-                            "application/json": {
+                            "application\/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/v4_numbers.show"
+                                    "$ref": "#\/components\/schemas\/v4_numbers.show"
                                 }
                             }
                         }
@@ -1672,56 +1340,15 @@
                     "name": "pagination.alternate"
                 }
             },
-            "v4_bible_timestamps": {
-                "title": "Bible Timestamps",
-                "description": "The bibles hash returned for timestamps",
-                "type": "array",
-                "items": {
-                    "properties": {
-                        "fileset_id": {
-                            "$ref": "#/components/schemas/BibleFileset/properties/id"
-                        }
-                    },
-                    "type": "object"
-                },
-                "xml": {
-                    "name": "v4_bible.timestamps"
-                }
-            },
             "v4_bible_equivalents.all": {
                 "title": "v4_bible_equivalents.all",
                 "description": "v4_bible_equivalents.all",
                 "type": "array",
                 "items": {
-                    "$ref": "#/components/schemas/BibleEquivalent"
+                    "$ref": "#\/components\/schemas\/BibleEquivalent"
                 },
                 "xml": {
                     "name": "v4_bible_equivalents.all"
-                }
-            },
-            "v4_bible_filesets.copyright": {
-                "title": "v4_bible_filesets.copyright",
-                "description": "v4_bible_filesets.copyright",
-                "properties": {
-                    "id": {
-                        "$ref": "#/components/schemas/BibleFileset/properties/id"
-                    },
-                    "asset_id": {
-                        "$ref": "#/components/schemas/BibleFileset/properties/asset_id"
-                    },
-                    "type": {
-                        "$ref": "#/components/schemas/BibleFileset/properties/set_type_code"
-                    },
-                    "size": {
-                        "$ref": "#/components/schemas/BibleFileset/properties/set_size_code"
-                    },
-                    "copyright": {
-                        "$ref": "#/components/schemas/BibleFilesetCopyright"
-                    }
-                },
-                "type": "object",
-                "xml": {
-                    "name": "v4_bible_filesets.copyright"
                 }
             },
             "v4_bibles_defaults": {
@@ -1731,10 +1358,10 @@
                     "en": {
                         "properties": {
                             "video": {
-                                "$ref": "#/components/schemas/Bible/properties/id"
+                                "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                             },
                             "audio": {
-                                "$ref": "#/components/schemas/Bible/properties/id"
+                                "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                             }
                         },
                         "type": "object"
@@ -1750,28 +1377,50 @@
                 "description": "The v4 bible copyrights response.",
                 "type": "array",
                 "items": {
-                    "$ref": "#/components/schemas/v4_bible_filesets.copyright"
+                    "$ref": "#\/components\/schemas\/v4_bible_filesets.copyright"
+                }
+            },
+            "v4_bible_filesets.copyright": {
+                "title": "v4_bible_filesets.copyright",
+                "description": "v4_bible_filesets.copyright",
+                "properties": {
+                    "id": {
+                        "$ref": "#\/components\/schemas\/BibleFileset\/properties\/id"
+                    },
+                    "type": {
+                        "$ref": "#\/components\/schemas\/BibleFileset\/properties\/set_type_code"
+                    },
+                    "size": {
+                        "$ref": "#\/components\/schemas\/BibleFileset\/properties\/set_size_code"
+                    },
+                    "copyright": {
+                        "$ref": "#\/components\/schemas\/BibleFilesetCopyright"
+                    }
+                },
+                "type": "object",
+                "xml": {
+                    "name": "v4_bible_filesets.copyright"
                 }
             },
             "v4_bible.fileset_chapter": {
                 "properties": {
                     "book_id": {
-                        "$ref": "#/components/schemas/BibleFile/properties/book_id"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/book_id"
                     },
                     "book_name": {
-                        "$ref": "#/components/schemas/BookTranslation/properties/name"
+                        "$ref": "#\/components\/schemas\/BookTranslation\/properties\/name"
                     },
                     "chapter_start": {
-                        "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                     },
                     "chapter_end": {
-                        "$ref": "#/components/schemas/BibleFile/properties/chapter_end"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_end"
                     },
                     "verse_start": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                     },
                     "verse_end": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_end"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_end"
                     },
                     "thumbnail": {
                         "description": "The image url",
@@ -1779,27 +1428,24 @@
                         "maxLength": 191
                     },
                     "timestamp": {
-                        "$ref": "#/components/schemas/BibleFileTimestamp/properties/timestamp"
+                        "$ref": "#\/components\/schemas\/BibleFileTimestamp\/properties\/timestamp"
                     },
                     "path": {
-                        "$ref": "#/components/schemas/BibleFile/properties/file_name"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/file_name"
                     },
                     "duration": {
-                        "$ref": "#/components/schemas/BibleFile/properties/duration"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/duration"
                     },
                     "fileset": {
                         "properties": {
                             "id": {
-                                "$ref": "#/components/schemas/BibleFileset/properties/id"
-                            },
-                            "asset_id": {
-                                "$ref": "#/components/schemas/BibleFileset/properties/asset_id"
+                                "$ref": "#\/components\/schemas\/BibleFileset\/properties\/id"
                             },
                             "type": {
-                                "$ref": "#/components/schemas/BibleFileset/properties/set_type_code"
+                                "$ref": "#\/components\/schemas\/BibleFileset\/properties\/set_type_code"
                             },
                             "size": {
-                                "$ref": "#/components/schemas/BibleFileset/properties/set_size_code"
+                                "$ref": "#\/components\/schemas\/BibleFileset\/properties\/set_size_code"
                             }
                         },
                         "type": "object"
@@ -1812,10 +1458,10 @@
                 "items": {
                     "properties": {
                         "timestamp": {
-                            "$ref": "#/components/schemas/BibleFileTimestamp/properties/timestamp"
+                            "$ref": "#\/components\/schemas\/BibleFileTimestamp\/properties\/timestamp"
                         },
                         "verse_start": {
-                            "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                            "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                         }
                     },
                     "type": "object"
@@ -1864,13 +1510,13 @@
             "v4_text_search": {
                 "properties": {
                     "verses": {
-                        "$ref": "#/components/schemas/v4_bible_filesets_chapter"
+                        "$ref": "#\/components\/schemas\/v4_bible_filesets_chapter"
                     }
                 },
                 "type": "object",
                 "allOf": [
                     {
-                        "$ref": "#/components/schemas/pagination.alternate"
+                        "$ref": "#\/components\/schemas\/pagination.alternate"
                     }
                 ]
             },
@@ -1884,41 +1530,41 @@
                 "type": "object",
                 "allOf": [
                     {
-                        "$ref": "#/components/schemas/v4_plan"
+                        "$ref": "#\/components\/schemas\/v4_plan"
                     }
                 ]
             },
             "v4_plan": {
                 "properties": {
                     "id": {
-                        "$ref": "#/components/schemas/Plan/properties/id"
+                        "$ref": "#\/components\/schemas\/Plan\/properties\/id"
                     },
                     "name": {
-                        "$ref": "#/components/schemas/Plan/properties/name"
+                        "$ref": "#\/components\/schemas\/Plan\/properties\/name"
                     },
                     "featured": {
-                        "$ref": "#/components/schemas/Plan/properties/featured"
+                        "$ref": "#\/components\/schemas\/Plan\/properties\/featured"
                     },
                     "thumbnail": {
-                        "$ref": "#/components/schemas/Plan/properties/thumbnail"
+                        "$ref": "#\/components\/schemas\/Plan\/properties\/thumbnail"
                     },
                     "suggested_start_date": {
-                        "$ref": "#/components/schemas/Plan/properties/suggested_start_date"
+                        "$ref": "#\/components\/schemas\/Plan\/properties\/suggested_start_date"
                     },
                     "created_at": {
-                        "$ref": "#/components/schemas/Plan/properties/created_at"
+                        "$ref": "#\/components\/schemas\/Plan\/properties\/created_at"
                     },
                     "updated_at": {
-                        "$ref": "#/components/schemas/Plan/properties/updated_at"
+                        "$ref": "#\/components\/schemas\/Plan\/properties\/updated_at"
                     },
                     "start_date": {
-                        "$ref": "#/components/schemas/UserPlan/properties/start_date"
+                        "$ref": "#\/components\/schemas\/UserPlan\/properties\/start_date"
                     },
                     "percentage_completed": {
-                        "$ref": "#/components/schemas/UserPlan/properties/percentage_completed"
+                        "$ref": "#\/components\/schemas\/UserPlan\/properties\/percentage_completed"
                     },
                     "user": {
-                        "$ref": "#/components/schemas/v4_plan_index_user"
+                        "$ref": "#\/components\/schemas\/v4_plan_index_user"
                     }
                 },
                 "type": "object"
@@ -1940,48 +1586,48 @@
                     "days": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/PlanDay"
+                            "$ref": "#\/components\/schemas\/PlanDay"
                         }
                     }
                 },
                 "type": "object",
                 "allOf": [
                     {
-                        "$ref": "#/components/schemas/v4_plan"
+                        "$ref": "#\/components\/schemas\/v4_plan"
                     }
                 ]
             },
             "PlaylistItemDetail": {
                 "properties": {
                     "id": {
-                        "$ref": "#/components/schemas/PlaylistItems/properties/id"
+                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/id"
                     },
                     "bible_id": {
-                        "$ref": "#/components/schemas/Bible/properties/id"
+                        "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                     },
                     "fileset_id": {
-                        "$ref": "#/components/schemas/PlaylistItems/properties/fileset_id"
+                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/fileset_id"
                     },
                     "book_id": {
-                        "$ref": "#/components/schemas/PlaylistItems/properties/book_id"
+                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/book_id"
                     },
                     "chapter_start": {
-                        "$ref": "#/components/schemas/PlaylistItems/properties/chapter_start"
+                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/chapter_start"
                     },
                     "chapter_end": {
-                        "$ref": "#/components/schemas/PlaylistItems/properties/chapter_end"
+                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/chapter_end"
                     },
                     "verse_start": {
-                        "$ref": "#/components/schemas/PlaylistItems/properties/verse_start"
+                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/verse_start"
                     },
                     "verse_end": {
-                        "$ref": "#/components/schemas/PlaylistItems/properties/verse_end"
+                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/verse_end"
                     },
                     "duration": {
-                        "$ref": "#/components/schemas/PlaylistItems/properties/duration"
+                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/duration"
                     },
                     "completed": {
-                        "$ref": "#/components/schemas/PlaylistItems/properties/completed"
+                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/completed"
                     }
                 },
                 "type": "object"
@@ -1989,28 +1635,28 @@
             "v4_playlist": {
                 "properties": {
                     "id": {
-                        "$ref": "#/components/schemas/Playlist/properties/id"
+                        "$ref": "#\/components\/schemas\/Playlist\/properties\/id"
                     },
                     "name": {
-                        "$ref": "#/components/schemas/Playlist/properties/name"
+                        "$ref": "#\/components\/schemas\/Playlist\/properties\/name"
                     },
                     "featured": {
-                        "$ref": "#/components/schemas/Playlist/properties/featured"
+                        "$ref": "#\/components\/schemas\/Playlist\/properties\/featured"
                     },
                     "created_at": {
-                        "$ref": "#/components/schemas/Playlist/properties/created_at"
+                        "$ref": "#\/components\/schemas\/Playlist\/properties\/created_at"
                     },
                     "updated_at": {
-                        "$ref": "#/components/schemas/Playlist/properties/updated_at"
+                        "$ref": "#\/components\/schemas\/Playlist\/properties\/updated_at"
                     },
                     "external_content": {
-                        "$ref": "#/components/schemas/Playlist/properties/external_content"
+                        "$ref": "#\/components\/schemas\/Playlist\/properties\/external_content"
                     },
                     "following": {
-                        "$ref": "#/components/schemas/Playlist/properties/following"
+                        "$ref": "#\/components\/schemas\/Playlist\/properties\/following"
                     },
                     "user": {
-                        "$ref": "#/components/schemas/v4_playlist_index_user"
+                        "$ref": "#\/components\/schemas\/v4_playlist_index_user"
                     }
                 },
                 "type": "object"
@@ -2032,14 +1678,14 @@
                     "items": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/PlaylistItemDetail"
+                            "$ref": "#\/components\/schemas\/PlaylistItemDetail"
                         }
                     }
                 },
                 "type": "object",
                 "allOf": [
                     {
-                        "$ref": "#/components/schemas/v4_playlist"
+                        "$ref": "#\/components\/schemas\/v4_playlist"
                     }
                 ]
             },
@@ -2051,19 +1697,19 @@
                         "items": {
                             "properties": {
                                 "id": {
-                                    "$ref": "#/components/schemas/Language/properties/id"
+                                    "$ref": "#\/components\/schemas\/Language\/properties\/id"
                                 },
                                 "glotto_id": {
-                                    "$ref": "#/components/schemas/Language/properties/glotto_id"
+                                    "$ref": "#\/components\/schemas\/Language\/properties\/glotto_id"
                                 },
                                 "iso": {
-                                    "$ref": "#/components/schemas/Language/properties/iso"
+                                    "$ref": "#\/components\/schemas\/Language\/properties\/iso"
                                 },
                                 "name": {
-                                    "$ref": "#/components/schemas/Language/properties/name"
+                                    "$ref": "#\/components\/schemas\/Language\/properties\/name"
                                 },
                                 "autonym": {
-                                    "$ref": "#/components/schemas/LanguageTranslation/properties/name"
+                                    "$ref": "#\/components\/schemas\/LanguageTranslation\/properties\/name"
                                 },
                                 "bibles": {
                                     "description": "Display a listing of the resource.\n\nFetches the records from the database > passes them through fractal for transforming.",
@@ -2074,7 +1720,7 @@
                                     "type": "integer"
                                 },
                                 "country_population": {
-                                    "$ref": "#/components/schemas/Language/properties/population"
+                                    "$ref": "#\/components\/schemas\/Language\/properties\/population"
                                 }
                             },
                             "type": "object"
@@ -2086,8 +1732,7 @@
             "v4_languages.one": {
                 "properties": {
                     "data": {
-                        "type": "object",
-                        "$ref": "#/components/schemas/Language"
+                        "$ref": "#\/components\/schemas\/Language"
                     }
                 },
                 "type": "object"
@@ -2141,8 +1786,7 @@
             "v4_numbers.show": {
                 "properties": {
                     "data": {
-                        "type": "object",
-                        "$ref": "#/components/schemas/NumeralSystem"
+                        "$ref": "#\/components\/schemas\/NumeralSystem"
                     }
                 },
                 "type": "object"
@@ -2160,7 +1804,7 @@
                         "example": "ENGESV"
                     },
                     "language_id": {
-                        "$ref": "#/components/schemas/Language/properties/id"
+                        "$ref": "#\/components\/schemas\/Language\/properties\/id"
                     },
                     "date": {
                         "title": "date",
@@ -2171,7 +1815,7 @@
                         "example": 1963
                     },
                     "scope": {
-                        "$ref": "#/components/schemas/BibleFilesetSize/properties/set_size_code"
+                        "$ref": "#\/components\/schemas\/BibleFilesetSize\/properties\/set_size_code"
                     },
                     "derived": {
                         "title": "derived",
@@ -2185,7 +1829,7 @@
                         "description": "A short copyright description for the bible text.",
                         "type": "string",
                         "maxLength": 191,
-                        "example": "© 1999 Bible Society of Ghana"
+                        "example": "\u00a9 1999 Bible Society of Ghana"
                     },
                     "in_progress": {
                         "title": "in_progress",
@@ -2231,10 +1875,10 @@
                 "description": "The Bible Book Model stores the vernacular book titles and chapters",
                 "properties": {
                     "bible_id": {
-                        "$ref": "#/components/schemas/Bible/properties/id"
+                        "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                     },
                     "book_id": {
-                        "$ref": "#/components/schemas/Book/properties/id"
+                        "$ref": "#\/components\/schemas\/Book\/properties\/id"
                     },
                     "name": {
                         "title": "name",
@@ -2268,7 +1912,7 @@
                 "description": "The Bible Equivalent Model stores the connections between the bible IDs and external organizations",
                 "properties": {
                     "bible_id": {
-                        "$ref": "#/components/schemas/Bible/properties/id"
+                        "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                     },
                     "equivalent_id": {
                         "title": "equivalent_id",
@@ -2278,7 +1922,7 @@
                         "example": "FreGeneve1669"
                     },
                     "organization_id": {
-                        "$ref": "#/components/schemas/Organization/properties/id"
+                        "$ref": "#\/components\/schemas\/Organization\/properties\/id"
                     },
                     "type": {
                         "title": "type",
@@ -2289,7 +1933,7 @@
                     },
                     "site": {
                         "title": "site",
-                        "description": "The name of the site/organization/app where the equivalent id is based",
+                        "description": "The name of the site\/organization\/app where the equivalent id is based",
                         "type": "string",
                         "maxLength": 191,
                         "example": "eSword"
@@ -2306,7 +1950,7 @@
                         "description": "The full path to the resource which the equivalent describes",
                         "type": "string",
                         "maxLength": 191,
-                        "example": "https://example.com/bibles/ENGKJV"
+                        "example": "https:\/\/example.com\/bibles\/ENGKJV"
                     }
                 },
                 "type": "object",
@@ -2465,13 +2109,13 @@
                         "example": "c2d2ad3e5983"
                     },
                     "asset_id": {
-                        "$ref": "#/components/schemas/Asset/properties/id"
+                        "$ref": "#\/components\/schemas\/Asset\/properties\/id"
                     },
                     "set_type_code": {
-                        "$ref": "#/components/schemas/BibleFilesetType/properties/set_type_code"
+                        "$ref": "#\/components\/schemas\/BibleFilesetType\/properties\/set_type_code"
                     },
                     "set_size_code": {
-                        "$ref": "#/components/schemas/BibleFilesetSize/properties/set_size_code"
+                        "$ref": "#\/components\/schemas\/BibleFilesetSize\/properties\/set_size_code"
                     },
                     "created_at": {
                         "title": "created_at",
@@ -2511,13 +2155,13 @@
                         "title": "copyright",
                         "description": "The copyright",
                         "type": "string",
-                        "example": "© Ethnos360"
+                        "example": "\u00a9 Ethnos360"
                     },
                     "copyright_description": {
                         "title": "copyright_description",
                         "description": "The copyright description",
                         "type": "string",
-                        "example": "© Ethnos360"
+                        "example": "\u00a9 Ethnos360"
                     },
                     "open_access": {
                         "title": "open_access",
@@ -2616,7 +2260,7 @@
                         "type": "string"
                     },
                     "bible_id": {
-                        "$ref": "#/components/schemas/Bible/properties/id"
+                        "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                     },
                     "type": {
                         "title": "type",
@@ -2628,7 +2272,7 @@
                         "title": "url",
                         "description": "URL of linked content",
                         "type": "string",
-                        "example": "http://bibles.org/versions/aai-AAINT"
+                        "example": "http:\/\/bibles.org\/versions\/aai-AAINT"
                     },
                     "title": {
                         "title": "title",
@@ -2637,7 +2281,7 @@
                         "example": "BibleSearch"
                     },
                     "organization_id": {
-                        "$ref": "#/components/schemas/Organization/properties/id"
+                        "$ref": "#\/components\/schemas\/Organization\/properties\/id"
                     },
                     "created_at": {
                         "title": "created_at",
@@ -2666,10 +2310,10 @@
                 "description": "BibleOrganization",
                 "properties": {
                     "bible_id": {
-                        "$ref": "#/components/schemas/Bible/properties/id"
+                        "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                     },
                     "organization_id": {
-                        "$ref": "#/components/schemas/Organization/properties/id"
+                        "$ref": "#\/components\/schemas\/Organization\/properties\/id"
                     },
                     "relationship_type": {
                         "title": "relationship_type",
@@ -2703,10 +2347,10 @@
                         "type": "string"
                     },
                     "iso": {
-                        "$ref": "#/components/schemas/Language/properties/id"
+                        "$ref": "#\/components\/schemas\/Language\/properties\/id"
                     },
                     "bible_id": {
-                        "$ref": "#/components/schemas/Bible/properties/id"
+                        "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                     },
                     "vernacular": {
                         "title": "vernacular",
@@ -2759,16 +2403,16 @@
                         "type": "integer"
                     },
                     "hash_id": {
-                        "$ref": "#/components/schemas/BibleFileset/properties/hash_id"
+                        "$ref": "#\/components\/schemas\/BibleFileset\/properties\/hash_id"
                     },
                     "book_id": {
-                        "$ref": "#/components/schemas/Book/properties/id"
+                        "$ref": "#\/components\/schemas\/Book\/properties\/id"
                     },
                     "chapter": {
-                        "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                     },
                     "verse_number": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                     },
                     "verse_text": {
                         "title": "verse_text",
@@ -2959,10 +2603,10 @@
                 "description": "The Book Translation's model",
                 "properties": {
                     "iso": {
-                        "$ref": "#/components/schemas/Language/properties/iso"
+                        "$ref": "#\/components\/schemas\/Language\/properties\/iso"
                     },
                     "book_id": {
-                        "$ref": "#/components/schemas/Book/properties/id"
+                        "$ref": "#\/components\/schemas\/Book\/properties\/id"
                     },
                     "name": {
                         "title": "name",
@@ -3060,7 +2704,7 @@
                 "description": "The commentary split up by the biblical references it describes",
                 "properties": {
                     "commentary_id": {
-                        "$ref": "#/components/schemas/Commentary/properties/id"
+                        "$ref": "#\/components\/schemas\/Commentary\/properties\/id"
                     },
                     "title": {
                         "title": "title",
@@ -3074,19 +2718,19 @@
                         "type": "string"
                     },
                     "book_id": {
-                        "$ref": "#/components/schemas/BibleFile/properties/book_id"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/book_id"
                     },
                     "chapter_start": {
-                        "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                     },
                     "chapter_end": {
-                        "$ref": "#/components/schemas/BibleFile/properties/chapter_end"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_end"
                     },
                     "verse_start": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                     },
                     "verse_end": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_end"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_end"
                     }
                 },
                 "type": "object",
@@ -3099,10 +2743,10 @@
                 "description": "CommentaryTranslation",
                 "properties": {
                     "language_id": {
-                        "$ref": "#/components/schemas/CommentaryTranslation/properties/language_id"
+                        "$ref": "#\/components\/schemas\/CommentaryTranslation\/properties\/language_id"
                     },
                     "commentary_id": {
-                        "$ref": "#/components/schemas/Commentary/properties/id"
+                        "$ref": "#\/components\/schemas\/Commentary\/properties\/id"
                     },
                     "vernacular": {
                         "description": "$vernacular",
@@ -3132,7 +2776,7 @@
                         "type": "string",
                         "maxLength": 5,
                         "minLength": 2,
-                        "pattern": "/^[G||H]\\d\\d?\\d?\\d?$/",
+                        "pattern": "\/^[G||H]\\d\\d?\\d?\\d?$\/",
                         "example": "G1055"
                     },
                     "base_word": {
@@ -3140,7 +2784,7 @@
                         "description": "The Greek or Hebrew word being defined",
                         "type": "string",
                         "maxLength": 64,
-                        "example": "γαλήνη"
+                        "example": "\u03b3\u03b1\u03bb\u03ae\u03bd\u03b7"
                     },
                     "usage": {
                         "title": "usage",
@@ -3362,7 +3006,7 @@
                         "minLength": 2,
                         "externalDocs": {
                             "description": "For more info please refer to the Iso Registration Authority",
-                            "url": "https://www.iso.org/iso-3166-country-codes.html"
+                            "url": "https:\/\/www.iso.org\/iso-3166-country-codes.html"
                         },
                         "example": "AD"
                     },
@@ -3374,7 +3018,7 @@
                         "minLength": 3,
                         "externalDocs": {
                             "description": "For more info please refer to the Iso Wiki",
-                            "url": "https://en.wikipedia.org/wiki/ISO_3166-3"
+                            "url": "https:\/\/en.wikipedia.org\/wiki\/ISO_3166-3"
                         },
                         "example": "AND"
                     },
@@ -3386,7 +3030,7 @@
                         "minLength": 2,
                         "externalDocs": {
                             "description": "For more info please refer to the FIPS Wiki",
-                            "url": "https://en.wikipedia.org/wiki/List_of_FIPS_country_codes"
+                            "url": "https:\/\/en.wikipedia.org\/wiki\/List_of_FIPS_country_codes"
                         },
                         "example": "AN"
                     },
@@ -3429,7 +3073,7 @@
                         "minLength": 4,
                         "externalDocs": {
                             "description": "For more info please refer to the Unicode Consortium",
-                            "url": "https://http://www.unicode.org/iso15924/"
+                            "url": "https:\/\/http:\/\/www.unicode.org\/iso15924\/"
                         },
                         "example": "Cans"
                     },
@@ -3445,7 +3089,7 @@
                         "description": "A url to a reference PDF for the alphabet",
                         "type": "string",
                         "maxLength": 191,
-                        "example": "https://unicode.org/charts/PDF/U1400.pdf",
+                        "example": "https:\/\/unicode.org\/charts\/PDF\/U1400.pdf",
                         "nullable": true
                     },
                     "family": {
@@ -3522,7 +3166,7 @@
                         "type": "boolean",
                         "externalDocs": {
                             "description": "For more info please refer to the Script Source Feature Definitions",
-                            "url": "http://scriptsource.org/cms/scripts/page.php?item_id=entry_detail&uid=cq3q4pwuah#50d6cb6e"
+                            "url": "http:\/\/scriptsource.org\/cms\/scripts\/page.php?item_id=entry_detail&uid=cq3q4pwuah#50d6cb6e"
                         },
                         "example": false
                     },
@@ -3538,7 +3182,7 @@
                         ],
                         "externalDocs": {
                             "description": "For more info please refer to the Script Source Feature Definitions",
-                            "url": "http://scriptsource.org/cms/scripts/page.php?item_id=entry_detail&uid=cq3q4pwuah#71259eae"
+                            "url": "http:\/\/scriptsource.org\/cms\/scripts\/page.php?item_id=entry_detail&uid=cq3q4pwuah#71259eae"
                         },
                         "example": "Current"
                     },
@@ -3554,7 +3198,7 @@
                         ],
                         "externalDocs": {
                             "description": "For more info please refer to the Script Source Feature Definitions",
-                            "url": "http://scriptsource.org/cms/scripts/page.php?item_id=entry_detail&uid=cq3q4pwuah#a4a32c47"
+                            "url": "http:\/\/scriptsource.org\/cms\/scripts\/page.php?item_id=entry_detail&uid=cq3q4pwuah#a4a32c47"
                         },
                         "example": "Bottom"
                     },
@@ -3569,7 +3213,7 @@
                         ],
                         "externalDocs": {
                             "description": "For more information please refer to the Script Source Feature Definitions",
-                            "url": "http://scriptsource.org/cms/scripts/page.php?item_id=entry_detail&uid=cq3q4pwuah#3e655409"
+                            "url": "http:\/\/scriptsource.org\/cms\/scripts\/page.php?item_id=entry_detail&uid=cq3q4pwuah#3e655409"
                         },
                         "example": "none"
                     },
@@ -3583,7 +3227,7 @@
                         ],
                         "externalDocs": {
                             "description": "For more information please refer to the Script Source Feature Definitions",
-                            "url": "http://scriptsource.org/cms/scripts/page.php?item_id=entry_detail&uid=cq3q4pwuah#02674a4e"
+                            "url": "http:\/\/scriptsource.org\/cms\/scripts\/page.php?item_id=entry_detail&uid=cq3q4pwuah#02674a4e"
                         },
                         "example": "ltr"
                     },
@@ -3647,7 +3291,7 @@
                         "title": "Alphabet URL",
                         "description": "The url to the font file",
                         "type": "string",
-                        "example": "https://cdn.example.com/resources/fonts/NotoNaskhArabic-Regular.ttf"
+                        "example": "https:\/\/cdn.example.com\/resources\/fonts\/NotoNaskhArabic-Regular.ttf"
                     },
                     "notes": {
                         "title": "Notes",
@@ -3683,7 +3327,7 @@
                         "type": "string",
                         "externalDocs": {
                             "description": "For more info please refer to the Glottolog",
-                            "url": "http://glottolog.org/"
+                            "url": "http:\/\/glottolog.org\/"
                         },
                         "example": "abkh1244"
                     },
@@ -3694,7 +3338,7 @@
                         "maxLength": 3,
                         "externalDocs": {
                             "description": "For more info",
-                            "url": "https://en.wikipedia.org/wiki/ISO_639-3"
+                            "url": "https:\/\/en.wikipedia.org\/wiki\/ISO_639-3"
                         },
                         "example": "abk"
                     },
@@ -3915,7 +3559,7 @@
                         "description": "The numeral in the vernacular of the writing system",
                         "type": "string",
                         "maxLength": 8,
-                        "example": "੧"
+                        "example": "\u0a67"
                     },
                     "numeral_written": {
                         "title": "Alphabet Numeral Written",
@@ -3941,7 +3585,7 @@
                         "example": "dbp-prod"
                     },
                     "organization_id": {
-                        "$ref": "#/components/schemas/Organization/properties/id"
+                        "$ref": "#\/components\/schemas\/Organization\/properties\/id"
                     },
                     "asset_type": {
                         "title": "asset_type",
@@ -4026,28 +3670,28 @@
                         "description": "The URL to the organization's facebook page",
                         "type": "string",
                         "maxLength": 191,
-                        "example": "https://facebook.com"
+                        "example": "https:\/\/facebook.com"
                     },
                     "url_website": {
                         "title": "url_website",
                         "description": "The url to the Organization's website",
                         "type": "string",
                         "maxLength": 191,
-                        "example": "https://someorg.com"
+                        "example": "https:\/\/someorg.com"
                     },
                     "url_donate": {
                         "title": "url_donate",
                         "description": "The url to the organization's donation page",
                         "type": "string",
                         "maxLength": 191,
-                        "example": "https://donate.someorg.com"
+                        "example": "https:\/\/donate.someorg.com"
                     },
                     "url_twitter": {
                         "title": "url_twitter",
                         "description": "The url to the organization's twitter page",
                         "type": "string",
                         "maxLength": 191,
-                        "example": "https://twitter.com"
+                        "example": "https:\/\/twitter.com"
                     },
                     "address": {
                         "title": "address",
@@ -4129,7 +3773,7 @@
                     },
                     "vernacular": {
                         "title": "id",
-                        "description": "If the current translation is the primary/vernacular translation",
+                        "description": "If the current translation is the primary\/vernacular translation",
                         "type": "boolean"
                     },
                     "alt": {
@@ -4225,7 +3869,7 @@
                         "type": "integer"
                     },
                     "playlist_id": {
-                        "$ref": "#/components/schemas/Playlist/properties/id"
+                        "$ref": "#\/components\/schemas\/Playlist\/properties\/id"
                     },
                     "completed": {
                         "title": "completed",
@@ -4411,16 +4055,16 @@
                         "description": "Bible metadata info",
                         "properties": {
                             "bible_id": {
-                                "$ref": "#/components/schemas/Bible/properties/id"
+                                "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                             },
                             "bible_name": {
-                                "$ref": "#/components/schemas/BibleTranslation/properties/name"
+                                "$ref": "#\/components\/schemas\/BibleTranslation\/properties\/name"
                             },
                             "bible_vname": {
-                                "$ref": "#/components/schemas/BibleTranslation/properties/name"
+                                "$ref": "#\/components\/schemas\/BibleTranslation\/properties\/name"
                             },
                             "book_name": {
-                                "$ref": "#/components/schemas/BookTranslation/properties/name"
+                                "$ref": "#\/components\/schemas\/BookTranslation\/properties\/name"
                             }
                         },
                         "type": "object"
@@ -4445,7 +4089,7 @@
                         "minLength": 3
                     },
                     "organization_id": {
-                        "$ref": "#/components/schemas/Organization/properties/id"
+                        "$ref": "#\/components\/schemas\/Organization\/properties\/id"
                     },
                     "source_id": {
                         "title": "source_id",
@@ -4523,10 +4167,10 @@
                         "type": "string"
                     },
                     "country_id": {
-                        "$ref": "#/components/schemas/Country/properties/id"
+                        "$ref": "#\/components\/schemas\/Country\/properties\/id"
                     },
                     "continent": {
-                        "$ref": "#/components/schemas/Country/properties/continent"
+                        "$ref": "#\/components\/schemas\/Country\/properties\/continent"
                     },
                     "allowed": {
                         "title": "allowed",
@@ -4602,7 +4246,7 @@
                     },
                     "sex": {
                         "title": "The Gender of the User",
-                        "description": "This field aligns with the ISO/IEC 5218 Standard. Codes for the representation of human sexes is an international standard that defines a representation of human sexes through a language-neutral single-digit code.",
+                        "description": "This field aligns with the ISO\/IEC 5218 Standard. Codes for the representation of human sexes is an international standard that defines a representation of human sexes through a language-neutral single-digit code.",
                         "type": "integer",
                         "format": "int64",
                         "minimum": 0,
@@ -4614,7 +4258,7 @@
                         ],
                         "externalDocs": {
                             "description": "Read More about the standard",
-                            "url": "http://standards.iso.org/ittf/PubliclyAvailableStandards/c036266_ISO_IEC_5218_2004(E_F).zip"
+                            "url": "http:\/\/standards.iso.org\/ittf\/PubliclyAvailableStandards\/c036266_ISO_IEC_5218_2004(E_F).zip"
                         }
                     },
                     "sub_administrative_area": {
@@ -4624,16 +4268,16 @@
                     },
                     "administrative_area": {
                         "title": "Administrative Area",
-                        "description": "State / Province / Region (ISO code when available)",
+                        "description": "State \/ Province \/ Region (ISO code when available)",
                         "type": "string"
                     },
                     "zip": {
                         "title": "Zip",
-                        "description": "Postal code / ZIP Code",
+                        "description": "Postal code \/ ZIP Code",
                         "type": "string"
                     },
                     "country_id": {
-                        "$ref": "#/components/schemas/Country/properties/id"
+                        "$ref": "#\/components\/schemas\/Country\/properties\/id"
                     }
                 },
                 "type": "object",
@@ -4659,13 +4303,13 @@
                     },
                     "url_avatar": {
                         "title": "url_avatar",
-                        "description": "The url to the logo / main identifying image for the project",
+                        "description": "The url to the logo \/ main identifying image for the project",
                         "type": "string",
                         "maxLength": 191
                     },
                     "url_avatar_icon": {
                         "title": "url_avatar_icon",
-                        "description": "The url to the logo / main identifying image for the project in a form that is suitable for small images (less than 100 pixels)",
+                        "description": "The url to the logo \/ main identifying image for the project in a form that is suitable for small images (less than 100 pixels)",
                         "type": "string",
                         "maxLength": 191
                     },
@@ -4677,10 +4321,10 @@
                     },
                     "reset_path": {
                         "title": "reset_path",
-                        "description": "The url to the location that contains the password reset form. Note this should end with a / and expect the final url path item to be a token. Example: https://example.com/password/reset/ with the expectation of receiving https://example.com/password/reset/{TOKEN_ID}",
+                        "description": "The url to the location that contains the password reset form. Note this should end with a \/ and expect the final url path item to be a token. Example: https:\/\/example.com\/password\/reset\/ with the expectation of receiving https:\/\/example.com\/password\/reset\/{TOKEN_ID}",
                         "type": "string",
                         "maxLength": 191,
-                        "example": "https://example.com/password/reset/"
+                        "example": "https:\/\/example.com\/password\/reset\/"
                     },
                     "description": {
                         "title": "description",
@@ -4719,7 +4363,7 @@
                         "maxLength": 8
                     },
                     "project_id": {
-                        "$ref": "#/components/schemas/Project/properties/id"
+                        "$ref": "#\/components\/schemas\/Project\/properties\/id"
                     },
                     "name": {
                         "title": "name",
@@ -4785,13 +4429,13 @@
                         "minimum": 0
                     },
                     "note_id": {
-                        "$ref": "#/components/schemas/Note/properties/id"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/id"
                     },
                     "bookmark_id": {
-                        "$ref": "#/components/schemas/Bookmark/properties/id"
+                        "$ref": "#\/components\/schemas\/Bookmark\/properties\/id"
                     },
                     "highlight_id": {
-                        "$ref": "#/components/schemas/Highlight/properties/id"
+                        "$ref": "#\/components\/schemas\/Highlight\/properties\/id"
                     },
                     "type": {
                         "title": "type",
@@ -4830,19 +4474,19 @@
                         "minimum": 0
                     },
                     "book_id": {
-                        "$ref": "#/components/schemas/Book/properties/id"
+                        "$ref": "#\/components\/schemas\/Book\/properties\/id"
                     },
                     "chapter": {
-                        "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                     },
                     "verse_start": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                     },
                     "user_id": {
-                        "$ref": "#/components/schemas/User/properties/id"
+                        "$ref": "#\/components\/schemas\/User\/properties\/id"
                     },
                     "bible_id": {
-                        "$ref": "#/components/schemas/Bible/properties/id"
+                        "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                     },
                     "updated_at": {
                         "title": "updated_at",
@@ -4877,13 +4521,13 @@
                         "type": "string"
                     },
                     "bible_id": {
-                        "$ref": "#/components/schemas/Bible/properties/id"
+                        "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                     },
                     "book_id": {
-                        "$ref": "#/components/schemas/Book/properties/id"
+                        "$ref": "#\/components\/schemas\/Book\/properties\/id"
                     },
                     "chapter": {
-                        "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                     },
                     "highlighted_color": {
                         "title": "highlighted_color",
@@ -4892,16 +4536,16 @@
                         "example": "#4488bb"
                     },
                     "verse_start": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                     },
                     "verse_end": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_end"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_end"
                     },
                     "reference": {
                         "type": "string"
                     },
                     "project_id": {
-                        "$ref": "#/components/schemas/Project/properties/id"
+                        "$ref": "#\/components\/schemas\/Project\/properties\/id"
                     },
                     "highlight_start": {
                         "title": "highlight_start",
@@ -4931,22 +4575,22 @@
                         "minimum": 0
                     },
                     "book_id": {
-                        "$ref": "#/components/schemas/Book/properties/id"
+                        "$ref": "#\/components\/schemas\/Book\/properties\/id"
                     },
                     "chapter": {
-                        "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                     },
                     "verse_start": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                     },
                     "verse_end": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_end"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_end"
                     },
                     "user_id": {
-                        "$ref": "#/components/schemas/User/properties/id"
+                        "$ref": "#\/components\/schemas\/User\/properties\/id"
                     },
                     "bible_id": {
-                        "$ref": "#/components/schemas/Bible/properties/id"
+                        "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                     },
                     "reference_id": {
                         "title": "reference_id",
@@ -5014,14 +4658,14 @@
                         "title": "nickname",
                         "description": "The preferred name for the user or an informal means of addressing them",
                         "type": "string",
-                        "example": "Elwë",
+                        "example": "Elw\u00eb",
                         "nullable": true
                     },
                     "avatar": {
                         "title": "avatar",
                         "description": "The url to the user's profile picture",
                         "type": "string",
-                        "example": "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
+                        "example": "https:\/\/upload.wikimedia.org\/wikipedia\/commons\/7\/7c\/Profile_avatar_placeholder_large.png",
                         "nullable": true
                     },
                     "email": {
@@ -5058,19 +4702,19 @@
                         "items": {
                             "properties": {
                                 "name": {
-                                    "$ref": "#/components/schemas/Alphabet/properties/name"
+                                    "$ref": "#\/components\/schemas\/Alphabet\/properties\/name"
                                 },
                                 "script": {
-                                    "$ref": "#/components/schemas/Alphabet/properties/script"
+                                    "$ref": "#\/components\/schemas\/Alphabet\/properties\/script"
                                 },
                                 "family": {
-                                    "$ref": "#/components/schemas/Alphabet/properties/family"
+                                    "$ref": "#\/components\/schemas\/Alphabet\/properties\/family"
                                 },
                                 "type": {
-                                    "$ref": "#/components/schemas/Alphabet/properties/type"
+                                    "$ref": "#\/components\/schemas\/Alphabet\/properties\/type"
                                 },
                                 "direction": {
-                                    "$ref": "#/components/schemas/Alphabet/properties/direction"
+                                    "$ref": "#\/components\/schemas\/Alphabet\/properties\/direction"
                                 }
                             },
                             "type": "object"
@@ -5089,36 +4733,36 @@
                     "data": {
                         "properties": {
                             "name": {
-                                "$ref": "#/components/schemas/Alphabet/properties/name"
+                                "$ref": "#\/components\/schemas\/Alphabet\/properties\/name"
                             },
                             "script": {
-                                "$ref": "#/components/schemas/Alphabet/properties/script"
+                                "$ref": "#\/components\/schemas\/Alphabet\/properties\/script"
                             },
                             "family": {
-                                "$ref": "#/components/schemas/Alphabet/properties/family"
+                                "$ref": "#\/components\/schemas\/Alphabet\/properties\/family"
                             },
                             "type": {
-                                "$ref": "#/components/schemas/Alphabet/properties/type"
+                                "$ref": "#\/components\/schemas\/Alphabet\/properties\/type"
                             },
                             "direction": {
-                                "$ref": "#/components/schemas/Alphabet/properties/direction"
+                                "$ref": "#\/components\/schemas\/Alphabet\/properties\/direction"
                             },
                             "fonts": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/components/schemas/AlphabetFont"
+                                    "$ref": "#\/components\/schemas\/AlphabetFont"
                                 }
                             },
                             "languages": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/components/schemas/Language"
+                                    "$ref": "#\/components\/schemas\/Language"
                                 }
                             },
                             "bibles": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#/components/schemas/Bible"
+                                    "$ref": "#\/components\/schemas\/Bible"
                                 }
                             }
                         },
@@ -5130,80 +4774,6 @@
                     "name": "v4_alphabets_one_response"
                 }
             },
-            "v4_audio_timestamps": {
-                "title": "v4_audio_timestamps",
-                "description": "The v4_audio_timestamps response",
-                "properties": {
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "properties": {
-                                "book": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/book_id"
-                                },
-                                "chapter": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
-                                },
-                                "verse_start": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_start"
-                                },
-                                "timestamp": {
-                                    "description": "The duration of the timestamp in seconds",
-                                    "type": "string",
-                                    "example": "13"
-                                }
-                            },
-                            "type": "object"
-                        }
-                    }
-                },
-                "type": "object",
-                "xml": {
-                    "name": "v4_audio_timestamps"
-                }
-            },
-            "v4_timestamps_tag": {
-                "title": "v4_timestamps_tag",
-                "description": "The v4 timestamps tag",
-                "properties": {
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "properties": {
-                                "book_id": {
-                                    "$ref": "#/components/schemas/Book/properties/id"
-                                },
-                                "book_name": {
-                                    "$ref": "#/components/schemas/Book/properties/name"
-                                },
-                                "chapter_start": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
-                                },
-                                "chapter_end": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/chapter_end"
-                                },
-                                "verse_start": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_start"
-                                },
-                                "verse_end": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_end"
-                                },
-                                "timestamp": {
-                                    "$ref": "#/components/schemas/BibleFileTimestamp/properties/timestamp"
-                                },
-                                "path": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/file_name"
-                                }
-                            },
-                            "type": "object"
-                        }
-                    }
-                },
-                "type": "object",
-                "xml": {
-                    "name": "v4_timestamps_tag"
-                }
-            },
             "v4_bible.all": {
                 "title": "v4_bible.all",
                 "description": "The bibles being returned",
@@ -5213,35 +4783,35 @@
                         "items": {
                             "properties": {
                                 "abbr": {
-                                    "$ref": "#/components/schemas/Bible/properties/id"
+                                    "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                                 },
                                 "name": {
-                                    "$ref": "#/components/schemas/BibleTranslation/properties/name"
+                                    "$ref": "#\/components\/schemas\/BibleTranslation\/properties\/name"
                                 },
                                 "vname": {
-                                    "$ref": "#/components/schemas/BibleTranslation/properties/name"
+                                    "$ref": "#\/components\/schemas\/BibleTranslation\/properties\/name"
                                 },
                                 "language": {
-                                    "$ref": "#/components/schemas/Language/properties/name"
+                                    "$ref": "#\/components\/schemas\/Language\/properties\/name"
                                 },
                                 "language_autonym": {
-                                    "$ref": "#/components/schemas/LanguageTranslation/properties/name"
+                                    "$ref": "#\/components\/schemas\/LanguageTranslation\/properties\/name"
                                 },
                                 "language_altNames": {
-                                    "$ref": "#/components/schemas/LanguageTranslation/properties/name"
+                                    "$ref": "#\/components\/schemas\/LanguageTranslation\/properties\/name"
                                 },
                                 "iso": {
-                                    "$ref": "#/components/schemas/Language/properties/iso"
+                                    "$ref": "#\/components\/schemas\/Language\/properties\/iso"
                                 },
                                 "date": {
-                                    "$ref": "#/components/schemas/Bible/properties/date"
+                                    "$ref": "#\/components\/schemas\/Bible\/properties\/date"
                                 },
                                 "filesets": {
                                     "properties": {
                                         "dbp-prod": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/components/schemas/BibleFileset"
+                                                "$ref": "#\/components\/schemas\/BibleFileset"
                                             }
                                         }
                                     },
@@ -5258,7 +4828,7 @@
                 },
                 "allOf": [
                     {
-                        "$ref": "#/components/schemas/pagination.alternate"
+                        "$ref": "#\/components\/schemas\/pagination.alternate"
                     }
                 ]
             },
@@ -5269,52 +4839,52 @@
                 "items": {
                     "properties": {
                         "abbr": {
-                            "$ref": "#/components/schemas/Bible/properties/id"
+                            "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                         },
                         "alphabet": {
-                            "$ref": "#/components/schemas/Alphabet/properties/script"
+                            "$ref": "#\/components\/schemas\/Alphabet\/properties\/script"
                         },
                         "mark": {
-                            "$ref": "#/components/schemas/Bible/properties/copyright"
+                            "$ref": "#\/components\/schemas\/Bible\/properties\/copyright"
                         },
                         "name": {
-                            "$ref": "#/components/schemas/BibleTranslation/properties/name"
+                            "$ref": "#\/components\/schemas\/BibleTranslation\/properties\/name"
                         },
                         "description": {
-                            "$ref": "#/components/schemas/BibleTranslation/properties/description"
+                            "$ref": "#\/components\/schemas\/BibleTranslation\/properties\/description"
                         },
                         "vname": {
-                            "$ref": "#/components/schemas/BibleTranslation/properties/name"
+                            "$ref": "#\/components\/schemas\/BibleTranslation\/properties\/name"
                         },
                         "vdescription": {
-                            "$ref": "#/components/schemas/BibleTranslation/properties/description"
+                            "$ref": "#\/components\/schemas\/BibleTranslation\/properties\/description"
                         },
                         "publishers": {
-                            "$ref": "#/components/schemas/Organization"
+                            "$ref": "#\/components\/schemas\/Organization"
                         },
                         "providers": {
-                            "$ref": "#/components/schemas/Organization"
+                            "$ref": "#\/components\/schemas\/Organization"
                         },
                         "language": {
-                            "$ref": "#/components/schemas/Language/properties/name"
+                            "$ref": "#\/components\/schemas\/Language\/properties\/name"
                         },
                         "iso": {
-                            "$ref": "#/components/schemas/Language/properties/iso"
+                            "$ref": "#\/components\/schemas\/Language\/properties\/iso"
                         },
                         "date": {
-                            "$ref": "#/components/schemas/Bible/properties/date"
+                            "$ref": "#\/components\/schemas\/Bible\/properties\/date"
                         },
                         "country": {
-                            "$ref": "#/components/schemas/Country/properties/name"
+                            "$ref": "#\/components\/schemas\/Country\/properties\/name"
                         },
                         "books": {
-                            "$ref": "#/components/schemas/Book/properties/id"
+                            "$ref": "#\/components\/schemas\/Book\/properties\/id"
                         },
                         "links": {
-                            "$ref": "#/components/schemas/BibleLink"
+                            "$ref": "#\/components\/schemas\/BibleLink"
                         },
                         "filesets": {
-                            "$ref": "#/components/schemas/BibleFileset"
+                            "$ref": "#\/components\/schemas\/BibleFileset"
                         }
                     },
                     "type": "object"
@@ -5332,28 +4902,28 @@
                         "items": {
                             "properties": {
                                 "book_id": {
-                                    "$ref": "#/components/schemas/Book/properties/id"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/id"
                                 },
                                 "book_id_usfx": {
-                                    "$ref": "#/components/schemas/Book/properties/id_usfx"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/id_usfx"
                                 },
                                 "book_id_osis": {
-                                    "$ref": "#/components/schemas/Book/properties/id_osis"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/id_osis"
                                 },
                                 "name": {
-                                    "$ref": "#/components/schemas/Book/properties/name"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/name"
                                 },
                                 "testament": {
-                                    "$ref": "#/components/schemas/Book/properties/book_testament"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/book_testament"
                                 },
                                 "testament_order": {
-                                    "$ref": "#/components/schemas/Book/properties/testament_order"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/testament_order"
                                 },
                                 "book_order": {
-                                    "$ref": "#/components/schemas/Book/properties/protestant_order"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/protestant_order"
                                 },
                                 "book_group": {
-                                    "$ref": "#/components/schemas/Book/properties/book_group"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/book_group"
                                 },
                                 "chapters": {
                                     "type": "integer"
@@ -5377,31 +4947,31 @@
                         "items": {
                             "properties": {
                                 "book_id": {
-                                    "$ref": "#/components/schemas/Book/properties/id"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/id"
                                 },
                                 "book_id_usfx": {
-                                    "$ref": "#/components/schemas/Book/properties/id_usfx"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/id_usfx"
                                 },
                                 "book_id_osis": {
-                                    "$ref": "#/components/schemas/Book/properties/id_osis"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/id_osis"
                                 },
                                 "name": {
-                                    "$ref": "#/components/schemas/Book/properties/name"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/name"
                                 },
                                 "testament": {
-                                    "$ref": "#/components/schemas/Book/properties/book_testament"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/book_testament"
                                 },
                                 "testament_order": {
-                                    "$ref": "#/components/schemas/Book/properties/testament_order"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/testament_order"
                                 },
                                 "book_order": {
-                                    "$ref": "#/components/schemas/Book/properties/protestant_order"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/protestant_order"
                                 },
                                 "book_group": {
-                                    "$ref": "#/components/schemas/Book/properties/book_group"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/book_group"
                                 },
                                 "chapters": {
-                                    "$ref": "#/components/schemas/Book/properties/chapters"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/chapters"
                                 }
                             },
                             "type": "object"
@@ -5420,10 +4990,10 @@
                     "data": {
                         "properties": {
                             "name": {
-                                "$ref": "#/components/schemas/Country/properties/name"
+                                "$ref": "#\/components\/schemas\/Country\/properties\/name"
                             },
                             "continent_code": {
-                                "$ref": "#/components/schemas/Country/properties/continent"
+                                "$ref": "#\/components\/schemas\/Country\/properties\/continent"
                             },
                             "languages": {}
                         },
@@ -5444,10 +5014,10 @@
                         "items": {
                             "properties": {
                                 "name": {
-                                    "$ref": "#/components/schemas/Country/properties/name"
+                                    "$ref": "#\/components\/schemas\/Country\/properties\/name"
                                 },
                                 "continent_code": {
-                                    "$ref": "#/components/schemas/Country/properties/continent"
+                                    "$ref": "#\/components\/schemas\/Country\/properties\/continent"
                                 },
                                 "languages": {}
                             },
@@ -5469,22 +5039,22 @@
                         "items": {
                             "properties": {
                                 "book_id": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/book_id"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/book_id"
                                 },
                                 "book_name": {
-                                    "$ref": "#/components/schemas/BookTranslation/properties/name"
+                                    "$ref": "#\/components\/schemas\/BookTranslation\/properties\/name"
                                 },
                                 "chapter_start": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                                 },
                                 "chapter_end": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/chapter_end"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_end"
                                 },
                                 "verse_start": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                                 },
                                 "verse_end": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_end"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_end"
                                 },
                                 "thumbnail": {
                                     "description": "The image url",
@@ -5492,13 +5062,13 @@
                                     "maxLength": 191
                                 },
                                 "timestamp": {
-                                    "$ref": "#/components/schemas/BibleFileTimestamp/properties/timestamp"
+                                    "$ref": "#\/components\/schemas\/BibleFileTimestamp\/properties\/timestamp"
                                 },
                                 "path": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/file_name"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/file_name"
                                 },
                                 "duration": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/duration"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/duration"
                                 }
                             },
                             "type": "object"
@@ -5519,31 +5089,31 @@
                         "items": {
                             "properties": {
                                 "book_id": {
-                                    "$ref": "#/components/schemas/Book/properties/id"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/id"
                                 },
                                 "book_name": {
-                                    "$ref": "#/components/schemas/Book/properties/name"
+                                    "$ref": "#\/components\/schemas\/Book\/properties\/name"
                                 },
                                 "book_name_alt": {
-                                    "$ref": "#/components/schemas/BookTranslation/properties/name"
+                                    "$ref": "#\/components\/schemas\/BookTranslation\/properties\/name"
                                 },
                                 "chapter": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                                 },
                                 "chapter_alt": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
                                 },
                                 "verse_start": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                                 },
                                 "verse_start_alt": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_start"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                                 },
                                 "verse_end": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_end"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_end"
                                 },
                                 "verse_end_alt": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_end"
+                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_end"
                                 },
                                 "verse_text": {
                                     "type": "string"
@@ -5561,43 +5131,43 @@
             "v4_note": {
                 "properties": {
                     "id": {
-                        "$ref": "#/components/schemas/Note/properties/id"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/id"
                     },
                     "bible_id": {
-                        "$ref": "#/components/schemas/Note/properties/bible_id"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/bible_id"
                     },
                     "book_id": {
-                        "$ref": "#/components/schemas/Note/properties/book_id"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/book_id"
                     },
                     "book_name": {
-                        "$ref": "#/components/schemas/BibleBook/properties/name"
+                        "$ref": "#\/components\/schemas\/BibleBook\/properties\/name"
                     },
                     "chapter": {
-                        "$ref": "#/components/schemas/Note/properties/chapter"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/chapter"
                     },
                     "verse_start": {
-                        "$ref": "#/components/schemas/Note/properties/verse_start"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/verse_start"
                     },
                     "verse_end": {
-                        "$ref": "#/components/schemas/Note/properties/verse_end"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/verse_end"
                     },
                     "verse_text": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_text"
+                        "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_text"
                     },
                     "notes": {
-                        "$ref": "#/components/schemas/Note/properties/notes"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/notes"
                     },
                     "created_at": {
-                        "$ref": "#/components/schemas/Note/properties/created_at"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/created_at"
                     },
                     "updated_at": {
-                        "$ref": "#/components/schemas/Note/properties/updated_at"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/updated_at"
                     },
                     "bible_name": {
-                        "$ref": "#/components/schemas/Note/properties/bible_name"
+                        "$ref": "#\/components\/schemas\/Note\/properties\/bible_name"
                     },
                     "tags": {
-                        "$ref": "#/components/schemas/AnnotationTag"
+                        "$ref": "#\/components\/schemas\/AnnotationTag"
                     }
                 },
                 "type": "object"
@@ -5607,9 +5177,9 @@
             "plan": {
                 "description": "Plan Object",
                 "content": {
-                    "application/json": {
+                    "application\/json": {
                         "schema": {
-                            "$ref": "#/components/schemas/v4_plan_detail"
+                            "$ref": "#\/components\/schemas\/v4_plan_detail"
                         }
                     }
                 }
@@ -5617,9 +5187,9 @@
             "playlist": {
                 "description": "Playlist Object",
                 "content": {
-                    "application/json": {
+                    "application\/json": {
                         "schema": {
-                            "$ref": "#/components/schemas/v4_playlist_detail"
+                            "$ref": "#\/components\/schemas\/v4_playlist_detail"
                         }
                     }
                 }
@@ -5627,9 +5197,9 @@
             "v4_languages.one": {
                 "description": "The Full alphabet return for the single alphabet route",
                 "content": {
-                    "application/json": {
+                    "application\/json": {
                         "schema": {
-                            "$ref": "#/components/schemas/Language"
+                            "$ref": "#\/components\/schemas\/Language"
                         }
                     }
                 }
@@ -5637,9 +5207,9 @@
             "v4_languages.all": {
                 "description": "The minimized language return for the single language route",
                 "content": {
-                    "application/json": {
+                    "application\/json": {
                         "schema": {
-                            "$ref": "#/components/schemas/Language"
+                            "$ref": "#\/components\/schemas\/Language"
                         }
                     }
                 }
@@ -5733,34 +5303,34 @@
             "l10n": {
                 "name": "l10n",
                 "in": "query",
-                "description": "When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route",
+                "description": "When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `\/languages` route",
                 "schema": {
-                    "$ref": "#/components/schemas/Language/properties/iso"
+                    "$ref": "#\/components\/schemas\/Language\/properties\/iso"
                 }
             }
         },
         "requestBodies": {
             "ProjectStore": {
-                "description": "Information supplied for project creation/update",
+                "description": "Information supplied for project creation\/update",
                 "required": true,
                 "content": {
-                    "application/json": {
+                    "application\/json": {
                         "schema": {
                             "properties": {
                                 "name": {
-                                    "$ref": "#/components/schemas/Project/properties/name"
+                                    "$ref": "#\/components\/schemas\/Project\/properties\/name"
                                 },
                                 "url_avatar": {
-                                    "$ref": "#/components/schemas/Project/properties/url_avatar"
+                                    "$ref": "#\/components\/schemas\/Project\/properties\/url_avatar"
                                 },
                                 "url_avatar_icon": {
-                                    "$ref": "#/components/schemas/Project/properties/url_avatar_icon"
+                                    "$ref": "#\/components\/schemas\/Project\/properties\/url_avatar_icon"
                                 },
                                 "url_site": {
-                                    "$ref": "#/components/schemas/Project/properties/url_site"
+                                    "$ref": "#\/components\/schemas\/Project\/properties\/url_site"
                                 },
                                 "description": {
-                                    "$ref": "#/components/schemas/Project/properties/description"
+                                    "$ref": "#\/components\/schemas\/Project\/properties\/description"
                                 }
                             },
                             "type": "object"
@@ -5772,28 +5342,28 @@
                 "description": "Fields for Playlist item creation",
                 "required": true,
                 "content": {
-                    "application/json": {
+                    "application\/json": {
                         "schema": {
                             "type": "array",
                             "items": {
                                 "properties": {
                                     "fileset_id": {
-                                        "$ref": "#/components/schemas/PlaylistItems/properties/fileset_id"
+                                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/fileset_id"
                                     },
                                     "book_id": {
-                                        "$ref": "#/components/schemas/PlaylistItems/properties/book_id"
+                                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/book_id"
                                     },
                                     "chapter_start": {
-                                        "$ref": "#/components/schemas/PlaylistItems/properties/chapter_start"
+                                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/chapter_start"
                                     },
                                     "chapter_end": {
-                                        "$ref": "#/components/schemas/PlaylistItems/properties/chapter_end"
+                                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/chapter_end"
                                     },
                                     "verse_start": {
-                                        "$ref": "#/components/schemas/PlaylistItems/properties/verse_start"
+                                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/verse_start"
                                     },
                                     "verse_end": {
-                                        "$ref": "#/components/schemas/PlaylistItems/properties/verse_end"
+                                        "$ref": "#\/components\/schemas\/PlaylistItems\/properties\/verse_end"
                                     }
                                 },
                                 "type": "object"
@@ -5818,7 +5388,7 @@
             "description": "v4 Routes for obtaining Languages Data",
             "externalDocs": {
                 "description": "For more info please refer to the Ethnologue Registration Authority",
-                "url": "https://www.iso.org/iso-639-language-codes.html"
+                "url": "https:\/\/www.iso.org\/iso-639-language-codes.html"
             }
         },
         {
@@ -5826,7 +5396,7 @@
             "description": "v4 Routes for obtaining Countries Data",
             "externalDocs": {
                 "description": "For more info please refer to the Iso Registration Authority",
-                "url": "https://www.iso.org/iso-3166-country-codes.html"
+                "url": "https:\/\/www.iso.org\/iso-3166-country-codes.html"
             }
         },
         {

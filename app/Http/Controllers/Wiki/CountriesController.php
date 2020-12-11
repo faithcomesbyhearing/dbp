@@ -41,12 +41,6 @@ class CountriesController extends APIController
      *          description="Filter the returned countries to those containing languages that have filesets",
      *     ),
      *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Asset/properties/id"),
-     *          description="Filter the returned countries to only those containing filesets for a specific asset",
-     *     ),
-     *     @OA\Parameter(
      *          name="include_languages",
      *          in="query",
      *          @OA\Schema(type="string"),
@@ -67,18 +61,13 @@ class CountriesController extends APIController
     public function index()
     {
         $filesets = checkParam('has_filesets') ?? true;
-        $asset_id = checkParam('asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
         $languages = checkParam('include_languages');
 
-        $cache_params = [$GLOBALS['i18n_iso'], $filesets, $asset_id, $languages];
+        $cache_params = [$GLOBALS['i18n_iso'], $filesets, $languages];
 
-        $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($filesets, $asset_id, $languages) {
-            $countries = Country::with('currentTranslation')->when($filesets, function ($query) use ($asset_id) {
-                $query->whereHas('languages.bibles.filesets', function ($query) use ($asset_id) {
-                    if ($asset_id) {
-                        $query->where('asset_id', $asset_id);
-                    }
-                });
+        $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($filesets, $languages) {
+            $countries = Country::with('currentTranslation')->when($filesets, function ($query)  {
+                $query->whereHas('languages.bibles.filesets');
             })->get();
             if ($languages !== null) {
                 $countries->load([
