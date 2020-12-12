@@ -426,9 +426,8 @@ class TextController extends APIController
     {
         $query      = checkParam('query', true);
         $fileset_id = checkParam('dam_id');
-        $asset_id   = checkParam('asset_id') ?? config('filesystems.disks.s3.bucket');
 
-        $fileset = BibleFileset::uniqueFileset($fileset_id, $asset_id, 'text_plain')->select('hash_id')->first();
+        $fileset = BibleFileset::uniqueFileset($fileset_id, 'text_plain')->select('hash_id')->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }
@@ -497,12 +496,6 @@ class TextController extends APIController
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
      *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id"),
-     *          description="If specified returns verse text ONLY for the specified fileset"
-     *     ),
-     *     @OA\Parameter(
      *          name="chapter",
      *          in="path",
      *          required=true,
@@ -542,15 +535,16 @@ class TextController extends APIController
         $chapter_id  = checkParam('chapter|chapter_id');
         $verse_start = checkParam('verse_start') ?? 1;
         $verse_end   = checkParam('verse_end');
-        $asset_id    = checkParam('asset_id') ?? config('filesystems.disks.s3.bucket');
 
-        $fileset = BibleFileset::uniqueFileset($fileset_id, $asset_id, 'text_plain')->select('hash_id', 'id')->first();
+        $fileset = BibleFileset::uniqueFileset($fileset_id, 'text_plain')->select('hash_id', 'id')->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }
 
+        $book = Book::where('id', $book_id)->orWhere('id_osis', $book_id)->first();
+
         $verse_info = BibleVerse::where('hash_id', $fileset->hash_id)->where([
-            ['book_id', '=', $book_id],
+            ['book_id', '=', $book->id],
             ['chapter', '=', $chapter_id],
             ['verse_start', '>=', $verse_start],
         ])->when($verse_end, function ($query) use ($verse_end) {

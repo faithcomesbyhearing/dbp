@@ -31,7 +31,6 @@ class BooksControllerV2 extends APIController
      *     description="Gets the book and code listing for a volume.",
      *     operationId="v2_library_book",
      *     @OA\Parameter(name="dam_id",in="query",required=true, @OA\Schema(ref="#/components/schemas/Bible/properties/id")),
-     *     @OA\Parameter(name="asset_id",in="query", @OA\Schema(ref="#/components/schemas/Asset/properties/id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -49,17 +48,16 @@ class BooksControllerV2 extends APIController
     public function book()
     {
         $id        = checkParam('dam_id');
-        $asset_id  = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
 
         $testament = $this->getTestamentString($id);
 
-        $fileset   = BibleFileset::with('bible')->uniqueFileset($id, $asset_id, null, null, $testament)->first();
+        $fileset   = BibleFileset::with('bible')->uniqueFileset($id, null, null, $testament)->first();
 
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $id]));
         }
 
-        $cache_params = [$asset_id, $id, $fileset, implode('-', $testament)];
+        $cache_params = [$id, $fileset, implode('-', $testament)];
         $libraryBook = cacheRemember(
             'v2_library_book',
             $cache_params,
@@ -118,7 +116,6 @@ class BooksControllerV2 extends APIController
      *     description="Gets the book order and code listing for a volume.",
      *     operationId="v2_library_bookOrder",
      *     @OA\Parameter(name="dam_id",in="query",required=true, @OA\Schema(ref="#/components/schemas/Bible/properties/id")),
-     *     @OA\Parameter(name="asset_id",in="query", @OA\Schema(ref="#/components/schemas/Asset/properties/id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -136,16 +133,15 @@ class BooksControllerV2 extends APIController
     public function bookOrder()
     {
         $id        = checkParam('dam_id', true);
-        $asset_id  = checkParam('bucket|bucket_id|asset_id') ?? 'dbp-prod';
 
-        $fileset   = BibleFileset::with('bible')->uniqueFileset($id, $asset_id, 'text_plain')->first();
+        $fileset   = BibleFileset::with('bible')->uniqueFileset($id, 'text_plain')->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $id]));
         }
 
         $testament = $this->getTestamentString($id);
 
-        $cache_params = ['v2_library_bookOrder_', $id, $asset_id, $fileset->id, json_encode($testament)];
+        $cache_params = ['v2_library_bookOrder_', $id, $fileset->id, json_encode($testament)];
         $libraryBook = cacheRemember(
             'v2_library_bookOrder',
             $cache_params,
@@ -356,7 +352,6 @@ class BooksControllerV2 extends APIController
      *     description="Lists the chapters for a book or all books in a standard bible volume.",
      *     operationId="v2_library_chapter",
      *     @OA\Parameter(name="dam_id",in="query",description="The bible_id",required=true, @OA\Schema(ref="#/components/schemas/Bible/properties/id")),
-     *     @OA\Parameter(name="asset_id",in="query",description="The asset_id", @OA\Schema(ref="#/components/schemas/Asset/properties/id")),
      *     @OA\Parameter(name="book_id",in="query",description="The book_id. For a complete list see the `book_id` field in the `/bibles/books` route.",required=true, @OA\Schema(ref="#/components/schemas/Book/properties/id")),
      *     @OA\Response(
      *         response=200,
@@ -371,7 +366,6 @@ class BooksControllerV2 extends APIController
      *
      * @param dam_id - The Fileset ID to filter by
      * @param book_id - The USFM 2.4 or OSIS Book ID code
-     * @param asset_id - The optional asset ID of the resource, if not given the API will assume FCBH origin
      *
      * @return mixed $chapters string - A JSON string that contains the status code and error messages if applicable.
      *
@@ -383,12 +377,11 @@ class BooksControllerV2 extends APIController
         }
 
         $id        = checkParam('dam_id');
-        $asset_id  = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
         $book_id   = checkParam('book_id');
 
-        $cache_params = [$asset_id, $id, $book_id];
-        $chapters = cacheRemember('v2_library_chapter', $cache_params, now()->addDay(), function () use ($id, $asset_id, $book_id) {
-            $fileset = BibleFileset::with('bible')->uniqueFileset($id, $asset_id, 'text_plain')->first();
+        $cache_params = [$id, $book_id];
+        $chapters = cacheRemember('v2_library_chapter', $cache_params, now()->addDay(), function () use ($id, $book_id) {
+            $fileset = BibleFileset::with('bible')->uniqueFileset($id, 'text_plain')->first();
             if (!$fileset) {
                 return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $id]));
             }
