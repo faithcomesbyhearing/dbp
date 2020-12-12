@@ -326,7 +326,7 @@ class LibraryController extends APIController
             $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
                 ->whereIn('bible_filesets.hash_id', $access_control->hashes)
-                ->uniqueFileset($dam_id, 'dbp-prod', $media, true)
+                ->uniqueFileset($dam_id, $media, true)
                 ->withBible($language_name, $language_id, $organization)
                 ->when($language_id, function ($query) use ($language_id) {
                     $query->whereHas('bible', function ($subquery) use ($language_id) {
