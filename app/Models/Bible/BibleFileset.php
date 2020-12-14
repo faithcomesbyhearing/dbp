@@ -128,7 +128,6 @@ class BibleFileset extends Model
 
     public function organization()
     {
-        // BWF: 12/10/20 unsure whether to remove asset_id here
         return $this->hasManyThrough(Organization::class, Asset::class, 'id', 'id', 'asset_id', 'organization_id');
     }
 
