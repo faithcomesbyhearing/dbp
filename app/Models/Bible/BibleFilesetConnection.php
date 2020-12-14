@@ -29,12 +29,6 @@ class BibleFilesetConnection extends Model
     public $keyType = 'string';
     public $primaryKey = 'hash_id';
 
-    /**
-     *
-     * @OA\Property(ref="#/components/schemas/BibleFileset/properties/hash_id")
-     * @method static BibleFilesetConnection whereHashId($value)
-     * @property string $hash_id
-     */
     protected $hash_id;
 
     /**
