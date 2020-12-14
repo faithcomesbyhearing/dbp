@@ -409,7 +409,6 @@ class TextController extends APIController
      *          required=true,
      *          @OA\Schema(type="string")
      *     ),
-     *     @OA\Parameter(name="asset_id", in="query", description="Will filter the results by the given Asset", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",

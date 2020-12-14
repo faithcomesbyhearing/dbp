@@ -14,8 +14,6 @@ use Illuminate\Support\Facades\DB;
  *
  * @method static BibleFileset whereId($value)
  * @property string $id
- * @method static BibleFileset whereHashId($value)
- * @property string $hash_id
  * @method static BibleFileset whereSetTypeCode($value)
  * @property string $set_type_code
  * @method static BibleFileset whereSetSizeCode($value)
@@ -56,25 +54,8 @@ class BibleFileset extends Model
      */
     protected $id;
 
-    /**
-     *
-     * @OA\Property(
-     *   title="hash_id",
-     *   type="string",
-     *   description="The hash_id generated from the `asset_id`, `set_type_code`, and `id`",
-     *   example="c2d2ad3e5983",
-     *   minLength=12,
-     *   maxLength=12
-     * )
-     *
-     */
     protected $hash_id;
 
-    /**
-     *
-     * @OA\Property(property="asset_id", ref="#/components/schemas/Asset/properties/id"),
-     *
-     */
     protected $asset_id;
 
     /**

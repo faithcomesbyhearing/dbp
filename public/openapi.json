@@ -1972,12 +1972,6 @@
                         "minimum": 0,
                         "example": 4
                     },
-                    "hash_id": {
-                        "title": "hash_id",
-                        "description": "The hash_id",
-                        "type": "string",
-                        "example": "7ccd81c2546e"
-                    },
                     "book_id": {
                         "title": "book_id",
                         "description": "The book_id",
@@ -2100,17 +2094,6 @@
                         "minLength": 6,
                         "example": "ENGESV"
                     },
-                    "hash_id": {
-                        "title": "hash_id",
-                        "description": "The hash_id generated from the `asset_id`, `set_type_code`, and `id`",
-                        "type": "string",
-                        "maxLength": 12,
-                        "minLength": 12,
-                        "example": "c2d2ad3e5983"
-                    },
-                    "asset_id": {
-                        "$ref": "#\/components\/schemas\/Asset\/properties\/id"
-                    },
                     "set_type_code": {
                         "$ref": "#\/components\/schemas\/BibleFilesetType\/properties\/set_type_code"
                     },
@@ -2137,14 +2120,6 @@
                 "title": "Bible Fileset Copyright",
                 "description": "BibleFilesetCopyright",
                 "properties": {
-                    "hash_id": {
-                        "title": "hash id",
-                        "description": "The hash value for the created fileset",
-                        "type": "string",
-                        "maxLength": 12,
-                        "minLength": 12,
-                        "example": "1248f044fe62"
-                    },
                     "copyright_date": {
                         "title": "copyright_date",
                         "description": "The copyright date created copyright",
@@ -2401,9 +2376,6 @@
                         "title": "id",
                         "description": "The incrementing id for the Bible Verse",
                         "type": "integer"
-                    },
-                    "hash_id": {
-                        "$ref": "#\/components\/schemas\/BibleFileset\/properties\/hash_id"
                     },
                     "book_id": {
                         "$ref": "#\/components\/schemas\/Book\/properties\/id"
