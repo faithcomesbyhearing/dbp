@@ -24,13 +24,10 @@ class StreamController extends APIController
      */
     public function index($id = null, $file_id_location = null)
     {
-        $asset_id = checkParam('asset_id') ?? config('filesystems.disks.s3_fcbh_video.bucket');
+        $cache_params = [$id, $file_id_location];
 
-
-        $cache_params = [$id, $asset_id, $file_id_location];
-
-        $current_file = cacheRemember('stream_master_index', $cache_params, now()->addHours(12), function () use ($id, $asset_id, $file_id_location) {
-            $fileset = BibleFileset::uniqueFileset($id, $asset_id)->select('hash_id', 'id')->first();
+        $current_file = cacheRemember('stream_master_index', $cache_params, now()->addHours(12), function () use ($id, $file_id_location) {
+            $fileset = BibleFileset::uniqueFileset($id)->select('hash_id', 'id', 'asset_id')->first();
             if (!$fileset) {
                 return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
             }
@@ -40,7 +37,7 @@ class StreamController extends APIController
             if (!$file) {
                 return $this->replyWithError(trans('api.bible_file_errors_404', ['id' => $file_id_location]));
             }
-
+            $asset_id = $fileset->asset_id;
             $current_file = '#EXTM3U';
             foreach ($file->streamBandwidth as $bandwidth) {
                 $current_file .= "\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=$bandwidth->bandwidth";
@@ -81,13 +78,11 @@ class StreamController extends APIController
      */
     public function transportStream(Response $response, $fileset_id = null, $file_id_location = null, $file_name = null)
     {
-        $asset_id = checkParam('asset_id') ?? config('filesystems.disks.s3_fcbh_video.bucket');
+        $cache_params = [$fileset_id, $file_id_location, $file_name];
 
-        $cache_params = [$fileset_id, $asset_id, $file_id_location, $file_name];
-
-        $current_file = cacheRemember('stream_bandwidth', $cache_params, now()->addHours(12), function () use ($response, $fileset_id, $asset_id, $file_id_location, $file_name) {
-            $video_fileset = BibleFileset::uniqueFileset($fileset_id, $asset_id, 'video_stream')->select('hash_id', 'id', 'asset_id')->first();
-            $audio_fileset = BibleFileset::uniqueFileset($fileset_id, $asset_id, 'audio', true)->select('hash_id', 'id', 'asset_id')->first();
+        $current_file = cacheRemember('stream_bandwidth', $cache_params, now()->addHours(12), function () use ($response, $fileset_id, $file_id_location, $file_name) {
+            $video_fileset = BibleFileset::uniqueFileset($fileset_id, 'video_stream')->select('hash_id', 'id', 'asset_id')->first();
+            $audio_fileset = BibleFileset::uniqueFileset($fileset_id, 'audio', true)->select('hash_id', 'id', 'asset_id')->first();
             if (!$video_fileset && !$audio_fileset) {
                 return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
             }

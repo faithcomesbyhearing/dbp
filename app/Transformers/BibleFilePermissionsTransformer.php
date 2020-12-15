@@ -21,7 +21,7 @@ class BibleFilePermissionsTransformer extends TransformerAbstract
          *      title="v4_bible_filesets_permissions.index",
          *      @OA\Xml(name="v4_bible_filesets_permissions.index"),
          *      @OA\Items(
-         *          @OA\Property(property="fileset_id",          ref="#/components/schemas/BibleFileset/properties/hash_id"),
+         *          @OA\Property(property="fileset_id", ref="#/components/schemas/BibleFileset/properties/id")
          *     )
          *   )
          * )

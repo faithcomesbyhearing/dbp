@@ -21,8 +21,6 @@ use App\Models\Language\Language;
  *
  * @method static BibleFile whereId($value)
  * @property $id
- * @method static BibleFile whereHashId($value)
- * @property string $hash_id
  * @method static BibleFile whereBookId($value)
  * @property $book_id
  * @method static BibleFile whereChapterStart($value)
@@ -69,16 +67,7 @@ class BibleFile extends Model
      *
      */
     protected $id;
-    /**
-     *
-     * @OA\Property(
-     *   title="hash_id",
-     *   type="string",
-     *   example="7ccd81c2546e",
-     *   description="The hash_id",
-     * )
-     *
-     */
+
     protected $hash_id;
     /**
      *

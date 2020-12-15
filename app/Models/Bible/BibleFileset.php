@@ -14,10 +14,6 @@ use Illuminate\Support\Facades\DB;
  *
  * @method static BibleFileset whereId($value)
  * @property string $id
- * @method static BibleFileset whereHashId($value)
- * @property string $hash_id
- * @method static BibleFileset whereBucketId($value)
- * @property string $asset_id
  * @method static BibleFileset whereSetTypeCode($value)
  * @property string $set_type_code
  * @method static BibleFileset whereSetSizeCode($value)
@@ -58,25 +54,8 @@ class BibleFileset extends Model
      */
     protected $id;
 
-    /**
-     *
-     * @OA\Property(
-     *   title="hash_id",
-     *   type="string",
-     *   description="The hash_id generated from the `asset_id`, `set_type_code`, and `id`",
-     *   example="c2d2ad3e5983",
-     *   minLength=12,
-     *   maxLength=12
-     * )
-     *
-     */
     protected $hash_id;
 
-    /**
-     *
-     * @OA\Property(property="asset_id", ref="#/components/schemas/Asset/properties/id"),
-     *
-     */
     protected $asset_id;
 
     /**
@@ -205,7 +184,7 @@ class BibleFileset extends Model
             });
     }
 
-    public function scopeUniqueFileset($query, $id = null, $asset_id = null, $fileset_type = null, $ambigious_fileset_type = false, $testament_filter = null)
+    public function scopeUniqueFileset($query, $id = null, $fileset_type = null, $ambigious_fileset_type = false, $testament_filter = null)
     {
         $version = (int) checkParam('v');
         return $query->when($id, function ($query) use ($id, $version) {
@@ -227,9 +206,6 @@ class BibleFileset extends Model
                 }
             });
         })
-            ->when($asset_id, function ($query) use ($asset_id) {
-                $query->where('bible_filesets.asset_id', $asset_id);
-            })
             ->when($testament_filter, function ($query) use ($testament_filter) {
                 $query->whereIn('bible_filesets.set_size_code', $testament_filter);
             })

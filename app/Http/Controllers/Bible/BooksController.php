@@ -74,13 +74,6 @@ class BooksController extends APIController
      *         @OA\Schema(ref="#/components/schemas/BibleFileset/properties/set_type_code"),
      *         description="The type of fileset being queried"
      *     ),
-     *     @OA\Parameter(
-     *         name="asset_id",
-     *         in="query",
-     *         required=true,
-     *         @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id"),
-     *         description="The asset id to select the fileset by"
-     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -94,22 +87,21 @@ class BooksController extends APIController
     public function show($id)
     {
         $fileset_type = checkParam('fileset_type') ?? 'text_plain';
-        $asset_id = checkParam('asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
 
-        $cache_params = [$asset_id, $id, $fileset_type];
-        $books = cacheRemember('v4_books', $cache_params, now()->addDay(), function () use ($fileset_type, $asset_id, $id) {
-            $books = $this->getActiveBooksFromFileset($id, $asset_id, $fileset_type);
+        $cache_params = [$id, $fileset_type];
+        $books = cacheRemember('v4_books', $cache_params, now()->addDay(), function () use ($fileset_type, $id) {
+            $books = $this->getActiveBooksFromFileset($id, $fileset_type);
             return fractal($books, new BooksTransformer(), $this->serializer);
         });
 
         return $this->reply($books);
     }
 
-    public function getActiveBooksFromFileset($id, $asset_id, $fileset_type)
+    public function getActiveBooksFromFileset($id, $fileset_type)
     {
-        $fileset = BibleFileset::with('bible')->where('id', $id)->where('asset_id', $asset_id)->where('set_type_code', $fileset_type)->first();
+        $fileset = BibleFileset::with('bible')->where('id', $id)->where('set_type_code', $fileset_type)->first();
         if (!$fileset) {
-            return $this->replyWithError('Fileset Not Found');
+            return $this->replyWithError('Fileset Not Found'); // BWF: shouldn't reply like this, as it masks error later on
         }
         $is_plain_text = BibleVerse::where('hash_id', $fileset->hash_id)->exists();
 
@@ -119,7 +111,7 @@ class BooksController extends APIController
 
         $dbp_database = config('database.connections.dbp.database');
         return \DB::connection('dbp')->table($dbp_database . '.bible_filesets as fileset')
-            ->where('fileset.id', $id)->where('fileset.asset_id', $asset_id)
+            ->where('fileset.id', $id)
             ->leftJoin($dbp_database . '.bible_fileset_connections as connection', 'connection.hash_id', 'fileset.hash_id')
             ->leftJoin($dbp_database . '.bibles', 'bibles.id', 'connection.bible_id')
             ->when($fileset_type, function ($q) use ($fileset_type) {

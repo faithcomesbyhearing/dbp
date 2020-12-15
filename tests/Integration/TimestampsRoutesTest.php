@@ -7,7 +7,7 @@ class TimestampsRoutesTest extends ApiV4Test
 
     /**
      * @category V4_API
-     * @category Route Name: v4_timestamps'
+     * @category Route Name: v4_internal_timestamps'
      * @category Route Path: https://api.dbp.test/timestamps?v=4&key={key}
      * @see      \App\Http\Controllers\Bible\AudioController::availableTimestamps
      * @group    V4
@@ -16,7 +16,7 @@ class TimestampsRoutesTest extends ApiV4Test
      */
     public function timestamps()
     {
-        $path = route('v4_timestamps', $this->params);
+        $path = route('v4_internal_timestamps', $this->params);
         echo "\nTesting: $path";
         $response = $this->withHeaders($this->params)->get($path);
         $response->assertSuccessful();
@@ -24,7 +24,7 @@ class TimestampsRoutesTest extends ApiV4Test
 
     /**
      * @category V4_API
-     * @category Route Name: v4_timestamps.tag
+     * @category Route Name: v4_internal_timestamps.tag
      * @category Route Path: https://api.dbp.test/timestamps/{fileset_id}/{query}?v=4&key={key}
      * @see      \App\Http\Controllers\Bible\AudioController::timestampsByTag
      * @group    V4
@@ -39,7 +39,7 @@ class TimestampsRoutesTest extends ApiV4Test
             'query' => 'God'
         ];
 
-        $path = route('v4_timestamps.tag', array_merge($additional_params, $this->params));
+        $path = route('v4_internal_timestamps.tag', array_merge($additional_params, $this->params));
         echo "\nTesting: $path";
         $response = $this->withHeaders($this->params)->get($path);
         $response->assertSuccessful();

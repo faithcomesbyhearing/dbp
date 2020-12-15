@@ -43,12 +43,6 @@ class LanguagesController extends APIController
      *          description="The language_name field will filter results by a specific language name"
      *     ),
      *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Asset/properties/id"),
-     *          description="The bucket_id"
-     *     ),
-     *     @OA\Parameter(
      *          name="include_alt_names",
      *          in="query",
      *          @OA\Schema(ref="#/components/schemas/Language/properties/name"),
@@ -113,7 +107,6 @@ class LanguagesController extends APIController
         $code                  = checkParam('code|iso');
         $sort_by               = checkParam('sort_by') ?? 'name';
         $include_alt_names     = checkParam('include_alt_names');
-        $asset_id              = checkParam('bucket_id|asset_id');
         $name                  = checkParam('name|language_name');
         $random                  = checkParam('random');
         $show_restricted       = checkBoolean('show_all|show_restricted');
@@ -125,15 +118,15 @@ class LanguagesController extends APIController
             return $this->accessControl($this->key);
         });
 
-        $cache_params = [$this->v,  $country, $code, $GLOBALS['i18n_id'], $sort_by, $name, $show_restricted, $include_alt_names, $asset_id, $access_control->string, $limit, $page, $show_bibles, $random];
+        $cache_params = [$this->v,  $country, $code, $GLOBALS['i18n_id'], $sort_by, $name, $show_restricted, $include_alt_names, $access_control->string, $limit, $page, $show_bibles, $random];
 
         $order = $country ? 'country_population.population' : 'ifnull(current_translation.name, languages.name)';
         $order_dir = $country ? 'desc' : 'asc';
         $select_country_population = $country ? 'country_population.population' : 'null';
-        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_alt_names, $asset_id, $code, $name, $show_restricted, $access_control, $order, $order_dir, $select_country_population, $limit, $page, $random) {
+        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_alt_names, $code, $name, $show_restricted, $access_control, $order, $order_dir, $select_country_population, $limit, $page, $random) {
             $languages = Language::includeCurrentTranslation()
                 ->includeAutonymTranslation()
-                ->includeExtraLanguages($show_restricted, arrayToCommaSeparatedValues($access_control->hashes), $asset_id)
+                ->includeExtraLanguages($show_restricted, arrayToCommaSeparatedValues($access_control->hashes))
                 ->includeExtraLanguageTranslations($include_alt_names)
                 ->includeCountryPopulation($country)
                 ->filterableByCountry($country)
@@ -154,23 +147,11 @@ class LanguagesController extends APIController
                     'autonym.name as autonym',
                     \DB::raw($select_country_population . ' as country_population')
                 ])
-                ->with(['bibles' => function ($query) use ($asset_id) {
-                    $query->whereHas('filesets', function ($query) use ($asset_id) {
-                        if ($asset_id) {
-                            $asset_id = explode(',', $asset_id);
-                            $query->whereIn('asset_id', $asset_id);
-                        }
-                    });
+                ->with(['bibles' => function ($query) {
+                    $query->whereHas('filesets');
                 }])
                 ->withCount([
-                    'filesets' => function ($query) use ($asset_id) {
-                        if ($asset_id) {
-                            $dbp = config('database.connections.dbp.database');
-                            $query->leftJoin($dbp . '.bible_filesets', 'bible_filesets.hash_id', '=', 'bible_fileset_connections.hash_id');
-                            $asset_id = explode(',', $asset_id);
-                            $query->whereIn('asset_id', $asset_id);
-                        }
-                    }
+                    'filesets' 
                 ]);
 
             if ($page) {
@@ -192,7 +173,7 @@ class LanguagesController extends APIController
      * @OA\Get(
      *     path="/languages/{id}",
      *     tags={"Languages"},
-     *     summary="Return a single Languages",
+     *     summary="Returns a single Language",
      *     description="Returns a single Language",
      *     operationId="v4_languages.one",
      *     @OA\Parameter(
