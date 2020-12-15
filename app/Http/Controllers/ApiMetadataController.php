@@ -153,7 +153,6 @@ class ApiMetadataController extends APIController
      *     description="This call returns the file path information. This information can be used with the response of the locations calls to create a URI to retrieve files.",
      *     operationId="v2_library_asset",
      *     @OA\Parameter(name="dam_id", in="query", description="The DAM ID for which to retrieve file path info.", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
-     *     @OA\Parameter(name="asset_id", in="query", description="Will filter the results by the given Asset", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")),
      *     @OA\Parameter(name="asset_type", in="query", description="The asset type to filter result by.", @OA\Schema(ref="#/components/schemas/Asset/properties/asset_type")),
      *     @OA\Response(
      *         response=200,
@@ -186,11 +185,10 @@ class ApiMetadataController extends APIController
     public function assets()
     {
         $dam_id   = checkParam('dam_id|fileset_id');
-        $asset_id = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
         $asset_type = checkParam('asset_type');
 
         if ($dam_id) {
-            $fileset = BibleFileset::uniqueFileset($dam_id, $asset_id, $asset_type)->first();
+            $fileset = BibleFileset::uniqueFileset($dam_id, $asset_type)->first();
             if (!$fileset) {
                 return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404'));
             }
