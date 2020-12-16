@@ -6,6 +6,7 @@ use App\Traits\AccessControlAPI;
 use App\Http\Controllers\APIController;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFile;
+use App\Models\Bible\BibleFileset;
 use App\Models\Language\Language;
 use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
@@ -946,10 +947,11 @@ class PlaylistsController extends APIController
         return false;
     }
 
-    public function itemHls(Response $response, $playlist_item_id)
+    public function itemHls(Response $response, $playlist_item_location)
     {
         $download = checkBoolean('download');
-        $playlist_item = PlaylistItems::whereId($playlist_item_id)->first();
+
+        $playlist_item = $this->getPlaylistItemFromLocation($playlist_item_location);
         if (!$playlist_item) {
             return $this->setStatusCode(404)->replyWithError('Playlist Item Not Found');
         }
@@ -961,9 +963,35 @@ class PlaylistsController extends APIController
         }
 
         return response($hls_playlist['file_content'], 200, [
-            'Content-Disposition' => 'attachment; filename="item_' . $playlist_item_id . '.m3u8"',
+            'Content-Disposition' => 'attachment; filename="item_' . $playlist_item->id . '.m3u8"',
             'Content-Type'        => 'application/x-mpegURL'
         ]);
+    }
+
+    private function getPlaylistItemFromLocation($playlist_item_location)
+    {
+        $parts = explode('-', $playlist_item_location);
+        if (sizeof($parts) === 1) {
+            return PlaylistItems::whereId($playlist_item_location)->first();
+        }
+
+        $fileset = cacheRemember('fileset', [$parts[0]], now()->addHours(12), function () use ($parts) {
+            return BibleFileset::whereId($parts[0])->first();
+        });
+
+        $playlist_item = [
+            'id' => $playlist_item_location,
+            'fileset' => $fileset,
+            'book_id' => $parts[1],
+            'chapter_start' => $parts[2],
+            'chapter_end' => $parts[2],
+            'verse_start' => $parts[3]
+        ];
+        if ($parts[4] !== '') {
+            $playlist_item['verse_end'] = $parts[4];
+        }
+
+        return (object) $playlist_item;
     }
 
     public function hls(Response $response, $playlist_id)
