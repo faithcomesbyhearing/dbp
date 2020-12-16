@@ -148,6 +148,9 @@ class BooksTransformer extends BaseTransformer
                 if ($book->content_types) {
                     $result['content_types'] = $book->content_types;
                 }
+                if ($book->verses_count) {
+                    $result['verses_count'] = $book->verses_count;
+                }
                 return $result;
 
             case 'v4_bible_filesets.books':
