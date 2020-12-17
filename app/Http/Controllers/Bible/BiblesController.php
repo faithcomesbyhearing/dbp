@@ -880,7 +880,7 @@ class BiblesController extends APIController
                 $results->audio->$name = $fileset_result[0];
                 $results->audio->$name['fileset'] = $fileset;
 
-                if ($fileset_result[0]['multiple_mp3']) {
+                if (isset($fileset_result[0]['multiple_mp3'])) {
                     $fileset_type = $fileset->set_type_code;
                     $results->audio->$name['fileset']->set_type_code = $fileset_type . '_stream';
                     unset($fileset_result[0]['multiple_mp3']);
