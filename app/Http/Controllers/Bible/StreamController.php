@@ -213,7 +213,7 @@ class StreamController extends APIController
         $current_file .= "\n#EXT-X-ENDLIST";
 
         return response($current_file, 200, [
-            'Content-Disposition' => 'attachment; filename="' . $fileset_id . $file_id_location . '"',
+            'Content-Disposition' => 'attachment; filename="' . $fileset_id . $file_id_location . '.m3u8"',
             'Content-Type'        => 'application/x-mpegURL'
         ]);
         ;
