@@ -36,9 +36,9 @@ Route::name('v2_text_search')->get('text/search',                               
 Route::name('v2_text_search_group')->get('text/searchgroup',                       'Bible\TextController@searchGroup');
 
 // VERSION 2 | Audio
-Route::name('v2_audio_location')->get('audio/location',                            'Bible\AudioController@location');
-Route::name('v2_audio_path')->get('audio/path',                                    'Bible\AudioController@index');
-Route::name('v2_audio_timestamps')->get('audio/versestart',                        'Bible\AudioController@timestampsByReference');
+Route::name('v2_audio_location')->get('audio/location',                            'Bible\AudioControllerV2@location');
+Route::name('v2_audio_path')->get('audio/path',                                    'Bible\AudioControllerV2@index');
+Route::name('v2_audio_timestamps')->get('audio/versestart',                        'Bible\AudioControllerV2@timestampsByReference');
 
 // VERSION 2 | Video
 Route::name('v2_video_location')->get('video/location',                            'Organization\FilmsController@location');
