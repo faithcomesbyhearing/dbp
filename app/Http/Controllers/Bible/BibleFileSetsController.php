@@ -364,15 +364,28 @@ class BibleFileSetsController extends APIController
                     'verse_end' => $fileset_chapter->verse_end
                 ]);
             }
-        }
-
-        if (!$is_stream) {
-            foreach ($fileset_chapters as $key => $fileset_chapter) {
-                $fileset_chapters[$key]->file_name = $this->signedUrl(
-                    $this->signedPath($bible, $fileset, $fileset_chapter),
-                    $asset_id,
-                    random_int(0, 10000000)
+        } else {
+            // Multiple files per chapter
+            if (sizeof($fileset_chapters) > 1 && !$is_video) {
+                $fileset_chapters[0]->file_name = route(
+                    'v4_media_stream',
+                    [
+                        'fileset_id' => $fileset->id,
+                        'book_id' => $fileset_chapters[0]->book_id,
+                        'chapter' => $fileset_chapters[0]->chapter_start,
+                        'verse_start' => null,
+                        'verse_end' => null,
+                    ]
                 );
+                $collection = collect($fileset_chapters);
+                $fileset_chapters[0]->duration = $collection->sum('duration');
+                $fileset_chapters[0]->verse_end = $collection->last()->verse_end;
+                $fileset_chapters[0]->multiple_mp3 = true;
+                $fileset_chapters = [$fileset_chapters[0]];
+            } else {
+                foreach ($fileset_chapters as $key => $fileset_chapter) {
+                    $fileset_chapters[$key]->file_name = $this->signedUrl($this->signedPath($bible, $fileset, $fileset_chapter), $asset_id, random_int(0, 10000000));
+                }
             }
         }
 

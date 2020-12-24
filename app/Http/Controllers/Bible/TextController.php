@@ -346,18 +346,27 @@ class TextController extends APIController
             $plan->total_days = sizeof($plan->days);
             unset($plan->days);
         }
-
+        
         $playlists = Playlist::with('user')
+            ->where('draft', 0)
+            ->where('plan_id', 0)
+            ->where('user_playlists.name', 'like', '%' . $query . '%')
+            ->where('user_playlists.user_id', $user->id)
+            ->select(['user_playlists.*'])
+            ->get();
+
+        $followed_playlists = Playlist::with('user')
             ->where('draft', 0)
             ->where('plan_id', 0)
             ->where('user_playlists.name', 'like', '%' . $query . '%')
             ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user) {
                 $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')->where('playlists_followers.user_id', $user->id);
             })
-            ->where('user_playlists.user_id', $user->id)
-            ->orWhere('playlists_followers.user_id', $user->id)
+            ->where('playlists_followers.user_id', $user->id)
             ->select(['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
-            ->orderBy('name', 'asc')->get();
+            ->get();
+            
+        $all_playlists = $playlists->merge($followed_playlists)->sortBy('name');
 
         $highlights = Highlight::where('user_id', $user->id)
             ->orderBy('user_highlights.updated_at')->limit($limit)->get()
@@ -383,7 +392,7 @@ class TextController extends APIController
             'highlights' => fractal($highlights, UserHighlightsTransformer::class)->toArray()['data'],
             'notes' => fractal($notes, UserNotesTransformer::class)->toArray()['data'],
             'plans' => $plans,
-            'playlists' => $playlists,
+            'playlists' => $all_playlists,
         ]);
     }
 

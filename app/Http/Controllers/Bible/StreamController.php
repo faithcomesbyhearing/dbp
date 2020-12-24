@@ -32,6 +32,12 @@ class StreamController extends APIController
                 return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
             }
 
+            $is_multiple_mp3 = $this->isMultipleMp3($file_id_location);
+            
+            if ($is_multiple_mp3) {
+                return $this->generateMultipleMp3HLS($id, $file_id_location);
+            }
+
             $file = $this->getFileFromLocation($fileset, $file_id_location);
 
             if (!$file) {
@@ -165,5 +171,56 @@ class StreamController extends APIController
 
         return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)
             ->where($where)->first();
+    }
+
+    private function generateMultipleMp3HLS($fileset_id, $file_id_location)
+    {
+        $parts = explode('-', $file_id_location);
+        $asset_id = checkParam('asset_id') ?? config('filesystems.disks.s3_fcbh_video.bucket');
+
+        $audio_fileset = BibleFileset::uniqueFileset($fileset_id, $asset_id, 'audio', true)->select('hash_id', 'id', 'asset_id')->first();
+
+        $bible_files = BibleFile::where([
+            'hash_id' => $audio_fileset->hash_id,
+            'book_id' => $parts[0],
+            'chapter_start' => $parts[1]
+        ])->get();
+
+        $transaction_id = random_int(0, 10000000);
+        $current_file = "#EXTM3U\n";
+        $current_file .= '#EXT-X-TARGETDURATION:' . ceil($bible_files->sum('duration')) . "\n";
+        $current_file .= "#EXT-X-VERSION:4\n";
+        $current_file .= '#EXT-X-MEDIA-SEQUENCE:0';
+
+        $signed_files = [];
+        $bible_path =  $audio_fileset->bible->first()->id . '/';
+
+        foreach ($bible_files as $bible_file) {
+            $current_file .= "\n#EXTINF:$bible_file->duration,";
+
+            $file_path = 'audio/' . $bible_path . $audio_fileset->id . '/' . $bible_file->file_name;
+            if (!isset($signed_files[$file_path])) {
+                $signed_files[$file_path] = $this->signedUrl($file_path, $audio_fileset->asset_id, $transaction_id);
+            }
+            $current_file .= "\n" . $signed_files[$file_path];
+        }
+
+        $current_file .= "\n#EXT-X-ENDLIST";
+
+        return response($current_file, 200, [
+            'Content-Disposition' => 'attachment; filename="' . $fileset_id . $file_id_location . '.m3u8"',
+            'Content-Type'        => 'application/x-mpegURL'
+        ]);
+        ;
+    }
+
+    private function isMultipleMp3($file_id_location)
+    {
+        $parts = explode('-', $file_id_location);
+        if (sizeof($parts) <= 3) {
+            return false;
+        }
+
+        return !$parts[2];
     }
 }
