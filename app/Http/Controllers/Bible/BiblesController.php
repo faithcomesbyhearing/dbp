@@ -968,81 +968,36 @@ class BiblesController extends APIController
                     }
                 }
 
-                $drama_all = $drama === 'all';
+            $drama_all = $drama === 'all';
 
-                if ($drama === 'drama' || $drama_all) {
-                    $chapter_filesets = $this->getAudioFilesetData(
-                        $chapter_filesets,
-                        $bible,
-                        $book,
-                        $chapter,
-                        'audio_drama',
-                        'drama',
-                        $zip,
-                        'audio',
-                        'non_drama',
-                        !$drama_all && $zip
-                    );
+            if ($drama === 'drama' || $drama_all) {
+                $chapter_filesets = $this->getAudioFilesetData($chapter_filesets, $bible, $book, $chapter, 'audio_drama', 'drama', $zip, 'audio', 'non_drama', !$drama_all && $zip);
 
-                    if (
-                        !empty($user) &&
-                        $zip &&
-                        isset($chapter_filesets->audio->drama)
-                    ) {
-                        $fileset_id =
-                            $chapter_filesets->audio->drama['fileset']['id'];
+                if (!empty($user) && $zip && isset($chapter_filesets->audio->drama)) {
+                    $fileset_id = $chapter_filesets->audio->drama['fileset']['id'];
 
-                        cacheRemember(
-                            'v4_user_download',
-                            [$user->id, $fileset_id],
-                            now()->addDay(),
-                            function () use ($user, $fileset_id) {
-                                UserDownload::create([
-                                    'user_id' => $user->id,
-                                    'fileset_id' => $fileset_id
-                                ]);
-                                return true;
-                            }
-                        );
-                    }
+                    cacheRemember('v4_user_download', [$user->id, $fileset_id], now()->addDay(), function () use ($user, $fileset_id) {
+                        UserDownload::create([
+                            'user_id'        => $user->id,
+                            'fileset_id'     => $fileset_id,
+                        ]);
+                        return true;
+                    });
                 }
+            }
 
-                if ($drama === 'non-drama' || $drama_all) {
-                    $chapter_filesets = $this->getAudioFilesetData(
-                        $chapter_filesets,
-                        $bible,
-                        $book,
-                        $chapter,
-                        'audio',
-                        'non_drama',
-                        $zip,
-                        'audio_drama',
-                        'drama',
-                        !$drama_all && $zip
-                    );
+            if ($drama === 'non-drama' || $drama_all) {
+                $chapter_filesets = $this->getAudioFilesetData($chapter_filesets, $bible, $book, $chapter, 'audio', 'non_drama', $zip, 'audio_drama', 'drama', !$drama_all && $zip);
 
-                    if (
-                        !empty($user) &&
-                        $zip &&
-                        isset($chapter_filesets->audio->non_drama)
-                    ) {
-                        $fileset_id =
-                            $chapter_filesets->audio->non_drama['fileset'][
-                                'id'
-                            ];
-                        cacheRemember(
-                            'v4_user_download',
-                            [$user->id, $fileset_id],
-                            now()->addDay(),
-                            function () use ($user, $fileset_id) {
-                                UserDownload::create([
-                                    'user_id' => $user->id,
-                                    'fileset_id' => $fileset_id
-                                ]);
-                                return true;
-                            }
-                        );
-                    }
+                if (!empty($user) && $zip && isset($chapter_filesets->audio->non_drama)) {
+                    $fileset_id = $chapter_filesets->audio->non_drama['fileset']['id'];
+                    cacheRemember('v4_user_download', [$user->id, $fileset_id], now()->addDay(), function () use ($user, $fileset_id) {
+                        UserDownload::create([
+                            'user_id'        => $user->id,
+                            'fileset_id'     => $fileset_id,
+                        ]);
+                        return true;
+                    });
                 }
 
                 $video_stream = $this->getFileset(
@@ -1234,6 +1189,13 @@ class BiblesController extends APIController
             if (!empty($fileset_result)) {
                 $results->audio->$name = $fileset_result[0];
                 $results->audio->$name['fileset'] = $fileset;
+
+                if (isset($fileset_result[0]['multiple_mp3'])) {
+                    $fileset_type = $fileset->set_type_code;
+                    $results->audio->$name['fileset']->set_type_code = $fileset_type . '_stream';
+                    unset($fileset_result[0]['multiple_mp3']);
+                }
+
                 if ($download) {
                     $file_name =
                         $fileset->id .
