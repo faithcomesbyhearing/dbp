@@ -21,7 +21,7 @@ Route::name('v4_languages.one')->get(
     'Wiki\LanguagesController@show'
 );
 
-// VERSION 4 | Alphabets
+// VERSION 4 | Alphabets and Numbers
 Route::name('v4_alphabets.all')->get(
     'alphabets',
     'Wiki\AlphabetsController@index'
@@ -85,6 +85,7 @@ Route::name('v4_internal_filesets.checkTypes')->post(
     'bibles/filesets/check/types',
     'Bible\BibleFileSetsController@checkTypes'
 );
+Route::name('v4_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
 Route::name('v4_filesets.show')->get(
     'bibles/filesets/{fileset_id?}',
     'Bible\BibleFileSetsController@show'
@@ -133,78 +134,14 @@ Route::name('v4_video_jesus_film_file')->get(
     'Bible\VideoStreamController@jesusFilmFile'
 );// used by bible.is
 
-// VERSION 4 | Community
-Route::name('v4_organizations.compare')->get(
-    'organizations/compare/',
-    'Organization\OrganizationsController@compare'
-);
-Route::name('v4_organizations.one')->get(
-    'organizations/{organization_id}',
-    'Organization\OrganizationsController@show'
-);
-Route::name('v4_organizations.all')->get(
-    'organizations/',
-    'Organization\OrganizationsController@index'
-);
-Route::name('v4_internal_projects.index')->get(
-    'projects',
-    'Organization\ProjectsController@index'
-);
-Route::name('v4_internal_projects.show')->get(
-    'projects/{project_id}',
-    'Organization\ProjectsController@show'
-);
-Route::name('v4_internal_projects.update')->put(
-    'projects/{project_id}',
-    'Organization\ProjectsController@update'
-);
-Route::name('v4_internal_projects.store')->post(
-    'projects',
-    'Organization\ProjectsController@store'
-);
-Route::name('v4_internal_projects.destroy')->delete(
-    'projects/{project_id}',
-    'Organization\ProjectsController@destroy'
-);
 
-// VERSION 4 | Resources
-Route::name('v4_resources.index')->get(
-    'resources',
-    'Organization\ResourcesController@index'
-);
-Route::name('v4_resources.show')->get(
-    'resources/{resource_id}',
-    'Organization\ResourcesController@show'
-);
 
-// VERSION 4 | API METADATA
-Route::name('v4_internal_api.versions')->get(
-    '/api/versions',
-    'HomeController@versions'
-);
-Route::name('v4_internal_api.buckets')->get(
-    '/api/buckets',
-    'HomeController@buckets'
-);
-Route::name('v4_internal_api.stats')->get('/stats', 'HomeController@stats');
-Route::name('v4_internal_api.gitVersion')->get(
-    '/api/git/version',
-    'ApiMetadataController@gitVersion'
-);
+
+
 Route::name('v4_internal_api.refreshDevCache')->get(
     '/refresh-dev-cache',
     'ApiMetadataController@refreshDevCache'
 );
-Route::name('v4_internal_api.changes')->get(
-    '/api/changelog',
-    'ApiMetadataController@changelog'
-);
-
-// VERSION 4 | GENERATOR
-Route::name('v4_internal_api.generator')->get(
-    '/api/gen/bibles',
-    'Connections\GeneratorController@bibles'
-);
 
 
 
@@ -213,13 +150,13 @@ Route::name('v4_internal_api.generator')->get(
 
 
 
-// bible.is private
+// ................. bible.is private .....................
 // this search includes plans/playlist/notes and requires API token
 Route::name('v4_internal_library_search')
     ->middleware('APIToken:check')
     ->get('search/library', 'Bible\TextController@searchLibrary');
 
-// VERSION 4 | Users
+// VERSION 4 | Users (bible.is private)
 Route::name('v4_internal_user.index')->get(
     'users',
     'User\UsersController@index'
@@ -268,7 +205,7 @@ Route::name('v4_internal_api_token.validate')
     ->middleware('APIToken')
     ->post('/token/validate', 'User\UsersController@validateApiToken');
 
-// VERSION 4 | Playlists
+// VERSION 4 | Playlists (bible.is private)
 Route::name('v4_internal_playlists.index')
     ->middleware('APIToken')
     ->get('playlists', 'Playlist\PlaylistsController@index');
@@ -329,7 +266,7 @@ Route::name('v4_internal_playlists.draft')
         'Playlist\PlaylistsController@draft'
     );
 
-// VERSION 4 | Plans
+// VERSION 4 | Plans (bible.is private)
 Route::name('v4_internal_plans.index')
     ->middleware('APIToken')
     ->get('plans', 'Plan\PlansController@index');
@@ -367,7 +304,7 @@ Route::name('v4_internal_plans.draft')
     ->middleware('APIToken:check')
     ->post('plans/{plan_id}/draft', 'Plan\PlansController@draft');
 
-// VERSION 4 | Accounts
+// VERSION 4 | Accounts (bible.is private)
 Route::name('v4_internal_user_accounts.index')->get(
     'accounts',
     'User\AccountsController@index'
@@ -385,7 +322,7 @@ Route::name('v4_internal_user_accounts.destroy')->delete(
     'User\AccountsController@destroy'
 );
 
-// VERSION 4 | Annotations with api_token
+// VERSION 4 | Annotations with api_token (bible.is private)
 Route::middleware('APIToken')->group(function () {
     Route::name('v4_internal_notes.index')->get(
         'users/{user_id}/notes',
@@ -448,8 +385,8 @@ Route::middleware('APIToken:check')->group(function () {
     );
 });
 
-// attic
-// VERSION 4 | Study Lexicons
+// ................. attic .......................
+// VERSION 4 | Study Lexicons (attic)
 Route::name('v4_internal_lexicon_index')->get(
     'lexicons',
     'Bible\Study\LexiconController@index'
@@ -466,7 +403,7 @@ Route::name('v4_countries.jsp')->get(
     'Wiki\CountriesController@joshuaProjectIndex'
 );
 
-// VERSION 4 | Push tokens
+// VERSION 4 | Push tokens (attic)
 Route::name('v4_internal_push_tokens.index')
     ->middleware('APIToken:check')
     ->get('push_notifications', 'User\PushTokensController@index');
@@ -477,7 +414,7 @@ Route::name('v4_internal_push_tokens.destroy')
     ->middleware('APIToken:check')
     ->delete('push_notifications/{token}', 'User\PushTokensController@destroy');
 
-// VERSION 4 | Timestamps (deprecated, no longer used in bible.is, remove)
+// VERSION 4 | Timestamps (attic...deprecated, no longer used in bible.is, )
 Route::name('v4_internal_timestamps')->get(
     'timestamps',
     'Bible\AudioController@availableTimestamps'
@@ -490,7 +427,6 @@ Route::name('v4_internal_timestamps.verse')->get(
     'timestamps/{id}/{book}/{chapter}',
     'Bible\AudioController@timestampsByReference'
 );
-
 
 Route::name('v4_bible.links')->get(
     'bibles/links',
