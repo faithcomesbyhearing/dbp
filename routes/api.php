@@ -66,7 +66,7 @@ Route::name('v4_bible.copyright')->get(
 ); // used
 Route::name('v4_internal_bible.chapter')
     ->middleware('APIToken')
-    ->get('bibles/{bible_id}/chapter', 'Bible\BiblesController@chapter');
+    ->get('bibles/{bible_id}/chapter', 'Bible\BiblesController@chapter'); //used
 Route::name('v4_internal_bible.chapter.annotations')
     ->middleware('APIToken:check')
     ->get(
