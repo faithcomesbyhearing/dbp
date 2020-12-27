@@ -106,7 +106,7 @@ class UsersController extends APIController
     {
         $available_projects = $this->availableProjects();
 
-        $user = User::with('accounts', 'organizations', 'profile')
+        $user = User::with('accounts', 'profile')
             ->whereHas('projectMembers', function ($query) use (
                 $available_projects
             ) {
