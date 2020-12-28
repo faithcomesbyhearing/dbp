@@ -57,7 +57,6 @@ class UserTransformer extends BaseTransformer
                     'avatar'    => $user->avatar,
                     'email'     => $user->email,
                     'profile'   => $user->profile,
-                    'organizations' => $user->organizations,
                     'accounts'  => $user->accounts,
                     'keys'      => $user->keys,
                     'api_token' => $user->api_token,
@@ -78,7 +77,6 @@ class UserTransformer extends BaseTransformer
              *       @OA\Property(property="avatar",   ref="#/components/schemas/User/properties/avatar"),
              *       @OA\Property(property="email",    ref="#/components/schemas/User/properties/email"),
              *       @OA\Property(property="profile",  ref="#/components/schemas/Profile"),
-             *       @OA\Property(property="organizations",  ref="#/components/schemas/Organization"),
              *       @OA\Property(property="accounts", type="object",description="The unique identifier for a user's connection to the api and the means of that connection",example={"facebook":"1903random6321","cookie": "43190crumbles1023"}),
              *    )
              * )
@@ -92,7 +90,6 @@ class UserTransformer extends BaseTransformer
                     'avatar'    => $user->avatar,
                     'email'     => $user->email,
                     'profile'   => $user->profile,
-                    'organizations' => $user->organizations,
                     'accounts'  => $user->accounts,
                     'freshchat_restore_id' => $user ->freshchat_restore_id
                 ];
