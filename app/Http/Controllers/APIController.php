@@ -179,7 +179,7 @@ class APIController extends Controller
             $this->user = $keyExists->user ?? null;
 
             if (!$this->user) {
-                abort(401, 'You need to provide a valid API key. To request an api key please email access@dbp4.org');
+                abort(401, 'You need to provide a valid API key. To request an api key please email support@digitalbibleplatform.com');
             }
 
             // i18n

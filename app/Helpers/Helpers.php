@@ -21,10 +21,11 @@ function checkParam(string $paramName, $required = false, $inPathValue = null)
         return $inPathValue;
     }
 
+    // BWF 12/24/2020 - key should be provided as request header, and api_token as Bearer token in Authorization header
     // Authorization params (with key => Authorization translation)
-    if ($paramName === 'key' && request()->header('Authorization')) {
-        return str_replace('Bearer ', '', request()->header('Authorization'));
-    }
+    // if ($paramName === 'key' && request()->header('Authorization')) {
+    //     return str_replace('Bearer ', '', request()->header('Authorization'));
+    // }
 
     foreach (explode('|', $paramName) as $current_param) {
         // Header params
