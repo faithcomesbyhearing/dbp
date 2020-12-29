@@ -285,11 +285,13 @@ class UsersController extends APIController
         }
 
         // Link the social account provider
-        $user->accounts()->create([
-            'project_id' => $request->project_id,
-            'provider_id'      => $provider_id,
+        Account::updateOrCreate([
+            'user_id' => $user->id,
             'provider_user_id' => $provider_user_id,
+            'provider_id' => $provider_id,
+            'project_id' => $request->project_id
         ]);
+
 
         return User::with('accounts', 'profile')->whereId($user->id)->first();
     }
