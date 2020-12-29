@@ -916,6 +916,13 @@ class BiblesController extends APIController
             if (!empty($fileset_result)) {
                 $results->audio->$name = $fileset_result[0];
                 $results->audio->$name['fileset'] = $fileset;
+
+                if (isset($fileset_result[0]['multiple_mp3'])) {
+                    $fileset_type = $fileset->set_type_code;
+                    $results->audio->$name['fileset']->set_type_code = $fileset_type . '_stream';
+                    unset($fileset_result[0]['multiple_mp3']);
+                }
+
                 if ($download) {
                     $file_name = $fileset->id . '-' . $book->id . '-' . $chapter . '.mp3';
                     $results->downloads[] = (object) ['path' => $results->audio->$name['path'], 'file_name' => $file_name];
