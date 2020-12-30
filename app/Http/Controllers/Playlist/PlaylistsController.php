@@ -233,10 +233,49 @@ class PlaylistsController extends APIController
         $playlist = Playlist::create($playlist_data);
 
         if ($items) {
-            $this->createPlaylistItems($playlist, $items);
+            $this->createNewPlaylistItems($playlist, $items);
         }
 
         return $this->show($request, $playlist->id);
+    }
+
+    private function createNewPlaylistItems($playlist, $playlist_items)
+    {
+        $new_items_size = sizeof($playlist_items);
+
+        if ($new_items_size > $this->items_limit) {
+            $allowed_size = $this->items_limit;
+            $playlist_items = array_slice($playlist_items, 0, $allowed_size);
+        }
+
+        $playlist_items_to_create = [];
+        $order = 1;
+
+        foreach ($playlist_items as $playlist_item) {
+            $playlist_item = (object) $playlist_item;
+            $playlist_item_data = [
+                'playlist_id'       => $playlist->id,
+                'fileset_id'        => $playlist_item->fileset_id,
+                'book_id'           => $playlist_item->book_id,
+                'chapter_start'     => $playlist_item->chapter_start,
+                'chapter_end'       => $playlist_item->chapter_end,
+                'verse_start'       => $playlist_item->verse_start ?? null,
+                'verse_end'         => $playlist_item->verse_end ?? null,
+                'verses'            => $playlist_items->verses ?? 0,
+                'order_column'      => $order
+            ];
+            $playlist_items_to_create[] = $playlist_item_data;
+            $order += 1;
+        }
+        PlaylistItems::insert($playlist_items_to_create);
+        $created_playlist_items = PlaylistItems::where('playlist_id', $playlist->id)->orderBy('order_column')->get();
+        foreach ($created_playlist_items as $created_playlist_item) {
+            $created_playlist_item->calculateDuration()->save();
+            if (!$created_playlist_item->verses) {
+                $created_playlist_item->calculateVerses()->save();
+            }
+        }
+        return $created_playlist_items;
     }
 
     /**
@@ -624,7 +663,7 @@ class PlaylistsController extends APIController
         return $created_playlist_items;
     }
 
-    private function createTranslatedPlaylistItems($playlist, $playlist_items)
+    public function createTranslatedPlaylistItems($playlist, $playlist_items)
     {
         $playlist_items_to_create = [];
         $order = 1;
@@ -908,7 +947,7 @@ class PlaylistsController extends APIController
         return $this->reply('Playlist draft status changed');
     }
 
-    private function getFileset($filesets, $type, $size)
+    public function getFileset($filesets, $type, $size)
     {
         $available_filesets = [];
 

@@ -925,8 +925,10 @@ class PlansController extends APIController
         $translated_percentage = 0;
         $playlists_data = [];
         $order = 1;
+        $audio_fileset_types = collect(['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama']);
+        $bible_audio_filesets = $bible->filesets->whereIn('set_type_code', $audio_fileset_types);
         foreach ($plan->days as $day) {
-            $playlist = (object) $playlist_controller->translate($request, $day->playlist_id, $user, $compare_projects, $new_plan->id)->original;
+            $playlist = (object) $this->translatePlaylist($day->playlist_id, $user, $new_plan->id, $bible, $audio_fileset_types, $bible_audio_filesets, $playlist_controller);
             $playlists_data[] = [
                 'plan_id'               => $new_plan->id,
                 'playlist_id'           => $playlist->id,
@@ -950,5 +952,65 @@ class PlansController extends APIController
         $plan['translated_percentage'] = $translated_percentage;
 
         return $plan;
+    }
+
+    private function translatePlaylist($playlist_id, $user, $plan_id, $bible, $audio_fileset_types, $bible_audio_filesets, $playlist_controller)
+    {
+        $playlist = Playlist::with('items')->where('user_playlists.id', $playlist_id)->first();
+        $translated_items = [];
+        $metadata_items = [];
+        $total_translated_items = 0;
+        foreach ($playlist->items as $item) {
+            $ordered_types = $audio_fileset_types->filter(function ($type) use ($item) {
+                return $type !== $item->fileset->set_type_code;
+            })->prepend($item->fileset->set_type_code);
+            $preferred_fileset = $ordered_types->map(function ($type) use ($bible_audio_filesets, $item, $playlist_controller) {
+                return $playlist_controller->getFileset($bible_audio_filesets, $type, $item->fileset->set_size_code);
+            })->firstWhere('id');
+            $has_translation = isset($preferred_fileset);
+            $is_streaming = true;
+
+            if ($has_translation) {
+                $item->fileset_id = $preferred_fileset->id;
+                $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' || $preferred_fileset->set_type_code === 'audio_drama_stream';
+                $translated_items[] = (object)[
+                    'translated_id' => $item->id,
+                    'fileset_id' => $item->fileset_id,
+                    'book_id' => $item->book_id,
+                    'chapter_start' => $item->chapter_start,
+                    'chapter_end' => $item->chapter_end,
+                    'verse_start' => $is_streaming ? $item->verse_start : null,
+                    'verse_end' => $is_streaming ? $item->verse_end : null,
+                ];
+                $total_translated_items += 1;
+            }
+            $metadata_items[] = $item;
+        }
+        $translated_percentage = sizeof($playlist->items) ? $total_translated_items / sizeof($playlist->items) : 0;
+        $playlist_data = [
+            'user_id'           => $user->id,
+            'name'              => $playlist->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
+            'external_content'  => $playlist->external_content,
+            'featured'          => false,
+            'draft'             => true,
+            'plan_id'           => $plan_id
+        ];
+
+
+        $playlist = Playlist::create($playlist_data);
+        $items = collect($playlist_controller->createTranslatedPlaylistItems($playlist, $translated_items));
+        foreach ($metadata_items as $item) {
+            $new_item = $items->first(function ($new_item) use ($item) {
+                return $new_item->translated_id === $item->id;
+            });
+            if ($new_item) {
+                unset($new_item->translated_id);
+                $item->translation_item = $new_item;
+            }
+        }
+
+        $playlist->translation_data = $metadata_items;
+        $playlist->translated_percentage = $translated_percentage * 100;
+        return $playlist;
     }
 }
