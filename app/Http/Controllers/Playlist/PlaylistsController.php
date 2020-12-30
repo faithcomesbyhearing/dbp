@@ -624,7 +624,7 @@ class PlaylistsController extends APIController
         return $created_playlist_items;
     }
 
-    private function createTranslatedPlaylistItems($playlist, $playlist_items)
+    public function createTranslatedPlaylistItems($playlist, $playlist_items)
     {
         $playlist_items_to_create = [];
         $order = 1;
@@ -908,7 +908,7 @@ class PlaylistsController extends APIController
         return $this->reply('Playlist draft status changed');
     }
 
-    private function getFileset($filesets, $type, $size)
+    public function getFileset($filesets, $type, $size)
     {
         $available_filesets = [];
 
