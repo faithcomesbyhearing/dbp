@@ -1031,9 +1031,9 @@ class PlaylistsController extends APIController
         $hls_items = '';
         foreach ($bible_files as $bible_file) {
             $currentBandwidth = $bible_file->streamBandwidth->first();
-
             $transportStream = sizeof($currentBandwidth->transportStreamBytes) ? $currentBandwidth->transportStreamBytes : $currentBandwidth->transportStreamTS;
 
+            // Fix verse audio stream starting from different initial verses causing audio missmatch
             if ($item->verse_end && $item->verse_start) {
                 if (isset($transportStream[0]->timestamp) && $transportStream[0]->timestamp->verse_start !== 0) {
                     $transportStream->prepend((object)[]);
