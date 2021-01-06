@@ -986,17 +986,46 @@ class PlaylistsController extends APIController
         return false;
     }
 
-    public function itemHls(Response $response, $playlist_item_location)
+    public function itemHls(Response $response, $playlist_item_id)
     {
-        $download = checkBoolean('download');
+        $playlist_item = PlaylistItems::whereId($playlist_item_id)->first();
 
-        $playlist_item = $this->getPlaylistItemFromLocation($playlist_item_location);
         if (!$playlist_item) {
             return $this->setStatusCode(404)->replyWithError('Playlist Item Not Found');
         }
-        
+
+        return $this->getHlsItem($response, $playlist_item);
+    }
+
+    public function itemHlsLocation(Response $response, $fileset_id, $book_id, $chapter, $verse_start, $verse_end)
+    {
+        $fileset = cacheRemember('fileset', [$fileset_id], now()->addHours(12), function () use ($fileset_id) {
+            return BibleFileset::whereId($fileset_id)->first();
+        });
+
+        if (!$fileset) {
+            return $this->setStatusCode(404)->replyWithError('Fileset Not Found');
+        }
+
+        $playlist_item = (object) [
+            'id' => $fileset_id,
+            'fileset' => $fileset,
+            'book_id' => $book_id,
+            'chapter_start' => $chapter,
+            'chapter_end' => $chapter,
+            'verse_start' => $verse_start,
+            'verse_end' => $verse_end,
+        ];
+
+        return $this->getHlsItem($response, $playlist_item);
+    }
+
+    private function getHlsItem($response, $playlist_item)
+    {
+        $download = checkBoolean('download');
+
         $hls_playlist = $this->getHlsPlaylist($response, [$playlist_item], $download);
-        
+
         if ($download) {
             return $this->reply(['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]);
         }
@@ -1005,32 +1034,6 @@ class PlaylistsController extends APIController
             'Content-Disposition' => 'attachment; filename="item_' . $playlist_item->id . '.m3u8"',
             'Content-Type'        => 'application/x-mpegURL'
         ]);
-    }
-
-    private function getPlaylistItemFromLocation($playlist_item_location)
-    {
-        $parts = explode('-', $playlist_item_location);
-        if (sizeof($parts) === 1) {
-            return PlaylistItems::whereId($playlist_item_location)->first();
-        }
-
-        $fileset = cacheRemember('fileset', [$parts[0]], now()->addHours(12), function () use ($parts) {
-            return BibleFileset::whereId($parts[0])->first();
-        });
-
-        $playlist_item = [
-            'id' => $playlist_item_location,
-            'fileset' => $fileset,
-            'book_id' => $parts[1],
-            'chapter_start' => $parts[2],
-            'chapter_end' => $parts[2],
-            'verse_start' => $parts[3]
-        ];
-        if ($parts[4] !== '') {
-            $playlist_item['verse_end'] = $parts[4];
-        }
-
-        return (object) $playlist_item;
     }
 
     public function hls(Response $response, $playlist_id)
@@ -1066,10 +1069,10 @@ class PlaylistsController extends APIController
                 if (isset($transportStream[0]->timestamp) && $transportStream[0]->timestamp->verse_start !== 0) {
                     $transportStream->prepend((object)[]);
                 }
-                
+
                 $transportStream = $this->processVersesOnTransportStream($item, $transportStream, $bible_file);
             }
-            
+
             $fileset = $bible_file->fileset;
 
             foreach ($transportStream as $stream) {
@@ -1158,7 +1161,7 @@ class PlaylistsController extends APIController
                 ->where('chapter_start', '>=', $item->chapter_start)
                 ->where('chapter_start', '<=', $item->chapter_end)
                 ->get();
-            
+
             if ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream') {
                 $result = $this->processHLSAudio($bible_files, $signed_files, $transaction_id, $item, $download);
                 $hls_items[] = $result->hls_items;
