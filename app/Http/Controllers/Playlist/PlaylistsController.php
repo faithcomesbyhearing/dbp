@@ -992,9 +992,9 @@ class PlaylistsController extends APIController
         if (!$playlist_item) {
             return $this->setStatusCode(404)->replyWithError('Playlist Item Not Found');
         }
-
+        
         $hls_playlist = $this->getHlsPlaylist($response, [$playlist_item], $download);
-
+        
         if ($download) {
             return $this->reply(['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]);
         }
@@ -1033,10 +1033,15 @@ class PlaylistsController extends APIController
             $currentBandwidth = $bible_file->streamBandwidth->first();
 
             $transportStream = sizeof($currentBandwidth->transportStreamBytes) ? $currentBandwidth->transportStreamBytes : $currentBandwidth->transportStreamTS;
+
             if ($item->verse_end && $item->verse_start) {
+                if (isset($transportStream[0]->timestamp) && $transportStream[0]->timestamp->verse_start !== 0) {
+                    $transportStream->prepend((object)[]);
+                }
+                
                 $transportStream = $this->processVersesOnTransportStream($item, $transportStream, $bible_file);
             }
-
+            
             $fileset = $bible_file->fileset;
 
             foreach ($transportStream as $stream) {
@@ -1111,8 +1116,10 @@ class PlaylistsController extends APIController
         }
         $durations = [];
         $hls_items = [];
+
         foreach ($items as $item) {
             $fileset = $item->fileset;
+
             if (!Str::contains($fileset->set_type_code, 'audio')) {
                 continue;
             }
@@ -1123,6 +1130,7 @@ class PlaylistsController extends APIController
                 ->where('chapter_start', '>=', $item->chapter_start)
                 ->where('chapter_start', '<=', $item->chapter_end)
                 ->get();
+            
             if ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream') {
                 $result = $this->processHLSAudio($bible_files, $signed_files, $transaction_id, $item, $download);
                 $hls_items[] = $result->hls_items;
