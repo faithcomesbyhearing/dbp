@@ -553,16 +553,18 @@ class TextController extends APIController
 
         $verse_info = BibleVerse::where('hash_id', $fileset->hash_id)->where([
             ['book_id', '=', $book->id],
-            ['chapter', '=', $chapter_id],
-            ['verse_start', '>=', $verse_start],
-        ])->when($verse_end, function ($query) use ($verse_end) {
+            ])->when($chapter_id, function ($query) use ($chapter_id) {
+                return $query->where('chapter', '=', $chapter_id);
+            })->when($verse_start, function ($query) use ($verse_start) {
+                    return $query->where('verse_start', '>=', $verse_start);        
+            })->when($verse_end, function ($query) use ($verse_end) {
             return $query->where('verse_start', '<=', $verse_end);
         })->select(['book_id', 'chapter as chapter_number', 'verse_start', 'verse_end', 'verse_text'])->get();
 
-        foreach ($verse_info as $key => $verse) {
-            $verse_info[$key]->bible_id           = $fileset->id;
-            $verse_info[$key]->bible_variation_id = null;
-        }
+        // foreach ($verse_info as $key => $verse) {
+        //     $verse_info[$key]->bible_id           = $fileset->id;
+        //     $verse_info[$key]->bible_variation_id = null;
+        // }
 
         /**
          * @OA\Schema (
@@ -581,6 +583,7 @@ class TextController extends APIController
          *   )
          * )
          */
-        return $this->reply($verse_info);
+        //return $this->reply($verse_info);
+        return $this->reply(fractal($verse_info, new TextTransformer(), $this->serializer));        
     }
 }
