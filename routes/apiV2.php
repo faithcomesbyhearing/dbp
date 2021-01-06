@@ -32,6 +32,7 @@ Route::name('v2_volume_organization_list')->get('library/volumeorganization',   
 // VERSION 2 | Text
 Route::name('v2_text_font')->get('text/font',                                      'Bible\TextController@fonts');
 Route::name('v2_text_verse')->get('text/verse',                                    'Bible\TextController@index');
+Route::name('v2_verseInfo')->get('text/verseinfo',                                 'Bible\TextController@info'); // I cannot see a difference between library/verseinfo and text/verseinfo
 Route::name('v2_text_search')->get('text/search',                                  'Bible\TextController@search');
 Route::name('v2_text_search_group')->get('text/searchgroup',                       'Bible\TextController@searchGroup');
 
