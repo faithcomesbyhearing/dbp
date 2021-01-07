@@ -986,17 +986,18 @@ class PlaylistsController extends APIController
         return false;
     }
 
-    public function itemHls(Response $response, $playlist_item_location)
+    public function itemHls(Response $response, $playlist_item_id, $book_id = null, $chapter = null, $verse_start = null, $verse_end = null)
     {
         $download = checkBoolean('download');
 
-        $playlist_item = $this->getPlaylistItemFromLocation($playlist_item_location);
+        $playlist_item = $this->getPlaylistItemFromLocation($playlist_item_id, $book_id, $chapter, $verse_start, $verse_end);
         if (!$playlist_item) {
             return $this->setStatusCode(404)->replyWithError('Playlist Item Not Found');
         }
-        
+
         $hls_playlist = $this->getHlsPlaylist($response, [$playlist_item], $download);
-        
+
+
         if ($download) {
             return $this->reply(['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]);
         }
@@ -1007,28 +1008,27 @@ class PlaylistsController extends APIController
         ]);
     }
 
-    private function getPlaylistItemFromLocation($playlist_item_location)
+    private function getPlaylistItemFromLocation($playlist_item_id, $book_id, $chapter, $verse_start, $verse_end)
     {
-        $parts = explode('-', $playlist_item_location);
-        if (sizeof($parts) === 1) {
-            return PlaylistItems::whereId($playlist_item_location)->first();
+        if (!$book_id) {
+            return PlaylistItems::whereId($playlist_item_id)->first();
         }
 
-        $fileset = cacheRemember('fileset', [$parts[0]], now()->addHours(12), function () use ($parts) {
-            return BibleFileset::whereId($parts[0])->first();
+        $fileset_id = $playlist_item_id;
+
+        $fileset = cacheRemember('fileset', [$fileset_id], now()->addHours(12), function () use ($fileset_id) {
+            return BibleFileset::whereId($fileset_id)->first();
         });
 
         $playlist_item = [
-            'id' => $playlist_item_location,
+            'id' => implode('-', [$fileset_id, $book_id, $chapter, $verse_start, $verse_end]),
             'fileset' => $fileset,
-            'book_id' => $parts[1],
-            'chapter_start' => $parts[2],
-            'chapter_end' => $parts[2],
-            'verse_start' => $parts[3]
+            'book_id' => $book_id,
+            'chapter_start' => $chapter,
+            'chapter_end' => $chapter,
+            'verse_start' => strtolower($verse_start) === 'null' ? null : $verse_start,
+            'verse_end' => strtolower($verse_end) === 'null' ? null : $verse_end,
         ];
-        if ($parts[4] !== '') {
-            $playlist_item['verse_end'] = $parts[4];
-        }
 
         return (object) $playlist_item;
     }
@@ -1066,10 +1066,10 @@ class PlaylistsController extends APIController
                 if (isset($transportStream[0]->timestamp) && $transportStream[0]->timestamp->verse_start !== 0) {
                     $transportStream->prepend((object)[]);
                 }
-                
+
                 $transportStream = $this->processVersesOnTransportStream($item, $transportStream, $bible_file);
             }
-            
+
             $fileset = $bible_file->fileset;
 
             foreach ($transportStream as $stream) {
@@ -1158,7 +1158,7 @@ class PlaylistsController extends APIController
                 ->where('chapter_start', '>=', $item->chapter_start)
                 ->where('chapter_start', '<=', $item->chapter_end)
                 ->get();
-            
+
             if ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream') {
                 $result = $this->processHLSAudio($bible_files, $signed_files, $transaction_id, $item, $download);
                 $hls_items[] = $result->hls_items;
