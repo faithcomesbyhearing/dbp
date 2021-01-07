@@ -986,11 +986,11 @@ class PlaylistsController extends APIController
         return false;
     }
 
-    public function itemHls(Response $response, $playlist_item_location)
+    public function itemHls(Response $response, $playlist_item_id, $book_id = null, $chapter = null, $verse_start = null, $verse_end = null)
     {
         $download = checkBoolean('download');
 
-        $playlist_item = $this->getPlaylistItemFromLocation($playlist_item_location);
+        $playlist_item = $this->getPlaylistItemFromLocation($playlist_item_id, $book_id, $chapter, $verse_start, $verse_end);
         if (!$playlist_item) {
             return $this->setStatusCode(404)->replyWithError('Playlist Item Not Found');
         }
@@ -1007,28 +1007,27 @@ class PlaylistsController extends APIController
         ]);
     }
 
-    private function getPlaylistItemFromLocation($playlist_item_location)
+    private function getPlaylistItemFromLocation($playlist_item_id, $book_id, $chapter, $verse_start, $verse_end)
     {
-        $parts = explode('-', $playlist_item_location);
-        if (sizeof($parts) === 1) {
-            return PlaylistItems::whereId($playlist_item_location)->first();
+        if (!$book_id) {
+            return PlaylistItems::whereId($playlist_item_id)->first();
         }
 
-        $fileset = cacheRemember('fileset', [$parts[0]], now()->addHours(12), function () use ($parts) {
-            return BibleFileset::whereId($parts[0])->first();
+        $fileset_id = $playlist_item_id;
+
+        $fileset = cacheRemember('fileset', [$fileset_id], now()->addHours(12), function () use ($fileset_id) {
+            return BibleFileset::whereId($fileset_id)->first();
         });
 
         $playlist_item = [
-            'id' => $playlist_item_location,
+            'id' => implode('-', [$fileset_id, $book_id, $chapter, $verse_start, $verse_end]),
             'fileset' => $fileset,
-            'book_id' => $parts[1],
-            'chapter_start' => $parts[2],
-            'chapter_end' => $parts[2],
-            'verse_start' => $parts[3]
+            'book_id' => $book_id,
+            'chapter_start' => $chapter,
+            'chapter_end' => $chapter,
+            'verse_start' => strtolower($verse_start) === 'null' ? null : $verse_start,
+            'verse_end' => strtolower($verse_end) === 'null' ? null : $verse_end,
         ];
-        if ($parts[4] !== '') {
-            $playlist_item['verse_end'] = $parts[4];
-        }
 
         return (object) $playlist_item;
     }
