@@ -6,6 +6,7 @@ use App\Traits\AccessControlAPI;
 use App\Http\Controllers\APIController;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFile;
+use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleFileTimestamp;
 use App\Models\Language\Language;
 use App\Models\Plan\UserPlan;
@@ -986,24 +987,50 @@ class PlaylistsController extends APIController
         return false;
     }
 
-    public function itemHls(Response $response, $playlist_item_id)
+    public function itemHls(Response $response, $playlist_item_id, $book_id = null, $chapter = null, $verse_start = null, $verse_end = null)
     {
         $download = checkBoolean('download');
-        $playlist_item = PlaylistItems::whereId($playlist_item_id)->first();
+
+        $playlist_item = $this->getPlaylistItemFromLocation($playlist_item_id, $book_id, $chapter, $verse_start, $verse_end);
         if (!$playlist_item) {
             return $this->setStatusCode(404)->replyWithError('Playlist Item Not Found');
         }
-        
+
         $hls_playlist = $this->getHlsPlaylist($response, [$playlist_item], $download);
-        
+
         if ($download) {
             return $this->reply(['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]);
         }
 
         return response($hls_playlist['file_content'], 200, [
-            'Content-Disposition' => 'attachment; filename="item_' . $playlist_item_id . '.m3u8"',
+            'Content-Disposition' => 'attachment; filename="item_' . $playlist_item->id . '.m3u8"',
             'Content-Type'        => 'application/x-mpegURL'
         ]);
+    }
+
+    private function getPlaylistItemFromLocation($playlist_item_id, $book_id, $chapter, $verse_start, $verse_end)
+    {
+        if (!$book_id) {
+            return PlaylistItems::whereId($playlist_item_id)->first();
+        }
+
+        $fileset_id = $playlist_item_id;
+
+        $fileset = cacheRemember('fileset', [$fileset_id], now()->addHours(12), function () use ($fileset_id) {
+            return BibleFileset::whereId($fileset_id)->first();
+        });
+
+        $playlist_item = [
+            'id' => implode('-', [$fileset_id, $book_id, $chapter, $verse_start, $verse_end]),
+            'fileset' => $fileset,
+            'book_id' => $book_id,
+            'chapter_start' => $chapter,
+            'chapter_end' => $chapter,
+            'verse_start' => strtolower($verse_start) === 'null' ? null : $verse_start,
+            'verse_end' => strtolower($verse_end) === 'null' ? null : $verse_end,
+        ];
+
+        return (object) $playlist_item;
     }
 
     public function hls(Response $response, $playlist_id)
@@ -1042,10 +1069,10 @@ class PlaylistsController extends APIController
                         $transportStream->prepend((object)[]);
                     }
                 }
-                
+
                 $transportStream = $this->processVersesOnTransportStream($item, $transportStream, $bible_file);
             }
-            
+
             $fileset = $bible_file->fileset;
 
             foreach ($transportStream as $stream) {
@@ -1134,7 +1161,7 @@ class PlaylistsController extends APIController
                 ->where('chapter_start', '>=', $item->chapter_start)
                 ->where('chapter_start', '<=', $item->chapter_end)
                 ->get();
-            
+
             if ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream') {
                 $result = $this->processHLSAudio($bible_files, $signed_files, $transaction_id, $item, $download);
                 $hls_items[] = $result->hls_items;
@@ -1270,5 +1297,37 @@ class PlaylistsController extends APIController
             $fileset_text_info[$fileset] = $text_filesets[$bible_id] ?? null;
         }
         return $fileset_text_info;
+    }
+
+    public function itemMetadata()
+    {
+        $fileset_id = checkParam('fileset_id', true);
+        $book_id = checkParam('book_id', true);
+        $chapter = checkParam('chapter', true);
+        $verse_start = checkParam('verse_start') ?? null;
+        $verse_end = checkParam('verse_end') ?? null;
+        $fileset = BibleFileset::whereId($fileset_id)->first();
+
+        if (!$fileset) {
+            return $this->setStatusCode(404)->replyWithError('Fileset Not Found');
+        }
+
+        $playlist_item = new PlaylistItems();
+        $playlist_item->setAttribute('id', rand());
+        $playlist_item->setAttribute('fileset_id', $fileset_id);
+        $playlist_item->setAttribute('book_id', $book_id);
+        $playlist_item->setAttribute('chapter_start', $chapter);
+        $playlist_item->setAttribute('chapter_end', $chapter);
+        $playlist_item->setAttribute('verse_start', $verse_start);
+        $playlist_item->setAttribute('verse_end',  $verse_end);
+        $playlist_item->calculateVerses();
+        $playlist_item->calculateDuration();
+
+        return $this->reply([
+            'metadata' => $playlist_item->metadata,
+            'verses' => $playlist_item->verses,
+            'duration' => $playlist_item->duration,
+            'timestamps' => $playlist_item->getTimestamps(),
+        ]);
     }
 }
