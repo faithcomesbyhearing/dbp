@@ -60,11 +60,7 @@ class BibleLink extends Model
 
     /**
      *
-     * @OA\Property(
-     *   title="bible_id",
-     *   type="string",
-     *   description=""
-     * )
+     * @OA\Property(ref="#/components/schemas/Bible/properties/id")
      *
      * @method static BibleLink whereBibleId($value)
      * @property string|null $bible_id
@@ -76,7 +72,8 @@ class BibleLink extends Model
      * @OA\Property(
      *   title="type",
      *   type="string",
-     *   description=""
+     *   example="web",
+     *   description="The type of link, for example, web, pdf, print"
      * )
      *
      * @method static BibleLink whereType($value)
@@ -89,7 +86,8 @@ class BibleLink extends Model
      * @OA\Property(
      *   title="url",
      *   type="string",
-     *   description=""
+     *   example="http://bibles.org/versions/aai-AAINT",
+     *   description="URL of linked content"
      * )
      *
      * @method static BibleLink whereUrl($value)
@@ -102,6 +100,7 @@ class BibleLink extends Model
      * @OA\Property(
      *   title="title",
      *   type="string",
+     *   example="BibleSearch",
      *   description=""
      * )
      *
@@ -112,11 +111,7 @@ class BibleLink extends Model
 
     /**
      *
-     * @OA\Property(
-     *   title="organization_id",
-     *   type="string",
-     *   description=""
-     * )
+     * @OA\Property(ref="#/components/schemas/Organization/properties/id")
      *
      * @method static BibleLink whereOrganizationId($value)
      * @property int|null $organization_id
@@ -154,7 +149,8 @@ class BibleLink extends Model
      * @OA\Property(
      *   title="provider",
      *   type="string",
-     *   description=""
+     *   example="American Bible Society",
+     *   description="Organization providing the content referenced in the link"
      * )
      *
      * @method static BibleLink whereProvider($value)

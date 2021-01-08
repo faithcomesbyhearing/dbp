@@ -60,10 +60,7 @@ class TextController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter"))
      *     )
      * )
      *
@@ -232,10 +229,7 @@ class TextController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_text_search")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_text_search")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_text_search")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_text_search"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_text_search"))
      *     )
      * )
      *
@@ -312,7 +306,7 @@ class TextController extends APIController
      *     path="/search/library",
      *     tags={"Text"},
      *     summary="Search Playlist, Plans, Notes, Highlights and Bookmarks",
-     *     operationId="v4_library_search",
+     *     operationId="v4_internal_library_search",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="query",
@@ -324,10 +318,7 @@ class TextController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_library_search")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_library_search")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_library_search")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_library_search"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_library_search"))
      *     )
      * )
      *
@@ -339,19 +330,6 @@ class TextController extends APIController
      *   schema="v4_library_search",
      *   description="The v4 library search response.",
      *   title="Library Search plans",
-     *   @OA\Property(property="bookmarks", ref="#/components/schemas/v4_user_bookmarks"),
-     *   @OA\Property(property="highlights", ref="#/components/schemas/v4_highlights_index"),
-     *   @OA\Property(property="notes", ref="#/components/schemas/v4_notes_index"),
-     *   @OA\Property(
-     *      property="plans",
-     *      type="array",
-     *      @OA\Items(ref="#/components/schemas/v4_plan_index_detail")
-     *   ),
-     *   @OA\Property(
-     *      property="playlists",
-     *      type="array",
-     *      @OA\Items(ref="#/components/schemas/v4_playlist")
-     *   )
      * )
      */
     public function searchLibrary(Request $request)
@@ -377,18 +355,27 @@ class TextController extends APIController
             $plan->total_days = sizeof($plan->days);
             unset($plan->days);
         }
-
+        
         $playlists = Playlist::with('user')
+            ->where('draft', 0)
+            ->where('plan_id', 0)
+            ->where('user_playlists.name', 'like', '%' . $query . '%')
+            ->where('user_playlists.user_id', $user->id)
+            ->select(['user_playlists.*'])
+            ->get();
+
+        $followed_playlists = Playlist::with('user')
             ->where('draft', 0)
             ->where('plan_id', 0)
             ->where('user_playlists.name', 'like', '%' . $query . '%')
             ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user) {
                 $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')->where('playlists_followers.user_id', $user->id);
             })
-            ->where('user_playlists.user_id', $user->id)
-            ->orWhere('playlists_followers.user_id', $user->id)
+            ->where('playlists_followers.user_id', $user->id)
             ->select(['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
-            ->orderBy('name', 'asc')->get();
+            ->get();
+            
+        $all_playlists = $playlists->merge($followed_playlists)->sortBy('name');
 
         $highlights = Highlight::where('user_id', $user->id)
             ->orderBy('user_highlights.updated_at')->limit($limit)->get()
@@ -414,7 +401,7 @@ class TextController extends APIController
             'highlights' => fractal($highlights, UserHighlightsTransformer::class)->toArray()['data'],
             'notes' => fractal($notes, UserNotesTransformer::class)->toArray()['data'],
             'plans' => $plans,
-            'playlists' => $playlists,
+            'playlists' => $all_playlists,
         ]);
     }
 
@@ -502,6 +489,7 @@ class TextController extends APIController
      * @version 2
      * @category v2_library_book
      * @category v2_library_bookOrder
+
      * @link https://dbt.io/library/verseinfo?key=TEST_KEY&v=2&dam_id=ENGKJV&book_id=GEN&chapter=1&verse_start=11 - V2 Access
      * @link https://api.dbp.test/library/verseinfo?key=TEST_KEY&v=2&dam_id=ENGKJV&book_id=GEN&chapter=1&verse_start=11 - V2 Test
      * @link https://dbp.test/eng/docs/swagger/v2#/Library/v2_library_verseinfo - V2 Test Docs

@@ -51,9 +51,9 @@ class FileSetTransformer extends BaseTransformer
                 if (!$bible) {
                     return $this->replyWithError(trans('api.filesets_errors_404'));
                 }
-                $meta['channel']['title'] = $fileset->translations->where('iso', $bible->language->iso)->first()->name.' - '.$bible->language->name ?? $bible->where('iso', 'eng')->first()->name.' - '.$bible->language->name;
+                $meta['channel']['title'] = $fileset->translations->where('iso', $bible->language->iso)->first()->name . ' - ' . $bible->language->name ?? $bible->where('iso', 'eng')->first()->name . ' - ' . $bible->language->name;
                 $meta['channel']['link'] = config('app.url_podcast');
-                $meta['channel']['atom:link']['_attributes'] = ['href'  => 'http://www.faithcomesbyhearing.com/feeds/audio-bibles/'.$bible->id.'.xml','rel'   => 'self','type'  => 'application/rss+xml'];
+                $meta['channel']['atom:link']['_attributes'] = ['href'  => 'http://www.faithcomesbyhearing.com/feeds/audio-bibles/' . $bible->id . '.xml', 'rel'   => 'self', 'type'  => 'application/rss+xml'];
                 $meta['channel']['description'] = $bible->translations->where('iso', $bible->language->iso)->first()->description ?? $bible->language->where('iso', 'eng')->first()->description;
                 $meta['channel']['language'] = $bible->language->iso;
                 $meta['channel']['managingEditor'] = 'adhooker@fcbhmail.org';
@@ -76,7 +76,7 @@ class FileSetTransformer extends BaseTransformer
 
                 $meta['channel']['managingEditor'] = config('app.contact');
                 $meta['channel']['image']['_attributes'] = [
-                    'url'   => 'http://bible.is/'.$fileset->id.'.jpg',
+                    'url'   => 'http://bible.is/' . $fileset->id . '.jpg',
                     'title' => 'Faith Comes by Hearing',
                     'link'  => 'http://bible.is',
                 ];
@@ -94,7 +94,7 @@ class FileSetTransformer extends BaseTransformer
                 foreach ($fileset->files as $file) {
                     $file_name = optional($fileset->bible->first()->books->where('book_id', $file->book_id)->first())->name;
                     $items[] = [
-                        'title'       => $file_name.' '.$file->chapter_start,
+                        'title'       => $file_name . ' ' . $file->chapter_start,
                         'link'        => "http://podcastdownload.faithcomesbyhearing.com/mp3.php/$fileset->id/$file->file_name",
                         'guid'        => "http://podcastdownload.faithcomesbyhearing.com/mp3.php/$fileset->id/$file->file_name",
                         //'description' => ($file->currentTitle) ? htmlspecialchars($file->currentTitle->title) : "",
@@ -145,7 +145,7 @@ class FileSetTransformer extends BaseTransformer
                  *   )
                  * )
                  */
-                return [
+                $schema = [
                     'book_id'       => $fileset->book_id,
                     'book_name'     => $fileset->book_name,
                     'chapter_start' => $fileset->chapter_start,
@@ -157,6 +157,12 @@ class FileSetTransformer extends BaseTransformer
                     'path'          => $fileset->file_name,
                     'duration'      => $fileset->duration
                 ];
+
+                if ($fileset->multiple_mp3) {
+                    $schema['multiple_mp3'] = true;
+                }
+
+                return $schema;
         }
     }
 }

@@ -48,10 +48,7 @@ class BibleFileSetsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.show")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_bible_filesets.show")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_bible_filesets.show")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_bible_filesets.show"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.show"))
      *     )
      * )
      *
@@ -163,14 +160,14 @@ class BibleFileSetsController extends APIController
      *     @OA\Parameter(name="fileset_id", in="path", required=true, description="The fileset ID",
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
-     *     @OA\Parameter(name="asset_id", in="query", required=true, description="The fileset ID",
-     *          @OA\Schema(ref="#/components/schemas/Asset/properties/id")
+     *     @OA\Parameter(name="asset_id", in="query", required=true, description="The asset id",
+     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")
      *     ),
      *     @OA\Parameter(name="fileset_type", in="query", description="The type of fileset being queried",
      *         @OA\Schema(ref="#/components/schemas/BibleFileset/properties/set_type_code")
      *     ),
      *     @OA\Parameter(name="book_ids", in="query", required=true,
-     *          description="The list of book ids to download content for separated by commas. For a complete list see the `book_id` field in the `/bibles/books` route.",
+     *          description="The list of book ids to download content for, separated by commas. For a complete list see the `book_id` field in the `/bibles/books` route.",
      *          example="GEN,EXO,MAT,REV",
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
@@ -254,10 +251,7 @@ class BibleFileSetsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="The requested fileset copyright",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.copyright")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.copyright")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.copyright")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.copyright"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.copyright"))
      *     )
      * )
      *
@@ -321,18 +315,6 @@ class BibleFileSetsController extends APIController
      *         @OA\MediaType(
      *            mediaType="application/json",
      *            @OA\Schema(type="object",example={"audio_drama"="Dramatized Audio","audio"="Audio","text_plain"="Plain Text","text_format"="Formatted Text","video"="Video","app"="Application"})
-     *         ),
-     *         @OA\MediaType(
-     *            mediaType="application/xml",
-     *            @OA\Schema(type="object",example={"audio_drama"="Dramatized Audio","audio"="Audio","text_plain"="Plain Text","text_format"="Formatted Text","video"="Video","app"="Application"})
-     *         ),
-     *         @OA\MediaType(
-     *            mediaType="text/x-yaml",
-     *            @OA\Schema(type="object",example={"audio_drama"="Dramatized Audio","audio"="Audio","text_plain"="Plain Text","text_format"="Formatted Text","video"="Video","app"="Application"})
-     *         ),
-     *         @OA\MediaType(
-     *            mediaType="text/csv",
-     *            @OA\Schema(type="object",example={"audio_drama"="Dramatized Audio","audio"="Audio","text_plain"="Plain Text","text_format"="Formatted Text","video"="Video","app"="Application"})
      *         )
      *     )
      * )
@@ -351,21 +333,18 @@ class BibleFileSetsController extends APIController
      *     tags={"Bibles"},
      *     summary="Check fileset types",
      *     description="Check Bible File locations if they have audio or video.",
-     *     operationId="v4_bible_filesets.checkTypes",
+     *     operationId="v4_internal_bible_filesets.checkTypes",
      *     @OA\RequestBody(ref="#/components/requestBodies/PlaylistItems"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_fileset_check")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_fileset_check")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_fileset_check")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_fileset_check"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_fileset_check"))
      *     )
      * )
      *
      * @OA\Schema (
      *   type="array",
-     *   schema="v4_fileset_check",
+     *   schema="v4_internal_fileset_check",
      *   title="Fileset check types response",
      *   description="The v4 fileset check types response.",
      *   @OA\Items(
@@ -441,14 +420,30 @@ class BibleFileSetsController extends APIController
                     ]
                 );
             }
-        }
-
-        if (!$is_stream) {
-            foreach ($fileset_chapters as $key => $fileset_chapter) {
-                $fileset_chapters[$key]->file_name = $this->signedUrl($this->signedPath($bible, $fileset, $fileset_chapter), $asset_id, random_int(0, 10000000));
+        } else {
+            // Multiple files per chapter
+            if (sizeof($fileset_chapters) > 1 && !$is_video) {
+                $fileset_chapters[0]->file_name = route(
+                    'v4_media_stream',
+                    [
+                        'fileset_id' => $fileset->id,
+                        'book_id' => $fileset_chapters[0]->book_id,
+                        'chapter' => $fileset_chapters[0]->chapter_start,
+                        'verse_start' => null,
+                        'verse_end' => null,
+                    ]
+                );
+                $collection = collect($fileset_chapters);
+                $fileset_chapters[0]->duration = $collection->sum('duration');
+                $fileset_chapters[0]->verse_end = $collection->last()->verse_end;
+                $fileset_chapters[0]->multiple_mp3 = true;
+                $fileset_chapters = [$fileset_chapters[0]];
+            } else {
+                foreach ($fileset_chapters as $key => $fileset_chapter) {
+                    $fileset_chapters[$key]->file_name = $this->signedUrl($this->signedPath($bible, $fileset, $fileset_chapter), $asset_id, random_int(0, 10000000));
+                }
             }
         }
-
 
         if ($is_video) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
