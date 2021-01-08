@@ -58,6 +58,7 @@ class BibleFilesetSize extends Model
      *   example="NTPOTP"
      * )
      *
+     *
      * @method static BibleFilesetSize whereSetSizeCode($value)
      * property string $set_size_code
      */

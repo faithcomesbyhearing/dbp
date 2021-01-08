@@ -24,7 +24,7 @@ class NotesController extends APIController
      *     tags={"Annotations"},
      *     summary="List a user's notes",
      *     description="Query information about a user's notes",
-     *     operationId="v4_notes.index",
+     *     operationId="v4_internal_notes.index",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="user_id",     in="path", required=true, description="The user who created the note", @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\Parameter(name="bible_id",    in="query", description="If provided the fileset_id will filter results to only those related to the Bible", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
@@ -45,10 +45,7 @@ class NotesController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_notes_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_notes_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_notes_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_notes_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_notes_index"))
      *     )
      * )
      *
@@ -106,17 +103,14 @@ class NotesController extends APIController
      *     tags={"Annotations"},
      *     summary="Get a Note",
      *     description="",
-     *     operationId="v4_notes.show",
+     *     operationId="v4_internal_notes.show",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="user_id",     in="path",required=true, description="The user who created the note", @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\Parameter(name="note_id",     in="path",required=true, description="The note currently being altered", @OA\Schema(ref="#/components/schemas/Note/properties/id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_note")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_note")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_note")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_note"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_note"))
      *     )
      * )
      *
@@ -149,7 +143,7 @@ class NotesController extends APIController
      *     tags={"Annotations"},
      *     summary="Store a Note",
      *     description="",
-     *     operationId="v4_notes.store",
+     *     operationId="v4_internal_notes.store",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="user_id",     in="path", required=true, description="The user who is creating the note", @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\RequestBody(required=true, description="Fields for Note Creation", @OA\MediaType(mediaType="application/json",
@@ -166,10 +160,7 @@ class NotesController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_highlights_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_highlights_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_highlights_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_highlights_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_highlights_index"))
      *     )
      * )
      *
@@ -215,7 +206,7 @@ class NotesController extends APIController
      *     tags={"Annotations"},
      *     summary="Update a Note",
      *     description="",
-     *     operationId="v4_notes.update",
+     *     operationId="v4_internal_notes.update",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="user_id", in="path", required=true, description="The user who created the note", @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\Parameter(name="note_id", in="path", required=true, description="The note currently being altered", @OA\Schema(ref="#/components/schemas/Note/properties/id")),
@@ -232,10 +223,7 @@ class NotesController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -283,17 +271,14 @@ class NotesController extends APIController
      *     tags={"Annotations"},
      *     summary="Delete a Note",
      *     description="",
-     *     operationId="v4_notes.destroy",
+     *     operationId="v4_internal_notes.destroy",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="user_id", in="path", required=true, description="The user who created the note", @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\Parameter(name="note_id", in="path", required=true, description="The note currently being deleted", @OA\Schema(ref="#/components/schemas/Note/properties/id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *

@@ -47,6 +47,7 @@ class LanguageDialect extends Model
      * @OA\Property(
      *   title="language_id",
      *   type="integer",
+     *   example=124,
      *   description="The foreign key pointing at the language id, indicating the parent language",
      *   minimum=0
      * )
@@ -60,7 +61,8 @@ class LanguageDialect extends Model
      *
      * @OA\Property(
      *   title="dialect_id",
-     *   type="integer",
+     *   type="string",
+     *   example="7912",
      *   description="The foreign key pointing at the language id, indicating the dialect",
      *   minimum=0
      * )
@@ -75,6 +77,7 @@ class LanguageDialect extends Model
      * @OA\Property(
      *   title="name",
      *   type="string",
+     *   example="Fanti",
      *   description="The name of the language dialect",
      * )
      *

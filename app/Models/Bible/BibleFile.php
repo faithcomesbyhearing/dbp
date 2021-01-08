@@ -74,6 +74,7 @@ class BibleFile extends Model
      * @OA\Property(
      *   title="hash_id",
      *   type="string",
+     *   example="7ccd81c2546e",
      *   description="The hash_id",
      * )
      *
@@ -84,6 +85,7 @@ class BibleFile extends Model
      * @OA\Property(
      *   title="book_id",
      *   type="string",
+     *   example="MAT",
      *   description="The book_id",
      * )
      *
@@ -163,6 +165,7 @@ class BibleFile extends Model
      *   title="file_name",
      *   type="string",
      *   description="The file_name",
+     *   example="ACHBSU_70_MAT_1.html",
      *   maxLength=191
      * )
      *
@@ -174,7 +177,8 @@ class BibleFile extends Model
      * @OA\Property(
      *   title="file_size",
      *   type="integer",
-     *   description="The file size in kilobytes"
+     *   description="The file size",
+     *   example="5486618"
      * )
      *
      */
@@ -187,7 +191,8 @@ class BibleFile extends Model
      *   type="integer",
      *   description="If the file has a set length of time, this field indicates that time in milliseconds",
      *   nullable=true,
-     *   minimum=0
+     *   minimum=0,
+     *   example=683
      * )
      *
      */

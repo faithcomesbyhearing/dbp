@@ -16,19 +16,16 @@ class CommentaryController extends APIController
      *     tags={"StudyBible"},
      *     summary="Commentaries",
      *     description="A list of all the commentaries that can be retrieved",
-     *     operationId="v4_commentary_index",
+     *     operationId="v4_internal_commentary_index",
      *     @OA\Response(
      *         response=200,
      *         description="The fileset types",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_commentary_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_commentary_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",  @OA\Schema(ref="#/components/schemas/v4_commentary_index")),
-     *         @OA\MediaType(mediaType="text/csv",  @OA\Schema(ref="#/components/schemas/v4_commentary_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_commentary_index"))
      *     )
      * )
      *
      * @OA\Schema(
-     *   schema="v4_commentary_index",
+     *   schema="v4_internal_commentary_index",
      *   type="object",
      *   @OA\Property(property="data", type="array",
      *      @OA\Items(ref="#/components/schemas/Commentary")
@@ -49,7 +46,7 @@ class CommentaryController extends APIController
      *     tags={"StudyBible"},
      *     summary="Commentary Chapters",
      *     description="A list of all the chapter navigation for a specific commentary",
-     *     operationId="v4_commentary_chapter",
+     *     operationId="v4_internal_commentary_chapter",
      *     @OA\Parameter(
      *          name="commentary_id",
      *          in="path",
@@ -66,10 +63,7 @@ class CommentaryController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="The fileset types",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_commentaries_chapter_response")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v4_commentaries_chapter_response")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_commentaries_chapter_response")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_commentaries_chapter_response"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_commentaries_chapter_response"))
      *     )
      * )
      *
@@ -124,7 +118,7 @@ class CommentaryController extends APIController
      *     tags={"StudyBible"},
      *     summary="Commentary Sections",
      *     description="A list of all the chapter navigation for a specific commentary",
-     *     operationId="v4_commentary_section",
+     *     operationId="v4_internal_commentary_section",
      *     @OA\Parameter(
      *          name="commentary_id",
      *          in="path",
@@ -141,10 +135,7 @@ class CommentaryController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="The fileset types",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_commentaries_section_response")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_commentaries_section_response")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v4_commentaries_section_response")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v4_commentaries_section_response"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_commentaries_section_response"))
      *     )
      * )
      *

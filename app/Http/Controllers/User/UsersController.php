@@ -37,7 +37,7 @@ class UsersController extends APIController
      *     tags={"Users"},
      *     summary="",
      *     description="",
-     *     operationId="v4_user.index",
+     *     operationId="v4_internal_user.index",
      *     @OA\Parameter(name="limit",  in="query", description="The number of search results to return",
      *          @OA\Schema(type="integer",default=100)),
      *     @OA\Parameter(name="page",  in="query", description="The current page of the results",
@@ -46,10 +46,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_user_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
      *     )
      * )
      *
@@ -79,15 +76,12 @@ class UsersController extends APIController
      *     tags={"Users"},
      *     summary="Returns a single user",
      *     description="",
-     *     operationId="v4_user.show",
+     *     operationId="v4_internal_user.show",
      *     @OA\Parameter(name="id", in="path", description="The user ID for which to retrieve info.", required=true, @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_user_show")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_user_show")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_user_show")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_user_show"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_show"))
      *     )
      * )
      *
@@ -139,7 +133,7 @@ class UsersController extends APIController
      *     tags={"Users"},
      *     summary="Login a user",
      *     description="",
-     *     operationId="v4_user.login",
+     *     operationId="v4_internal_user.login",
      *     @OA\RequestBody(required=true, description="Either the `email` & `password` or the `social_provider_user_id` & `social_provider_id` are required for user Login", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
      *              @OA\Property(property="email",                     ref="#/components/schemas/User/properties/email"),
@@ -152,10 +146,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_user_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
      *     )
      * )
      *
@@ -220,15 +211,12 @@ class UsersController extends APIController
      *     path="/logout",
      *     tags={"Users"},
      *     summary="Logout a user",
-     *     operationId="v4_user.logout",
+     *     operationId="v4_internal_user.logout",
      *     security={{"api_token":{}}},
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -297,11 +285,13 @@ class UsersController extends APIController
         }
 
         // Link the social account provider
-        $user->accounts()->create([
-            'project_id' => $request->project_id,
-            'provider_id'      => $provider_id,
+        Account::updateOrCreate([
+            'user_id' => $user->id,
             'provider_user_id' => $provider_user_id,
+            'provider_id' => $provider_id,
+            'project_id' => $request->project_id
         ]);
+
 
         return User::with('accounts', 'profile')->whereId($user->id)->first();
     }
@@ -313,7 +303,7 @@ class UsersController extends APIController
      *     tags={"Users"},
      *     summary="Create a new user",
      *     description="",
-     *     operationId="v4_user.store",
+     *     operationId="v4_internal_user.store",
      *     @OA\RequestBody(required=true, description="Information supplied for user creation", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
      *              @OA\Property(property="email",                   ref="#/components/schemas/User/properties/email"),
@@ -328,10 +318,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_user_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
      *     )
      * )
      *
@@ -417,7 +404,7 @@ class UsersController extends APIController
      *     tags={"Users"},
      *     summary="Update an existing user",
      *     description="",
-     *     operationId="v4_user.update",
+     *     operationId="v4_internal_user.update",
      *     @OA\Parameter(name="id", in="path", description="The user ID for which to retrieve info.", required=true, @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *     @OA\RequestBody(required=true, description="Information supplied for updating an existing user", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
@@ -434,10 +421,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_user_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_user_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
      *     )
      * )
      *
@@ -448,10 +432,6 @@ class UsersController extends APIController
      */
     public function update(Request $request, $id)
     {
-        if ((int) $request->v === 1) {
-            return redirect('http://api.dbp.test/login?reply=json');
-        }
-
         // Retrieve User
         $user = User::with('projects')->whereId($id)->first();
         if (!$user) {
@@ -519,7 +499,7 @@ class UsersController extends APIController
      *     tags={"Users"},
      *     summary="Delete an existing user",
      *     description="",
-     *     operationId="v4_user.destroy",
+     *     operationId="v4_internal_user.destroy",
      *     security={{"api_token":{}}},
      *     @OA\RequestBody(required=true, description="Either `password` or the `social_provider_user_id` & `social_provider_id` are required for user deletion", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
@@ -531,10 +511,7 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -588,7 +565,7 @@ class UsersController extends APIController
      *     path="/token/validate",
      *     tags={"Users"},
      *     summary="Validate user api_token ",
-     *     operationId="v4_api_token.validate",
+     *     operationId="v4_internal_api_token.validate",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="renew_token",
@@ -605,18 +582,12 @@ class UsersController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean"))),
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean")))
      *     ),
      *     @OA\Response(
      *         response=401,
      *         description="unsuccessful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false))),
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="object",@OA\Property(property="valid", type="boolean", example=false)))
      *     )
      * )
      * @param Request $request

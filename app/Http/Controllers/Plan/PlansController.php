@@ -30,7 +30,7 @@ class PlansController extends APIController
      *     path="/plans",
      *     tags={"Plans"},
      *     summary="List a user's plans",
-     *     operationId="v4_plans.index",
+     *     operationId="v4_internal_plans.index",
      *     @OA\Parameter(
      *          name="featured",
      *          in="query",
@@ -51,10 +51,7 @@ class PlansController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_index")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_plan_index")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_plan_index")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_plan_index"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_index"))
      *     )
      * )
      *
@@ -150,7 +147,7 @@ class PlansController extends APIController
      *     path="/plans",
      *     tags={"Plans"},
      *     summary="Crete a plan",
-     *     operationId="v4_plans.store",
+     *     operationId="v4_internal_plans.store",
      *     security={{"api_token":{}}},
      *     @OA\RequestBody(required=true, description="Fields for User Plan Creation",
      *           @OA\MediaType(mediaType="application/json",
@@ -226,7 +223,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}",
      *     tags={"Plans"},
      *     summary="A user's plan",
-     *     operationId="v4_plans.show",
+     *     operationId="v4_internal_plans.show",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="plan_id",
@@ -281,7 +278,7 @@ class PlansController extends APIController
         if ($show_details) {
             foreach ($plan->days as $day) {
                 $day_playlist = $playlist_controller->getPlaylist($user, $day->playlist_id);
-                $day_playlist->path = route('v4_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
+                $day_playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
                 if ($show_text) {
                     foreach ($day_playlist->items as $item) {
                         $item->verse_text = $item->getVerseText();
@@ -301,7 +298,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}",
      *     tags={"Plans"},
      *     summary="Update a plan",
-     *     operationId="v4_plans.update",
+     *     operationId="v4_internal_plans.update",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Parameter(name="days", in="query",@OA\Schema(type="string"), description="Comma-separated ids of the days to be sorted or deleted"),
@@ -378,16 +375,13 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}",
      *     tags={"Plans"},
      *     summary="Delete a plan",
-     *     operationId="v4_plans.destroy",
+     *     operationId="v4_internal_plans.destroy",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -440,7 +434,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/start",
      *     tags={"Plans"},
      *     summary="Start a plan",
-     *     operationId="v4_plans.start",
+     *     operationId="v4_internal_plans.start",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="application/json",
@@ -498,23 +492,20 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/day",
      *     tags={"Plans"},
      *     summary="Create plan days",
-     *     operationId="v4_plans_days.store",
+     *     operationId="v4_internal_plans_days.store",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Parameter(name="days", in="query", required=true, @OA\Schema(type="integer"), description="Number of days to add to the plan"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plans_days")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_plans_days")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_plans_days")),
-     *         @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_plans_days"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_plans_days"))
      *     )
      * )
      *
      * @OA\Schema (
      *   type="array",
-     *   schema="v4_plans_days",
+     *   schema="v4_internal_plans_days",
      *   title="User created plan days",
      *   description="The v4 plan days creation response.",
      *   @OA\Items(ref="#/components/schemas/PlanDay")
@@ -579,17 +570,14 @@ class PlansController extends APIController
      *     path="/plans/day/{day_id}/complete",
      *     tags={"Plans"},
      *     summary="Complete a plan day",
-     *     operationId="v4_plans_days.complete",
+     *     operationId="v4_internal_plans_days.complete",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="day_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/PlanDay/properties/id")),
      *     @OA\Parameter(name="complete", in="query", @OA\Schema(type="boolean")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_complete_day")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_complete_day")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_complete_day")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v4_complete_day"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_complete_day"))
      *     )
      * )
      *
@@ -652,7 +640,7 @@ class PlansController extends APIController
      *     tags={"Plans"},
      *     summary="Reset a plan",
      *     description="",
-     *     operationId="v4_plans.reset",
+     *     operationId="v4_internal_plans.reset",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\RequestBody(@OA\MediaType(mediaType="application/json",
@@ -705,16 +693,13 @@ class PlansController extends APIController
      *     tags={"Plans"},
      *     summary="Stop a plan",
      *     description="",
-     *     operationId="v4_plans.stop",
+     *     operationId="v4_internal_plans.stop",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      *
@@ -754,7 +739,7 @@ class PlansController extends APIController
         $playlist_controller = new PlaylistsController();
         foreach ($plan->days as $day) {
             $day_playlist = $playlist_controller->getPlaylist($user, $day->playlist_id);
-            $day_playlist->path = route('v4_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
+            $day_playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
             $day->playlist = $day_playlist;
         }
         return $this->reply($plan);
@@ -765,17 +750,14 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/draft",
      *     tags={"Plans"},
      *     summary="Change draft status in a plan.",
-     *     operationId="v4_plans.draft",
+     *     operationId="v4_internal_plans.draft",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Parameter(name="draft", in="query", @OA\Schema(type="boolean")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(type="string")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(type="string"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
      *     )
      * )
      */
@@ -845,10 +827,7 @@ class PlansController extends APIController
      * @OA\Response(
      *   response="plan",
      *   description="Plan Object",
-     *   @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_detail")),
-     *   @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v4_plan_detail")),
-     *   @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v4_plan_detail")),
-     *   @OA\MediaType(mediaType="text/csv",         @OA\Schema(ref="#/components/schemas/v4_plan_detail"))
+     *   @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_detail"))
      * )
      */
 
@@ -877,7 +856,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/translate",
      *     tags={"Plans"},
      *     summary="Translate a user's plan",
-     *     operationId="v4_plans.translate",
+     *     operationId="v4_internal_plans.translate",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(
      *          name="plan_id",
@@ -946,8 +925,10 @@ class PlansController extends APIController
         $translated_percentage = 0;
         $playlists_data = [];
         $order = 1;
+        $audio_fileset_types = collect(['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama']);
+        $bible_audio_filesets = $bible->filesets->whereIn('set_type_code', $audio_fileset_types);
         foreach ($plan->days as $day) {
-            $playlist = (object) $playlist_controller->translate($request, $day->playlist_id, $user, $compare_projects, $new_plan->id)->original;
+            $playlist = (object) $this->translatePlaylist($day->playlist_id, $user, $new_plan->id, $bible, $audio_fileset_types, $bible_audio_filesets, $playlist_controller);
             $playlists_data[] = [
                 'plan_id'               => $new_plan->id,
                 'playlist_id'           => $playlist->id,
@@ -971,5 +952,65 @@ class PlansController extends APIController
         $plan['translated_percentage'] = $translated_percentage;
 
         return $plan;
+    }
+
+    private function translatePlaylist($playlist_id, $user, $plan_id, $bible, $audio_fileset_types, $bible_audio_filesets, $playlist_controller)
+    {
+        $playlist = Playlist::with('items')->where('user_playlists.id', $playlist_id)->first();
+        $translated_items = [];
+        $metadata_items = [];
+        $total_translated_items = 0;
+        foreach ($playlist->items as $item) {
+            $ordered_types = $audio_fileset_types->filter(function ($type) use ($item) {
+                return $type !== $item->fileset->set_type_code;
+            })->prepend($item->fileset->set_type_code);
+            $preferred_fileset = $ordered_types->map(function ($type) use ($bible_audio_filesets, $item, $playlist_controller) {
+                return $playlist_controller->getFileset($bible_audio_filesets, $type, $item->fileset->set_size_code);
+            })->firstWhere('id');
+            $has_translation = isset($preferred_fileset);
+            $is_streaming = true;
+
+            if ($has_translation) {
+                $item->fileset_id = $preferred_fileset->id;
+                $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' || $preferred_fileset->set_type_code === 'audio_drama_stream';
+                $translated_items[] = (object)[
+                    'translated_id' => $item->id,
+                    'fileset_id' => $item->fileset_id,
+                    'book_id' => $item->book_id,
+                    'chapter_start' => $item->chapter_start,
+                    'chapter_end' => $item->chapter_end,
+                    'verse_start' => $is_streaming ? $item->verse_start : null,
+                    'verse_end' => $is_streaming ? $item->verse_end : null,
+                ];
+                $total_translated_items += 1;
+            }
+            $metadata_items[] = $item;
+        }
+        $translated_percentage = sizeof($playlist->items) ? $total_translated_items / sizeof($playlist->items) : 0;
+        $playlist_data = [
+            'user_id'           => $user->id,
+            'name'              => $playlist->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
+            'external_content'  => $playlist->external_content,
+            'featured'          => false,
+            'draft'             => true,
+            'plan_id'           => $plan_id
+        ];
+
+
+        $playlist = Playlist::create($playlist_data);
+        $items = collect($playlist_controller->createTranslatedPlaylistItems($playlist, $translated_items));
+        foreach ($metadata_items as $item) {
+            $new_item = $items->first(function ($new_item) use ($item) {
+                return $new_item->translated_id === $item->id;
+            });
+            if ($new_item) {
+                unset($new_item->translated_id);
+                $item->translation_item = $new_item;
+            }
+        }
+
+        $playlist->translation_data = $metadata_items;
+        $playlist->translated_percentage = $translated_percentage * 100;
+        return $playlist;
     }
 }
