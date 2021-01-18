@@ -42,7 +42,7 @@ Route::name('v4_numbers.one')->get(
 
 // VERSION 4 | Search
 // Even though TextController fields the search, it returns content from text, audio and video. Rename to SearchController?
-Route::name('v4_text_search')->get('search', 'Bible\TextController@search'); 
+Route::name('v4_text_search')->get('search', 'Bible\TextController@search');
 
 
 
