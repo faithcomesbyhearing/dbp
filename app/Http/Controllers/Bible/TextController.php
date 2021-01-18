@@ -556,10 +556,10 @@ class TextController extends APIController
             ])->when($chapter_id, function ($query) use ($chapter_id) {
                 return $query->where('chapter', '=', $chapter_id);
             })->when($verse_start, function ($query) use ($verse_start) {
-                    return $query->where('verse_start', '>=', $verse_start);        
+                return $query->where('verse_start', '>=', $verse_start);
             })->when($verse_end, function ($query) use ($verse_end) {
-            return $query->where('verse_start', '<=', $verse_end);
-        })->select(['book_id', 'chapter as chapter_number', 'verse_start', 'verse_end', 'verse_text'])->get();
+                return $query->where('verse_start', '<=', $verse_end);
+            })->select(['book_id', 'chapter as chapter_number', 'verse_start', 'verse_end', 'verse_text'])->get();
 
         // foreach ($verse_info as $key => $verse) {
         //     $verse_info[$key]->bible_id           = $fileset->id;
@@ -584,6 +584,6 @@ class TextController extends APIController
          * )
          */
         //return $this->reply($verse_info);
-        return $this->reply(fractal($verse_info, new TextTransformer(), $this->serializer));        
+        return $this->reply(fractal($verse_info, new TextTransformer(), $this->serializer));
     }
 }
