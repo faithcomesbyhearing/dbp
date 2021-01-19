@@ -172,7 +172,7 @@ class UsersController extends APIController
             $user = $this->loginWithEmail($email, $password);
         }
 
-        if (!$user) {
+        if (isset($user) && !$user) {
             return $this->setStatusCode(401)->replyWithError(trans('auth.failed'));
         }
 
@@ -267,10 +267,14 @@ class UsersController extends APIController
         if ($account) {
             return User::with('accounts', 'profile')->whereId($account->user_id)->first();
         }
+
+        if (isset($request->email) && !$request->email) {
+            return false;
+        }
         // Verify a user with the email exist
         $user = User::with('accounts', 'profile')->where('email', $request->email)->first();
         // Create user if not exists
-        if (!$user) {
+        if (isset($user) && !$user) {
             $user = User::create([
                 'name'          => $request->name,
                 'first_name'    => $request->first_name,
@@ -286,15 +290,16 @@ class UsersController extends APIController
         }
 
         // Link the social account provider if it does not exist
-        $existing_account = Account::where('provider_id', $provider_id)
-            ->where('user_id', $user->id)
-            ->where('project_id', $request->project_id)
-            ->firstOrCreate([
+        $existing_account = Account::firstOrCreate(
+            [
                 'user_id' => $user->id,
-                'provider_user_id' => $provider_user_id,
-                'provider_id' => $provider_id,
-                'project_id' => $request->project_id
-            ]);
+                'project_id' => $request->project_id,
+                'provider_id' => $provider_id
+            ],
+            [
+                'provider_user_id' => $provider_user_id
+            ]
+        );
         
         // if exists update the provider_user_id
         if ($existing_account) {
