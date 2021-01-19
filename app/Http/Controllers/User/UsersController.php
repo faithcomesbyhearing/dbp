@@ -262,8 +262,7 @@ class UsersController extends APIController
     private function loginWithSocialProvider($provider_id, $provider_user_id, $request)
     {
         $account = Account::where('provider_id', $provider_id)
-            ->where('provider_user_id', $provider_user_id)
-            ->where('project_id', $request->project_id)->first();
+            ->where('provider_user_id', $provider_user_id)->first();
         if ($account) {
             return User::with('accounts', 'profile')->whereId($account->user_id)->first();
         }
@@ -285,22 +284,14 @@ class UsersController extends APIController
             ]);
         }
 
-        // Link the social account provider if it does not exist
-        $existing_account = Account::where('provider_id', $provider_id)
-            ->where('user_id', $user->id)
-            ->where('project_id', $request->project_id)
-            ->firstOrCreate([
-                'user_id' => $user->id,
-                'provider_user_id' => $provider_user_id,
-                'provider_id' => $provider_id,
-                'project_id' => $request->project_id
-            ]);
-        
-        // if exists update the provider_user_id
-        if ($existing_account) {
-            $existing_account->provider_user_id = $provider_user_id;
-            $existing_account->save();
-        }
+        // Link the social account provider
+        Account::updateOrCreate([
+            'user_id' => $user->id,
+            'provider_user_id' => $provider_user_id,
+            'provider_id' => $provider_id,
+            'project_id' => $request->project_id
+        ]);
+
 
         return User::with('accounts', 'profile')->whereId($user->id)->first();
     }
