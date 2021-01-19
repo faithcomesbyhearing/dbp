@@ -21,6 +21,7 @@ use App\Models\Bible\BibleDefault;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleFileTimestamp;
+use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Language\Language;
 use Exception;
@@ -271,6 +272,12 @@ class BiblesController extends APIController
      *          @OA\Schema(type="boolean"),
      *          description="Filter all the books that have content"
      *     ),
+     *     @OA\Parameter(
+     *          name="verse_count",
+     *          in="query",
+     *          @OA\Schema(type="boolean"),
+     *          description="Retrieve how many verses the chapters of the books have"
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -290,6 +297,7 @@ class BiblesController extends APIController
 
         $asset_id = checkParam('asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
         $verify_content = checkBoolean('verify_content');
+        $verse_count = checkBoolean('verse_count');
 
         $bible = Bible::find($bible_id);
         $access_control = $this->accessControl($this->key);
@@ -349,6 +357,35 @@ class BiblesController extends APIController
                     return $book->content_types;
                 });
             });
+
+            if ($verse_count) {
+                $cache_params = [$bible_id, $access_control->string, $book_id];
+                $books = cacheRemember('bible_books_verse_count', $cache_params, now()->addDay(), function () use ($books, $bible) {
+                    $text_fileset = $bible->filesets->where('set_type_code', 'text_plain')->first();
+                    if (!$text_fileset) {
+                        return $books;
+                    }
+
+                    return $books->map(function ($book) use ($text_fileset) {
+                        $verses_count = [];
+                        foreach (array_map('\intval', explode(',', $book->chapters)) as $chapter) {
+                            $verse_count = BibleVerse::where('hash_id', $text_fileset->hash_id)
+                                ->where(
+                                    [
+                                        ['book_id', $book->book_id],
+                                        ['chapter', '=', $chapter]
+                                    ]
+                                )
+                                ->count();
+                            if ($verse_count) {
+                                $verses_count[] = ['chapter' => $chapter, 'verses' => $verse_count];
+                            }
+                        }
+                        $book->verses_count = $verses_count;
+                        return $book;
+                    });
+                });
+            }
         }
 
         return $this->reply(fractal($books, new BooksTransformer));
@@ -797,7 +834,7 @@ class BiblesController extends APIController
                     }
                 }
                 $chapter_filesets->video->jesus_films = collect($films)->map(function ($film) use ($metadata) {
-                    $film->meta = $metadata[$film->component_id];
+                    $film->meta = $metadata[$film->component_id] ?? [];
                     return $film;
                 });
             }
