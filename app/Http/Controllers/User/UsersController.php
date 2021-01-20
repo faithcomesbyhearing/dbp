@@ -164,6 +164,11 @@ class UsersController extends APIController
         $social_provider_id = checkParam('social_provider_id');
         $project_id = checkParam('project_id');
 
+        $invalidLoginParams = invalidUserLogin();
+        if ($invalidLoginParams) {
+            return $invalidLoginParams;
+        }
+
         if ($social_provider_id) {
             $social_provider_user_id = checkParam('social_provider_user_id');
             $user = $this->loginWithSocialProvider($social_provider_id, $social_provider_user_id, $request);
@@ -262,10 +267,12 @@ class UsersController extends APIController
     private function loginWithSocialProvider($provider_id, $provider_user_id, $request)
     {
         $account = Account::where('provider_id', $provider_id)
-            ->where('provider_user_id', $provider_user_id)->first();
+            ->where('provider_user_id', $provider_user_id)
+            ->where('project_id', $request->project_id)->first();
         if ($account) {
             return User::with('accounts', 'profile')->whereId($account->user_id)->first();
         }
+
         // Verify a user with the email exist
         $user = User::with('accounts', 'profile')->where('email', $request->email)->first();
         // Create user if not exists
@@ -284,14 +291,24 @@ class UsersController extends APIController
             ]);
         }
 
-        // Link the social account provider
-        Account::updateOrCreate([
-            'user_id' => $user->id,
-            'provider_user_id' => $provider_user_id,
-            'provider_id' => $provider_id,
-            'project_id' => $request->project_id
-        ]);
-
+        // Link the social account provider if it does not exist
+        $existing_account = Account::firstOrCreate(
+            [
+                'user_id' => $user->id,
+                'project_id' => $request->project_id,
+                'provider_id' => $provider_id
+            ],
+            [
+                'provider_user_id' => $provider_user_id
+            ]
+        );
+        
+        // if exists update the provider_user_id (For now throw error to newrelic)
+        if ($existing_account && ($provider_user_id !== $existing_account->provider_user_id)) {
+            throw new Error(
+              "Login error on  different provider_user_id '" + $provider_user_id +
+              'given but account is different on' + json_encode($existing_account));
+        }
 
         return User::with('accounts', 'profile')->whereId($user->id)->first();
     }
@@ -702,6 +719,27 @@ class UsersController extends APIController
         if ($validate_email) {
             $rules['email'] = 'required|unique:dbp_users.users,email';
         }
+
+        $validator = Validator::make(request()->all(), $rules);
+
+        if ($validator->fails()) {
+            return $this->setStatusCode(422)->replyWithError($validator->errors());
+        }
+        return false;
+    }
+
+    /**
+     * Return Validate UserLogin
+     * If the login params are invalid return the errors, otherwise return false.
+     *
+     * @return Validator|bool
+     */
+    private function invalidUserLogin()
+    {
+        $rules = [
+          'email'       => 'required|unique:dbp_users.users,email',
+          'project_id'  => 'required|exists:dbp_users.projects,id',
+        ];
 
         $validator = Validator::make(request()->all(), $rules);
 
