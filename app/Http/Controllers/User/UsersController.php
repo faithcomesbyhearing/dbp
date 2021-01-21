@@ -164,7 +164,7 @@ class UsersController extends APIController
         $social_provider_id = checkParam('social_provider_id');
         $project_id = checkParam('project_id');
 
-        $invalidLoginParams = invalidUserLogin();
+        $invalidLoginParams = $this->invalidUserLogin();
         if ($invalidLoginParams) {
             return $invalidLoginParams;
         }
@@ -737,7 +737,7 @@ class UsersController extends APIController
     private function invalidUserLogin()
     {
         $rules = [
-          'email'       => 'required|unique:dbp_users.users,email',
+          'email'       => 'required|exists:dbp_users.users,email',
           'project_id'  => 'required|exists:dbp_users.projects,id',
         ];
 
