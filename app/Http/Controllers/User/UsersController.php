@@ -19,6 +19,7 @@ use App\Transformers\UserTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+use Log;
 use Mail;
 use Validator;
 use Illuminate\Support\Facades\Auth;
@@ -305,9 +306,9 @@ class UsersController extends APIController
         
         // if exists update the provider_user_id (For now throw error to newrelic)
         if ($existing_account && ($provider_user_id !== $existing_account->provider_user_id)) {
-            throw new Error(
-              "Login error on  different provider_user_id '" + $provider_user_id +
-              'given but account is different on' + json_encode($existing_account));
+            $provider_error_message = 'Login error on  different provider_user_id ' . $provider_user_id .
+                                      ' account data:' . json_encode($existing_account);
+            Log::error($provider_error_message);
         }
 
         return User::with('accounts', 'profile')->whereId($user->id)->first();
