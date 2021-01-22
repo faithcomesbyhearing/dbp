@@ -66,6 +66,7 @@ files:
 
 commands:
   "01":
-    command: systemctl enable awslogsd.service
+    #command: systemctl enable awslogsd.service # linux 2 only
   "02":
-    command: systemctl restart awslogsd
+    #command: systemctl restart awslogsd #linux 2 only 
+    command: system awslogs restart
