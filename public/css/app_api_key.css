@@ -4430,6 +4430,13 @@ a.has-text-danger:focus {
   min-height: 32vh;
 }
 
+.detail-card {
+  background-color: #f7f9fa;
+  padding: 1% 4% 0 4%;
+  width: 50%;
+  min-height: 32vh;
+}
+
 .card-header {
   margin: 0;
   font-size: 1.5rem;

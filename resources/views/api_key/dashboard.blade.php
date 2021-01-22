@@ -15,38 +15,55 @@
         var key = keys[id].temporary_key;
         var description = keys[id].description;
 
-        if (state == 1) {
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
-                }
-            });
-            var formData = {
-                email: email,
-                key_request_id: id,
-                name: name,
-                key: key,
-                description: description
-            };
-            $.ajax({
-                type: "POST",
-                url: "{{route('api_key.approve_api_key')}}",
-                dataType: 'json',
-                data: formData,
-                error: function(xhr) {
-                    console.log('error', xhr.responseText);
-                }
-            });
-        }
+      if (state == 2){
+          $.ajaxSetup({
+              headers: {
+                  'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
+              }
+          });
+          var formData = {
+              email: email,
+              key_request_id: id,
+              name: name,
+              key: key,
+              description: description
+          };
+          $.ajax({
+              type: "POST",
+              url: "{{route('api_key.approve_api_key')}}",
+              dataType: 'json',
+              data: formData,
+              error: function(xhr) {
+                  console.log('error', xhr.responseText);
+              }
+          });
+      }
     }
 
     $(document).ready(function() {
         var loading = false;
         var keys = <?php echo json_encode(
-                        collect($key_requests->items())->mapWithKeys(function ($item) {
-                            return [$item['id'] => $item];
-                        })
-                    ); ?>;
+          collect($key_requests->items())->mapWithKeys(function ($item) {
+              return [$item['id'] => $item];
+          })
+        ); ?>;
+        $(".request_detail").click(function(e) {
+            var key = $(this).data(key).key;
+            var state = $(this).data(state).state;
+            var keydate = $(this).data(keydate).keydate;
+      
+            $("#detail_modal").data('key', key);
+            $("#detail_modal").css('display', 'flex');
+            $('#detail_name').text(`${key.name}`);
+            $('#detail_email').text(`${key.email}`);
+            $('#detail_description').text(`${key.description}`);
+            $('#detail_questions').text(`${key.questions}`);
+            $('#detail_key').text(`${key.temporary_key}`);
+            $('#detail_state').text(`${state}`);
+            $('#detail_notes').text(`${key.notes}`);
+            $('#detail_date').text(`${keydate}`);
+        });
+
         $(".email_row").click(function(e) {
             var id = $(this).data('id');
             var email = keys[id].email;
@@ -204,7 +221,7 @@
 @endsection
 
 @section('content')
-@if($user->roles->where('slug','admin')->first())
+<!-- @if($user->roles->where('slug','admin')->first()) -->
 <h2 class="dashboard-title">Key Management</h2>
 <div class="dashboard-card">
     <div class="key-filter">
@@ -223,20 +240,21 @@
     <table class="key-table">
         <thead>
             <tr>
-                <th scope="col">Data Requested</th>
+                <th></th>
+                <th scope="col">Date</th>
                 <th scope="col">Name</th>
                 <th scope="col">E-mail</th>
                 <th scope="col">Purpose</th>
                 <th scope="col">Comment/Question</th>
                 <th scope="col">Notes</th>
-                <th scope="col">Key</th>
                 <th scope="col">State</th>
             </tr>
         </thead>
         <tbody>
             @foreach($key_requests as $key_request)
-            <tr>
-                <td>{{ $key_request->created_at }}</th>
+            <tr >
+                <td><a href="#" class="request_detail"  data-key="{{ $key_request }}" data-state="{{ $state_names[$key_request->state] }}" data-keydate="{{ date_format($key_request['created_at'],'d/m/Y H:i:s') }}">details</a></td>
+                <td>{{ date_format($key_request->created_at,"d/m/Y") }}</th>
                 <td>{{ $key_request->name }}</td>
                 <td><a href="#" class="email_row" data-id="{{ $key_request->id }}">{{ $key_request->email }}</a></td>
                 <td>{{ $key_request->description }}</td>
@@ -244,7 +262,6 @@
                 <td>
                     <div id="note-{{$key_request->id}}" data-id="{{$key_request->id}}" class="note_row">{{ $key_request->notes ?? 'Add a note' }}</div>
                 </td>
-                <td>{{ $key_request->temporary_key }}</td>
                 <td>
                     <select name="key_state" onchange="changeItemState({{ $key_request->id }},this.value)">
                         @foreach($options as $option)
@@ -260,12 +277,54 @@
     <p>Empty Results</p>
     @endif
 </div>
-@else
-<p>You are not an admin</p>
-@endif
+<!--@else
+    <p>You are not an admin</p>
+@endif -->
 
 <div class="pagination">
     {{$key_requests->appends(['state' => $state,'search' => $search])->links()}}
+</div>
+
+<div class="dashboard_modal" id="detail_modal">
+    <div class="card detail-card">
+        <a class="close_modal close" href="#"></a>
+        <p class="card-header">Api Key details</p>
+        
+        <table class="key-table">
+            <tr>
+              <th>Name</th>
+              <td id="detail_name"></td>
+            </tr>
+            <tr>
+              <th scope="col">E-mail</th>
+              <td id="detail_email"></td>
+            </tr>
+            <tr>
+                <th scope="col">Description</th>
+                <td id="detail_description"></td>
+            </tr>
+            <tr>
+                <th scope="col">Question</th>
+                <td id="detail_questions"></td>
+            </tr>
+            <tr>
+                <th scope="col">Key</th>
+                <td id="detail_key"></td>
+            </tr>
+            <tr>
+                <th scope="col">Notes</th>
+                <td id="detail_notes"></td>
+            </tr>
+            <tr>
+                <th scope="col">State</th>
+                <td id="detail_state"></td>
+            </tr>
+            <tr>
+                <th scope="col">Request date</th>
+                <td id="detail_date"></td>
+            </tr>
+        </table>
+    </div>
 </div>
 
 <div class="dashboard_modal" id="email_modal">
