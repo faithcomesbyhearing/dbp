@@ -1100,13 +1100,22 @@ class PlaylistsController extends APIController
         foreach ($bible_files as $bible_file) {
             $default_duration = $bible_file->duration ?? 180;
             $durations[] = $default_duration;
-            $hls_items .= "\n#EXTINF:$default_duration," . $item->id;
+            if (isset($item->id)) {
+                $hls_items .= "\n#EXTINF:$default_duration," . $item->id;
+            }
 
-            $bible_path = $bible_file->fileset->bible->first()->id;
-            $file_path = 'audio/' . $bible_path . '/' . $bible_file->fileset->id . '/' . $bible_file->file_name;
-            $hls_items .= "\n";
-            if (!isset($signed_files[$file_path])) {
-                $signed_files[$file_path] = $this->signedUrl($file_path, $bible_file->fileset->asset_id, $transaction_id);
+            if (isset($bible_file->fileset)) {
+                $bible_data = $bible_file->fileset->bible->first();
+
+                if ($bible_data) {
+                    $bible_path = $bible_data->id;
+                    $file_path = 'audio/' . $bible_path . '/' . $bible_file->fileset->id . '/' . $bible_file->file_name;
+                    $hls_items .= "\n";
+                }
+              
+                if (!isset($signed_files[$file_path])) {
+                    $signed_files[$file_path] = $this->signedUrl($file_path, $bible_file->fileset->asset_id, $transaction_id);
+                }
             }
             $hls_file_path = $download ? $file_path : $signed_files[$file_path];
             $hls_items .= "\n" . $hls_file_path;
