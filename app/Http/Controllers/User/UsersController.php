@@ -301,7 +301,7 @@ class UsersController extends APIController
         
         // if exists update the provider_user_id (For now throw error to newrelic)
         if ($existing_account && ($provider_user_id !== $existing_account->provider_user_id)) {
-            $provider_error_message = 'Login error on request' . json_encode($request) . ' with different provider_user_id ' . $provider_user_id .
+            $provider_error_message = 'Login error on email' . json_encode($request->email) . ' with different provider_user_id ' . $provider_user_id .
                                       ' account data:' . json_encode($existing_account);
             Log::error($provider_error_message);
         }
