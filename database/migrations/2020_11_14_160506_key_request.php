@@ -18,10 +18,10 @@ class KeyRequest extends Migration
         if ($schema->hasTable('user_keys')) {
             $schema->table('user_keys', function (Blueprint $table) {
                 $table
-          ->integer('user_id')
-          ->unsigned()
-          ->nullable()
-          ->change();
+                    ->integer('user_id')
+                    ->unsigned()
+                    ->nullable()
+                    ->change();
             });
         }
         if (!$schema->hasTable('user_key_requests')) {
@@ -29,11 +29,11 @@ class KeyRequest extends Migration
                 $table->increments('id');
                 $table->integer('key_id')->nullable();
                 $table
-          ->foreign('key_id', 'FK_user_keys_user_key_requests')
-          ->references('id')
-          ->on(config('database.connections.dbp_users.database') . '.user_keys')
-          ->onUpdate('cascade')
-          ->onDelete('cascade');
+                    ->foreign('key_id', 'FK_user_keys_user_key_requests')
+                    ->references('id')
+                    ->on(config('database.connections.dbp_users.database') . '.user_keys')
+                    ->onUpdate('cascade')
+                    ->onDelete('cascade');
                 $table->string('name');
                 $table->string('email');
                 $table->text('description')->nullable();
@@ -43,8 +43,8 @@ class KeyRequest extends Migration
                 $table->integer('state')->default(0);
                 $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
                 $table
-          ->timestamp('updated_at')
-          ->default(DB::raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'));
+                    ->timestamp('updated_at')
+                    ->default(DB::raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'));
             });
         }
     }
@@ -61,10 +61,10 @@ class KeyRequest extends Migration
             Schema::disableForeignKeyConstraints();
             $schema->table('user_keys', function (Blueprint $table) {
                 $table
-          ->integer('user_id')
-          ->unsigned()
-          ->nullable(false)
-          ->change();
+                    ->integer('user_id')
+                    ->unsigned()
+                    ->nullable(false)
+                    ->change();
             });
             Schema::enableForeignKeyConstraints();
         }
