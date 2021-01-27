@@ -151,7 +151,7 @@ class LanguagesController extends APIController
                     $query->whereHas('filesets');
                 }])
                 ->withCount([
-                    'filesets' 
+                    'filesets'
                 ]);
 
             if ($page) {

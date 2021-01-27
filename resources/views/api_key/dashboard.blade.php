@@ -1,19 +1,52 @@
 @extends('layouts.apiKey')
 
 @section('head')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
 <script>
     function changeItemState(id, state) {
-        showModal(true);
-        console.log(id, state);
+        var keys = <?php echo json_encode(
+                        collect($key_requests->items())->mapWithKeys(function ($item) {
+                            return [$item['id'] => $item];
+                        })
+                    ); ?>;
+        var email = keys[id].email;
+        var name = keys[id].name;
+        var key = keys[id].temporary_key;
+        var description = keys[id].description;
+
+        if (state == 1) {
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
+                }
+            });
+            var formData = {
+                email: email,
+                key_request_id: id,
+                name: name,
+                key: key,
+                description: description
+            };
+            $.ajax({
+                type: "POST",
+                url: "{{route('api_key.approve_api_key')}}",
+                dataType: 'json',
+                data: formData,
+                error: function(xhr) {
+                    console.log('error', xhr.responseText);
+                }
+            });
+        }
     }
 
     $(document).ready(function() {
         var loading = false;
         var keys = <?php echo json_encode(
-    collect($key_requests->items())->mapWithKeys(function ($item) {
-              return [$item['id'] => $item];
-          })
-); ?>;
+                        collect($key_requests->items())->mapWithKeys(function ($item) {
+                            return [$item['id'] => $item];
+                        })
+                    ); ?>;
         $(".email_row").click(function(e) {
             var id = $(this).data('id');
             var email = keys[id].email;
@@ -170,7 +203,7 @@
 <link rel="stylesheet" href="{{ mix('css/app_api_key.css') }}" />
 @endsection
 
-@section('content') 
+@section('content')
 @if($user->roles->where('slug','admin')->first())
 <h2 class="dashboard-title">Key Management</h2>
 <div class="dashboard-card">
@@ -202,7 +235,7 @@
         </thead>
         <tbody>
             @foreach($key_requests as $key_request)
-            <tr >
+            <tr>
                 <td>{{ $key_request->created_at }}</th>
                 <td>{{ $key_request->name }}</td>
                 <td><a href="#" class="email_row" data-id="{{ $key_request->id }}">{{ $key_request->email }}</a></td>
@@ -228,7 +261,7 @@
     @endif
 </div>
 @else
-    <p>You are not an admin</p>
+<p>You are not an admin</p>
 @endif
 
 <div class="pagination">

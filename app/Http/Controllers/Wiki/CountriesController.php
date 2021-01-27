@@ -66,7 +66,7 @@ class CountriesController extends APIController
         $cache_params = [$GLOBALS['i18n_iso'], $filesets, $languages];
 
         $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($filesets, $languages) {
-            $countries = Country::with('currentTranslation')->when($filesets, function ($query)  {
+            $countries = Country::with('currentTranslation')->when($filesets, function ($query) {
                 $query->whereHas('languages.bibles.filesets');
             })->get();
             if ($languages !== null) {
