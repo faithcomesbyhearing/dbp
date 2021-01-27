@@ -120,6 +120,36 @@ class DashboardController extends APIController
         }
     }
 
+    public function changeApiKeyState()
+    {
+        if (!$this->isAdmin()) {
+            return $this->setStatusCode(403)->replyWithError('Unauthorized');
+        }
+
+        $rules = [
+          'key_request_id' => 'required',
+          'state' => 'required'
+        ];
+
+        $validator = Validator::make(request()->all(), $rules);
+        if ($validator->fails()) {
+            $error_message = '';
+            foreach ($validator->errors()->all() as $error) {
+                $error_message .= $error . "\n";
+            }
+            return $this->setStatusCode(422)->replyWithError($error_message);
+        } else {
+            $key_request_id = checkParam('key_request_id');
+            $key_state = checkParam('state');
+
+            $key_request = KeyRequest::whereId($key_request_id)->first();
+            $key_request->state = $key_state;
+            $key_request->save();
+
+            return $key_request;
+        }
+    }
+
     public function approveApiKey()
     {
         if (!$this->isAdmin()) {

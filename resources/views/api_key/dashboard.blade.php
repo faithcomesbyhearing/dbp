@@ -4,39 +4,54 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <script>
-    function changeItemState(id, state) {
-        var keys = <?php echo json_encode(
-                        collect($key_requests->items())->mapWithKeys(function ($item) {
-                            return [$item['id'] => $item];
-                        })
-                    ); ?>;
-        var email = keys[id].email;
-        var name = keys[id].name;
-        var key = keys[id].temporary_key;
-        var description = keys[id].description;
+    function sendAjaxRequest(url, formData) {
+      $.ajaxSetup({
+        headers: {
+          'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
+        }
+      });
+      $.ajax({
+          type: "POST",
+          url,
+          dataType: 'json',
+          data: formData,
+        error: function(xhr) {
+          console.log('error', xhr.responseText);
+        }
+      });
+    }
 
-      if (state == 2){
-          $.ajaxSetup({
-              headers: {
-                  'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
-              }
-          });
-          var formData = {
-              email: email,
-              key_request_id: id,
-              name: name,
-              key: key,
-              description: description
-          };
-          $.ajax({
-              type: "POST",
-              url: "{{route('api_key.approve_api_key')}}",
-              dataType: 'json',
-              data: formData,
-              error: function(xhr) {
-                  console.log('error', xhr.responseText);
-              }
-          });
+    function changeItemState(id, state) {
+      var keys = <?php echo json_encode(
+        collect($key_requests->items())->mapWithKeys(function ($item) {
+            return [$item['id'] => $item];
+        })
+      ); ?>;
+      var email = keys[id].email;
+      var name = keys[id].name;
+      var key = keys[id].temporary_key;
+      var description = keys[id].description;
+      var formData = {
+        email: email,
+        key_request_id: id,
+        name: name,
+        key: key,
+        description: description,
+        state
+      };
+
+      switch(state) {
+        case '1':
+          sendAjaxRequest("{{route('api_key.change_api_key_state')}}", formData);
+          break;
+        case '2':
+          sendAjaxRequest("{{route('api_key.approve_api_key')}}", formData);
+          break;
+        case '3':
+          sendAjaxRequest("{{route('api_key.change_api_key_state')}}", formData);
+          break;
+        default:
+          break;
       }
     }
 
