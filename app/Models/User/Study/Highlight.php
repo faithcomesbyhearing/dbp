@@ -173,12 +173,22 @@ class Highlight extends Model
         $verse_start = $highlight['verse_start'];
         $verse_end = $highlight['verse_end'] ?? $verse_start;
         $bible = Bible::where('id', $highlight['bible_id'])->first();
+        if (!$bible) {
+            return [];
+        }
         $filesets = $bible->filesets;
+        if (!$filesets) {
+            return [];
+        }
         $text_fileset = $filesets->firstWhere('set_type_code', 'text_plain');
 
         $bibles_controller = new BiblesController();
         $fileset_types = collect(['audio_stream_drama', 'audio_drama', 'audio_stream', 'audio']);
-        $testament = $this->book->book->book_testament;
+        if (!$this->book || !$this->book->book) {
+            $testament = '';
+        } else {
+            $testament = $this->book->book->book_testament;
+        }
 
         $audio_filesets = $filesets->filter(function ($fs) {
             return Str::contains($fs->set_type_code, 'audio');
