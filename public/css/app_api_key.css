@@ -4771,6 +4771,10 @@ textarea {
   margin-left: 4%;
 }
 
+#search_filter{
+  width: 220px;
+}
+
 .pagination {
   display: flex;
   flex-direction: row;
