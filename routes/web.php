@@ -372,3 +372,7 @@ Route::name('api_key.approve_api_key')->post(
     '/api_key/approve_api_key',
     'ApiKey\DashboardController@approveApiKey'
 );
+Route::name('api_key.change_api_key_state')->post(
+  '/api_key/change_api_key_state',
+  'ApiKey\DashboardController@changeApiKeyState'
+);
