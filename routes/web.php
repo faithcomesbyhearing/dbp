@@ -368,3 +368,7 @@ Route::name('api_key.save_note')->post(
     '/api_key/save_note',
     'ApiKey\DashboardController@saveNote'
 );
+Route::name('api_key.approve_api_key')->post(
+    '/api_key/approve_api_key',
+    'ApiKey\DashboardController@approveApiKey'
+);
