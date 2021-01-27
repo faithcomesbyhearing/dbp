@@ -307,7 +307,7 @@ class UsersController extends APIController
                 'provider_user_id' => $provider_user_id
             ]
         );
-        $account_log = 'social provider login, User Account after linking User and Account:' . json_encode($account);
+        $account_log = 'social provider login, User Account after linking User and Account:' . json_encode($existing_account);
         Log::error($account_log);
 
         // if exists update the provider_user_id (For now throw error to newrelic)
