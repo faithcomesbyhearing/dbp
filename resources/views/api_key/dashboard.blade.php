@@ -19,6 +19,7 @@
           console.log('error', xhr.responseText);
         }
       });
+      window.location.reload();
     }
 
     function changeItemState(id, state) {
@@ -132,6 +133,7 @@
                     }
                 });
             }
+            window.location.reload();
         });
 
         $(".note_row").off().on('click', function(e) {
@@ -164,7 +166,7 @@
             $("#note_modal").css('display', 'flex');
         });
 
-        $("#button_save_note").off().on('click', function(e) {
+        $("#button_save_note").click(function(e) {
             e.preventDefault();
             var id = $("#button_save_note").data('id');
             var isNew = $("#button_save_note").data('isNew');
@@ -209,6 +211,7 @@
                         $("#note_error").show();
                     }
                 });
+                window.location.reload();
             }
         });
 
