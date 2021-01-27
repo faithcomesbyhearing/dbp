@@ -15,11 +15,13 @@
           url,
           dataType: 'json',
           data: formData,
-        error: function(xhr) {
-          console.log('error', xhr.responseText);
-        }
+          success: function() {
+            window.location.reload(); 
+          },
+          error: function(xhr) {
+            console.log('error', xhr.responseText);
+          }
       });
-      window.location.reload();
     }
 
     function changeItemState(id, state) {
@@ -283,7 +285,9 @@
                 <td>
                     <select name="key_state" onchange="changeItemState({{ $key_request->id }},this.value)">
                         @foreach($options as $option)
+                        @if ($option['value'] !== 0)
                         <option value="{{$option['value']}}" {{ $key_request->state === $option['value'] ? 'selected':''  }}>{{$option['name']}}</option>
+                        @endif
                         @endforeach
                     </select>
                 </td>

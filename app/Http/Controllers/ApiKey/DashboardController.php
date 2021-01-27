@@ -31,25 +31,29 @@ class DashboardController extends APIController
         $search = checkParam('search');
         $state = checkParam('state');
         $page = checkParam('page');
-        $state_names = [ 1 => 'Requested', 2 => 'Approved', 3 => 'Denied'];
+        $state_names = [0 => '', 1 => 'Requested', 2 => 'Approved', 3 => 'Denied'];
         $options = [
+        ['name' => $state_names[0], 'value' => 0, 'selected' => $state == 0],
         ['name' => $state_names[1], 'value' => 1, 'selected' => $state == 1],
         ['name' => $state_names[2], 'value' => 2, 'selected' => $state == 2],
         ['name' => $state_names[3], 'value' => 3, 'selected' => $state == 3]
       ];
 
         $key_requests = KeyRequest::select('*')
-            ->when($state, function ($query, $state) {
-                $query->where('state', $state);
-            })
-            ->when($search, function ($query, $search) {
-                $query
-                    ->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
-                    ->orWhere('temporary_key', 'LIKE', "%{$search}%");
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        ->when($state, function ($query, $state) {
+            $query->where('state', $state);
+        })
+        ->when($search, function ($query) use ($search) {
+            $query
+            ->where(function($query) use ($search){
+              $query
+              ->where('name', 'LIKE', "%{$search}%")
+              ->orWhere('email', 'LIKE', "%{$search}%")
+              ->orWhere('temporary_key', 'LIKE', "%{$search}%");
+            });
+        })
+        ->orderBy('created_at', 'desc')
+        ->paginate(20);
 
         return view(
         'api_key.dashboard',
