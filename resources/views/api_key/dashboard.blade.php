@@ -62,7 +62,7 @@
               return [$item['id'] => $item];
           })
         ); ?>;
-        $(".request_detail").click(function(e) {
+        $(".request_detail").off().on('click', function(e) {
             var key = $(this).data(key).key;
             var state = $(this).data(state).state;
             var keydate = $(this).data(keydate).keydate;
@@ -79,7 +79,7 @@
             $('#detail_date').text(`${keydate}`);
         });
 
-        $(".email_row").click(function(e) {
+        $(".email_row").off().on('click', function(e) {
             var id = $(this).data('id');
             var email = keys[id].email;
             $("#email_error").css('display', 'none');
@@ -90,7 +90,7 @@
             $("#email_modal").css('display', 'flex');
         });
 
-        $("#button_send_email").click(function(e) {
+        $("#button_send_email").off().on('click', function(e) {
             e.preventDefault();
             var id = $("#email_modal").data('id');
             var email = $("#to_email").val();
@@ -134,7 +134,7 @@
             }
         });
 
-        $(".note_row").click(function(e) {
+        $(".note_row").off().on('click', function(e) {
             e.preventDefault();
             var id = $(this).data('id');
             var note = keys[parseInt(id)].notes;
@@ -164,7 +164,7 @@
             $("#note_modal").css('display', 'flex');
         });
 
-        $("#button_save_note").click(function(e) {
+        $("#button_save_note").off().on('click', function(e) {
             e.preventDefault();
             var id = $("#button_save_note").data('id');
             var isNew = $("#button_save_note").data('isNew');
@@ -212,7 +212,7 @@
             }
         });
 
-        $(".close_modal").click(function(e) {
+        $(".close_modal").off().on('click', function(e) {
             e.preventDefault();
             if (!loading) {
                 $(".dashboard_modal").hide();
