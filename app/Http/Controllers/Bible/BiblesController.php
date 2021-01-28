@@ -807,7 +807,7 @@ class BiblesController extends APIController
                     }
                 }
                 $chapter_filesets->video->jesus_films = collect($films)->map(function ($film) use ($metadata) {
-                    $film->meta = $metadata[$film->component_id];
+                    $film->meta = $metadata[$film->component_id] ?? [];
                     return $film;
                 });
             }

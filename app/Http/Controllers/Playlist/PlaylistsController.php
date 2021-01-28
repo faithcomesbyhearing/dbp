@@ -315,14 +315,13 @@ class PlaylistsController extends APIController
 
         $playlist = $this->getPlaylist($user, $playlist_id);
 
-        if (!$playlist) {
+        if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
         }
 
         foreach ($playlist->items as $item) {
             $item->verse_text = $item->getVerseText();
         }
-
 
         return $this->reply($playlist->items->pluck('verse_text', 'id'));
     }
@@ -368,11 +367,11 @@ class PlaylistsController extends APIController
 
         $playlist = $this->getPlaylist($user, $playlist_id);
 
-        if (!$playlist) {
+        if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
         }
-
-        if ($show_text) {
+        
+        if ($show_text && isset($playlist->items)) {
             $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist_id);
             foreach ($playlist->items as $item) {
                 $item->verse_text = $item->getVerseText($playlist_text_filesets);
@@ -458,7 +457,6 @@ class PlaylistsController extends APIController
         }
 
         $playlist = $this->getPlaylist($user, $playlist_id);
-
         return $this->reply($playlist);
     }
 
@@ -828,10 +826,9 @@ class PlaylistsController extends APIController
         }
 
         $playlist = $this->getPlaylist(false, $playlist_id);
-        if (!$playlist) {
+        if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
         }
-
 
         $audio_fileset_types = collect(['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama']);
         $bible_audio_filesets = $bible->filesets->whereIn('set_type_code', $audio_fileset_types);
@@ -895,7 +892,7 @@ class PlaylistsController extends APIController
         $playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $playlist->id, 'v' => $this->v, 'key' => $this->key]);
         $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
 
-        if ($show_details) {
+        if ($show_details && isset($playlist->items)) {
             $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist->id);
             foreach ($playlist->items as $item) {
                 $item->verse_text = $item->getVerseText($playlist_text_filesets);
@@ -1103,13 +1100,22 @@ class PlaylistsController extends APIController
         foreach ($bible_files as $bible_file) {
             $default_duration = $bible_file->duration ?? 180;
             $durations[] = $default_duration;
-            $hls_items .= "\n#EXTINF:$default_duration," . $item->id;
+            if (isset($item->id)) {
+                $hls_items .= "\n#EXTINF:$default_duration," . $item->id;
+            }
 
-            $bible_path = $bible_file->fileset->bible->first()->id;
-            $file_path = 'audio/' . $bible_path . '/' . $bible_file->fileset->id . '/' . $bible_file->file_name;
-            $hls_items .= "\n";
-            if (!isset($signed_files[$file_path])) {
-                $signed_files[$file_path] = $this->signedUrl($file_path, $bible_file->fileset->asset_id, $transaction_id);
+            if (isset($bible_file->fileset)) {
+                $bible_data = $bible_file->fileset->bible->first();
+
+                if ($bible_data) {
+                    $bible_path = $bible_data->id;
+                    $file_path = 'audio/' . $bible_path . '/' . $bible_file->fileset->id . '/' . $bible_file->file_name;
+                    $hls_items .= "\n";
+                }
+              
+                if (!isset($signed_files[$file_path])) {
+                    $signed_files[$file_path] = $this->signedUrl($file_path, $bible_file->fileset->asset_id, $transaction_id);
+                }
             }
             $hls_file_path = $download ? $file_path : $signed_files[$file_path];
             $hls_items .= "\n" . $hls_file_path;
@@ -1254,14 +1260,16 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(404)->replyWithError('No playlist could be found for: ' . $playlist_id);
         }
 
-        $playlist->items = $playlist->items->map(function ($item) {
-            $bible = $item->fileset->bible->first();
-            if ($bible) {
-                $item->bible_id = $bible->id;
-            }
-            unset($item->fileset);
-            return $item;
-        });
+        if (isset($playlist->items)) {
+            $playlist->items = $playlist->items->map(function ($item) {
+                $bible = $item->fileset->bible->first();
+                if ($bible) {
+                    $item->bible_id = $bible->id;
+                }
+                unset($item->fileset);
+                return $item;
+            });
+        }
 
         return $playlist;
     }
