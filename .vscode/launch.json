@@ -9,8 +9,7 @@
             "name": "Listen for XDebug",
             "type": "php",
             "request": "launch",
-            "port": 9003, // the default
-            "log": false
+            "port": 9003
         },
         {
             "name": "Launch currently open script",
