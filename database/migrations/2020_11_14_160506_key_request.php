@@ -40,7 +40,7 @@ class KeyRequest extends Migration
                 $table->text('questions')->nullable();
                 $table->string('temporary_key', 64)->unique();
                 $table->text('notes')->nullable();
-                $table->integer('state')->default(0);
+                $table->integer('state')->default(1);
                 $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
                 $table
                     ->timestamp('updated_at')
