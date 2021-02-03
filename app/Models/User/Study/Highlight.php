@@ -174,11 +174,11 @@ class Highlight extends Model
         $verse_end = $highlight['verse_end'] ?? $verse_start;
         $bible = Bible::where('id', $highlight['bible_id'])->first();
         if (!$bible) {
-            return [];
+            return collect([]);
         }
         $filesets = $bible->filesets;
         if (!$filesets) {
-            return [];
+            return collect([]);
         }
         $text_fileset = $filesets->firstWhere('set_type_code', 'text_plain');
 

@@ -160,9 +160,14 @@ class HighlightsController extends APIController
 
             $select_fields[] = DB::raw($book_order_query . ' as book_order');
         }
-
+        
+        $dbp_database = config('database.connections.dbp.database');
         $highlights = Highlight::join('user_highlight_colors', 'user_highlights.highlighted_color', '=', 'user_highlight_colors.id')
             ->where('user_id', $user_id)
+            ->join($dbp_database . '.bibles as bibles', function ($join) use ($query) {
+                $join->on('user_highlights.bible_id', '=', 'bibles.id')
+                    ->where('user_highlights.bible_id', DB::raw('bibles.id'));
+            })
             ->when($bible_id, function ($q) use ($bible_id) {
                 $q->where('user_highlights.bible_id', $bible_id);
             })->when($book_id, function ($q) use ($book_id) {
@@ -201,9 +206,6 @@ class HighlightsController extends APIController
                 $dbp_database = config('database.connections.dbp.database');
                 $q->join($dbp_database . '.books as books', function ($join) {
                     $join->on('user_highlights.book_id', '=', 'books.id');
-                });
-                $q->join($dbp_database . '.bibles as bibles', function ($join) {
-                    $join->on('user_highlights.bible_id', '=', 'bibles.id');
                 });
             })->select($select_fields)
             ->orderBy($order_by, $sort_dir)
