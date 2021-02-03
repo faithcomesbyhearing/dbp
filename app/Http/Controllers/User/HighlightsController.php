@@ -165,8 +165,7 @@ class HighlightsController extends APIController
         $highlights = Highlight::join('user_highlight_colors', 'user_highlights.highlighted_color', '=', 'user_highlight_colors.id')
             ->where('user_id', $user_id)
             ->join($dbp_database . '.bibles as bibles', function ($join) use ($query) {
-                $join->on('user_highlights.bible_id', '=', 'bibles.id')
-                    ->where('user_highlights.bible_id', DB::raw('bibles.id'));
+                $join->on('user_highlights.bible_id', '=', 'bibles.id');
             })
             ->when($bible_id, function ($q) use ($bible_id) {
                 $q->where('user_highlights.bible_id', $bible_id);
