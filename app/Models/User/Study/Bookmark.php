@@ -147,6 +147,9 @@ class Bookmark extends Model
         $chapter = $bookmark['chapter'];
         $verse_start = $bookmark['verse_start'];
         $bible = Bible::where('id', $bookmark['bible_id'])->first();
+        if (!$bible) {
+            return '';
+        }
         $fileset = BibleFileset::join(
       'bible_fileset_connections as connection',
       'connection.hash_id',

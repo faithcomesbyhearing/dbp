@@ -250,25 +250,13 @@ Route::name('v4_internal_playlists_items.complete')
         'Playlist\PlaylistsController@completeItem'
     );
 Route::name('v4_internal_playlists.translate')
-    ->middleware('APIToken:check')
-    ->get(
-        'playlists/{playlist_id}/translate',
-        'Playlist\PlaylistsController@translate'
-    );
-Route::name('v4_internal_playlists.hls')->get(
-    'playlists/{playlist_id}/hls',
-    'Playlist\PlaylistsController@hls'
-);
-Route::name('v4_internal_playlists_item.hls')->get(
-    'playlists/{playlist_item_id}/item-hls',
-    'Playlist\PlaylistsController@itemHls'
-);
+    ->middleware('APIToken:check')->get('playlists/{playlist_id}/translate',        'Playlist\PlaylistsController@translate');
+Route::name('v4_internal_playlists.hls')->get('playlists/{playlist_id}/hls',                 'Playlist\PlaylistsController@hls');
+Route::name('v4_internal_playlists_item.hls')->get('playlists/{fileset_id}-{book_id}-{chapter}-{verse_start}-{verse_end}/item-hls',  'Playlist\PlaylistsController@itemHls');
+Route::name('v4_internal_playlists_item.hls')->get('playlists/{playlist_item_id}/item-hls',  'Playlist\PlaylistsController@itemHls');
 Route::name('v4_internal_playlists.draft')
-    ->middleware('APIToken:check')
-    ->post(
-        'playlists/{playlist_id}/draft',
-        'Playlist\PlaylistsController@draft'
-    );
+    ->middleware('APIToken:check')->post('playlists/{playlist_id}/draft',           'Playlist\PlaylistsController@draft');
+Route::name('v4_internal_playlists_item.metadata')->get('playlists/item/metadata',  'Playlist\PlaylistsController@itemMetadata');
 
 // VERSION 4 | Plans (bible.is private)
 Route::name('v4_internal_plans.index')
