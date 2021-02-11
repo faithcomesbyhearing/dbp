@@ -19,6 +19,7 @@ use App\Transformers\UserTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+use Log;
 use Mail;
 use Validator;
 use Illuminate\Support\Facades\Auth;
@@ -306,16 +307,22 @@ class UsersController extends APIController
     ) {
         $account = Account::where('provider_id', $provider_id)
             ->where('provider_user_id', $provider_user_id)
-            ->first();
+            ->where('project_id', $request->project_id)->first();
         if ($account) {
             return User::with('accounts', 'profile')
                 ->whereId($account->user_id)
                 ->first();
         }
+
+        $no_match_log = 'social provider login with no matching DBP info. request:' . json_encode($request->all())
+                        . ', provider_id: ' . $provider_id . ', provider_user_id: ' . $provider_user_id;
+        Log::error($no_match_log);
         // Verify a user with the email exist
-        $user = User::with('accounts', 'profile')
-            ->where('email', $request->email)
-            ->first();
+        if (!$request->email) {
+            $user = null;
+        } else {
+            $user = User::with('accounts', 'profile')->where('email', $request->email)->first();
+        }
         // Create user if not exists
         if (!$user) {
             $user = User::create([
@@ -326,20 +333,34 @@ class UsersController extends APIController
                 'activated' => 0,
                 'password' => \Hash::make(Str::random(10))
             ]);
+            $user_created_log = 'new user created with userid:' . $user->id . ', request: ' . json_encode($request->all());
+            Log::error($user_created_log);
 
             Profile::create([
                 'user_id' => $user->id
             ]);
         }
 
-        // Link the social account provider
-        Account::updateOrCreate([
-            'user_id' => $user->id,
-            'provider_user_id' => $provider_user_id,
-            'provider_id' => $provider_id,
-            'project_id' => $request->project_id
-        ]);
+        // Link the social account provider if it does not exist
+        $existing_account = Account::firstOrCreate(
+            [
+                'user_id' => $user->id,
+                'project_id' => $request->project_id,
+                'provider_id' => $provider_id
+            ],
+            [
+                'provider_user_id' => $provider_user_id
+            ]
+        );
+        $account_log = 'social provider login, User Account after linking User and Account:' . json_encode($existing_account);
+        Log::error($account_log);
 
+        // if exists update the provider_user_id (For now throw error to newrelic)
+        if ($existing_account && ($provider_user_id !== $existing_account->provider_user_id)) {
+            $provider_error_message = 'Login error on request' . json_encode($request->all()) . ' with different provider_user_id ' . $provider_user_id .
+                                      ' on account data:' . json_encode($existing_account);
+            Log::error($provider_error_message);
+        }
 
         return User::with('accounts', 'profile')->whereId($user->id)->first();
     }
@@ -831,34 +852,24 @@ class UsersController extends APIController
         return false;
     }
 
-    public function adminLogin(Request $request)
+    /**
+     * Return Validate UserLogin
+     * If the login params are invalid return the errors, otherwise return false.
+     *
+     * @return Validator|bool
+     */
+    private function invalidUserLogin()
     {
-        if (!$this->api && $request->method() !== 'POST') {
-            if (!Auth::guest()) {
-                return redirect()->to(route('api_key.dashboard'));
-            }
-            return view('api_key.login');
-            //return view('auth.login');
+        $rules = [
+          'email'       => 'required|exists:dbp_users.users,email',
+          'project_id'  => 'required|exists:dbp_users.projects,id',
+        ];
+
+        $validator = Validator::make(request()->all(), $rules);
+
+        if ($validator->fails()) {
+            return $this->setStatusCode(422)->replyWithError($validator->errors());
         }
-
-        $email = checkParam('email');
-        $password = checkParam('password');
-        $user = $this->loginWithEmail($email, $password);
-
-        if (!$user) {
-            return redirect()
-                ->back()
-                ->withErrors(['auth.failed' => trans('auth.failed')])
-                ->withInput();
-        }
-
-        Auth::login($user, true);
-        return redirect()->to(route('api_key.dashboard'));
-    }
-
-    public function adminLogout()
-    {
-        Auth::logout();
-        return redirect()->to(route('welcome'));
+        return false;
     }
 }

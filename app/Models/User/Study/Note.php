@@ -211,6 +211,9 @@ class Note extends Model
         $verse_start = $this['verse_start'];
         $verse_end = $this['verse_end'] ? $this['verse_end'] : $verse_start;
         $bible = Bible::where('id', $this['bible_id'])->first();
+        if (!$bible) {
+            return '';
+        }
         $fileset = BibleFileset::join(
       'bible_fileset_connections as connection',
       'connection.hash_id',
@@ -246,6 +249,9 @@ class Note extends Model
     public function getBibleNameAttribute()
     {
         $bible = Bible::whereId($this['bible_id'])->with(['translations', 'books.book'])->first();
+        if (!$bible) {
+            return '';
+        }
         $ctitle = optional($bible->translations->where('language_id', $GLOBALS['i18n_id'])->first())->name;
         $vtitle = optional($bible->vernacularTranslation)->name;
         return ($vtitle ? $vtitle : $ctitle);
