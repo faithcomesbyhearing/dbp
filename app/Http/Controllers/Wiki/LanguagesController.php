@@ -77,7 +77,6 @@ class LanguagesController extends APIController
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_languages.all"))
      *     )
      * )
-     * @link https://api.dbp.test/languages?key=1234&v=4&pretty
      * @return \Illuminate\Http\Response
      *
      * @OA\Schema(

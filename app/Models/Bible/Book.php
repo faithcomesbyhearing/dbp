@@ -115,7 +115,7 @@ class Book extends Model
      *   type="string",
      *   description="The OSIS id for the books of the Bible",
      *   minLength=2,
-     *   maxLength=2
+     *   maxLength=12
      * )
      *
      *

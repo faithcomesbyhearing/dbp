@@ -19,8 +19,6 @@ class BooksController extends APIController
      *
      * @version 4
      * @category v4_bible_books_all
-     * @link http://api.dbp.test/bibles/books?key=1234&v=4 - V4 Test Access URL
-     * @link https://dbp.test/eng/docs/swagger/v4#/Bible/v4_bible_books2 - V4 Test Docs
      *
      * @OA\Get(
      *     path="/bibles/books",
@@ -53,8 +51,6 @@ class BooksController extends APIController
      *
      * @version  4
      * @category v4_bible_filesets.books
-     * @link     https://api.dbp.test/bibles/filesets/TZTWBT/books?key=e8a946a0-d9e2-11e7-bfa7-b1fb2d7f5824&v=4&pretty
-     * @link     https://dbp.test/eng/docs/swagger/v4#/Bible/v4_bible_filesets.books - V4 Test Docs
      *
      * @OA\Get(
      *     path="/bibles/filesets/{fileset_id}/books",

@@ -143,7 +143,6 @@ class PlaylistItems extends Model implements Sortable
      *   maximum=176,
      *   example=5
      * )
-     *
      */
     protected $verse_end;
 
