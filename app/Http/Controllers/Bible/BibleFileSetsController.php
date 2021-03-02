@@ -28,7 +28,8 @@ class BibleFileSetsController extends APIController
      *     tags={"Bibles"},
      *     summary="Returns Bibles Filesets",
      *     description="Returns a list of bible filesets",
-     *     operationId="v4_bible_filesets.show",
+     *     operationId="v4_internal_filesets.show",
+ 
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
@@ -45,7 +46,8 @@ class BibleFileSetsController extends APIController
      *         response=200,
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.show"))
-     *     )
+     *     ),
+     *     deprecated=true
      * )
      *
      * @param null $id
@@ -203,7 +205,7 @@ class BibleFileSetsController extends APIController
      *     tags={"Bibles"},
      *     summary="Fileset Copyright information",
      *     description="A fileset's copyright information and organizational connections",
-     *     operationId="v4_bible_filesets.copyright",
+     *     operationId="v4_internal_bible_filesets.copyright",
      *     @OA\Parameter(
      *          name="fileset_id",
      *          in="path",
@@ -211,26 +213,7 @@ class BibleFileSetsController extends APIController
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id"),
      *          description="The fileset ID to retrieve the copyright information for"
      *     ),
-     *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          required=true,
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id"),
-     *          description="The asset id which contains the Fileset"
-     *     ),
-     *     @OA\Parameter(
-     *          name="type",
-     *          in="query",
-     *          required=true,
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/set_type_code"),
-     *          description="The set type code for the fileset"
-     *     ),
-     *     @OA\Parameter(
-     *          name="iso",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso", default="eng"),
-     *          description="The iso code to filter organization translations by. For a complete list see the `iso` field in the `/languages` route."
-     *     ),
+
      *     @OA\Response(
      *         response=200,
      *         description="The requested fileset copyright",
@@ -245,23 +228,20 @@ class BibleFileSetsController extends APIController
      *     title="v4_bible_filesets.copyright",
      *     @OA\Xml(name="v4_bible_filesets.copyright"),
      *     @OA\Property(property="id", ref="#/components/schemas/BibleFileset/properties/id"),
-     *     @OA\Property(property="asset_id", ref="#/components/schemas/BibleFileset/properties/asset_id"),
      *     @OA\Property(property="type", ref="#/components/schemas/BibleFileset/properties/set_type_code"),
      *     @OA\Property(property="size", ref="#/components/schemas/BibleFileset/properties/set_size_code"),
      *     @OA\Property(property="copyright", ref="#/components/schemas/BibleFilesetCopyright")
      * )
      *
-     * @see https://api.dbp.test/bibles/filesets/ENGESV/copyright?key=API_KEY&v=4&type=text_plain&pretty
      * @param string $id
      * @return mixed
      */
     public function copyright($id)
     {
         $iso = checkParam('iso') ?? 'eng';
-        $type = checkParam('type', true);
 
-        $cache_params = [$id, $type, $iso];
-        $fileset = cacheRemember('bible_fileset_copyright', $cache_params, now()->addDay(), function () use ($iso, $type, $id) {
+        $cache_params = [$id, $iso];
+        $fileset = cacheRemember('bible_fileset_copyright', $cache_params, now()->addDay(), function () use ($iso, $id) {
             $language_id = optional(Language::where('iso', $iso)->select('id')->first())->id;
             return BibleFileset::where('id', $id)->with([
                 'copyright.organizations.logos',
@@ -269,9 +249,7 @@ class BibleFileSetsController extends APIController
                     $q->where('language_id', $language_id);
                 }
             ])
-                ->when($type, function ($q) use ($type) {
-                    $q->where('set_type_code', $type);
-                })->select(['hash_id', 'id', 'asset_id', 'set_type_code as type', 'set_size_code as size'])->first();
+                ->select(['hash_id', 'id', 'asset_id', 'set_type_code as type', 'set_size_code as size'])->first();
         });
 
         return $this->reply($fileset);
