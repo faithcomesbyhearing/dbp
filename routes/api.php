@@ -52,9 +52,9 @@ Route::name('v4_bible.defaults')->get(
     'Bible\BiblesController@defaults'
 ); // used
 Route::name('v4_bible.books')->get(
-    'bibles/{bible_id}/book/{book?}',
+    'bibles/{bible_id}/book',
     'Bible\BiblesController@books'
-); // used, but book is not specified
+); // used by bible.is, but book is not specified. suggest unifying on this one. (fixed)The signature looks wrong - the code doesn't accept book_id as a path param, only a query param
 Route::name('v4_bible.one')->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
@@ -85,21 +85,33 @@ Route::name('v4_internal_filesets.checkTypes')->post(
     'bibles/filesets/check/types',
     'Bible\BibleFileSetsController@checkTypes'
 );
-Route::name('v4_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
-Route::name('v4_filesets.show')->get(
+Route::name('v4_internal_bible_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
+
+// Deprecate this endpoint. It takes book and chapter as query parameters. Prefer instead v4_filesets.chapter
+Route::name('v4_internal_filesets.show')->get(
     'bibles/filesets/{fileset_id?}',
     'Bible\BibleFileSetsController@show'
 );
+// not used by bible.is
+// is there anything in this that cannot be provided by bibles/books?
+// try to remove it
 Route::name('v4_filesets.books')->get(
     'bibles/filesets/{fileset_id}/books',
     'Bible\BooksController@show'
 );
 
 // VERSION 4 | Text
+// BWF: this is the preferred endpoint for filesets. It needs to be broadened to process all filesets, not just text.
+// Route to BibleFileSetsController:showChapter. 
+// When fileset is text, use logic in TextController
+// Otherwise, use logic roughly found in BibleFileSetController:show, although only return one chapter
+
 Route::name('v4_filesets.chapter')->get(
     'bibles/filesets/{fileset_id}/{book}/{chapter}',
     'Bible\TextController@index'
 );
+
+
 // This is new, added Dec 28, to provide just the verses for a bible or chapter. Note that this does not have filesets in path
 Route::name('v4_bible.verseinfo')->get(
     'bibles/{bible_id}/{book}/{chapter?}',
@@ -115,6 +127,7 @@ Route::name('v4_media_stream_ts')->get(
     'bible/filesets/{fileset_id}/{file_id}/{file_name}',
     'Bible\StreamController@transportStream'
 );
+## this is no good. StreamController::index does not process book_id/chapter/verse_start/verse_end
 Route::name('v4_media_stream')->get(
     'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start}-{verse_end}/playlist.m3u8',
     'Bible\StreamController@index'
@@ -384,7 +397,7 @@ Route::name('v4_internal_lexicon_index')->get(
     'Bible\Study\LexiconController@index'
 );
 // Bible Equivalents will be updated at some point in the future. Not to be removed
-Route::name('v4_bible_equivalents.all')->get(
+Route::name('v4_internal_bible_equivalents.all')->get(
     'bible/equivalents',
     'Bible\BibleEquivalentsController@index'
 );
