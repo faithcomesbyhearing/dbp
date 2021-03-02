@@ -110,7 +110,7 @@ class Bible extends Model
      *   type="integer",
      *   description="The year the Bible was originally published",
      *   minimum=1,
-     *   maximum=2030,
+     *   maximum=4,
      *   example=1963
      * )
      *

@@ -125,7 +125,7 @@ class Language extends Model
      *     title="iso",
      *     description="The iso 639-3 for the language",
      *     type="string",
-     *     example="abk",
+     *     example="eng",
      *     maxLength=3,
      *     @OA\ExternalDocumentation(
      *         description="For more info",
@@ -140,14 +140,12 @@ class Language extends Model
     /**
      * iso2B
      *
-     * @OA\Property(
+     *  OpenAPI Note: this property was removed from the documentation because the values are mostly null
      *     title="iso 2b",
      *     description="The iso 639-2, B variant for the language",
      *     type="string",
      *     example="abk",
      *     maxLength=3
-
-     * )
      *
      */
     protected $iso2B;
@@ -155,7 +153,7 @@ class Language extends Model
     /**
      * iso2T
      *
-     * @OA\Property(
+     *  OpenAPI Note: this property was removed from the documentation because the values are mostly null
      *     title="iso 2t",
      *     description="The iso 639-2, T variant for the language",
      *     type="string",
@@ -167,7 +165,7 @@ class Language extends Model
     protected $iso2T;
 
     /**
-     * @OA\Property(
+     *  OpenAPI Note: this property was removed from the documentation because the values are mostly null
      *     title="iso1",
      *     description="The iso 639-1 for the language",
      *     type="string",

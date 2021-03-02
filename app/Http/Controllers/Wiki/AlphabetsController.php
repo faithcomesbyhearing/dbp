@@ -15,15 +15,12 @@ class AlphabetsController extends APIController
      *
      * @version 4
      * @category v4_alphabets.all
-     * @link http://bible.build/alphabets - V4 Access
-     * @link https://api.dbp.test/alphabets?key=1234&v=4&pretty - V4 Test Access
-     * @link https://dbp.test/eng/docs/swagger/v4#/Wiki/v4_alphabets_all - V4 Test Docs
      *
      * @OA\Get(
      *     path="/alphabets",
      *     tags={"Languages"},
      *     summary="Returns Alphabets",
-     *     description="Returns a list of the world's known scripts. This route might be useful to you if you'd like to you if you'd like to query information about fonts, alphabets, and the world's writing systems. Some fileset returns may not display correctly without a font delivered by these via the `alphabets/{id}` routes.",
+     *     description="Returns a list of the world's known scripts. This route might be useful to you if you'd like to query information about fonts, alphabets, and the world's writing systems. Some fileset returns may not display correctly without a font delivered by these via the `alphabets/{id}` routes.",
      *     operationId="v4_alphabets.all",
      *     @OA\Response(
      *         response=200,
@@ -51,10 +48,6 @@ class AlphabetsController extends APIController
      *
      * @version  4
      * @category v4_alphabets.one
-     * @link     http://bible.build/alphabets - V4 Access
-     * @link     https://api.dbp.test/alphabets/Latn?key=1234&v=4&pretty - V4 Test Access
-     * @link     https://dbp.test/eng/docs/swagger/v4#/Wiki/v4_alphabets_one - V4 Test Docs
-     *
      *
      * @OA\Get(
      *     path="/alphabets/{id}",
