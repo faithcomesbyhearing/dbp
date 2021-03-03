@@ -112,16 +112,16 @@ class BibleFileSetsController extends APIController
      * @OA\Get(
      *     path="bibles/filesets/{fileset_id}/{book}/{chapter}",
      *     tags={"Bibles"},
-     *     summary="Returns Bibles Filesets",
-     *     description="Returns a list of bible filesets",
-     *     operationId="v4_bible_filesets.show",
+     *     summary="Returns content for a given fileset",
+     *     description="For a given fileset, book and chapter, return content (text, audio or video)",
+     *     operationId="v4_bible_filesets.showChapter",
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
-     *     @OA\Parameter(name="book_id", in="query", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true,
+     *     @OA\Parameter(name="book_id", in="path", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true,
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
-     *     @OA\Parameter(name="chapter_id", in="query", description="Will filter the results by the given chapter", required=true,
+     *     @OA\Parameter(name="chapter_id", in="path", description="Will filter the results by the given chapter", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")
      *     ),
      *     @OA\Parameter(name="verse_start", in="query", description="Will filter the results by the given starting verse",
