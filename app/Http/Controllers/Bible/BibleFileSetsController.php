@@ -176,6 +176,7 @@ class BibleFileSetsController extends APIController
                     ->first();
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 $fileset_type = $fileset_from_id['set_type_code'];
+                // Default to text plain until text_format type has a different filesetId
                 $fileset_type = ($fileset_type === 'text_format')
                     ? 'text_plain'
                     : $fileset_type;
