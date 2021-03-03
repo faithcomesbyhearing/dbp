@@ -362,7 +362,7 @@ class AudioController extends APIController
     {
         return $this->reply([
             [
-                'server'    => 'dbp.test.s3.us-west-2.amazonaws.com',
+                'server'    => config('services.cdn.server'),
                 'root_path' => '/audio',
                 'protocol'  => 'https',
                 'CDN'       => '1',
