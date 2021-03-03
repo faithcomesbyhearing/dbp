@@ -118,10 +118,10 @@ class BibleFileSetsController extends APIController
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
-     *     @OA\Parameter(name="book_id", in="query", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.",
+     *     @OA\Parameter(name="book_id", in="query", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true,
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
-     *     @OA\Parameter(name="chapter_id", in="query", description="Will filter the results by the given chapter",
+     *     @OA\Parameter(name="chapter_id", in="query", description="Will filter the results by the given chapter", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")
      *     ),
      *     @OA\Parameter(name="verse_start", in="query", description="Will filter the results by the given starting verse",
@@ -151,8 +151,8 @@ class BibleFileSetsController extends APIController
         $cache_key = 'bible_filesets_show'
     ) {
         $fileset_id    = checkParam('dam_id|fileset_id', true, $fileset_url_param);
-        $book_id     = checkParam('book_id', false, $book_url_param);
-        $chapter_id    = checkParam('chapter_id|chapter', false, $chapter_url_param);
+        $book_id     = checkParam('book_id', true, $book_url_param);
+        $chapter_id    = checkParam('chapter_id|chapter', true, $chapter_url_param);
         $verse_start = checkParam('verse_start') ?? 1;
         $verse_end   = checkParam('verse_end');
 
@@ -232,14 +232,10 @@ class BibleFileSetsController extends APIController
     ) {
         $text_query = BibleVerse::withVernacularMetaData($bible)
         ->where('hash_id', $fileset->hash_id)
-        ->when($book, function ($query) use ($book) {
-            return $query->where('bible_verses.book_id', $book->id);
-        })
+        ->where('bible_verses.book_id', $book->id)
+        ->where('chapter', $chapter_id)
         ->when($verse_start, function ($query) use ($verse_start) {
             return $query->where('verse_end', '>=', $verse_start);
-        })
-        ->when($chapter_id, function ($query) use ($chapter_id) {
-            return $query->where('chapter', $chapter_id);
         })
         ->when($verse_end, function ($query) use ($verse_end) {
             return $query->where('verse_end', '<=', $verse_end);
