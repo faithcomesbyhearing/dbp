@@ -78,7 +78,11 @@ return [
 
     'loaderIo' => [
         'key' => env('LOADER_IO')
-    ]
+    ],
 
+    // CDN server
+    'cdn' => [
+        'server' => env('CDN_SERVER', 'content.cdn.dbp-prod.dbp4.org')
+    ]
 
 ];

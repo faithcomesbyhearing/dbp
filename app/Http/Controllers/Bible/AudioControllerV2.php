@@ -235,7 +235,7 @@ class AudioControllerV2 extends APIController
     {
         return $this->reply([
             [
-                'server'    => 'content.cdn.dbp-prod.dbp4.org',
+                'server'    => config('services.cdn.server'),
                 'root_path' => '/audio',
                 'protocol'  => 'https',
                 'CDN'       => '1',
