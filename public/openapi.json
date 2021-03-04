@@ -61,7 +61,7 @@
         "\/timestamps\/{fileset_id}\/{book}\/{chapter}": {
             "get": {
                 "tags": [
-                    "Bible"
+                    "Bibles"
                 ],
                 "summary": "Returns Audio timestamps for a specific reference",
                 "description": "This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `\/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
@@ -687,7 +687,7 @@
                     "Languages"
                 ],
                 "summary": "Returns Alphabets",
-                "description": "Returns a list of the world's known scripts. This route might be useful to you if you'd like to query information about fonts, alphabets, and the world's writing systems. Some fileset returns may not display correctly without a font delivered by these via the `alphabets\/{id}` routes.",
+                "description": "Returns a list of the world's known scripts. This route might be useful to you if you'd like to query information about fonts, alphabets, and the world's writing systems. Some fileset returns may not display correctly without a font delivered by these via the `alphabets\/{script_id}` routes.",
                 "operationId": "v4_alphabets.all",
                 "parameters": [
                     {
@@ -708,19 +708,19 @@
                 }
             }
         },
-        "\/alphabets\/{id}": {
+        "\/alphabets\/{script_id}": {
             "get": {
                 "tags": [
                     "Languages"
                 ],
-                "summary": "Return a single Alphabets",
+                "summary": "Return details on a single Alphabet",
                 "description": "Returns a single alphabet along with whatever bibles and languages using it.",
                 "operationId": "v4_alphabets.one",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "script_id",
                         "in": "path",
-                        "description": "The alphabet ID",
+                        "description": "The alphabet Script, which is used as the identifier",
                         "required": true,
                         "schema": {
                             "$ref": "#\/components\/schemas\/Alphabet\/properties\/script"
@@ -802,6 +802,10 @@
                 ],
                 "summary": "Returns a single Country",
                 "description": "Returns a single Country",
+                "externalDocs": {
+                    "description": "For more information on Country Codes,  please refer to the ISO Registration Authority",
+                    "url": "https:\/\/www.iso.org\/iso-3166-country-codes.html"
+                },
                 "operationId": "v4_countries.one",
                 "parameters": [
                     {
@@ -842,13 +846,13 @@
                     {
                         "name": "country",
                         "in": "query",
-                        "description": "The country",
+                        "description": "The ISO Country Code. For a complete list of Country codes,  please refer to the ISO Registration Authority. https:\/\/www.iso.org\/iso-3166-country-codes.html",
                         "schema": {
                             "$ref": "#\/components\/schemas\/Country\/properties\/id"
                         }
                     },
                     {
-                        "name": "iso",
+                        "name": "language_code",
                         "in": "query",
                         "description": "The iso code to filter languages by. For a complete list see the `iso` field in the `\/languages` route",
                         "schema": {
@@ -864,45 +868,15 @@
                         }
                     },
                     {
-                        "name": "include_alt_names",
+                        "name": "include_translations",
                         "in": "query",
-                        "description": "The include_alt_names",
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/Language\/properties\/name"
-                        }
-                    },
-                    {
-                        "name": "show_all",
-                        "in": "query",
-                        "description": "Will show all entries",
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    {
-                        "name": "random",
-                        "in": "query",
-                        "description": "Will order the entries randomly",
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    {
-                        "name": "show_bibles",
-                        "in": "query",
-                        "description": "Will show all bibles details",
+                        "description": "Include the ISO language ids for available translations",
                         "schema": {
                             "type": "boolean"
                         }
                     },
                     {
                         "$ref": "#\/components\/parameters\/l10n"
-                    },
-                    {
-                        "$ref": "#\/components\/parameters\/sort_by"
-                    },
-                    {
-                        "$ref": "#\/components\/parameters\/sort_dir"
                     },
                     {
                         "$ref": "#\/components\/parameters\/page"
@@ -933,8 +907,8 @@
                 "tags": [
                     "Languages"
                 ],
-                "summary": "Returns a single Language",
-                "description": "Returns a single Language",
+                "summary": "Returns details on a single Language",
+                "description": "Returns details on a single Language",
                 "operationId": "v4_languages.one",
                 "parameters": [
                     {
@@ -989,7 +963,8 @@
                         "required": true,
                         "schema": {
                             "type": "integer"
-                        }
+                        },
+                        "example": 1
                     },
                     {
                         "name": "end",
@@ -998,7 +973,8 @@
                         "required": true,
                         "schema": {
                             "type": "integer"
-                        }
+                        },
+                        "example": 2
                     },
                     {
                         "$ref": "#\/components\/parameters\/version_number"
@@ -1572,11 +1548,13 @@
                                 },
                                 "bibles": {
                                     "description": "Display a listing of the resource.\n\nFetches the records from the database > passes them through fractal for transforming.",
-                                    "type": "integer"
+                                    "type": "integer",
+                                    "example": 12
                                 },
                                 "filesets": {
                                     "description": "Display a listing of the resource.\n\nFetches the records from the database > passes them through fractal for transforming.",
-                                    "type": "integer"
+                                    "type": "integer",
+                                    "example": 4
                                 },
                                 "country_population": {
                                     "$ref": "#\/components\/schemas\/Language\/properties\/population"
@@ -1605,10 +1583,12 @@
                         "items": {
                             "properties": {
                                 "numeral": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "example": "1"
                                 },
                                 "numeral_vernacular": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "example": "\u09e7"
                                 }
                             },
                             "type": "object"
@@ -1627,13 +1607,16 @@
                         "items": {
                             "properties": {
                                 "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "example": "bengali"
                                 },
                                 "description": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "example": "description for bengali"
                                 },
                                 "notes": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "example": "notes for bengali"
                                 }
                             },
                             "type": "object"
@@ -1690,11 +1673,6 @@
                         "maxLength": 191,
                         "example": "\u00a9 1999 Bible Society of Ghana"
                     },
-                    "in_progress": {
-                        "title": "in_progress",
-                        "description": "If the Bible being described is currently in progress.",
-                        "type": "string"
-                    },
                     "versification": {
                         "title": "versification",
                         "description": "The versification system for ordering books and chapters",
@@ -1716,12 +1694,14 @@
                     "created_at": {
                         "title": "created_at",
                         "description": "The timestamp at which the bible was originally created",
-                        "type": "string"
+                        "type": "string",
+                        "example": "2018-02-12 13:32:23"
                     },
                     "updated_at": {
                         "title": "updated_at",
                         "description": "The timestamp at which the bible was last updated",
-                        "type": "string"
+                        "type": "string",
+                        "example": "2018-02-12 13:32:23"
                     }
                 },
                 "type": "object",
@@ -2888,13 +2868,15 @@
                         "title": "Family",
                         "description": "The linguistic family the alphabet can be categorized within",
                         "type": "string",
-                        "example": "American"
+                        "example": "American",
+                        "nullable": true
                     },
                     "type": {
                         "title": "Type",
                         "description": "The type of alphabet be described",
                         "type": "string",
-                        "example": "abugida"
+                        "example": "abugida",
+                        "nullable": true
                     },
                     "white_space": {
                         "title": "White Space",
@@ -3015,13 +2997,15 @@
                         "type": "string",
                         "enum": [
                             "rtl",
-                            "ltr"
+                            "ltr",
+                            ""
                         ],
                         "externalDocs": {
                             "description": "For more information please refer to the Script Source Feature Definitions",
                             "url": "http:\/\/scriptsource.org\/cms\/scripts\/page.php?item_id=entry_detail&uid=cq3q4pwuah#02674a4e"
                         },
-                        "example": "ltr"
+                        "example": "ltr",
+                        "nullable": true
                     },
                     "sample": {
                         "title": "Sample Image",
@@ -3089,6 +3073,7 @@
                         "title": "Notes",
                         "description": "Any notes for the font file name",
                         "type": "string",
+                        "example": "notes specific to this font",
                         "nullable": true
                     },
                     "italic": {
@@ -3111,7 +3096,8 @@
                     "id": {
                         "title": "id",
                         "description": "The incrementing ID for the language",
-                        "type": "integer"
+                        "type": "integer",
+                        "example": 6411
                     },
                     "glotto_id": {
                         "title": "glotto_id",
@@ -3121,7 +3107,7 @@
                             "description": "For more info please refer to the Glottolog",
                             "url": "http:\/\/glottolog.org\/"
                         },
-                        "example": "abkh1244"
+                        "example": "stan1288"
                     },
                     "iso": {
                         "title": "iso",
@@ -3132,29 +3118,32 @@
                             "description": "For more info",
                             "url": "https:\/\/en.wikipedia.org\/wiki\/ISO_639-3"
                         },
-                        "example": "eng"
+                        "example": "spa"
                     },
                     "name": {
                         "title": "Name",
                         "description": "The name of the language",
                         "type": "string",
                         "maxLength": 191,
-                        "example": "Abkhazian"
+                        "example": "Spanish"
                     },
                     "maps": {
                         "title": "Maps",
                         "description": "The general area where the language can be found",
-                        "type": "string"
+                        "type": "string",
+                        "example": "Andorra and France"
                     },
                     "development": {
                         "title": "Development",
                         "description": "The development of the growth of the language",
-                        "type": "string"
+                        "type": "string",
+                        "example": "Fully developed. Bible: 1553-2000."
                     },
                     "use": {
                         "title": "use",
                         "description": "The use of the language",
-                        "type": "string"
+                        "type": "string",
+                        "example": "60,000,000 L2 speakers."
                     },
                     "location": {
                         "title": "Location",
@@ -3164,52 +3153,50 @@
                     "area": {
                         "title": "Area",
                         "description": "The area of the language",
-                        "type": "string"
+                        "type": "string",
+                        "example": "Central, south; Canary Islands. Also in Andorra, ..."
                     },
                     "population": {
                         "title": "Population",
                         "description": "The estimated number of people that speak the language",
-                        "type": "string"
+                        "type": "number",
+                        "example": 24900
                     },
                     "population_notes": {
-                        "title": "Population",
+                        "title": "Population Notes",
                         "description": "Any notes regarding the estimated number of people",
-                        "type": "string"
+                        "type": "string",
+                        "example": "58,200,000 in United Kingdom (Crystal 2003). Population total all countries: 334,800,758."
                     },
                     "notes": {
                         "title": "Notes",
                         "description": "Any notes regarding the language",
-                        "type": "string"
+                        "type": "string",
+                        "example": "The Aragonese dialect of Spanish is different from Aragonese language [arg]. Christian."
                     },
                     "typology": {
                         "title": "Typology",
                         "description": "The language's Typology",
-                        "type": "string"
+                        "type": "string",
+                        "example": "SVO,prepositions,genitives, relatives after noun heads,articles, numerals before noun heads..."
                     },
                     "description": {
-                        "title": "Typology",
+                        "title": "Description",
                         "description": "The description of the language",
-                        "type": "string"
-                    },
-                    "latitude": {
-                        "title": "Latitude",
-                        "description": "A generalized latitude for the location of the language",
-                        "type": "string"
-                    },
-                    "longitude": {
-                        "title": "Longitude",
-                        "description": "A generalized longitude for the location of the language",
-                        "type": "string"
+                        "type": "string",
+                        "example": "language description"
                     },
                     "status": {
                         "title": "Status",
                         "description": "A status of the language",
-                        "type": "string"
+                        "type": "string",
+                        "example": "6a"
                     },
                     "country_id": {
                         "title": "country_id",
                         "description": "The primary country where the language is spoken",
-                        "type": "string"
+                        "type": "string",
+                        "example": "ES"
                     }
                 },
                 "type": "object",
@@ -4514,9 +4501,7 @@
                                     "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
                                 },
                                 "timestamp": {
-                                    "description": "The duration of the timestamp in seconds",
-                                    "type": "string",
-                                    "example": "13"
+                                    "$ref": "#\/components\/schemas\/BibleFileTimestamp\/properties\/timestamp"
                                 }
                             },
                             "type": "object"
@@ -5188,5 +5173,9 @@
             "name": "Bibles",
             "description": "v4 Routes for obtaining Bibles Data"
         }
-    ]
+    ],
+    "externalDocs": {
+        "description": "find more info here",
+        "url": "https:\/\/faithcomesbyhearing.com\/biblebrain"
+    }
 }

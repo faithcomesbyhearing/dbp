@@ -119,6 +119,10 @@ class CountriesController extends APIController
      *     summary="Returns a single Country",
      *     description="Returns a single Country",
      *     operationId="v4_countries.one",
+     *     @OA\ExternalDocumentation(
+     *         description="For more information on Country Codes,  please refer to the ISO Registration Authority",
+     *         url="https://www.iso.org/iso-3166-country-codes.html"
+     *     ),
      *     @OA\Parameter(
      *          name="id",
      *          in="path",
