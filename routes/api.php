@@ -98,6 +98,10 @@ Route::name('v4_filesets.chapter')->get(
   'bibles/filesets/{fileset_id}/{book}/{chapter}',
   'Bible\BibleFileSetsController@showChapter'
 );
+Route::name('v4_filesets.batch')->get(
+  '/bibles/filesets/{fileset_id}/batch',
+  'Bible\BibleFileSetsController@showBatch'
+);
 
 // VERSION 4 | Text
 // This is new, added Dec 28, to provide just the verses for a bible or chapter. Note that this does not have filesets in path
