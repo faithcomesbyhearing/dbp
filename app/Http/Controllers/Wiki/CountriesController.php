@@ -32,16 +32,10 @@ class CountriesController extends APIController
      *          description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route"
      *     ),
      *     @OA\Parameter(
-     *          name="has_filesets",
-     *          in="query",
-     *          @OA\Schema(type="boolean"),
-     *          description="Filter the returned countries to those containing languages that have filesets",
-     *     ),
-     *     @OA\Parameter(
      *          name="include_languages",
      *          in="query",
-     *          @OA\Schema(type="string"),
-     *          description="When set to true, the return will include the major languages used in each country. You may optionally also include the language names by setting it to `with_names`",
+     *          @OA\Schema(type="boolean"),
+     *          description="When set to true, the return will include the major languages used in each country. ",
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -57,24 +51,18 @@ class CountriesController extends APIController
      */
     public function index()
     {
-        $filesets = checkParam('has_filesets') ?? true;
-        $languages = checkParam('include_languages');
+        $languages = checkBoolean('include_languages');
 
-        $cache_params = [$GLOBALS['i18n_iso'], $filesets, $languages];
+        $cache_params = [$GLOBALS['i18n_iso'], $languages];
 
-        $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($filesets, $languages) {
-            $countries = Country::with('currentTranslation')->when($filesets, function ($query) {
-                $query->whereHas('languages.bibles.filesets');
-            })->get();
-            if ($languages !== null) {
+        $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($languages) {
+            $countries = Country::with('currentTranslation')
+            ->whereHas('languages.bibles.filesets')
+            ->get();
+            if ($languages) {
                 $countries->load([
                     'languagesFiltered' => function ($query) use ($languages) {
                         $query->orderBy('country_language.population', 'desc');
-                        if ($languages === 'with_names') {
-                            $query->with(['translation' => function ($query) {
-                                $query->where('language_translation_id', $GLOBALS['i18n_id']);
-                            }]);
-                        }
                     },
                 ]);
             }
@@ -116,8 +104,8 @@ class CountriesController extends APIController
      * @OA\Get(
      *     path="/countries/{id}",
      *     tags={"Countries"},
-     *     summary="Returns a single Country",
-     *     description="Returns a single Country",
+     *     summary="Returns details for a single Country",
+     *     description="Returns details for a single Country",
      *     operationId="v4_countries.one",
      *     @OA\ExternalDocumentation(
      *         description="For more information on Country Codes,  please refer to the ISO Registration Authority",
