@@ -705,8 +705,6 @@ class BibleFileSetsController extends APIController
             }
         } else {
             // Multiple files per chapter
-            echo($fileset_chapters);
-            die();
             if (sizeof($fileset_chapters) > 1 && !$is_video) {
                 $fileset_chapters[0]->file_name = route(
                     'v4_media_stream',
