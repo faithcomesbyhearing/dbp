@@ -34,7 +34,7 @@ class AudioTransformer extends BaseTransformer
              *   @OA\Xml(name="v2_audio_timestamps"),
              *   @OA\Items(
              *              @OA\Property(property="verse_start", ref="#/components/schemas/BibleFile/properties/verse_start"),
-             *              @OA\Property(property="timestamp", type="number",example="1",description="The duration of the timestamp in seconds")
+             *              @OA\Property(property="timestamp", ref="#/components/schemas/BibleFileTimestamp/properties/timestamp")
              *     )
              *   )
              * )
@@ -86,7 +86,7 @@ class AudioTransformer extends BaseTransformer
              *              @OA\Property(property="book", ref="#/components/schemas/BibleFile/properties/book_id"),
              *              @OA\Property(property="chapter", ref="#/components/schemas/BibleFile/properties/chapter_start"),
              *              @OA\Property(property="verse_start", ref="#/components/schemas/BibleFile/properties/verse_start"),
-             *              @OA\Property(property="timestamp", type="string",example="13",description="The duration of the timestamp in seconds")
+             *              @OA\Property(property="timestamp", ref="#/components/schemas/BibleFileTimestamp/properties/timestamp")
              *    )
              *   )
              * )

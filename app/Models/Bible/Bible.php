@@ -158,7 +158,7 @@ class Bible extends Model
 
     /**
      *
-     * @OA\Property(
+     * API Note: removed 
      *   title="in_progress",
      *   type="string",
      *   description="If the Bible being described is currently in progress.",
@@ -184,7 +184,8 @@ class Bible extends Model
      * @OA\Property(
      *   title="created_at",
      *   type="string",
-     *   description="The timestamp at which the bible was originally created"
+     *   description="The timestamp at which the bible was originally created",
+     *   example="2018-02-12 13:32:23"
      * )
      *
      */
@@ -194,7 +195,8 @@ class Bible extends Model
      * @OA\Property(
      *   title="updated_at",
      *   type="string",
-     *   description="The timestamp at which the bible was last updated"
+     *   description="The timestamp at which the bible was last updated",
+     *   example="2018-02-12 13:32:23"
      * )
      *
      */

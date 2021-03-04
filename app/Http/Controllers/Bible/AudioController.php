@@ -70,7 +70,7 @@ class AudioController extends APIController
      *
      * @OA\Get(
      *     path="/timestamps/{fileset_id}/{book}/{chapter}",
-     *     tags={"Bible"},
+     *     tags={"Bibles"},
      *     summary="Returns Audio timestamps for a specific reference",
      *     description="This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
      *     operationId="v4_timestamps.verse",

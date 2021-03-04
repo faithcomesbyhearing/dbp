@@ -21,14 +21,23 @@ class APIController extends Controller
     // Top Level Swagger Docs
 
     /**
-     * @OA\Info(
+     * @OA\OpenApi(
+     *   security={{"dbp_key": {}}},
+     *   @OA\Info(
      *     description="Fast, easy, and free API access to video, audio, and text Bibles.",
      *     version="4.0.0-beta",
      *     title="Digital Bible Platform",
      *     termsOfService="http://digitalbibleplatform/terms/",
      *     @OA\Contact(email="support@digitalbibleplatform.com"),
      *     @OA\License(name="Apache 2.0",url="http://www.apache.org/licenses/LICENSE-2.0.html")
+     *   ),
+     *   @OA\ExternalDocumentation(
+     *     description="find more info here",
+     *     url="https://faithcomesbyhearing.com/biblebrain"
+     *   )
      * )
+     * 
+
      *
      * @OA\Server(
      *     url=API_URL_DOCS,
@@ -61,9 +70,7 @@ class APIController extends Controller
      * @OA\Parameter(name="l10n", in="query", description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route",
      *      @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
      *
-     * @OA\OpenApi(
-     *   security={{"dbp_key": {}}}
-     * )
+
      * 
      */
 
@@ -130,17 +137,19 @@ class APIController extends Controller
     /**
      * Version 4 Tags
      *
-     * @OA\Tag(name="Languages",       description="v4 Routes for obtaining Languages Data",
+     * @OA\Tag(name="Languages",       
+     *      description="v4 Routes for obtaining Languages Data",
      *      @OA\ExternalDocumentation(
      *         description="For more info please refer to the Ethnologue Registration Authority",
      *         url="https://www.iso.org/iso-639-language-codes.html"
      *      )
      * )
-     * @OA\Tag(name="Countries",       description="v4 Routes for obtaining Countries Data",
-     *     @OA\ExternalDocumentation(
+     * @OA\Tag(name="Countries",       
+     *      description="v4 Routes for obtaining Countries Data",
+     *      @OA\ExternalDocumentation(
      *         description="For more info please refer to the Iso Registration Authority",
      *         url="https://www.iso.org/iso-3166-country-codes.html"
-     *     )
+     *      )
      * )
      * @OA\Tag(name="Bibles",          description="v4 Routes for obtaining Bibles Data")
      * @OA\Tag(name="Users",           description="v4_internal Routes for obtaining Users Data")
