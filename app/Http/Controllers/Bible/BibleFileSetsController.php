@@ -222,6 +222,76 @@ class BibleFileSetsController extends APIController
         return $this->reply($fileset_chapters, [], $transaction_id ?? '');
     }
 
+    /**
+     *
+     * @OA\Get(
+     *     path="bibles/filesets/{fileset_id}/batch",
+     *     tags={"Bibles"},
+     *     summary="Returns all content for a given fileset",
+     *     description="For a given fileset return content (text, audio or video)",
+     *     operationId="v4_bible_filesets.showBatch",
+     *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
+     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showBatch"))
+     *     )
+     * )
+     *
+     * @param string|null $fileset_url_param
+     *
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
+     * @throws \Exception
+     */
+    public function showBatch(
+        $fileset_url_param = null,
+        $cache_key = 'bible_filesets_show_bulk'
+    ) {
+        $fileset_id    = checkParam('dam_id|fileset_id', true, $fileset_url_param);
+
+        $cache_params = [
+            $this->v,
+            $fileset_id,
+        ];
+
+        $fileset_chapters = cacheRemember(
+            $cache_key,
+            $cache_params,
+            now()->addHours(12),
+            function () use ($fileset_id) {
+                $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
+                $fileset_type = $fileset_from_id['set_type_code'];
+                // Default to text plain until text_format type has a different filesetId
+                $fileset_type = ($fileset_type === 'text_format')
+                    ? 'text_plain'
+                    : $fileset_type;
+                $fileset = BibleFileset::with('bible')
+                    ->uniqueFileset($fileset_id, $fileset_type)
+                    ->first();
+
+                if (!$fileset) {
+                    return $this->setStatusCode(404)->replyWithError(
+                        trans('api.bible_fileset_errors_404')
+                    );
+                }
+
+                $bulk_access_blocked = $this->blockedByBulkAccessControl($fileset);
+                if ($bulk_access_blocked) {
+                    return $bulk_access_blocked;
+                }
+
+                $asset_id = $fileset->asset_id;
+                $bible = optional($fileset->bible)->first();
+
+                return $fileset;
+            }
+        );
+
+        return $this->reply($fileset_chapters, [], $transaction_id ?? '');
+    }
+
     private function showTextFilesetChapter(
         $bible,
         $fileset,
@@ -635,6 +705,8 @@ class BibleFileSetsController extends APIController
             }
         } else {
             // Multiple files per chapter
+            echo($fileset_chapters);
+            die();
             if (sizeof($fileset_chapters) > 1 && !$is_video) {
                 $fileset_chapters[0]->file_name = route(
                     'v4_media_stream',
