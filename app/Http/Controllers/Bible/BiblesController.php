@@ -62,7 +62,7 @@ class BiblesController extends APIController
      *          in="query",
      *          @OA\Schema(ref="#/components/schemas/BibleFilesetType/properties/set_type_code"),
      *          description="Will filter bibles based upon the media type of their filesets",
-     *          example="audio_drama",
+     *          example="audio_drama"
      *     ),
      *     @OA\Parameter(
      *          name="media_exclude",
@@ -81,7 +81,8 @@ class BiblesController extends APIController
      *          name="size_exclude",
      *          in="query",
      *          @OA\Schema(ref="#/components/schemas/BibleFilesetSize/properties/set_size_code"),
-     *          description="Will exclude bibles based upon the size type of their filesets"
+     *          description="Will exclude bibles based upon the size type of their filesets",
+     *          example="OT"
      *     ),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
@@ -202,7 +203,7 @@ class BiblesController extends APIController
      *     path="/bibles/{id}",
      *     tags={"Bibles"},
      *     summary="",
-     *     description="",
+     *     description="Detailed information for a single Bible",
      *     operationId="v4_bible.one",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
      *     @OA\Response(

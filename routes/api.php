@@ -95,10 +95,10 @@ Route::name('v4_internal_filesets.show')->get(
 // not used by bible.is
 // is there anything in this that cannot be provided by bibles/books?
 // try to remove it
-Route::name('v4_filesets.books')->get(
-    'bibles/filesets/{fileset_id}/books',
-    'Bible\BooksController@show'
-);
+// Route::name('v4_filesets.books')->get(
+//     'bibles/filesets/{fileset_id}/books',
+//     'Bible\BooksController@show'
+// );
 
 // VERSION 4 | Text
 // BWF: this is the preferred endpoint for filesets. It needs to be broadened to process all filesets, not just text.

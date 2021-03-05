@@ -269,7 +269,7 @@ class BibleFileSetsController extends APIController
      *         description="The fileset types",
      *         @OA\MediaType(
      *            mediaType="application/json",
-     *            @OA\Schema(type="object",example={"audio_drama"="Dramatized Audio","audio"="Audio","text_plain"="Plain Text","text_format"="Formatted Text","video"="Video","app"="Application"})
+     *            @OA\Schema(type="object",example={"audio_drama"="Dramatized Audio","audio"="Audio","text_plain"="Plain Text","text_format"="Formatted Text","video_stream"="Video","audio_stream"="Audio HLS Stream", "audio_drama_stream"="Dramatized Audio HLS Stream"})
      *         )
      *     )
      * )
