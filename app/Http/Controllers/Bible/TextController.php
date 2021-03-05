@@ -43,7 +43,6 @@ class TextController extends APIController
      *
      * @OA\Get(
      *     path="/bibles/filesets/{id}/{book}/{chapter}",
-     *     tags={"Text"},
      *     summary="Get Bible Text",
      *     description="V4's base fileset route",
      *     operationId="v4_bible_filesets.chapter",
@@ -191,7 +190,7 @@ class TextController extends APIController
      *
      * @OA\Get(
      *     path="/search",
-     *     tags={"Text"},
+     *     tags={"Search"},
      *     summary="Search a bible for a word",
      *     description="",
      *     operationId="v4_text_search",
@@ -207,16 +206,10 @@ class TextController extends APIController
      *          description="The Bible fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
-     *     @OA\Parameter(
-     *          name="relevance_order",
-     *          in="query",
-     *          description="When set to true the returned result will be ordered by relevance",
-     *          @OA\Schema(type="boolean",default=false)
-     *     ),
      *     @OA\Parameter(name="limit",  in="query", description="The number of search results to return",
      *          @OA\Schema(type="integer",default=15)),
      *     @OA\Parameter(ref="#/components/parameters/page"),
-     *     @OA\Parameter(name="books",  in="query", description="The usfm book ids to search through seperated by a comma",
+     *     @OA\Parameter(name="books",  in="query", description="The usfm book ids to search through separated by a comma",
      *          @OA\Schema(type="string",example="GEN,EXO,MAT")),
      *     @OA\Response(
      *         response=200,
@@ -246,7 +239,6 @@ class TextController extends APIController
         $query      = checkParam('query', true);
         $fileset_id = checkParam('fileset_id|dam_id', true);
         $book_id    = checkParam('book|book_id|books');
-        $relevance_order   = checkParam('relevance_order');
         $limit      = checkParam('limit') ?? 15;
         $page       = checkParam('page');
 
@@ -279,10 +271,7 @@ class TextController extends APIController
                 'glyph_chapter.glyph as chapter_vernacular',
                 'glyph_start.glyph as verse_start_vernacular',
                 'glyph_end.glyph as verse_end_vernacular',
-            ])
-            ->unless($relevance_order, function ($query) {
-                $query->orderByRaw('books.book_testament DESC, IFNULL(books.testament_order, books.protestant_order), bible_verses.chapter, bible_verses.verse_start');
-            });
+            ]);
 
         if ($page) {
             $verses  = $verses->paginate($limit);

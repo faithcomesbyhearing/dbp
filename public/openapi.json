@@ -33,7 +33,7 @@
                 "tags": [
                     "Bibles"
                 ],
-                "summary": "Returns Bible Filesets which have Audio timestamps",
+                "summary": "Returns Bible Filesets which have audio timestamps",
                 "description": "This call returns a list of fileset that have timestamp metadata associated with them. This data could be used to search audio bibles for a specific term, make karaoke verse & audio readings, or to jump to a specific location in an audio file.",
                 "operationId": "v4_timestamps",
                 "parameters": [
@@ -42,9 +42,6 @@
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No timestamps are available at this time"
-                    },
                     "200": {
                         "description": "successful operation",
                         "content": {
@@ -63,8 +60,8 @@
                 "tags": [
                     "Bibles"
                 ],
-                "summary": "Returns Audio timestamps for a specific reference",
-                "description": "This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `\/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
+                "summary": "Returns audio timestamps for a chapter",
+                "description": "This route will return timestamps for a chapter. Note that the fileset id must be available via the path `\/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
                 "operationId": "v4_timestamps.verse",
                 "parameters": [
                     {
@@ -112,66 +109,6 @@
                 }
             }
         },
-        "\/timestamps\/search": {
-            "get": {
-                "tags": [
-                    "Bibles"
-                ],
-                "summary": "Returns audio timestamps for a specific word",
-                "description": "This route will search the text for a specific word or phrase and return a collection of timestamps associated with the verse references connected to the term",
-                "operationId": "v4_timestamps.tag",
-                "parameters": [
-                    {
-                        "name": "audio_fileset_id",
-                        "in": "query",
-                        "description": "The specific audio fileset to return references for",
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/id"
-                        }
-                    },
-                    {
-                        "name": "text_fileset_id",
-                        "in": "query",
-                        "description": "The specific text fileset to return references for",
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/id"
-                        }
-                    },
-                    {
-                        "name": "book_id",
-                        "in": "query",
-                        "description": "The specific book id to return references for.  For a complete list see the `book_id` field in the `\/bibles\/books` route.",
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/Book\/properties\/id"
-                        }
-                    },
-                    {
-                        "name": "query",
-                        "in": "query",
-                        "description": "The tag for which to return timestamps",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "$ref": "#\/components\/parameters\/version_number"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "successful operation",
-                        "content": {
-                            "application\/json": {
-                                "schema": {
-                                    "$ref": "#\/components\/schemas\/v4_timestamps_tag"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "\/bibles\/filesets\/media\/types": {
             "get": {
                 "tags": [
@@ -197,8 +134,9 @@
                                         "audio": "Audio",
                                         "text_plain": "Plain Text",
                                         "text_format": "Formatted Text",
-                                        "video": "Video",
-                                        "app": "Application"
+                                        "video_stream": "Video",
+                                        "audio_stream": "Audio HLS Stream",
+                                        "audio_drama_stream": "Dramatized Audio HLS Stream"
                                     }
                                 }
                             }
@@ -264,7 +202,8 @@
                         "description": "Will exclude bibles based upon the size type of their filesets",
                         "schema": {
                             "$ref": "#\/components\/schemas\/BibleFilesetSize\/properties\/set_size_code"
-                        }
+                        },
+                        "example": "OT"
                     },
                     {
                         "$ref": "#\/components\/parameters\/page"
@@ -465,82 +404,8 @@
                 }
             }
         },
-        "\/bibles\/books": {
-            "get": {
-                "tags": [
-                    "Bibles"
-                ],
-                "summary": "Returns the books of the Bible",
-                "description": "Returns all of the books of the Bible both canonical and deuterocanonical",
-                "operationId": "v4_bible_books_all",
-                "parameters": [
-                    {
-                        "$ref": "#\/components\/parameters\/version_number"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "successful operation",
-                        "content": {
-                            "application\/json": {
-                                "schema": {
-                                    "$ref": "#\/components\/schemas\/v4_bible_books_all"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "\/bibles\/filesets\/{fileset_id}\/books": {
-            "get": {
-                "tags": [
-                    "Bibles"
-                ],
-                "summary": "Returns the books of the Bible",
-                "description": "Returns the books and chapters for a specific fileset",
-                "operationId": "v4_bible_filesets.books",
-                "parameters": [
-                    {
-                        "name": "fileset_id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/id"
-                        }
-                    },
-                    {
-                        "name": "fileset_type",
-                        "in": "query",
-                        "description": "The type of fileset being queried",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/set_type_code"
-                        }
-                    },
-                    {
-                        "$ref": "#\/components\/parameters\/version_number"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "successful operation",
-                        "content": {
-                            "application\/json": {
-                                "schema": {
-                                    "$ref": "#\/components\/schemas\/v4_bible.books"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "\/bibles\/filesets\/{id}\/{book}\/{chapter}": {
             "get": {
-                "tags": [
-                    "Text"
-                ],
                 "summary": "Get Bible Text",
                 "description": "V4's base fileset route",
                 "operationId": "v4_bible_filesets.chapter",
@@ -609,7 +474,7 @@
         "\/search": {
             "get": {
                 "tags": [
-                    "Text"
+                    "Search"
                 ],
                 "summary": "Search a bible for a word",
                 "description": "",
@@ -634,15 +499,6 @@
                         }
                     },
                     {
-                        "name": "relevance_order",
-                        "in": "query",
-                        "description": "When set to true the returned result will be ordered by relevance",
-                        "schema": {
-                            "type": "boolean",
-                            "default": false
-                        }
-                    },
-                    {
                         "name": "limit",
                         "in": "query",
                         "description": "The number of search results to return",
@@ -657,7 +513,7 @@
                     {
                         "name": "books",
                         "in": "query",
-                        "description": "The usfm book ids to search through seperated by a comma",
+                        "description": "The usfm book ids to search through separated by a comma",
                         "schema": {
                             "type": "string",
                             "example": "GEN,EXO,MAT"
@@ -762,19 +618,11 @@
                         }
                     },
                     {
-                        "name": "has_filesets",
-                        "in": "query",
-                        "description": "Filter the returned countries to those containing languages that have filesets",
-                        "schema": {
-                            "type": "boolean"
-                        }
-                    },
-                    {
                         "name": "include_languages",
                         "in": "query",
-                        "description": "When set to true, the return will include the major languages used in each country. You may optionally also include the language names by setting it to `with_names`",
+                        "description": "When set to true, the return will include the major languages used in each country. ",
                         "schema": {
-                            "type": "string"
+                            "type": "boolean"
                         }
                     },
                     {
@@ -800,8 +648,8 @@
                 "tags": [
                     "Countries"
                 ],
-                "summary": "Returns a single Country",
-                "description": "Returns a single Country",
+                "summary": "Returns details for a single Country",
+                "description": "Returns details for a single Country",
                 "externalDocs": {
                     "description": "For more information on Country Codes,  please refer to the ISO Registration Authority",
                     "url": "https:\/\/www.iso.org\/iso-3166-country-codes.html"
@@ -1820,35 +1668,27 @@
                     "chapter_start": {
                         "title": "chapter_start",
                         "description": "The chapter_start",
-                        "type": "integer",
-                        "maximum": 150,
-                        "minimum": 0,
-                        "example": 4
+                        "type": "string",
+                        "example": "4"
                     },
                     "chapter_end": {
                         "title": "chapter_end",
                         "description": "If the Bible File spans multiple chapters this field indicates the last chapter of the selection",
-                        "type": "integer",
-                        "maximum": 150,
-                        "minimum": 0,
-                        "example": 5,
+                        "type": "string",
+                        "example": "5",
                         "nullable": true
                     },
                     "verse_start": {
                         "title": "verse_start",
                         "description": "The starting verse at which the BibleFile reference begins",
-                        "type": "integer",
-                        "maximum": 176,
-                        "minimum": 1,
-                        "example": 5
+                        "type": "string",
+                        "example": "5"
                     },
                     "verse_end": {
                         "title": "verse_end",
                         "description": "If the Bible File spans multiple verses this value will indicate the last verse in that reference. This value is inclusive, so for the reference John 1:1-4. The value would be 4 and the reference would contain verse 4.",
                         "type": "string",
-                        "maximum": 176,
-                        "minimum": 1,
-                        "example": 5,
+                        "example": "5",
                         "nullable": true
                     },
                     "verse_text": {
@@ -1868,7 +1708,7 @@
                         "title": "file_size",
                         "description": "The file size",
                         "type": "integer",
-                        "example": "5486618"
+                        "example": 5486618
                     },
                     "duration": {
                         "title": "duration",
@@ -3376,7 +3216,8 @@
                         "title": "id",
                         "description": "The Organization's incrementing id",
                         "type": "integer",
-                        "minimum": 0
+                        "minimum": 0,
+                        "example": 1
                     },
                     "slug": {
                         "title": "slug",
@@ -4513,48 +4354,6 @@
                     "name": "v4_audio_timestamps"
                 }
             },
-            "v4_timestamps_tag": {
-                "title": "v4_timestamps_tag",
-                "description": "The v4 timestamps tag",
-                "properties": {
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "properties": {
-                                "book_id": {
-                                    "$ref": "#\/components\/schemas\/Book\/properties\/id"
-                                },
-                                "book_name": {
-                                    "$ref": "#\/components\/schemas\/Book\/properties\/name"
-                                },
-                                "chapter_start": {
-                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
-                                },
-                                "chapter_end": {
-                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_end"
-                                },
-                                "verse_start": {
-                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
-                                },
-                                "verse_end": {
-                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_end"
-                                },
-                                "timestamp": {
-                                    "$ref": "#\/components\/schemas\/BibleFileTimestamp\/properties\/timestamp"
-                                },
-                                "path": {
-                                    "$ref": "#\/components\/schemas\/BibleFile\/properties\/file_name"
-                                }
-                            },
-                            "type": "object"
-                        }
-                    }
-                },
-                "type": "object",
-                "xml": {
-                    "name": "v4_timestamps_tag"
-                }
-            },
             "v4_bible.all": {
                 "title": "v4_bible.all",
                 "description": "The bibles being returned",
@@ -4672,51 +4471,6 @@
                 },
                 "xml": {
                     "name": "v4_bible.one"
-                }
-            },
-            "v4_bible_books_all": {
-                "title": "v4_bible_books_all",
-                "description": "The books of the bible with codes",
-                "properties": {
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "properties": {
-                                "book_id": {
-                                    "$ref": "#\/components\/schemas\/Book\/properties\/id"
-                                },
-                                "book_id_usfx": {
-                                    "$ref": "#\/components\/schemas\/Book\/properties\/id_usfx"
-                                },
-                                "book_id_osis": {
-                                    "$ref": "#\/components\/schemas\/Book\/properties\/id_osis"
-                                },
-                                "name": {
-                                    "$ref": "#\/components\/schemas\/Book\/properties\/name"
-                                },
-                                "testament": {
-                                    "$ref": "#\/components\/schemas\/Book\/properties\/book_testament"
-                                },
-                                "testament_order": {
-                                    "$ref": "#\/components\/schemas\/Book\/properties\/testament_order"
-                                },
-                                "book_order": {
-                                    "$ref": "#\/components\/schemas\/Book\/properties\/protestant_order"
-                                },
-                                "book_group": {
-                                    "$ref": "#\/components\/schemas\/Book\/properties\/book_group"
-                                },
-                                "chapters": {
-                                    "type": "integer"
-                                }
-                            },
-                            "type": "object"
-                        }
-                    }
-                },
-                "type": "object",
-                "xml": {
-                    "name": "v4_bible_books_all"
                 }
             },
             "v4_bible.books": {

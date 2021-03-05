@@ -131,10 +131,10 @@ class AudioTransformer extends BaseTransformer
                 return [
                     'book_id'       => $audio->book_id,
                     'book_name'     => $audio->book->currentTranslation->name ?? $audio->book->name,
-                    'chapter_start' => $audio->chapter_start,
-                    'chapter_end'   => $audio->chapter_end,
-                    'verse_start'   => $audio->verse_start,
-                    'verse_end'     => $audio->verse_end,
+                    'chapter_start' => (string)$audio->chapter_start,
+                    'chapter_end'   => (string)$audio->chapter_end,
+                    'verse_start'   => (string)$audio->verse_start,
+                    'verse_end'     => (string)$audio->verse_end,
                     'timestamp'     => $audio->timestamps,
                     'path'          => $audio->file_name
                 ];
