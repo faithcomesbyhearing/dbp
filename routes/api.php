@@ -98,9 +98,9 @@ Route::name('v4_filesets.chapter')->get(
   'bibles/filesets/{fileset_id}/{book}/{chapter}',
   'Bible\BibleFileSetsController@showChapter'
 );
-Route::name('v4_filesets.batch')->get(
-  '/bibles/filesets/{fileset_id}/batch',
-  'Bible\BibleFileSetsController@showBatch'
+Route::name('v4_filesets.bulk')->get(
+  '/bibles/filesets/{fileset_id}/bulk',
+  'Bible\BibleFileSetsController@showBulk'
 );
 
 // VERSION 4 | Text
