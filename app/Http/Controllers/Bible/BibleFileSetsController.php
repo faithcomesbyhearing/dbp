@@ -250,7 +250,6 @@ class BibleFileSetsController extends APIController
         $cache_key = 'bible_filesets_show_bulk'
     ) {
         $fileset_id    = checkParam('dam_id|fileset_id', true, $fileset_url_param);
-
         $cache_params = [
             $this->v,
             $fileset_id,
@@ -282,6 +281,14 @@ class BibleFileSetsController extends APIController
                     return $bulk_access_blocked;
                 }
 
+                $bible = optional($fileset->bible)->first();
+                if (strpos($fileset_type, 'text') !== false) {
+                    return $this->showTextFilesetChapter(
+                        $bible,
+                        $fileset
+                    );
+                }
+
                 return $fileset;
             }
         );
@@ -292,15 +299,19 @@ class BibleFileSetsController extends APIController
     private function showTextFilesetChapter(
         $bible,
         $fileset,
-        $book,
-        $chapter_id,
-        $verse_start,
-        $verse_end
+        $book = null,
+        $chapter_id = null,
+        $verse_start = null,
+        $verse_end = null
     ) {
         $text_query = BibleVerse::withVernacularMetaData($bible)
         ->where('hash_id', $fileset->hash_id)
-        ->where('bible_verses.book_id', $book->id)
-        ->where('chapter', $chapter_id)
+        ->when($book, function ($query) use ($book) {
+            return $query->where('bible_verses.book_id', $book->id);
+        })
+        ->when($chapter_id, function ($query) use ($chapter_id) {
+            return $query->where('chapter', $chapter_id);
+        })
         ->when($verse_start, function ($query) use ($verse_start) {
             return $query->where('verse_end', '>=', $verse_start);
         })
@@ -320,7 +331,7 @@ class BibleFileSetsController extends APIController
             'glyph_chapter.glyph as chapter_vernacular',
             'glyph_start.glyph as verse_start_vernacular',
             'glyph_end.glyph as verse_end_vernacular',
-        ]);
+        ])->orderBy('books.name', 'ASC');
 
         $fileset_chapters = $text_query->get();
 
