@@ -225,18 +225,18 @@ class BibleFileSetsController extends APIController
     /**
      *
      * @OA\Get(
-     *     path="bibles/filesets/{fileset_id}/batch",
+     *     path="bibles/filesets/{fileset_id}/bulk",
      *     tags={"Bibles"},
      *     summary="Returns all content for a given fileset",
      *     description="For a given fileset return content (text, audio or video)",
-     *     operationId="v4_bible_filesets.showBatch",
+     *     operationId="v4_bible_filesets.showBulk",
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showBatch"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showBulk"))
      *     )
      * )
      *
@@ -245,7 +245,7 @@ class BibleFileSetsController extends APIController
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
      * @throws \Exception
      */
-    public function showBatch(
+    public function showBulk(
         $fileset_url_param = null,
         $cache_key = 'bible_filesets_show_bulk'
     ) {
@@ -281,9 +281,6 @@ class BibleFileSetsController extends APIController
                 if ($bulk_access_blocked) {
                     return $bulk_access_blocked;
                 }
-
-                $asset_id = $fileset->asset_id;
-                $bible = optional($fileset->bible)->first();
 
                 return $fileset;
             }
@@ -719,7 +716,7 @@ class BibleFileSetsController extends APIController
                 $collection = collect($fileset_chapters);
                 $fileset_chapters[0]->duration = $collection->sum('duration');
                 $fileset_chapters[0]->verse_end = $collection->last()->verse_end;
-                $fileset_chapters[0]->multiple_mp3 = true;
+                $fileset_chapters[0]->multiple_mp3 = $this->hasMultipleMp3Chapters($fileset_chapters);
                 $fileset_chapters = [$fileset_chapters[0]];
             } else {
                 foreach ($fileset_chapters as $key => $fileset_chapter) {
@@ -748,5 +745,15 @@ class BibleFileSetsController extends APIController
         }
 
         return $fileset_chapters;
+    }
+
+    private function hasMultipleMp3Chapters($fileset_chapters)
+    {
+        foreach ($fileset_chapters as $chapter) {
+            if ($chapter['chapter_start'] !== $fileset_chapters[0]['chapter_start']) {
+                return false;
+            }
+        }
+        return true;
     }
 }
