@@ -58,6 +58,12 @@ return [
   'apiKeyAccessGroups' => env('API_KEY_ACCESS_GROUPS', '121,123,125'),
 
   /*
+   * Keys allowed to fileset bulk access
+   */
+
+  'keysWithFilesetBulkAccess' => env('KEYS_FILESET_BULK_ACCESS'),
+
+  /*
    * User restore encryption key
    */
   'restoreKey' => env(
