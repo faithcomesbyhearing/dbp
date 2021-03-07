@@ -96,10 +96,10 @@ class BibleFileSetsController extends APIController
                 return $this->showAudioVideoFilesets(
                     $bible,
                     $fileset,
-                    $book,
-                    $chapter_id,
                     $asset_id,
-                    $type
+                    $type,
+                    $book,
+                    $chapter_id
                 );
             }
         );
@@ -210,10 +210,10 @@ class BibleFileSetsController extends APIController
                     return $this->showAudioVideoFilesets(
                         $bible,
                         $fileset,
-                        $book,
-                        $chapter_id,
                         $asset_id,
-                        $fileset_type
+                        $fileset_type,
+                        $book,
+                        $chapter_id
                     );
                 }
             }
@@ -281,15 +281,22 @@ class BibleFileSetsController extends APIController
                     return $bulk_access_blocked;
                 }
 
+                $asset_id = $fileset->asset_id;
                 $bible = optional($fileset->bible)->first();
+
                 if (strpos($fileset_type, 'text') !== false) {
                     return $this->showTextFilesetChapter(
                         $bible,
                         $fileset
                     );
+                } else {
+                    return $this->showAudioVideoFilesets(
+                      $bible,
+                      $fileset,
+                      $asset_id,
+                      $fileset_type
+                  );
                 }
-
-                return $fileset;
             }
         );
 
@@ -351,10 +358,10 @@ class BibleFileSetsController extends APIController
     private function showAudioVideoFilesets(
         $bible,
         $fileset,
-        $book,
-        $chapter_id,
         $asset_id,
-        $type
+        $type,
+        $book =  null,
+        $chapter_id = null
     ) {
         $query = BibleFile::where('hash_id', $fileset->hash_id)
         ->leftJoin(
@@ -415,12 +422,7 @@ class BibleFileSetsController extends APIController
         }
 
         return fractal(
-            $this->generateFilesetChapters(
-                $fileset,
-                $fileset_chapters,
-                $bible,
-                $asset_id
-            ),
+            $fileset_chapters,
             new FileSetTransformer(),
             $this->serializer
         );
@@ -713,7 +715,8 @@ class BibleFileSetsController extends APIController
             }
         } else {
             // Multiple files per chapter
-            if (sizeof($fileset_chapters) > 1 && !$is_video) {
+            $hasMultiMp3Chapter = $this->hasMultipleMp3Chapters($fileset_chapters);
+            if (sizeof($fileset_chapters) > 1  && !$is_video && $hasMultiMp3Chapter) {
                 $fileset_chapters[0]->file_name = route(
                     'v4_media_stream',
                     [
@@ -727,7 +730,7 @@ class BibleFileSetsController extends APIController
                 $collection = collect($fileset_chapters);
                 $fileset_chapters[0]->duration = $collection->sum('duration');
                 $fileset_chapters[0]->verse_end = $collection->last()->verse_end;
-                $fileset_chapters[0]->multiple_mp3 = $this->hasMultipleMp3Chapters($fileset_chapters);
+                $fileset_chapters[0]->multiple_mp3 = true;
                 $fileset_chapters = [$fileset_chapters[0]];
             } else {
                 foreach ($fileset_chapters as $key => $fileset_chapter) {
