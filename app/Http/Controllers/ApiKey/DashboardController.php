@@ -43,10 +43,10 @@ class DashboardController extends APIController
         ->when($state, function ($query, $state) {
             $query->where('state', $state);
         })
-        ->when($search, function ($query, $search){
+        ->when($search, function ($query, $search) {
             $query
-            ->where(function($query) use ($search){
-              $query
+            ->where(function ($query) use ($search) {
+                $query
               ->where('name', 'LIKE', "%{$search}%")
               ->orWhere('email', 'LIKE', "%{$search}%")
               ->orWhere('temporary_key', 'LIKE', "%{$search}%");
@@ -57,7 +57,7 @@ class DashboardController extends APIController
 
         return view(
         'api_key.dashboard',
-        compact('user','key_requests', 'search', 'options', 'state', 'state_names')
+        compact('user', 'key_requests', 'search', 'options', 'state', 'state_names')
       );
     }
 
