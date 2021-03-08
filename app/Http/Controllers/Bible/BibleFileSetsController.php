@@ -249,11 +249,8 @@ class BibleFileSetsController extends APIController
         $fileset_url_param = null,
         $cache_key = 'bible_filesets_show_bulk'
     ) {
-        $fileset_id    = checkParam('dam_id|fileset_id', true, $fileset_url_param);
-        $cache_params = [
-            $this->v,
-            $fileset_id,
-        ];
+        $fileset_id = checkParam('dam_id|fileset_id', true, $fileset_url_param);
+        $cache_params = [$this->v, $fileset_id];
 
         $fileset_chapters = cacheRemember(
             $cache_key,
@@ -291,10 +288,10 @@ class BibleFileSetsController extends APIController
                     );
                 } else {
                     return $this->showAudioVideoFilesets(
-                      $bible,
-                      $fileset,
-                      $asset_id,
-                      $fileset_type
+                        $bible,
+                        $fileset,
+                        $asset_id,
+                        $fileset_type
                   );
                 }
             }
@@ -422,7 +419,12 @@ class BibleFileSetsController extends APIController
         }
 
         return fractal(
-            $fileset_chapters,
+            $this->generateFilesetChapters(
+                $fileset,
+                $fileset_chapters,
+                $bible,
+                $asset_id
+            ),
             new FileSetTransformer(),
             $this->serializer
         );
