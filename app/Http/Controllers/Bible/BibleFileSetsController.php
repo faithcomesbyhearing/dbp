@@ -133,7 +133,7 @@ class BibleFileSetsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.show"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showChapter"))
      *     )
      * )
      *
@@ -718,7 +718,7 @@ class BibleFileSetsController extends APIController
         } else {
             // Multiple files per chapter
             $hasMultiMp3Chapter = $this->hasMultipleMp3Chapters($fileset_chapters);
-            if (sizeof($fileset_chapters) > 1  && !$is_video && $hasMultiMp3Chapter) {
+            if (sizeof($fileset_chapters) > 1 && !$is_video && $hasMultiMp3Chapter) {
                 $fileset_chapters[0]->file_name = route(
                     'v4_media_stream',
                     [
