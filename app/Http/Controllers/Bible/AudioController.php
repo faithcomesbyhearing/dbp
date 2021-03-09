@@ -23,7 +23,7 @@ class AudioController extends APIController
      *
      * @OA\Get(
      *     path="/timestamps",
-     *     tags={"Bibles"},
+     *     tags={"Audio Timing"},
      *     summary="Returns Bible Filesets which have audio timestamps",
      *     description="This call returns a list of fileset that have timestamp metadata associated with them. This data could be used to search audio bibles for a specific term, make karaoke verse & audio readings, or to jump to a specific location in an audio file.",
      *     operationId="v4_timestamps",
@@ -68,7 +68,7 @@ class AudioController extends APIController
      *
      * @OA\Get(
      *     path="/timestamps/{fileset_id}/{book}/{chapter}",
-     *     tags={"Bibles"},
+     *     tags={"Bibles","Audio Timing"},
      *     summary="Returns audio timestamps for a chapter",
      *     description="This route will return timestamps for a chapter. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
      *     operationId="v4_timestamps.verse",

@@ -198,7 +198,8 @@ class TextController extends APIController
      *          name="query",
      *          in="query",
      *          description="The word or phrase being searched", required=true,
-     *          @OA\Schema(type="string")
+     *          @OA\Schema(type="string"),
+     *          example="Jesus"
      *     ),
      *     @OA\Parameter(
      *          name="fileset_id",

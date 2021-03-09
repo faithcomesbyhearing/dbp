@@ -112,7 +112,7 @@ class BibleFileSetsController extends APIController
     /**
      *
      * @OA\Get(
-     *     path="bibles/filesets/{fileset_id}/{book}/{chapter}",
+     *     path="/bibles/filesets/{fileset_id}/{book}/{chapter}",
      *     tags={"Bibles"},
      *     summary="Returns content for a given fileset",
      *     description="For a given fileset, book and chapter, return content (text, audio or video)",
@@ -227,18 +227,18 @@ class BibleFileSetsController extends APIController
     /**
      *
      * @OA\Get(
-     *     path="bibles/filesets/{fileset_id}/bulk",
+     *     path="/bibles/filesets/{fileset_id}/bulk",
      *     tags={"Bibles"},
      *     summary="Returns all content for a given fileset",
      *     description="For a given fileset return content (text, audio or video)",
-     *     operationId="v4_bible_filesets.showBulk",
+     *     operationId="v4_internal_bible_filesets.showBulk",
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showBulk"))
+     *         
      *     )
      * )
      *
@@ -468,7 +468,7 @@ class BibleFileSetsController extends APIController
 
      *     @OA\Response(
      *         response=200,
-     *         description="The requested fileset copyright",
+     *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.copyright"))
      *     )
      * )
@@ -518,7 +518,7 @@ class BibleFileSetsController extends APIController
      *     operationId="v4_bible_filesets.types",
      *     @OA\Response(
      *         response=200,
-     *         description="The fileset types",
+     *         description="successful operation",
      *         @OA\MediaType(
      *            mediaType="application/json",
      *            @OA\Schema(type="object",example={"audio_drama"="Dramatized Audio","audio"="Audio","text_plain"="Plain Text","text_format"="Formatted Text","video_stream"="Video","audio_stream"="Audio HLS Stream", "audio_drama_stream"="Dramatized Audio HLS Stream"})
