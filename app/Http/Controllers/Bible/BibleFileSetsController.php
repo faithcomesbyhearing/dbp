@@ -118,10 +118,10 @@ class BibleFileSetsController extends APIController
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
-     *     @OA\Parameter(name="book_id", in="path", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true,
+     *     @OA\Parameter(name="book", in="path", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true,
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
-     *     @OA\Parameter(name="chapter_id", in="path", description="Will filter the results by the given chapter", required=true,
+     *     @OA\Parameter(name="chapter", in="path", description="Will filter the results by the given chapter", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")
      *     ),
      *     @OA\Parameter(name="verse_start", in="query", description="Will filter the results by the given starting verse",
@@ -135,6 +135,14 @@ class BibleFileSetsController extends APIController
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showChapter"))
      *     )
+     * )
+     * 
+     * @OA\Schema (
+     *     type="object",
+     *     schema="v4_bible_filesets.showChapter",
+     *     description="v4_bible_filesets.showChapter",
+     *     title="v4_bible_filesets.showChapter",
+     *     @OA\Xml(name="v4_bible_filesets.showChapter"),
      * )
      *
      * @param string|null $fileset_url_param
@@ -238,6 +246,17 @@ class BibleFileSetsController extends APIController
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showBulk"))
      *     )
+     * )
+     * 
+     * @OA\Schema (
+     *     type="object",
+     *     schema="v4_bible_filesets.showBulk",
+     *     description="v4_bible_filesets.showBulk",
+     *     title="v4_bible_filesets.showBulk",
+     *     @OA\Xml(name="v4_bible_filesets.showBulk"),
+     *     @OA\Property(property="id", ref="#/components/schemas/BibleFileset/properties/id"),
+     *     @OA\Property(property="type", ref="#/components/schemas/BibleFileset/properties/set_type_code"),
+     *     @OA\Property(property="size", ref="#/components/schemas/BibleFileset/properties/set_size_code"),
      * )
      *
      * @param string|null $fileset_url_param
@@ -479,13 +498,6 @@ class BibleFileSetsController extends APIController
      *          description="The fileset ID to retrieve the copyright information for"
      *     ),
      *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          required=true,
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id"),
-     *          description="The asset id which contains the Fileset"
-     *     ),
-     *     @OA\Parameter(
      *          name="type",
      *          in="query",
      *          required=true,
@@ -512,7 +524,6 @@ class BibleFileSetsController extends APIController
      *     title="v4_bible_filesets.copyright",
      *     @OA\Xml(name="v4_bible_filesets.copyright"),
      *     @OA\Property(property="id", ref="#/components/schemas/BibleFileset/properties/id"),
-     *     @OA\Property(property="asset_id", ref="#/components/schemas/BibleFileset/properties/asset_id"),
      *     @OA\Property(property="type", ref="#/components/schemas/BibleFileset/properties/set_type_code"),
      *     @OA\Property(property="size", ref="#/components/schemas/BibleFileset/properties/set_size_code"),
      *     @OA\Property(property="copyright", ref="#/components/schemas/BibleFilesetCopyright")
