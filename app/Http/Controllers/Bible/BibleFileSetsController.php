@@ -98,10 +98,10 @@ class BibleFileSetsController extends APIController
                 return $this->showAudioVideoFilesets(
                     $bible,
                     $fileset,
-                    $book,
-                    $chapter_id,
                     $asset_id,
-                    $type
+                    $type,
+                    $book,
+                    $chapter_id
                 );
             }
         );
@@ -120,10 +120,10 @@ class BibleFileSetsController extends APIController
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
-     *     @OA\Parameter(name="book_id", in="path", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true,
+     *     @OA\Parameter(name="book", in="path", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true,
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
-     *     @OA\Parameter(name="chapter_id", in="path", description="Will filter the results by the given chapter", required=true,
+     *     @OA\Parameter(name="chapter", in="path", description="Will filter the results by the given chapter", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")
      *     ),
      *     @OA\Parameter(name="verse_start", in="query", description="Will filter the results by the given starting verse",
@@ -135,8 +135,16 @@ class BibleFileSetsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.show"))
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showChapter"))
      *     )
+     * )
+     * 
+     * @OA\Schema (
+     *     type="object",
+     *     schema="v4_bible_filesets.showChapter",
+     *     description="v4_bible_filesets.showChapter",
+     *     title="v4_bible_filesets.showChapter",
+     *     @OA\Xml(name="v4_bible_filesets.showChapter"),
      * )
      *
      * @param string|null $fileset_url_param
@@ -212,10 +220,10 @@ class BibleFileSetsController extends APIController
                     return $this->showAudioVideoFilesets(
                         $bible,
                         $fileset,
-                        $book,
-                        $chapter_id,
                         $asset_id,
-                        $fileset_type
+                        $fileset_type,
+                        $book,
+                        $chapter_id
                     );
                 }
             }
@@ -241,6 +249,17 @@ class BibleFileSetsController extends APIController
      *         
      *     )
      * )
+     * 
+     * @OA\Schema (
+     *     type="object",
+     *     schema="v4_bible_filesets.showBulk",
+     *     description="v4_bible_filesets.showBulk",
+     *     title="v4_bible_filesets.showBulk",
+     *     @OA\Xml(name="v4_bible_filesets.showBulk"),
+     *     @OA\Property(property="id", ref="#/components/schemas/BibleFileset/properties/id"),
+     *     @OA\Property(property="type", ref="#/components/schemas/BibleFileset/properties/set_type_code"),
+     *     @OA\Property(property="size", ref="#/components/schemas/BibleFileset/properties/set_size_code"),
+     * )
      *
      * @param string|null $fileset_url_param
      *
@@ -251,12 +270,8 @@ class BibleFileSetsController extends APIController
         $fileset_url_param = null,
         $cache_key = 'bible_filesets_show_bulk'
     ) {
-        $fileset_id    = checkParam('dam_id|fileset_id', true, $fileset_url_param);
-
-        $cache_params = [
-            $this->v,
-            $fileset_id,
-        ];
+        $fileset_id = checkParam('dam_id|fileset_id', true, $fileset_url_param);
+        $cache_params = [$this->v, $fileset_id];
 
         $fileset_chapters = cacheRemember(
             $cache_key,
@@ -284,7 +299,22 @@ class BibleFileSetsController extends APIController
                     return $bulk_access_blocked;
                 }
 
-                return $fileset;
+                $asset_id = $fileset->asset_id;
+                $bible = optional($fileset->bible)->first();
+
+                if (strpos($fileset_type, 'text') !== false) {
+                    return $this->showTextFilesetChapter(
+                        $bible,
+                        $fileset
+                    );
+                } else {
+                    return $this->showAudioVideoFilesets(
+                        $bible,
+                        $fileset,
+                        $asset_id,
+                        $fileset_type
+                  );
+                }
             }
         );
 
@@ -294,15 +324,19 @@ class BibleFileSetsController extends APIController
     private function showTextFilesetChapter(
         $bible,
         $fileset,
-        $book,
-        $chapter_id,
-        $verse_start,
-        $verse_end
+        $book = null,
+        $chapter_id = null,
+        $verse_start = null,
+        $verse_end = null
     ) {
         $text_query = BibleVerse::withVernacularMetaData($bible)
         ->where('hash_id', $fileset->hash_id)
-        ->where('bible_verses.book_id', $book->id)
-        ->where('chapter', $chapter_id)
+        ->when($book, function ($query) use ($book) {
+            return $query->where('bible_verses.book_id', $book->id);
+        })
+        ->when($chapter_id, function ($query) use ($chapter_id) {
+            return $query->where('chapter', $chapter_id);
+        })
         ->when($verse_start, function ($query) use ($verse_start) {
             return $query->where('verse_end', '>=', $verse_start);
         })
@@ -322,7 +356,7 @@ class BibleFileSetsController extends APIController
             'glyph_chapter.glyph as chapter_vernacular',
             'glyph_start.glyph as verse_start_vernacular',
             'glyph_end.glyph as verse_end_vernacular',
-        ]);
+        ])->orderBy('books.name', 'ASC');
 
         $fileset_chapters = $text_query->get();
 
@@ -342,10 +376,10 @@ class BibleFileSetsController extends APIController
     private function showAudioVideoFilesets(
         $bible,
         $fileset,
-        $book,
-        $chapter_id,
         $asset_id,
-        $type
+        $type,
+        $book =  null,
+        $chapter_id = null
     ) {
         $query = BibleFile::where('hash_id', $fileset->hash_id)
         ->leftJoin(
@@ -465,7 +499,6 @@ class BibleFileSetsController extends APIController
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id"),
      *          description="The fileset ID to retrieve the copyright information for"
      *     ),
-
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -680,7 +713,8 @@ class BibleFileSetsController extends APIController
             }
         } else {
             // Multiple files per chapter
-            if (sizeof($fileset_chapters) > 1 && !$is_video) {
+            $hasMultiMp3Chapter = $this->hasMultipleMp3Chapters($fileset_chapters);
+            if (sizeof($fileset_chapters) > 1 && !$is_video && $hasMultiMp3Chapter) {
                 $fileset_chapters[0]->file_name = route(
                     'v4_media_stream',
                     [
@@ -694,7 +728,7 @@ class BibleFileSetsController extends APIController
                 $collection = collect($fileset_chapters);
                 $fileset_chapters[0]->duration = $collection->sum('duration');
                 $fileset_chapters[0]->verse_end = $collection->last()->verse_end;
-                $fileset_chapters[0]->multiple_mp3 = $this->hasMultipleMp3Chapters($fileset_chapters);
+                $fileset_chapters[0]->multiple_mp3 = true;
                 $fileset_chapters = [$fileset_chapters[0]];
             } else {
                 foreach ($fileset_chapters as $key => $fileset_chapter) {

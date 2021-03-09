@@ -17,7 +17,6 @@ class AudioController extends APIController
 {
     use CallsBucketsTrait;
 
-
     /**
      * Available Timestamps
      *
