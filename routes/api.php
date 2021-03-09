@@ -156,7 +156,19 @@ Route::name('v4_video_jesus_film_file')->get(
 );// used by bible.is
 
 
-
+// VERSION 4 | Timestamps (attic...deprecated, no longer used in bible.is, )
+Route::name('v4_timestamps')->get(
+    'timestamps',
+    'Bible\AudioController@availableTimestamps'
+);
+Route::name('v4_timestamps.tag')->get(
+    'timestamps/search',
+    'Bible\AudioController@timestampsByTag'
+);
+Route::name('v4_timestamps.verse')->get(
+    'timestamps/{id}/{book}/{chapter}',
+    'Bible\AudioController@timestampsByReference'
+);
 
 
 Route::name('v4_internal_api.refreshDevCache')->get(
@@ -423,19 +435,7 @@ Route::name('v4_internal_push_tokens.destroy')
     ->middleware('APIToken:check')
     ->delete('push_notifications/{token}', 'User\PushTokensController@destroy');
 
-// VERSION 4 | Timestamps (attic...deprecated, no longer used in bible.is, )
-Route::name('v4_internal_timestamps')->get(
-    'timestamps',
-    'Bible\AudioController@availableTimestamps'
-);
-Route::name('v4_internal_timestamps.tag')->get(
-    'timestamps/search',
-    'Bible\AudioController@timestampsByTag'
-);
-Route::name('v4_internal_timestamps.verse')->get(
-    'timestamps/{id}/{book}/{chapter}',
-    'Bible\AudioController@timestampsByReference'
-);
+
 
 Route::name('v4_bible.links')->get(
     'bibles/links',

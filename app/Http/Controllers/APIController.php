@@ -152,6 +152,7 @@ class APIController extends Controller
      *      )
      * )
      * @OA\Tag(name="Bibles",          description="v4 Routes for obtaining Bibles Data")
+     * @OA\Tag(name="Audio Timing", description="v4 Routes for obtaining Audio timing information. This data could be used to search audio bibles for a specific term, make karaoke verse & audio readings, or to jump to a specific location in an audio file.")
      * @OA\Tag(name="Users",           description="v4_internal Routes for obtaining Users Data")
      * @OA\Tag(name="Playlists",       description="v4_internal Routes for obtaining Playlists Data")
      * @OA\Tag(name="Plans",           description="v4_internal Routes for obtaining Plans Data")
