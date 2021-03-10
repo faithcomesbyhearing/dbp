@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bible;
 
+use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use Illuminate\Support\Str;
 use App\Traits\AccessControlAPI;
 use App\Traits\CallsBucketsTrait;
@@ -94,6 +95,7 @@ class BibleFileSetsController extends APIController
                 $bible = optional($fileset->bible)->first();
                 
                 return $this->showAudioVideoFilesets(
+                    null,
                     $bible,
                     $fileset,
                     $asset_id,
@@ -136,7 +138,7 @@ class BibleFileSetsController extends APIController
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showChapter"))
      *     )
      * )
-     * 
+     *
      * @OA\Schema (
      *     type="object",
      *     schema="v4_bible_filesets.showChapter",
@@ -207,6 +209,7 @@ class BibleFileSetsController extends APIController
                 
                 if (strpos($fileset_type, 'text') !== false) {
                     return $this->showTextFilesetChapter(
+                        null,
                         $bible,
                         $fileset,
                         $book,
@@ -216,6 +219,7 @@ class BibleFileSetsController extends APIController
                     );
                 } else {
                     return $this->showAudioVideoFilesets(
+                        null,
                         $bible,
                         $fileset,
                         $asset_id,
@@ -244,13 +248,15 @@ class BibleFileSetsController extends APIController
      *     @OA\Parameter(name="book", in="query", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.",
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
+     *     @OA\Parameter(name="limit", in="query", description="limit for the pagination of the query"
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showBulk"))
      *     ),
      * )
-     * 
+     *
      * @OA\Schema (
      *     type="object",
      *     schema="v4_bible_filesets.showBulk",
@@ -276,12 +282,13 @@ class BibleFileSetsController extends APIController
         $fileset_id  = checkParam('dam_id|fileset_id', true, $fileset_url_param);
         $book_id     = checkParam('book_id', false, $book_url_param);
         $cache_params = [$this->v, $fileset_id, $book_id];
-      
+        $limit        = (int) (checkParam('limit') ?? 5000);
+
         $fileset_chapters = cacheRemember(
             $cache_key,
             $cache_params,
             now()->addHours(12),
-            function () use ($fileset_id, $book_id) {
+            function () use ($fileset_id, $book_id, $limit) {
                 $book = Book::where('id', $book_id)
                     ->orWhere('id_osis', $book_id)
                     ->orWhere('id_usfx', $book_id)
@@ -312,12 +319,14 @@ class BibleFileSetsController extends APIController
 
                 if (strpos($fileset_type, 'text') !== false) {
                     return $this->showTextFilesetChapter(
+                        $limit,
                         $bible,
                         $fileset,
                         $book
                     );
                 } else {
                     return $this->showAudioVideoFilesets(
+                        $limit,
                         $bible,
                         $fileset,
                         $asset_id,
@@ -332,6 +341,7 @@ class BibleFileSetsController extends APIController
     }
 
     private function showTextFilesetChapter(
+        $limit,
         $bible,
         $fileset,
         $book = null,
@@ -368,7 +378,12 @@ class BibleFileSetsController extends APIController
             'glyph_end.glyph as verse_end_vernacular',
         ])->orderBy('books.name', 'ASC');
 
-        $fileset_chapters = $text_query->get();
+        if ($limit !== null) {
+            $fileset_chapters = $text_query->paginate($limit);
+            $filesets_pagination = new IlluminatePaginatorAdapter($fileset_chapters);
+        } else {
+            $fileset_chapters = $text_query->get();
+        }
 
         if ($fileset_chapters->count() === 0) {
             return $this->setStatusCode(404)->replyWithError(
@@ -376,14 +391,21 @@ class BibleFileSetsController extends APIController
             );
         }
 
-        return fractal(
+        $fileset_return = fractal(
             $fileset_chapters,
             new TextTransformer(),
             $this->serializer
         );
+
+        return (
+            $limit !== null ?
+            $fileset_return->paginateWith($filesets_pagination) :
+            $fileset_return
+        );
     }
 
     private function showAudioVideoFilesets(
+        $limit,
         $bible,
         $fileset,
         $asset_id,
@@ -441,7 +463,12 @@ class BibleFileSetsController extends APIController
                 ->orderBy('verse_start', 'ASC');
         }
 
-        $fileset_chapters = $query->get();
+        if ($limit !== null) {
+            $fileset_chapters = $query->paginate($limit);
+            $filesets_pagination = new IlluminatePaginatorAdapter($fileset_chapters);
+        } else {
+            $fileset_chapters = $query->get();
+        }
 
         if ($fileset_chapters->count() === 0) {
             return $this->setStatusCode(404)->replyWithError(
@@ -449,7 +476,7 @@ class BibleFileSetsController extends APIController
             );
         }
 
-        return fractal(
+        $fileset_return = fractal(
             $this->generateFilesetChapters(
                 $fileset,
                 $fileset_chapters,
@@ -459,6 +486,12 @@ class BibleFileSetsController extends APIController
             new FileSetTransformer(),
             $this->serializer
         );
+
+        return (
+          $limit !== null ?
+          $fileset_return->paginateWith($filesets_pagination) :
+          $fileset_return
+      );
     }
 
     private function signedPath($bible, $fileset, $fileset_chapter)
