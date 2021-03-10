@@ -233,7 +233,7 @@ class BibleFileSetsController extends APIController
     /**
      *
      * @OA\Get(
-     *     path="bibles/filesets/{fileset_id}/bulk",
+     *     path="bibles/filesets/bulk/{fileset_id}/{book}",
      *     tags={"Bibles"},
      *     summary="Returns all content for a given fileset",
      *     description="For a given fileset return content (text, audio or video)",
@@ -241,11 +241,14 @@ class BibleFileSetsController extends APIController
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
+     *     @OA\Parameter(name="book", in="query", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.",
+     *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showBulk"))
-     *     )
+     *     ),
      * )
      * 
      * @OA\Schema (
@@ -260,22 +263,29 @@ class BibleFileSetsController extends APIController
      * )
      *
      * @param string|null $fileset_url_param
+     * @param string|null $book_url_param
      *
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
      * @throws \Exception
      */
     public function showBulk(
-        $fileset_url_param = null,
+        $fileset_url_param,
+        $book_url_param = null,
         $cache_key = 'bible_filesets_show_bulk'
     ) {
-        $fileset_id = checkParam('dam_id|fileset_id', true, $fileset_url_param);
-        $cache_params = [$this->v, $fileset_id];
-
+        $fileset_id  = checkParam('dam_id|fileset_id', true, $fileset_url_param);
+        $book_id     = checkParam('book_id', false, $book_url_param);
+        $cache_params = [$this->v, $fileset_id, $book_id];
+      
         $fileset_chapters = cacheRemember(
             $cache_key,
             $cache_params,
             now()->addHours(12),
-            function () use ($fileset_id) {
+            function () use ($fileset_id, $book_id) {
+                $book = Book::where('id', $book_id)
+                    ->orWhere('id_osis', $book_id)
+                    ->orWhere('id_usfx', $book_id)
+                    ->first();
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 $fileset_type = $fileset_from_id['set_type_code'];
                 // Default to text plain until text_format type has a different filesetId
@@ -303,15 +313,17 @@ class BibleFileSetsController extends APIController
                 if (strpos($fileset_type, 'text') !== false) {
                     return $this->showTextFilesetChapter(
                         $bible,
-                        $fileset
+                        $fileset,
+                        $book
                     );
                 } else {
                     return $this->showAudioVideoFilesets(
                         $bible,
                         $fileset,
                         $asset_id,
-                        $fileset_type
-                  );
+                        $fileset_type,
+                        $book
+                    );
                 }
             }
         );
