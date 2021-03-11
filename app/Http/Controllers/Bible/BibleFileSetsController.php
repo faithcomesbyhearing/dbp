@@ -279,10 +279,11 @@ class BibleFileSetsController extends APIController
         $book_url_param = null,
         $cache_key = 'bible_filesets_show_bulk'
     ) {
-        $fileset_id  = checkParam('dam_id|fileset_id', true, $fileset_url_param);
-        $book_id     = checkParam('book_id', false, $book_url_param);
+        $fileset_id   = checkParam('dam_id|fileset_id', true, $fileset_url_param);
+        $book_id      = checkParam('book_id', false, $book_url_param);
         $cache_params = [$this->v, $fileset_id, $book_id];
         $limit        = (int) (checkParam('limit') ?? 5000);
+        $limit        = max($limit, 5000);
 
         $fileset_chapters = cacheRemember(
             $cache_key,
