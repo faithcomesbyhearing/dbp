@@ -136,7 +136,7 @@ class BibleFileSetsController extends APIController
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showChapter"))
      *     )
      * )
-     * 
+     *
      * @OA\Schema (
      *     type="object",
      *     schema="v4_bible_filesets.showChapter",
@@ -250,7 +250,7 @@ class BibleFileSetsController extends APIController
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.showBulk"))
      *     ),
      * )
-     * 
+     *
      * @OA\Schema (
      *     type="object",
      *     schema="v4_bible_filesets.showBulk",
@@ -282,10 +282,12 @@ class BibleFileSetsController extends APIController
             $cache_params,
             now()->addHours(12),
             function () use ($fileset_id, $book_id) {
-                $book = Book::where('id', $book_id)
-                    ->orWhere('id_osis', $book_id)
-                    ->orWhere('id_usfx', $book_id)
-                    ->first();
+                $book = $book_id
+                    ? Book::where('id', $book_id)
+                        ->orWhere('id_osis', $book_id)
+                        ->orWhere('id_usfx', $book_id)
+                        ->first()
+                    : null;
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 $fileset_type = $fileset_from_id['set_type_code'];
                 // Default to text plain until text_format type has a different filesetId
