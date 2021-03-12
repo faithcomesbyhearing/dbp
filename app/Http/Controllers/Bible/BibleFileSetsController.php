@@ -289,8 +289,7 @@ class BibleFileSetsController extends APIController
             $cache_key,
             $cache_params,
             now()->addHours(12),
-
-            function () use ($fileset_id, $book_id) {
+            function () use ($fileset_id, $book_id, $limit) {
                 $book = $book_id
                     ? Book::where('id', $book_id)
                         ->orWhere('id_osis', $book_id)
