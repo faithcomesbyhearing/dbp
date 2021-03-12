@@ -109,7 +109,6 @@ class AudioControllerV2 extends APIController
         return $this->reply(fractal($audioChapters, new AudioTransformer(), $this->serializer), [], $transaction_id);
     }
 
-
     /**
      * Returns a List of timestamps for a given Scripture Reference
      *
@@ -184,9 +183,7 @@ class AudioControllerV2 extends APIController
         // Return Response
         return $this->reply(fractal($audioTimestamps, new AudioTransformer(), $this->serializer));
     }
-
-
-
+    
     /**
      * Old path route for v2 of the API
      *
