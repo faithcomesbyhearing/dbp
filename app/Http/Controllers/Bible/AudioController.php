@@ -8,6 +8,7 @@ use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
+use App\Models\Bible\BibleFileTimestamp;
 
 use App\Traits\CallsBucketsTrait;
 use App\Transformers\AudioTransformer;
@@ -24,7 +25,7 @@ class AudioController extends APIController
      *     tags={"Bibles"},
      *     summary="Returns Bible Filesets which have Audio timestamps",
      *     description="This call returns a list of fileset that have timestamp metadata associated with them. This data could be used to search audio bibles for a specific term, make karaoke verse & audio readings, or to jump to a specific location in an audio file.",
-     *     operationId="v4_internal_timestamps",
+     *     operationId="v4_timestamps",
      *     @OA\Response(response=204, description="No timestamps are available at this time"),
      *     @OA\Response(
      *         response=200,
@@ -61,6 +62,76 @@ class AudioController extends APIController
             return $this->setStatusCode(204)->replyWithError('No timestamps are available at this time');
         }
         return $this->reply($filesets);
+    }
+
+    /**
+     * Returns a List of timestamps for a given Scripture Reference
+     *
+     * @OA\Get(
+     *     path="/timestamps/{fileset_id}/{book}/{chapter}",
+     *     tags={"Bible"},
+     *     summary="Returns Audio timestamps for a specific reference",
+     *     description="This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
+     *     operationId="v4_timestamps.verse",
+     *     @OA\Parameter(name="fileset_id", in="path", description="The specific fileset to return references for", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
+     *     @OA\Parameter(name="book", in="path", required=true, description="The Book ID for which to return timestamps. For a complete list see the `book_id` field in the `/bibles/books` route.", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
+     *     @OA\Parameter(name="chapter", in="path", required=true, description="The chapter for which to return timestamps", @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_audio_timestamps"))
+     *     )
+     * )
+     *
+     *
+     * @return mixed
+     */
+    public function timestampsByReference($fileset_id_param = null, $book_url_param = null, $chapter_url_param = null)
+    {
+        // Check Params
+        $id       = checkParam('fileset_id|dam_id|id', true, $fileset_id_param);
+        $book     = checkParam('book|osis_code', false, $book_url_param);
+        $chapter  = checkParam('chapter_id|chapter_number', false, $chapter_url_param);
+
+        // Fetch Fileset & Files
+        $fileset = BibleFileset::uniqueFileset($id, 'audio', true)->first();
+        if (!$fileset) {
+            return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $id]));
+        }
+
+        $bible_files = BibleFile::where('hash_id', $fileset->hash_id)
+            ->when($book, function ($query) use ($book) {
+                return $query->where('book_id', $book);
+            })
+            ->when($chapter, function ($query) use ($chapter) {
+                return $query->where('chapter_start', $chapter);
+            })->get();
+
+        // Fetch Timestamps
+        $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))->orderBy('verse_start')->get();
+
+
+        if ($audioTimestamps->isEmpty() && ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream')) {
+            $audioTimestamps = [];
+            $bible_files = BibleFile::with('streamBandwidth.transportStreamBytes')->where([
+                'hash_id' => $fileset->hash_id,
+                'book_id' => $book,
+            ])
+                ->where('chapter_start', '>=', $chapter)
+                ->where('chapter_start', '<=', $chapter)
+                ->get();
+            foreach ($bible_files as $bible_file) {
+                $currentBandwidth = $bible_file->streamBandwidth->first();
+                foreach ($currentBandwidth->transportStreamBytes as $stream) {
+                    if ($stream->timestamp) {
+                        $audioTimestamps[] = $stream->timestamp;
+                    }
+                }
+            }
+        }
+
+        // Return Response
+        return $this->reply(fractal($audioTimestamps, new AudioTransformer(), $this->serializer));
     }
 
     /**
