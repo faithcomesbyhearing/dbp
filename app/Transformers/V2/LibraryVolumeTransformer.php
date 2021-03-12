@@ -37,7 +37,6 @@ class LibraryVolumeTransformer extends BaseTransformer
              *  @OA\Xml(name="v2_volume_history"),
              *  @OA\Items(
              *      @OA\Property(property="dam_id", ref="#/components/schemas/BibleFileset/properties/id"),
-             *      @OA\Property(property="time", ref="#/components/schemas/BibleFileset/properties/updated_at"),
              *      @OA\Property(property="event", type="string", example="Updated"),
              *     )
              *   )
@@ -83,8 +82,6 @@ class LibraryVolumeTransformer extends BaseTransformer
              *      @OA\Property(property="collection_code",         @OA\Schema(type="string", example="NT",enum={"OT", "NT"})),
              *      @OA\Property(property="rich",                    @OA\Schema(type="integer",example=1,enum={1, 0})),
              *      @OA\Property(property="collection_name",         @OA\Schema(type="string",example="New Testament",enum={"Old Testament", "New Testament"})),
-             *      @OA\Property(property="updated_on",              ref="#/components/schemas/BibleFileset/properties/updated_at"),
-             *      @OA\Property(property="created_on",              ref="#/components/schemas/BibleFileset/properties/created_at"),
              *      @OA\Property(property="right_to_left",           @OA\Schema(type="string", example="rtl",enum={"rtl", "ltr"})),
              *      @OA\Property(property="num_art",                 @OA\Schema(type="integer",example=0)),
              *      @OA\Property(property="num_sample_audio",        @OA\Schema(type="integer",example=0)),
