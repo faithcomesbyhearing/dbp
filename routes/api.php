@@ -92,6 +92,7 @@ Route::name('v4_internal_filesets.show')->get(
     'bibles/filesets/{fileset_id?}',
     'Bible\BibleFileSetsController@show'
 );
+
 // not used by bible.is
 // is there anything in this that cannot be provided by bibles/books?
 // try to remove it
@@ -100,11 +101,20 @@ Route::name('v4_internal_filesets.show')->get(
 //     'Bible\BooksController@show'
 // );
 
-
+Route::name('v4_filesets.books')->get(
+    'bibles/filesets/{fileset_id}/books',
+    'Bible\BooksController@show'
+);
+// the order of the routes matters, the most general have to go first
 Route::name('v4_filesets.bulk')->get(
-  '/bibles/filesets/{fileset_id}/bulk',
+  'bibles/filesets/bulk/{fileset_id}/{book?}',
   'Bible\BibleFileSetsController@showBulk'
 );
+Route::name('v4_filesets.chapter')->get(
+  'bibles/filesets/{fileset_id}/{book}/{chapter}',
+  'Bible\BibleFileSetsController@showChapter'
+);
+
 
 
 // This is the preferred endpoint for filesets.
