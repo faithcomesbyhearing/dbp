@@ -41,26 +41,7 @@ class TextController extends APIController
      * @param string|null $book_url_param
      * @param string|null $chapter_url_param
      *
-     * @OA\Get(
-     *     path="/bibles/filesets/{id}/{book}/{chapter}",
-     *     summary="Get Bible Text",
-     *     description="V4's base fileset route",
-     *     operationId="v4_bible_filesets.chapter",
-     *     @OA\Parameter(name="id", in="path", description="The Bible fileset ID", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
-     *     @OA\Parameter(name="book", in="path", description="The Book ID. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true, @OA\Schema(ref="#/components/schemas/Book/properties/id")),
-     *     @OA\Parameter(name="chapter", in="path", description="The chapter number", required=true, @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
-     *     @OA\Parameter(name="verse_start", in="query", description="Will filter the results by the given start verse",
-     *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_start")
-     *     ),
-     *     @OA\Parameter(name="verse_end", in="query", description="Will filter the results by the given end verse",
-     *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_end")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter"))
-     *     )
-     * )
+     * API Note: I removed the v4 openapi docs. Returning text for a fileset/book/chapter is now handled in BibleFileSetsController:showChapter, along with all other filesets
      *
      * @OA\Get(
      *     path="/text/verse",
@@ -224,10 +205,9 @@ class TextController extends APIController
      * @OA\Schema(
      *   schema="v4_text_search",
      *   type="object",
-     *   allOf={
-     *      @OA\Schema(ref="#/components/schemas/pagination.alternate"),
-     *   },
-     *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter")
+     *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter"),
+     *   @OA\Property(property="meta",ref="#/components/schemas/pagination.new")
+     * 
      * )
      */
     public function search()

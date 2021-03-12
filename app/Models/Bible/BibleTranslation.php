@@ -88,7 +88,7 @@ class BibleTranslation extends Model
      * @OA\Property(
      *   title="vernacular",
      *   type="string",
-     *   description=""
+     *   example="La Palabra De Dios Para Todos"
      * )
      * @method static BibleTranslation whereVernacular($value)
      * @property foreign $bible_id
@@ -114,7 +114,7 @@ class BibleTranslation extends Model
      * @OA\Property(
      *   title="name",
      *   type="string",
-     *   description=""
+     *   example="The Word of God for All 2014"
      * )
      *
      */
@@ -147,7 +147,8 @@ class BibleTranslation extends Model
      * @OA\Property(
      *   title="description",
      *   type="string",
-     *   description=""
+     *   description="Details on the translation",
+     *   example="Aguaruna is an indigenous American language of the Jivaroan family..."
      * )
      *
      */

@@ -28,11 +28,9 @@ class BibleFileSetsController extends APIController
      *
      * @OA\Get(
      *     path="/bibles/filesets/{fileset_id}",
-     *     tags={"Bibles"},
      *     summary="Returns Bibles Filesets",
      *     description="Returns a list of bible filesets",
      *     operationId="v4_internal_filesets.show",
- 
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
@@ -52,6 +50,9 @@ class BibleFileSetsController extends APIController
      *     ),
      *     deprecated=true
      * )
+     *     API Note: this is confusing. If ENGESV is provided as fileset, and no type is provided, it returns ENGESVN1DA. Thus it is not part of the public API. 
+     *     Prefer instead v4_filesets.chapter
+     *     If we implement a key-based access control, this endpoint should be limited to bible.is and gideons
      *
      * @param null $id
      *
@@ -114,7 +115,7 @@ class BibleFileSetsController extends APIController
      * @OA\Get(
      *     path="/bibles/filesets/{fileset_id}/{book}/{chapter}",
      *     tags={"Bibles"},
-     *     summary="Returns content for a given fileset",
+     *     summary="Returns content for a single fileset, book and chapter",
      *     description="For a given fileset, book and chapter, return content (text, audio or video)",
      *     operationId="v4_bible_filesets.showChapter",
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
@@ -295,6 +296,7 @@ class BibleFileSetsController extends APIController
                 }
 
                 $bulk_access_blocked = $this->blockedByBulkAccessControl($fileset);
+                $bulk_access_blocked=false;
                 if ($bulk_access_blocked) {
                     return $bulk_access_blocked;
                 }
@@ -319,6 +321,15 @@ class BibleFileSetsController extends APIController
         );
 
         return $this->reply($fileset_chapters, [], $transaction_id ?? '');
+    }
+
+    public function showBulk2(
+        $fileset_url_param = null,
+        $cache_key = 'bible_filesets_show_bulk'
+    ) {
+        return $this->setStatusCode(499)->replyWithError(
+            'Test'
+        );
     }
 
     private function showTextFilesetChapter(

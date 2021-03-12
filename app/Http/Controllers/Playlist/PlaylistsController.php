@@ -85,7 +85,7 @@ class PlaylistsController extends APIController
      *   description="The v4 playlist index response.",
      *   title="User playlists",
      *   allOf={
-     *      @OA\Schema(ref="#/components/schemas/pagination"),
+     *      @OA\Schema(ref="#/components/schemas/pagination.alternate"),
      *   },
      *   @OA\Property(
      *      property="data",

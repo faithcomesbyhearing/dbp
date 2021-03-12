@@ -16,7 +16,7 @@ class NumbersController extends APIController
      * @OA\Get(
      *     path="/numbers/range",
      *     tags={"Languages"},
-     *     summary="Return a range of numbers",
+     *     summary="Return a range of vernacular numbers",
      *     description="This route returns the vernacular numbers for a set range.",
      *     operationId="v4_numbers.range",
      *     @OA\Parameter(

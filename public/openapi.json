@@ -115,7 +115,7 @@
                 "tags": [
                     "Bibles"
                 ],
-                "summary": "Returns content for a given fileset",
+                "summary": "Returns content for a single fileset, book and chapter",
                 "description": "For a given fileset, book and chapter, return content (text, audio or video)",
                 "operationId": "v4_bible_filesets.showChapter",
                 "parameters": [
@@ -129,7 +129,7 @@
                         }
                     },
                     {
-                        "name": "book_id",
+                        "name": "book",
                         "in": "path",
                         "description": "Will filter the results by the given book. For a complete list see the `book_id` field in the `\/bibles\/books` route.",
                         "required": true,
@@ -138,7 +138,7 @@
                         }
                     },
                     {
-                        "name": "chapter_id",
+                        "name": "chapter",
                         "in": "path",
                         "description": "Will filter the results by the given chapter",
                         "required": true,
@@ -172,7 +172,7 @@
                         "content": {
                             "application\/json": {
                                 "schema": {
-                                    "$ref": "#\/components\/schemas\/v4_bible_filesets.show"
+                                    "$ref": "#\/components\/schemas\/v4_bible_filesets.showChapter"
                                 }
                             }
                         }
@@ -221,7 +221,7 @@
                 "tags": [
                     "Bibles"
                 ],
-                "summary": "Returns Bibles",
+                "summary": "Returns Bibles based on filter criteria",
                 "description": "The base bible route returning by default bibles and filesets that your key has access to",
                 "operationId": "v4_bible.all",
                 "parameters": [
@@ -231,14 +231,6 @@
                         "description": "The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `\/languages` route",
                         "schema": {
                             "$ref": "#\/components\/schemas\/Language\/properties\/iso"
-                        }
-                    },
-                    {
-                        "name": "organization_id",
-                        "in": "query",
-                        "description": "The owning organization to return bibles for. For a complete list of ids see the route\n     *              `\/organizations`.",
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/Organization\/properties\/id"
                         }
                     },
                     {
@@ -258,23 +250,6 @@
                             "$ref": "#\/components\/schemas\/BibleFilesetType\/properties\/set_type_code"
                         },
                         "example": "audio"
-                    },
-                    {
-                        "name": "size",
-                        "in": "query",
-                        "description": "Will filter bibles based upon the size type of their filesets",
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/BibleFilesetSize\/properties\/set_size_code"
-                        }
-                    },
-                    {
-                        "name": "size_exclude",
-                        "in": "query",
-                        "description": "Will exclude bibles based upon the size type of their filesets",
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/BibleFilesetSize\/properties\/set_size_code"
-                        },
-                        "example": "OT"
                     },
                     {
                         "$ref": "#\/components\/parameters\/page"
@@ -305,7 +280,7 @@
                 "tags": [
                     "Bibles"
                 ],
-                "summary": "",
+                "summary": "Returns detailed metadata for a single Bible",
                 "description": "Detailed information for a single Bible",
                 "operationId": "v4_bible.one",
                 "parameters": [
@@ -399,8 +374,8 @@
                 "tags": [
                     "Bibles"
                 ],
-                "summary": "Available bible defaults per language code",
-                "description": "Available bible defaults per language code",
+                "summary": "Default Bible for a language",
+                "description": "Returns default Bible for a language",
                 "operationId": "v4_bible.defaults",
                 "parameters": [
                     {
@@ -475,73 +450,6 @@
                 }
             }
         },
-        "\/bibles\/filesets\/{id}\/{book}\/{chapter}": {
-            "get": {
-                "summary": "Get Bible Text",
-                "description": "V4's base fileset route",
-                "operationId": "v4_bible_filesets.chapter",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "The Bible fileset ID",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/BibleFileset\/properties\/id"
-                        }
-                    },
-                    {
-                        "name": "book",
-                        "in": "path",
-                        "description": "The Book ID. For a complete list see the `book_id` field in the `\/bibles\/books` route.",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/Book\/properties\/id"
-                        }
-                    },
-                    {
-                        "name": "chapter",
-                        "in": "path",
-                        "description": "The chapter number",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/BibleFile\/properties\/chapter_start"
-                        }
-                    },
-                    {
-                        "name": "verse_start",
-                        "in": "query",
-                        "description": "Will filter the results by the given start verse",
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_start"
-                        }
-                    },
-                    {
-                        "name": "verse_end",
-                        "in": "query",
-                        "description": "Will filter the results by the given end verse",
-                        "schema": {
-                            "$ref": "#\/components\/schemas\/BibleFile\/properties\/verse_end"
-                        }
-                    },
-                    {
-                        "$ref": "#\/components\/parameters\/version_number"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "successful operation",
-                        "content": {
-                            "application\/json": {
-                                "schema": {
-                                    "$ref": "#\/components\/schemas\/v4_bible_filesets_chapter"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "\/search": {
             "get": {
                 "tags": [
@@ -558,7 +466,8 @@
                         "required": true,
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "example": "Jesus"
                     },
                     {
                         "name": "fileset_id",
@@ -979,58 +888,45 @@
     },
     "components": {
         "schemas": {
-            "pagination": {
+            "pagination.new": {
                 "title": "Pagination",
-                "description": "The pagination meta response.",
+                "description": "The new pagination meta response.",
                 "properties": {
-                    "current_page": {
+                    "pagination": {
                         "description": "Pagination",
-                        "type": "integer"
-                    },
-                    "first_page_url": {
-                        "description": "Pagination",
-                        "type": "string"
-                    },
-                    "from": {
-                        "description": "Pagination",
-                        "type": "integer"
-                    },
-                    "last_page": {
-                        "description": "Pagination",
-                        "type": "integer"
-                    },
-                    "last_page_url": {
-                        "description": "Pagination",
-                        "type": "string"
-                    },
-                    "next_page_url": {
-                        "description": "Pagination",
-                        "type": "string"
-                    },
-                    "path": {
-                        "description": "Pagination",
-                        "type": "string"
-                    },
-                    "per_page": {
-                        "description": "Pagination",
-                        "type": "integer"
-                    },
-                    "prev_page_url": {
-                        "description": "Pagination",
-                        "type": "string"
-                    },
-                    "to": {
-                        "description": "Pagination",
-                        "type": "integer"
-                    },
-                    "total": {
-                        "description": "Pagination",
-                        "type": "integer"
+                        "properties": {
+                            "total": {
+                                "description": "Pagination",
+                                "type": "integer",
+                                "example": 1801
+                            },
+                            "count": {
+                                "description": "Pagination",
+                                "type": "integer",
+                                "example": 25
+                            },
+                            "per_page": {
+                                "description": "Pagination",
+                                "type": "integer",
+                                "example": 25
+                            },
+                            "current_page": {
+                                "description": "Pagination",
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "total_pages": {
+                                "description": "Pagination",
+                                "type": "integer",
+                                "example": 73
+                            }
+                        },
+                        "type": "object"
                     }
                 },
                 "type": "object",
                 "xml": {
-                    "name": "pagination"
+                    "name": "pagination.new"
                 }
             },
             "pagination.alternate": {
@@ -1103,6 +999,14 @@
                 },
                 "xml": {
                     "name": "v4_bible.timestamps"
+                }
+            },
+            "v4_bible_filesets.showChapter": {
+                "title": "v4_bible_filesets.showChapter",
+                "description": "v4_bible_filesets.showChapter",
+                "type": "object",
+                "xml": {
+                    "name": "v4_bible_filesets.showChapter"
                 }
             },
             "v4_bible_filesets.copyright": {
@@ -1265,14 +1169,12 @@
                 "properties": {
                     "verses": {
                         "$ref": "#\/components\/schemas\/v4_bible_filesets_chapter"
+                    },
+                    "meta": {
+                        "$ref": "#\/components\/schemas\/pagination.new"
                     }
                 },
-                "type": "object",
-                "allOf": [
-                    {
-                        "$ref": "#\/components\/schemas\/pagination.alternate"
-                    }
-                ]
+                "type": "object"
             },
             "v4_plan_index_detail": {
                 "properties": {
@@ -1849,16 +1751,6 @@
                     },
                     "set_size_code": {
                         "$ref": "#\/components\/schemas\/BibleFilesetSize\/properties\/set_size_code"
-                    },
-                    "created_at": {
-                        "title": "created_at",
-                        "description": "The timestamp at which the fileset was originally created",
-                        "type": "string"
-                    },
-                    "updated_at": {
-                        "title": "updated_at",
-                        "description": "The timestamp at which the fileset was last updated",
-                        "type": "string"
                     }
                 },
                 "type": "object",
@@ -2079,8 +1971,8 @@
                     },
                     "vernacular": {
                         "title": "vernacular",
-                        "description": "",
-                        "type": "string"
+                        "type": "string",
+                        "example": "La Palabra De Dios Para Todos"
                     },
                     "vernacular_trade": {
                         "title": "vernacular_trade",
@@ -2089,8 +1981,8 @@
                     },
                     "name": {
                         "title": "name",
-                        "description": "",
-                        "type": "string"
+                        "type": "string",
+                        "example": "The Word of God for All 2014"
                     },
                     "type": {
                         "title": "type",
@@ -2104,8 +1996,9 @@
                     },
                     "description": {
                         "title": "description",
-                        "description": "",
-                        "type": "string"
+                        "description": "Details on the translation",
+                        "type": "string",
+                        "example": "Aguaruna is an indigenous American language of the Jivaroan family..."
                     },
                     "notes": {
                         "title": "notes",
@@ -4433,7 +4326,7 @@
                         "type": "array",
                         "items": {
                             "properties": {
-                                "abbr": {
+                                "id": {
                                     "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                                 },
                                 "name": {
@@ -4471,17 +4364,15 @@
                             },
                             "type": "object"
                         }
+                    },
+                    "meta": {
+                        "$ref": "#\/components\/schemas\/pagination.new"
                     }
                 },
                 "type": "object",
                 "xml": {
                     "name": "v4_bible.all"
-                },
-                "allOf": [
-                    {
-                        "$ref": "#\/components\/schemas\/pagination.alternate"
-                    }
-                ]
+                }
             },
             "v4_bible.one": {
                 "title": "v4_bible.one",
@@ -4489,7 +4380,7 @@
                 "type": "array",
                 "items": {
                     "properties": {
-                        "abbr": {
+                        "id": {
                             "$ref": "#\/components\/schemas\/Bible\/properties\/id"
                         },
                         "alphabet": {

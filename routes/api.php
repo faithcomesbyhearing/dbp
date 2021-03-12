@@ -87,7 +87,7 @@ Route::name('v4_internal_filesets.checkTypes')->post(
 );
 Route::name('v4_internal_bible_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
 
-// Deprecate this endpoint. It takes book and chapter as query parameters. Prefer instead v4_filesets.chapter
+// Deprecate this endpoint. Prefer instead v4_filesets.chapter. Reasons: It takes book and chapter as query parameters. 
 Route::name('v4_internal_filesets.show')->get(
     'bibles/filesets/{fileset_id?}',
     'Bible\BibleFileSetsController@show'
@@ -100,19 +100,17 @@ Route::name('v4_internal_filesets.show')->get(
 //     'Bible\BooksController@show'
 // );
 
-// VERSION 4 | Text
-// BWF: this is the preferred endpoint for filesets. It needs to be broadened to process all filesets, not just text.
-// Route to BibleFileSetsController:showChapter. 
-// When fileset is text, use logic in TextController
-// Otherwise, use logic roughly found in BibleFileSetController:show, although only return one chapter
 
-Route::name('v4_filesets.chapter')->get(
-  'bibles/filesets/{fileset_id}/{book}/{chapter}',
-  'Bible\BibleFileSetsController@showChapter'
-);
 Route::name('v4_filesets.bulk')->get(
   '/bibles/filesets/{fileset_id}/bulk',
   'Bible\BibleFileSetsController@showBulk'
+);
+
+
+// This is the preferred endpoint for filesets.
+Route::name('v4_filesets.chapter')->get(
+    'bibles/filesets/{fileset_id}/{book}/{chapter}',
+    'Bible\BibleFileSetsController@showChapter'
 );
 
 // VERSION 4 | Text
@@ -121,6 +119,21 @@ Route::name('v4_bible.verseinfo')->get(
     'bibles/{bible_id}/{book}/{chapter?}',
     'Bible\TextController@index'
 );
+
+// VERSION 4 | Timestamps 
+Route::name('v4_timestamps')->get(
+    'timestamps',
+    'Bible\AudioController@availableTimestamps'
+);
+Route::name('v4_timestamps.tag')->get(
+    'timestamps/search',
+    'Bible\AudioController@timestampsByTag'
+);
+Route::name('v4_timestamps.verse')->get(
+    'timestamps/{id}/{book}/{chapter}',
+    'Bible\AudioController@timestampsByReference'
+);
+
 
 // VERSION 4 | Stream
 Route::name('v4_media_stream')->get(
@@ -156,19 +169,6 @@ Route::name('v4_video_jesus_film_file')->get(
 );// used by bible.is
 
 
-// VERSION 4 | Timestamps (attic...deprecated, no longer used in bible.is, )
-Route::name('v4_timestamps')->get(
-    'timestamps',
-    'Bible\AudioController@availableTimestamps'
-);
-Route::name('v4_timestamps.tag')->get(
-    'timestamps/search',
-    'Bible\AudioController@timestampsByTag'
-);
-Route::name('v4_timestamps.verse')->get(
-    'timestamps/{id}/{book}/{chapter}',
-    'Bible\AudioController@timestampsByReference'
-);
 
 
 Route::name('v4_internal_api.refreshDevCache')->get(

@@ -76,25 +76,23 @@ class APIController extends Controller
 
 
      
-    /**
-     * Pagination
+   /**
+     * Pagination 
      * @OA\Schema (
      *   type="object",
-     *   schema="pagination",
+     *   schema="pagination.new",
      *   title="Pagination",
-     *   description="The pagination meta response.",
-     *   @OA\Xml(name="pagination"),
-     *   @OA\Property(property="current_page", type="integer"),
-     *   @OA\Property(property="first_page_url", type="string"),
-     *   @OA\Property(property="from", type="integer"),
-     *   @OA\Property(property="last_page", type="integer"),
-     *   @OA\Property(property="last_page_url", type="string"),
-     *   @OA\Property(property="next_page_url", type="string"),
-     *   @OA\Property(property="path", type="string"),
-     *   @OA\Property(property="per_page", type="integer"),
-     *   @OA\Property(property="prev_page_url", type="string"),
-     *   @OA\Property(property="to", type="integer"),
-     *   @OA\Property(property="total", type="integer")
+     *   description="The new pagination meta response.",
+     *   @OA\Xml(name="pagination.new"),
+     *   @OA\Property(property="pagination", type="object",
+     *      @OA\Property(property="total", type="integer", example=1801),
+     *      @OA\Property(property="count", type="integer", example=25),
+     *      @OA\Property(property="per_page", type="integer", example=25),
+     *      @OA\Property(property="current_page", type="integer", example=1),
+     *      @OA\Property(property="total_pages", type="integer", example=73),
+     *    )
+     *    )
+     *   )
      * )
      */
 
