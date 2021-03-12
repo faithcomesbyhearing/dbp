@@ -25,7 +25,7 @@ class AudioController extends APIController
      *     tags={"Bibles"},
      *     summary="Returns Bible Filesets which have Audio timestamps",
      *     description="This call returns a list of fileset that have timestamp metadata associated with them. This data could be used to search audio bibles for a specific term, make karaoke verse & audio readings, or to jump to a specific location in an audio file.",
-     *     operationId="v4_internal_timestamps",
+     *     operationId="v4_timestamps",
      *     @OA\Response(response=204, description="No timestamps are available at this time"),
      *     @OA\Response(
      *         response=200,
@@ -72,7 +72,7 @@ class AudioController extends APIController
      *     tags={"Bible"},
      *     summary="Returns Audio timestamps for a specific reference",
      *     description="This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
-     *     operationId="v4_internal_timestamps.verse",
+     *     operationId="v4_timestamps.verse",
      *     @OA\Parameter(name="fileset_id", in="path", description="The specific fileset to return references for", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
      *     @OA\Parameter(name="book", in="path", required=true, description="The Book ID for which to return timestamps. For a complete list see the `book_id` field in the `/bibles/books` route.", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
      *     @OA\Parameter(name="chapter", in="path", required=true, description="The chapter for which to return timestamps", @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
