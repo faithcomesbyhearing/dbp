@@ -8,6 +8,7 @@ use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
+use App\Models\Bible\BibleFileTimestamp;
 
 use App\Traits\CallsBucketsTrait;
 use App\Transformers\AudioTransformer;
