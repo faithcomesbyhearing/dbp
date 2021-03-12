@@ -289,11 +289,14 @@ class BibleFileSetsController extends APIController
             $cache_key,
             $cache_params,
             now()->addHours(12),
-            function () use ($fileset_id, $book_id, $limit) {
-                $book = Book::where('id', $book_id)
-                    ->orWhere('id_osis', $book_id)
-                    ->orWhere('id_usfx', $book_id)
-                    ->first();
+
+            function () use ($fileset_id, $book_id) {
+                $book = $book_id
+                    ? Book::where('id', $book_id)
+                        ->orWhere('id_osis', $book_id)
+                        ->orWhere('id_usfx', $book_id)
+                        ->first()
+                    : null;
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 $fileset_type = $fileset_from_id['set_type_code'];
                 // Default to text plain until text_format type has a different filesetId
