@@ -108,6 +108,81 @@ class AudioControllerV2 extends APIController
 
         return $this->reply(fractal($audioChapters, new AudioTransformer(), $this->serializer), [], $transaction_id);
     }
+
+    /**
+     * Returns a List of timestamps for a given Scripture Reference
+     *
+     * @OA\Get(
+     *     path="/audio/versestart",
+     *     tags={"Library Audio"},
+     *     summary="Returns Audio timestamps for a specific reference",
+     *     description="This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
+     *     operationId="v2_audio_timestamps",
+     *     @OA\Parameter(name="fileset_id", in="query", description="The specific fileset to return references for", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
+     *     @OA\Parameter(name="book", in="query", description="The Book ID for which to return timestamps. For a complete list see the `book_id` field in the `/bibles/books` route.", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
+     *     @OA\Parameter(name="chapter", in="query", description="The chapter for which to return timestamps", @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v2_audio_timestamps")),
+     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v2_audio_timestamps")),
+     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v2_audio_timestamps")),
+     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v2_audio_timestamps"))
+     *     )
+     * )
+     *
+     * @return mixed
+     */
+    public function timestampsByReference($fileset_id_param = null, $book_url_param = null, $chapter_url_param = null)
+    {
+        // Check Params
+        $id       = checkParam('fileset_id|dam_id|id', true, $fileset_id_param);
+        $book     = checkParam('book|osis_code', false, $book_url_param);
+        $chapter  = checkParam('chapter_id|chapter_number', false, $chapter_url_param);
+
+        // Fetch Fileset & Files
+        $fileset = BibleFileset::uniqueFileset($id, 'audio', true)->first();
+        if (!$fileset) {
+            return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $id]));
+        }
+
+        // does this work?
+        $book_id = optional(Book::where('id_osis', $book)->first())->id;
+
+        $bible_files = BibleFile::where('hash_id', $fileset->hash_id)
+            ->when($book_id, function ($query) use ($book_id) {
+                return $query->where('book_id', $book_id);
+            })
+            ->when($chapter, function ($query) use ($chapter) {
+                return $query->where('chapter_start', $chapter);
+            })->get();
+
+        // Fetch Timestamps
+        $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))->orderBy('verse_start')->get();
+
+
+        if ($audioTimestamps->isEmpty() && ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream')) {
+            $audioTimestamps = [];
+            $bible_files = BibleFile::with('streamBandwidth.transportStreamBytes')->where([
+                'hash_id' => $fileset->hash_id,
+                'book_id' => $book,
+            ])
+                ->where('chapter_start', '>=', $chapter)
+                ->where('chapter_start', '<=', $chapter)
+                ->get();
+            foreach ($bible_files as $bible_file) {
+                $currentBandwidth = $bible_file->streamBandwidth->first();
+                foreach ($currentBandwidth->transportStreamBytes as $stream) {
+                    if ($stream->timestamp) {
+                        $audioTimestamps[] = $stream->timestamp;
+                    }
+                }
+            }
+        }
+
+        // Return Response
+        return $this->reply(fractal($audioTimestamps, new AudioTransformer(), $this->serializer));
+    }
     
     /**
      * Old path route for v2 of the API
