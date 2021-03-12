@@ -116,13 +116,6 @@ Route::name('v4_filesets.chapter')->get(
 );
 
 
-
-// This is the preferred endpoint for filesets.
-Route::name('v4_filesets.chapter')->get(
-    'bibles/filesets/{fileset_id}/{book}/{chapter}',
-    'Bible\BibleFileSetsController@showChapter'
-);
-
 // VERSION 4 | Text
 // This is new, added Dec 28, to provide just the verses for a bible or chapter. Note that this does not have filesets in path
 Route::name('v4_bible.verseinfo')->get(
