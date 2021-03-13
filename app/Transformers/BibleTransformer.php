@@ -168,7 +168,7 @@ class BibleTransformer extends BaseTransformer
 
             case 'v4_bible.all':
                 $output = [
-                    'id'                => $bible->id,
+                    'abbr'              => $bible->id,
                     'name'              => $bible->ctitle,
                     'vname'             => $bible->vtitle,
                     'language'          => $bible->language_current ?? null,

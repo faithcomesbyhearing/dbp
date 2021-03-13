@@ -316,7 +316,6 @@ class BibleFileSetsController extends APIController
                 }
 
                 $bulk_access_blocked = $this->blockedByBulkAccessControl($fileset);
-                $bulk_access_blocked=false;
                 if ($bulk_access_blocked) {
                     return $bulk_access_blocked;
                 }
@@ -345,15 +344,6 @@ class BibleFileSetsController extends APIController
         );
 
         return $this->reply($fileset_chapters, [], $transaction_id ?? '');
-    }
-
-    public function showBulk2(
-        $fileset_url_param = null,
-        $cache_key = 'bible_filesets_show_bulk'
-    ) {
-        return $this->setStatusCode(499)->replyWithError(
-            'Test'
-        );
     }
 
     private function showTextFilesetChapter(
