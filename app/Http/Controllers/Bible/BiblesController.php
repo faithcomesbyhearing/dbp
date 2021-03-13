@@ -256,7 +256,6 @@ class BiblesController extends APIController
     public function books($bible_id, $book_id = null)
     {
         $book_id   = checkParam('book_id', false, $book_id);
-        // $testament = checkParam('testament');
 
         $verify_content = checkBoolean('verify_content');
         $verse_count = checkBoolean('verse_count');
