@@ -223,7 +223,7 @@ class BibleTransformer extends BaseTransformer
                 $currentTranslation = optional($bible->translations->where('language_id', $GLOBALS['i18n_id']));
                 $fonts = [];
                 $bible = [
-                    'id'            => $bible->id,
+                    'abbr'          => $bible->id,
                     'alphabet'      => $bible->alphabet,
                     'mark'          => $bible->copyright,
                     'name'          => optional($bible->translations->where('language_id', $GLOBALS['i18n_id'])->first())->name,

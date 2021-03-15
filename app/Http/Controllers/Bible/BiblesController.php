@@ -88,8 +88,8 @@ class BiblesController extends APIController
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
         $bitrate            = checkParam('bitrate'); #removed from API for initial release
-        $limit      = checkParam('limit');
-        $page       = checkParam('page');
+        $limit              = checkParam('limit');
+        $page               = checkParam('page');
 
         if ($media) {
             $media_types = BibleFilesetType::select('set_type_code')->get();
@@ -102,17 +102,15 @@ class BiblesController extends APIController
         $access_control = $this->accessControl($this->key) ;
         $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
         $cache_params = [$language_code, $organization, $country, $access_control->string, $media, $media_exclude, $size, $size_exclude, $bitrate, $limit, $page];
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $bitrate, $show_restricted, $limit, $page) {
-            $bibles = Bible::when(!$show_restricted, function ($query) use ($access_control, $media, $media_exclude, $size, $size_exclude, $bitrate) {
-                $query->withRequiredFilesets([
+        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $bitrate, $limit, $page) {
+            $bibles = Bible::withRequiredFilesets([
                     'access_control' => $access_control,
                     'media'          => $media,
                     'media_exclude'  => $media_exclude,
                     'size'           => $size,
                     'size_exclude'   => $size_exclude,
                     'bitrate'        => $bitrate
-                ]);
-            })
+            ])
                 ->leftJoin('bible_translations as ver_title', function ($join) {
                     $join->on('ver_title.bible_id', '=', 'bibles.id')->where('ver_title.vernacular', 1);
                 })
