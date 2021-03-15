@@ -74,7 +74,7 @@ class PlansController extends APIController
      *   description="The v4 plan index response.",
      *   title="User plans",
      *   allOf={
-     *      @OA\Schema(ref="#/components/schemas/pagination"),
+     *      @OA\Schema(ref="#/components/schemas/pagination.alternate"),
      *   },
      *   @OA\Property(
      *      property="data",

@@ -41,27 +41,7 @@ class TextController extends APIController
      * @param string|null $book_url_param
      * @param string|null $chapter_url_param
      *
-     * @OA\Get(
-     *     path="/bibles/filesets/{id}/{book}/{chapter}",
-     *     tags={"Text"},
-     *     summary="Get Bible Text",
-     *     description="V4's base fileset route",
-     *     operationId="v4_bible_filesets.chapter",
-     *     @OA\Parameter(name="id", in="path", description="The Bible fileset ID", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
-     *     @OA\Parameter(name="book", in="path", description="The Book ID. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true, @OA\Schema(ref="#/components/schemas/Book/properties/id")),
-     *     @OA\Parameter(name="chapter", in="path", description="The chapter number", required=true, @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
-     *     @OA\Parameter(name="verse_start", in="query", description="Will filter the results by the given start verse",
-     *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_start")
-     *     ),
-     *     @OA\Parameter(name="verse_end", in="query", description="Will filter the results by the given end verse",
-     *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_end")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter"))
-     *     )
-     * )
+     * API Note: I removed the v4 openapi docs. Returning text for a fileset/book/chapter is now handled in BibleFileSetsController:showChapter, along with all other filesets
      *
      * @OA\Get(
      *     path="/text/verse",
@@ -191,7 +171,7 @@ class TextController extends APIController
      *
      * @OA\Get(
      *     path="/search",
-     *     tags={"Text"},
+     *     tags={"Search"},
      *     summary="Search a bible for a word",
      *     description="",
      *     operationId="v4_text_search",
@@ -199,7 +179,8 @@ class TextController extends APIController
      *          name="query",
      *          in="query",
      *          description="The word or phrase being searched", required=true,
-     *          @OA\Schema(type="string")
+     *          @OA\Schema(type="string"),
+     *          example="Jesus"
      *     ),
      *     @OA\Parameter(
      *          name="fileset_id",
@@ -207,16 +188,10 @@ class TextController extends APIController
      *          description="The Bible fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
-     *     @OA\Parameter(
-     *          name="relevance_order",
-     *          in="query",
-     *          description="When set to true the returned result will be ordered by relevance",
-     *          @OA\Schema(type="boolean",default=false)
-     *     ),
      *     @OA\Parameter(name="limit",  in="query", description="The number of search results to return",
      *          @OA\Schema(type="integer",default=15)),
      *     @OA\Parameter(ref="#/components/parameters/page"),
-     *     @OA\Parameter(name="books",  in="query", description="The usfm book ids to search through seperated by a comma",
+     *     @OA\Parameter(name="books",  in="query", description="The usfm book ids to search through separated by a comma",
      *          @OA\Schema(type="string",example="GEN,EXO,MAT")),
      *     @OA\Response(
      *         response=200,
@@ -230,10 +205,9 @@ class TextController extends APIController
      * @OA\Schema(
      *   schema="v4_text_search",
      *   type="object",
-     *   allOf={
-     *      @OA\Schema(ref="#/components/schemas/pagination.alternate"),
-     *   },
-     *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter")
+     *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter"),
+     *   @OA\Property(property="meta",ref="#/components/schemas/pagination.new")
+     * 
      * )
      */
     public function search()
@@ -246,7 +220,6 @@ class TextController extends APIController
         $query      = checkParam('query', true);
         $fileset_id = checkParam('fileset_id|dam_id', true);
         $book_id    = checkParam('book|book_id|books');
-        $relevance_order   = checkParam('relevance_order');
         $limit      = checkParam('limit') ?? 15;
         $page       = checkParam('page');
 
@@ -279,10 +252,7 @@ class TextController extends APIController
                 'glyph_chapter.glyph as chapter_vernacular',
                 'glyph_start.glyph as verse_start_vernacular',
                 'glyph_end.glyph as verse_end_vernacular',
-            ])
-            ->unless($relevance_order, function ($query) {
-                $query->orderByRaw('books.book_testament DESC, IFNULL(books.testament_order, books.protestant_order), bible_verses.chapter, bible_verses.verse_start');
-            });
+            ]);
 
         if ($page) {
             $verses  = $verses->paginate($limit);

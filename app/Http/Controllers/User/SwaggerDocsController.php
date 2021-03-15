@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 
 class SwaggerDocsController extends Controller
 {
-    public function swaggerDatabase()
+    public function swaggerDocsGen($version)
     {
-        $docs = json_decode(
-            file_get_contents(public_path('/swagger_database.json')),
-            true
-        );
-        return view('docs.swagger_database', compact('docs'));
-    }
+        if (file_exists(public_path('openapi.json'))) {
+            $swagger = file_get_contents(public_path('openapi.json'));
+            return response($swagger)->header('Content-Type', 'application/json');
+        } else {
+            return response('Not Found', 404);
+        }
+    }    
 }
