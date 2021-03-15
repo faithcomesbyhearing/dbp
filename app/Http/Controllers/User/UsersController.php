@@ -872,4 +872,36 @@ class UsersController extends APIController
         }
         return false;
     }
+
+    public function adminLogin(Request $request)
+    {
+        if (!$this->api && $request->method() !== 'POST') {
+            if (!Auth::guest()) {
+                return redirect()->to(route('api_key.dashboard'));
+            }
+            return view('api_key.login');
+            //return view('auth.login');
+        }
+
+        $email = checkParam('email');
+        $password = checkParam('password');
+        $user = $this->loginWithEmail($email, $password);
+
+        if (!$user) {
+            return redirect()
+                ->back()
+                ->withErrors(['auth.failed' => trans('auth.failed')])
+                ->withInput();
+        }
+
+        Auth::login($user, true);
+        return redirect()->to(route('api_key.dashboard'));
+    }
+
+    public function adminLogout()
+    {
+        Auth::logout();
+        return redirect()->to(route('api_key.login'));
+    }
+
 }
