@@ -4,30 +4,9 @@ namespace App\Http\Controllers;
 
 class WelcomeController extends APIController
 {
-    public function welcome()
+    public function redirect()
     {
-        return view('welcome');
+        return view('redirect');
     }
 
-    // Legal
-
-    public function legal()
-    {
-        return view('about.legal.overview');
-    }
-
-    public function license()
-    {
-        return view('about.legal.license');
-    }
-
-    public function privacyPolicy()
-    {
-        return view('about.legal.privacy_policy');
-    }
-
-    public function terms()
-    {
-        return view('about.legal.terms');
-    }
 }

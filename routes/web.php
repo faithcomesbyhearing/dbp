@@ -5,69 +5,33 @@
 | Web Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
 | Middleware options can be located in `app/Http/Kernel.php`
 |
 */
 
 Localization::localizedRoutesGroup(function () {
-    // Homepage Route
-    //Route::get('/', 'WelcomeController@welcome')->name('welcome');
-    Route::name('welcome')->get('/', 'User\DocsController@index');
 
-    Route::name('docs')->get('/docs', 'User\DocsController@index');
+    // Primary documentation resides in WebFlow, which is accessed from biblebrain.com
+    Route::get('/', 'WelcomeController@redirect')->name('welcome');
+    
 
-    // Legal Overview
-    // site note: the API license doc will contain a link the license agreement. This route needs to match the link in the document
-    Route::get('/about/legal', 'WelcomeController@legal')->name(
-        'legal_overview'
-    );
-    Route::get('/about/license', 'WelcomeController@license')->name(
-        'legal_license'
-    );
-    Route::get('/terms', 'WelcomeController@terms')->name('legal_terms');
-    Route::get('/privacy', 'WelcomeController@privacyPolicy')->name(
-        'privacy_policy'
-    );
+    // Referenced by bible.is for password reset
+    // TBD - what is the web page that we need here?
+    /*
+    - needed:
+    - reset.blade
+    - v4_internal_user.password_reset (api route)
+    */
 
-    Route::get('/about/contact', 'User\ContactController@create')->name(
-        'contact.create'
-    );
-
-    // About
-    Route::get(
-        '/organizations',
-        'Organization\OrganizationsController@index'
-    )->name('organizations.index');
-
-    // Reader
-    Route::get('/reader', 'Bible\ReaderController@languages')->name(
-        'reader.languages'
-    );
-    Route::get(
-        '/reader/languages/{language_id}',
-        'Bible\ReaderController@bibles'
-    )->name('reader.bibles');
-    Route::get('/reader/bibles/{id}/', 'Bible\ReaderController@books')->name(
-        'reader.books'
-    );
-    Route::get(
-        '/reader/bibles/{id}/{book}/{chapter}',
-        'Bible\ReaderController@chapter'
-    )->name('reader.chapter');
-
-    // Authentication Routes | Passwords
-    Route::name('login')->match(
-        ['get', 'post'],
-        'login',
-        'User\UsersController@login'
-    );
-    Route::name('logout')->post('logout', 'User\UsersController@logout');
-    Route::name('register')->get('register', 'User\UsersController@create');
-    Route::post('register', 'User\UsersController@store');
+    // I think register/login/logout is all done via API
+    // Route::name('login')->match(
+    //     ['get', 'post'],
+    //     'login',
+    //     'User\UsersController@login'
+    // );
+    // Route::name('logout')->post('logout', 'User\UsersController@logout');
+    // Route::name('register')->get('register', 'User\UsersController@create');
+    // Route::post('register', 'User\UsersController@store');
 
     Route::name('password.request')->get(
         'password/reset',
@@ -90,15 +54,119 @@ Localization::localizedRoutesGroup(function () {
         'User\PasswordsController@passwordAttempt'
     );
 
-    Route::name('api_key_email')->post(
-        'keys/email',
-        'User\Dashboard\KeysController@sendKeyEmail'
+
+// API KEY routes
+Route::name('api_key.login')->match(
+    ['get', 'post'],
+    'admin/login',
+    'User\UsersController@adminLogin'
+);
+Route::name('api_key.logout')->get(
+    '/api_key/logout',
+    'User\UsersController@adminLogout'
+);
+Route::name('api_key.dashboard')->get(
+    '/api_key/dashboard',
+    'ApiKey\DashboardController@home'
+);
+Route::name('api_key.request')->match(
+    ['get', 'post'],
+    '/api_key/request',
+    'ApiKey\KeysController@request'
+);
+Route::name('api_key.requested')->get(
+    '/api_key/requested',
+    'ApiKey\KeysController@requested'
+);
+Route::name('api_key.send_email')->post(
+    '/api_key/send_email',
+    'ApiKey\DashboardController@sendEmail'
+);
+Route::name('api_key.save_note')->post(
+    '/api_key/save_note',
+    'ApiKey\DashboardController@saveNote'
+);
+Route::name('api_key.approve_api_key')->post(
+    '/api_key/approve_api_key',
+    'ApiKey\DashboardController@approveApiKey'
+);
+Route::name('api_key.change_api_key_state')->post(
+  '/api_key/change_api_key_state',
+  'ApiKey\DashboardController@changeApiKeyState'
+);
+
+
+
+
+    Route::group(['middleware' => ['auth']], function () {
+
+        Route::name('dashboard')->get(
+            'home',
+            'User\Dashboard\DashboardController@home'
+        );
+        Route::name('dashboard_alt')->get(
+            'dashboard',
+            'User\Dashboard\DashboardController@home'
+        );
+
+
+    });
+});
+
+Route::name('status')->get('/status', 'ApiMetadataController@getStatus');
+Route::name('status')->get(
+    '/status/cache',
+    'ApiMetadataController@getCacheStatus'
+);
+
+
+
+
+// ------------------------------ working attic-----------------------------------------------------
+//Localization::localizedRoutesGroup(function () {
+
+    // Route::name('welcome')->get('/', 'User\DocsController@index');
+    // Route::name('docs')->get('/docs', 'User\DocsController@index');
+
+    // Legal Overview
+    Route::get('/about/legal', 'WelcomeController@legal')->name(
+        'legal_overview'
     );
-    Route::name('api_key_generate')->get(
-        'keys/generate/{email_token}',
-        'User\Dashboard\KeysController@generateAPIKey'
+    Route::get('/about/license', 'WelcomeController@license')->name(
+        'legal_license'
+    );
+    Route::get('/terms', 'WelcomeController@terms')->name('legal_terms');
+    Route::get('/privacy', 'WelcomeController@privacyPolicy')->name(
+        'privacy_policy'
     );
 
+    // About
+    Route::get('/about/contact', 'User\ContactController@create')->name(
+        'contact.create'
+    );
+    Route::get(
+        '/organizations',
+        'Organization\OrganizationsController@index'
+    )->name('organizations.index');
+
+
+    // Reader
+    Route::get('/reader', 'Bible\ReaderController@languages')->name(
+        'reader.languages'
+    );
+    Route::get(
+        '/reader/languages/{language_id}',
+        'Bible\ReaderController@bibles'
+    )->name('reader.bibles');
+    Route::get('/reader/bibles/{id}/', 'Bible\ReaderController@books')->name(
+        'reader.books'
+    );
+    Route::get(
+        '/reader/bibles/{id}/{book}/{chapter}',
+        'Bible\ReaderController@chapter'
+    )->name('reader.chapter');
+
+    // Wiki
     Route::name('wiki_home')->get('/wiki', 'WikiController@home');
     Route::name('wiki_bibles.one')->get(
         '/wiki/bibles/{id}',
@@ -108,8 +176,7 @@ Localization::localizedRoutesGroup(function () {
         '/wiki/bibles',
         'WikiController@bibles'
     );
-
-    // Public Routes
+    // Validate
     Route::group(['middleware' => ['web']], function () {
         Route::name('validate.index')->get(
             '/validate',
@@ -135,13 +202,6 @@ Localization::localizedRoutesGroup(function () {
             '/valdiate/placeholder_books',
             'ValidateController@placeholder_books'
         );
-
-        // Getting Started
-        Route::name('apiDocs_bible_equivalents')->get(
-            '/api/bible/bible-equivalents',
-            'Bible\BibleEquivalentsController@index'
-        );
-
         // Docs Routes
         Route::name('docs')->get('docs', 'User\DocsController@index');
         Route::name('core_concepts')->get(
@@ -205,14 +265,17 @@ Localization::localizedRoutesGroup(function () {
             'docs/alphabets',
             'User\DocsController@alphabets'
         );
-
         // Docs Generator Routes
         Route::name('swagger_docs_gen')->get(
             'open-api-{version}.json',
             'User\SwaggerDocsController@swaggerDocsGen'
         );
 
-        // Activation Routes
+        Route::name('apiDocs_bible_equivalents')->get(
+            '/api/bible/bible-equivalents',
+            'Bible\BibleEquivalentsController@index'
+        );
+
         Route::name('projects.connect')->get(
             '/connect/{token}',
             'Organization\ProjectsController@connect'
@@ -227,9 +290,12 @@ Localization::localizedRoutesGroup(function () {
             '/login/{provider}/callback',
             'User\SocialController@callback'
         );
-    });
+    // }); end of localization
+    
+// not part of localization.. part of auth
+Route::group(['middleware' => ['auth']], function () {
 
-    Route::group(['middleware' => ['auth']], function () {
+        // Bible Management
         Route::name('dashboard.bibles')->get(
             'dashboard/bibles',
             'User\Dashboard\BibleManagementController@index'
@@ -251,14 +317,7 @@ Localization::localizedRoutesGroup(function () {
             'User\Dashboard\BibleManagementController@update'
         );
 
-        Route::name('dashboard')->get(
-            'home',
-            'User\Dashboard\DashboardController@home'
-        );
-        Route::name('dashboard_alt')->get(
-            'dashboard',
-            'User\Dashboard\DashboardController@home'
-        );
+        // Projects Management
         Route::name('dashboard.projects.index')->get(
             'api/projects',
             'User\Dashboard\ProjectsController@index'
@@ -282,6 +341,16 @@ Localization::localizedRoutesGroup(function () {
         Route::name('dashboard.projects.update')->put(
             'api/projects/{project_id}/',
             'User\Dashboard\ProjectsController@update'
+        );
+
+        // Profiles
+        Route::name('profile')->get(
+            'profile',
+            'User\Dashboard\ProfileController@profile'
+        );
+        Route::name('profile.update')->put(
+            'profile/{user_id}',
+            'User\Dashboard\ProfileController@updateProfile'
         );
 
         // Keys
@@ -318,61 +387,19 @@ Localization::localizedRoutesGroup(function () {
             'api/keys/{id}/delete',
             'User\Dashboard\KeysController@destroy'
         );
+    // API Key (old?)
+    Route::name('api_key_email')->post(
+        'keys/email',
+        'User\Dashboard\KeysController@sendKeyEmail'
+    );
+    Route::name('api_key_generate')->get(
+        'keys/generate/{email_token}',
+        'User\Dashboard\KeysController@generateAPIKey'
+    );
 
-        // Profiles
-        Route::name('profile')->get(
-            'profile',
-            'User\Dashboard\ProfileController@profile'
-        );
-        Route::name('profile.update')->put(
-            'profile/{user_id}',
-            'User\Dashboard\ProfileController@updateProfile'
-        );
-    });
+
+
+
+
 });
-
-Route::name('status')->get('/status', 'ApiMetadataController@getStatus');
-Route::name('status')->get(
-    '/status/cache',
-    'ApiMetadataController@getCacheStatus'
-);
-
-// API KEY routes
-Route::name('api_key.login')->match(
-    ['get', 'post'],
-    'admin/login',
-    'User\UsersController@adminLogin'
-);
-Route::name('api_key.logout')->get(
-    '/api_key/logout',
-    'User\UsersController@adminLogout'
-);
-Route::name('api_key.dashboard')->get(
-    '/api_key/dashboard',
-    'ApiKey\DashboardController@home'
-);
-Route::name('api_key.request')->match(
-    ['get', 'post'],
-    '/api_key/request',
-    'ApiKey\KeysController@request'
-);
-Route::name('api_key.requested')->get(
-    '/api_key/requested',
-    'ApiKey\KeysController@requested'
-);
-Route::name('api_key.send_email')->post(
-    '/api_key/send_email',
-    'ApiKey\DashboardController@sendEmail'
-);
-Route::name('api_key.save_note')->post(
-    '/api_key/save_note',
-    'ApiKey\DashboardController@saveNote'
-);
-Route::name('api_key.approve_api_key')->post(
-    '/api_key/approve_api_key',
-    'ApiKey\DashboardController@approveApiKey'
-);
-Route::name('api_key.change_api_key_state')->post(
-  '/api_key/change_api_key_state',
-  'ApiKey\DashboardController@changeApiKeyState'
-);
+});
