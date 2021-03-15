@@ -14,26 +14,24 @@ class BooksController extends APIController
 {
 
     /**
-     *
+     * Note: this now conflicts with another route: "The specified bible_id `books` could not be found"
      * Returns a static list of Scriptural Books and Accompanying meta data
      *
      * @version 4
      * @category v4_bible_books_all
-     * @link http://api.dbp.test/bibles/books?key=1234&v=4 - V4 Test Access URL
-     * @link https://dbp.test/eng/docs/swagger/v4#/Bible/v4_bible_books2 - V4 Test Docs
      *
      * @OA\Get(
      *     path="/bibles/books",
      *
-     *     tags={"Bibles"},
      *     summary="Returns the books of the Bible",
      *     description="Returns all of the books of the Bible both canonical and deuterocanonical",
-     *     operationId="v4_bible_books_all",
+     *     operationId="v4_internal_bible_books_all",
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_books_all"))
-     *     )
+     *     ),
+     *     deprecated=true
      * )
      *
      * @return JsonResponse
@@ -53,15 +51,12 @@ class BooksController extends APIController
      *
      * @version  4
      * @category v4_bible_filesets.books
-     * @link     https://api.dbp.test/bibles/filesets/TZTWBT/books?key=e8a946a0-d9e2-11e7-bfa7-b1fb2d7f5824&v=4&pretty
-     * @link     https://dbp.test/eng/docs/swagger/v4#/Bible/v4_bible_filesets.books - V4 Test Docs
      *
      * @OA\Get(
      *     path="/bibles/filesets/{fileset_id}/books",
-     *     tags={"Bibles"},
      *     summary="Returns the books of the Bible",
      *     description="Returns the books and chapters for a specific fileset",
-     *     operationId="v4_bible_filesets.books",
+     *     operationId="v4_internal_bible_filesets.books",
      *     @OA\Parameter(name="fileset_id",
      *         in="path",
      *         required=true,
@@ -78,24 +73,25 @@ class BooksController extends APIController
      *         response=200,
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.books"))
-     *     )
+     *     ),
+     *     deprecated=true
      * )
      *
      * @param $id
      * @return JsonResponse
      */
-    public function show($id)
-    {
-        $fileset_type = checkParam('fileset_type') ?? 'text_plain';
+    // public function show($id)
+    // {
+    //     $fileset_type = checkParam('fileset_type') ?? 'text_plain';
 
-        $cache_params = [$id, $fileset_type];
-        $books = cacheRemember('v4_books', $cache_params, now()->addDay(), function () use ($fileset_type, $id) {
-            $books = $this->getActiveBooksFromFileset($id, $fileset_type);
-            return fractal($books, new BooksTransformer(), $this->serializer);
-        });
+    //     $cache_params = [$id, $fileset_type];
+    //     $books = cacheRemember('v4_books', $cache_params, now()->addDay(), function () use ($fileset_type, $id) {
+    //         $books = $this->getActiveBooksFromFileset($id, $fileset_type);
+    //         return fractal($books, new BooksTransformer(), $this->serializer);
+    //     });
 
-        return $this->reply($books);
-    }
+    //     return $this->reply($books);
+    // }
 
     public function getActiveBooksFromFileset($id, $fileset_type)
     {

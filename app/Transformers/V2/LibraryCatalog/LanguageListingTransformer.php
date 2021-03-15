@@ -19,9 +19,6 @@ class LanguageListingTransformer extends BaseTransformer
      *          @OA\Property(property="language_name",         ref="#/components/schemas/Language/properties/name"),
      *          @OA\Property(property="english_name",          ref="#/components/schemas/Language/properties/name"),
      *          @OA\Property(property="language_iso",          ref="#/components/schemas/Language/properties/iso"),
-     *          @OA\Property(property="language_iso_2B",       ref="#/components/schemas/Language/properties/iso2B"),
-     *          @OA\Property(property="language_iso_2T",       ref="#/components/schemas/Language/properties/iso2T"),
-     *          @OA\Property(property="language_iso_1",        ref="#/components/schemas/Language/properties/iso1"),
      *          @OA\Property(property="language_iso_name",     ref="#/components/schemas/Language/properties/name"),
      *          @OA\Property(property="language_family_code",  ref="#/components/schemas/Language/properties/iso")
      *     )
@@ -68,9 +65,6 @@ class LanguageListingTransformer extends BaseTransformer
              *          @OA\Property(property="language_family_name",      ref="#/components/schemas/Language/properties/name"),
              *          @OA\Property(property="language_family_english",   ref="#/components/schemas/Language/properties/name"),
              *          @OA\Property(property="language_family_iso",       ref="#/components/schemas/Language/properties/iso"),
-             *          @OA\Property(property="language_family_iso_2B",    ref="#/components/schemas/Language/properties/iso2B"),
-             *          @OA\Property(property="language_family_iso_2T",    ref="#/components/schemas/Language/properties/iso2T"),
-             *          @OA\Property(property="language_family_iso_1",     ref="#/components/schemas/Language/properties/iso1"),
              *          @OA\Property(property="language",                  @OA\Schema(type="array")),
              *          @OA\Property(property="media",                     @OA\Schema(type="array")),
              *          @OA\Property(property="delivery",                  @OA\Schema(type="array")),

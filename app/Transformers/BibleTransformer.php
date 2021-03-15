@@ -104,14 +104,11 @@ class BibleTransformer extends BaseTransformer
              *   description="The bibles being returned",
              *   title="v4_bible.all",
              *   @OA\Xml(name="v4_bible.all"),
-             *   allOf={
-             *      @OA\Schema(ref="#/components/schemas/pagination.alternate"),
-             *   },
              *   @OA\Property(
              *    property="data",
              *    type="array",
              *    @OA\Items(
-             *              @OA\Property(property="abbr",              ref="#/components/schemas/Bible/properties/id"),
+             *              @OA\Property(property="id",                ref="#/components/schemas/Bible/properties/id"),
              *              @OA\Property(property="name",              ref="#/components/schemas/BibleTranslation/properties/name"),
              *              @OA\Property(property="vname",             ref="#/components/schemas/BibleTranslation/properties/name"),
              *              @OA\Property(property="language",          ref="#/components/schemas/Language/properties/name"),
@@ -123,7 +120,8 @@ class BibleTransformer extends BaseTransformer
              *                         @OA\Property(property="dbp-prod",type="array", @OA\Items(ref="#/components/schemas/BibleFileset"))
              *              )
              *     )
-             *    )
+             *    ),
+             *    @OA\Property(property="meta",ref="#/components/schemas/pagination.new")
              *   )
              * )
              */
@@ -201,7 +199,7 @@ class BibleTransformer extends BaseTransformer
                  *   title="v4_bible.one",
                  *   @OA\Xml(name="v4_bible.one"),
                  *   @OA\Items(
-                 *              @OA\Property(property="abbr",          ref="#/components/schemas/Bible/properties/id"),
+                 *              @OA\Property(property="id",          ref="#/components/schemas/Bible/properties/id"),
                  *              @OA\Property(property="alphabet",      ref="#/components/schemas/Alphabet/properties/script"),
                  *              @OA\Property(property="mark",          ref="#/components/schemas/Bible/properties/copyright"),
                  *              @OA\Property(property="name",          ref="#/components/schemas/BibleTranslation/properties/name"),
@@ -225,7 +223,7 @@ class BibleTransformer extends BaseTransformer
                 $currentTranslation = optional($bible->translations->where('language_id', $GLOBALS['i18n_id']));
                 $fonts = [];
                 $bible = [
-                    'abbr'          => $bible->id,
+                    'id'            => $bible->id,
                     'alphabet'      => $bible->alphabet,
                     'mark'          => $bible->copyright,
                     'name'          => optional($bible->translations->where('language_id', $GLOBALS['i18n_id'])->first())->name,

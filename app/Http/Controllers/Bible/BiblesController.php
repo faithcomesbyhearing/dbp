@@ -41,7 +41,7 @@ class BiblesController extends APIController
      * @OA\Get(
      *     path="/bibles",
      *     tags={"Bibles"},
-     *     summary="Returns Bibles",
+     *     summary="Returns Bibles based on filter criteria",
      *     description="The base bible route returning by default bibles and filesets that your key has access to",
      *     operationId="v4_bible.all",
      *     @OA\Parameter(
@@ -51,35 +51,18 @@ class BiblesController extends APIController
      *          description="The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `/languages` route",
      *     ),
      *     @OA\Parameter(
-     *          name="organization_id",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Organization/properties/id"),
-     *          description="The owning organization to return bibles for. For a complete list of ids see the route
-     *              `/organizations`."
-     *     ),
-     *     @OA\Parameter(
      *          name="media",
      *          in="query",
-     *          @OA\Property(ref="#/components/schemas/BibleFilesetType/properties/set_type_code"),
-     *          description="Will filter bibles based upon the media type of their filesets"
+     *          @OA\Schema(ref="#/components/schemas/BibleFilesetType/properties/set_type_code"),
+     *          description="Will filter bibles based upon the media type of their filesets",
+     *          example="audio_drama"
      *     ),
      *     @OA\Parameter(
      *          name="media_exclude",
      *          in="query",
-     *          @OA\Property(ref="#/components/schemas/BibleFilesetType/properties/set_type_code"),
-     *          description="Will exclude bibles based upon the media type of their filesets"
-     *     ),
-     *     @OA\Parameter(
-     *          name="size",
-     *          in="query",
-     *          @OA\Property(ref="#/components/schemas/BibleFilesetSize/properties/set_size_code"),
-     *          description="Will filter bibles based upon the size type of their filesets"
-     *     ),
-     *     @OA\Parameter(
-     *          name="size_exclude",
-     *          in="query",
-     *          @OA\Property(ref="#/components/schemas/BibleFilesetSize/properties/set_size_code"),
-     *          description="Will exclude bibles based upon the size type of their filesets"
+     *          @OA\Schema(ref="#/components/schemas/BibleFilesetType/properties/set_type_code"),
+     *          description="Will exclude bibles based upon the media type of their filesets",
+     *          example="audio"
      *     ),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
@@ -89,20 +72,22 @@ class BiblesController extends APIController
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.all"))
      *     )
      * )
-     *
+     * API Notes (Mar 2021): 
+     * I removed organization as a search criteria. There is no organization endpoint currently. Can be added back in, but the data needs validation first.
+     * I removed size and size_exclude because there is no way for the API developer to see the list of available sizes. Need to add an endpoint showing available size types, or at least an enum
+     * 
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
      */
     public function index()
     {
         $language_code      = checkParam('language_id|language_code');
-        $organization_id    = checkParam('organization_id');
+        $organization_id    = checkParam('organization_id'); #removed from API for initial release
         $country            = checkParam('country');
         $media              = checkParam('media');
         $media_exclude      = checkParam('media_exclude');
-        $size               = checkParam('size');
-        $size_exclude       = checkParam('size_exclude');
-        $bitrate            = checkParam('bitrate');
-        $show_restricted    = checkBoolean('show_all|show_restricted');
+        $size               = checkParam('size'); #removed from API for initial release
+        $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
+        $bitrate            = checkParam('bitrate'); #removed from API for initial release
         $limit      = checkParam('limit');
         $page       = checkParam('page');
 
@@ -114,7 +99,7 @@ class BiblesController extends APIController
             }
         }
 
-        $access_control = (!$show_restricted) ? $this->accessControl($this->key) : (object) ['string' => null, 'hashes' => null];
+        $access_control = $this->accessControl($this->key) ;
         $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
         $cache_params = [$language_code, $organization, $country, $access_control->string, $media, $media_exclude, $size, $size_exclude, $bitrate, $limit, $page];
         $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $bitrate, $show_restricted, $limit, $page) {
@@ -199,8 +184,8 @@ class BiblesController extends APIController
      * @OA\Get(
      *     path="/bibles/{id}",
      *     tags={"Bibles"},
-     *     summary="",
-     *     description="",
+     *     summary="Returns detailed metadata for a single Bible",
+     *     description="Detailed information for a single Bible",
      *     operationId="v4_bible.one",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
      *     @OA\Response(
@@ -239,12 +224,11 @@ class BiblesController extends APIController
      * @OA\Get(
      *     path="/bibles/{id}/book",
      *     tags={"Bibles"},
-     *     summary="Returns a list of translated book names and general information for the given Bible",
-     *     description="The actual list of books may vary from fileset to fileset. For example, a King James Fileset may contain deuterocanonical books that are missing from one of it's sibling filesets nested within the bible parent.",
+     *     summary="Book information for a Bible",
+     *     description="Returns a list of translated book names and general information for the given Bible. The actual list of books may vary from fileset to fileset. For example, a King James Fileset may contain deuterocanonical books that are missing from one of it's sibling filesets nested within the bible parent.",
      *     operationId="v4_bible.books",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
      *     @OA\Parameter(name="book_id",in="query", description="The book id. For a complete list see the `book_id` field in the `/bibles/books` route.",@OA\Schema(ref="#/components/schemas/Book/properties/id")),
-     *     @OA\Parameter(name="testament",in="query",@OA\Schema(ref="#/components/schemas/Book/properties/book_testament")),
      *     @OA\Parameter(
      *          name="verify_content",
      *          in="query",
@@ -272,12 +256,11 @@ class BiblesController extends APIController
     public function books($bible_id, $book_id = null)
     {
         $book_id   = checkParam('book_id', false, $book_id);
-        $testament = checkParam('testament');
 
         $verify_content = checkBoolean('verify_content');
         $verse_count = checkBoolean('verse_count');
 
-        $bible = Bible::find($bible_id);
+        $bible = Bible::find($bible_id); // FIXME: I think this can be removed. verify and remove
         $access_control = $this->accessControl($this->key);
         $cache_params = [$bible_id, $access_control->string, $verify_content];
         $bible = cacheRemember('bible_books_bible', $cache_params, now()->addDay(), function () use ($access_control, $bible_id, $verify_content) {
@@ -297,12 +280,12 @@ class BiblesController extends APIController
             return $this->setStatusCode(404)->replyWithError(trans('api.bibles_errors_404', ['bible_id' => $bible_id]));
         }
 
-        $cache_params = [$bible_id, $testament, $book_id];
-        $books = cacheRemember('bible_books_books', $cache_params, now()->addDay(), function () use ($bible_id, $testament, $book_id, $bible) {
+        $cache_params = [$bible_id, $book_id];
+        $books = cacheRemember('bible_books_books', $cache_params, now()->addDay(), function () use ($bible_id, $book_id, $bible) {
             $books = BibleBook::where('bible_id', $bible_id)
-                ->when($testament, function ($query) use ($testament) {
-                    $query->where('book_testament', $testament);
-                })
+                // ->when($testament, function ($query) use ($testament) {
+                //     $query->where('book_testament', $testament);
+                // })
                 ->when($book_id, function ($query) use ($book_id) {
                     $query->where('book_id', $book_id);
                 })
@@ -314,7 +297,7 @@ class BiblesController extends APIController
         });
 
         if ($verify_content) {
-            $cache_params = [$bible_id, $access_control->string, $verify_content, $testament, $book_id];
+            $cache_params = [$bible_id, $access_control->string, $verify_content, $book_id];
             $books = cacheRemember('bible_books_books_verified', $cache_params, now()->addDay(), function () use ($books, $bible) {
                 $book_controller = new BooksController();
                 $active_books = [];
@@ -379,8 +362,8 @@ class BiblesController extends APIController
      * @OA\Get(
      *     path="/bibles/defaults/types",
      *     tags={"Bibles"},
-     *     summary="Available bible defaults per language code",
-     *     description="Available bible defaults per language code",
+     *     summary="Default Bible for a language",
+     *     description="Returns default Bible for a language",
      *     operationId="v4_bible.defaults",
      *     @OA\Parameter(
      *          name="language_code",
@@ -494,7 +477,7 @@ class BiblesController extends APIController
      *     summary="Bible chapter information",
      *     description="All bible chapter information",
      *     operationId="v4_internal_bible.chapter",
-     *     security={{"api_token":{}}},
+     *     security={{"dbp_user_token":{}}},
      *     @OA\Parameter(
      *          name="bible_id",
      *          in="path",
@@ -955,7 +938,7 @@ class BiblesController extends APIController
      *     summary="Bible chapter annotations",
      *     description="Bible chapter annotations",
      *     operationId="v4_internal_bible.chapter.annotations",
-     *     security={{"api_token":{}}},
+     *     security={{"dbp_user_token":{}}},
      *     @OA\Parameter(
      *          name="bible_id",
      *          in="path",

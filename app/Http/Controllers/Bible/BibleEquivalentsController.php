@@ -11,13 +11,12 @@ class BibleEquivalentsController extends APIController
 
     /**
      *
-     * @link https://api.dbp.test/bibles/equivalents?key=1234&v=4&pretty
      * @OA\Get(
      *     path="/bible/equivalents",
      *     tags={"Bibles"},
      *     summary="Get a list of bible equivalents",
      *     description="Fetch a list of bible equivalents filtered by Type, Organization or Bible. This route will allow your apps to connect to other Bible APIs and services without introducing duplicate Bible content into your apps and ease migration between APIs.",
-     *     operationId="v4_bible_equivalents.all",
+     *     operationId="v4_internal_bible_equivalents.all",
      *     @OA\Parameter(
      *       name="organization_id",
      *       in="query",

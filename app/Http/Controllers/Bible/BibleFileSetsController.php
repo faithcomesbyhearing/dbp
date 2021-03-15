@@ -29,10 +29,9 @@ class BibleFileSetsController extends APIController
      *
      * @OA\Get(
      *     path="/bibles/filesets/{fileset_id}",
-     *     tags={"Bibles"},
      *     summary="Returns Bibles Filesets",
      *     description="Returns a list of bible filesets",
-     *     operationId="v4_bible_filesets.show",
+     *     operationId="v4_internal_filesets.show",
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
@@ -49,8 +48,12 @@ class BibleFileSetsController extends APIController
      *         response=200,
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.show"))
-     *     )
+     *     ),
+     *     deprecated=true
      * )
+     *     API Note: this is confusing. If ENGESV is provided as fileset, and no type is provided, it returns ENGESVN1DA. Thus it is not part of the public API. 
+     *     Prefer instead v4_filesets.chapter
+     *     If we implement a key-based access control, this endpoint should be limited to bible.is and gideons
      *
      * @param null $id
      *
@@ -112,9 +115,9 @@ class BibleFileSetsController extends APIController
     /**
      *
      * @OA\Get(
-     *     path="bibles/filesets/{fileset_id}/{book}/{chapter}",
+     *     path="/bibles/filesets/{fileset_id}/{book}/{chapter}",
      *     tags={"Bibles"},
-     *     summary="Returns content for a given fileset",
+     *     summary="Returns content for a single fileset, book and chapter",
      *     description="For a given fileset, book and chapter, return content (text, audio or video)",
      *     operationId="v4_bible_filesets.showChapter",
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
@@ -241,7 +244,7 @@ class BibleFileSetsController extends APIController
      *     tags={"Bibles"},
      *     summary="Returns all content for a given fileset",
      *     description="For a given fileset return content (text, audio or video)",
-     *     operationId="v4_bible_filesets.showBulk",
+     *     operationId="v4_internal_bible_filesets.showBulk",
      *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
@@ -537,7 +540,7 @@ class BibleFileSetsController extends APIController
      *     tags={"Bibles"},
      *     summary="Fileset Copyright information",
      *     description="A fileset's copyright information and organizational connections",
-     *     operationId="v4_bible_filesets.copyright",
+     *     operationId="v4_internal_bible_filesets.copyright",
      *     @OA\Parameter(
      *          name="fileset_id",
      *          in="path",
@@ -545,22 +548,9 @@ class BibleFileSetsController extends APIController
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id"),
      *          description="The fileset ID to retrieve the copyright information for"
      *     ),
-     *     @OA\Parameter(
-     *          name="type",
-     *          in="query",
-     *          required=true,
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/set_type_code"),
-     *          description="The set type code for the fileset"
-     *     ),
-     *     @OA\Parameter(
-     *          name="iso",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso", default="eng"),
-     *          description="The iso code to filter organization translations by. For a complete list see the `iso` field in the `/languages` route."
-     *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="The requested fileset copyright",
+     *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets.copyright"))
      *     )
      * )
@@ -577,17 +567,15 @@ class BibleFileSetsController extends APIController
      *     @OA\Property(property="copyright", ref="#/components/schemas/BibleFilesetCopyright")
      * )
      *
-     * @see https://api.dbp.test/bibles/filesets/ENGESV/copyright?key=API_KEY&v=4&type=text_plain&pretty
      * @param string $id
      * @return mixed
      */
     public function copyright($id)
     {
         $iso = checkParam('iso') ?? 'eng';
-        $type = checkParam('type', true);
 
-        $cache_params = [$id, $type, $iso];
-        $fileset = cacheRemember('bible_fileset_copyright', $cache_params, now()->addDay(), function () use ($iso, $type, $id) {
+        $cache_params = [$id, $iso];
+        $fileset = cacheRemember('bible_fileset_copyright', $cache_params, now()->addDay(), function () use ($iso, $id) {
             $language_id = optional(Language::where('iso', $iso)->select('id')->first())->id;
             return BibleFileset::where('id', $id)->with([
                 'copyright.organizations.logos',
@@ -595,9 +583,7 @@ class BibleFileSetsController extends APIController
                     $q->where('language_id', $language_id);
                 }
             ])
-                ->when($type, function ($q) use ($type) {
-                    $q->where('set_type_code', $type);
-                })->select(['hash_id', 'id', 'asset_id', 'set_type_code as type', 'set_size_code as size'])->first();
+                ->select(['hash_id', 'id', 'asset_id', 'set_type_code as type', 'set_size_code as size'])->first();
         });
 
         return $this->reply($fileset);
@@ -614,10 +600,10 @@ class BibleFileSetsController extends APIController
      *     operationId="v4_bible_filesets.types",
      *     @OA\Response(
      *         response=200,
-     *         description="The fileset types",
+     *         description="successful operation",
      *         @OA\MediaType(
      *            mediaType="application/json",
-     *            @OA\Schema(type="object",example={"audio_drama"="Dramatized Audio","audio"="Audio","text_plain"="Plain Text","text_format"="Formatted Text","video"="Video","app"="Application"})
+     *            @OA\Schema(type="object",example={"audio_drama"="Dramatized Audio","audio"="Audio","text_plain"="Plain Text","text_format"="Formatted Text","video_stream"="Video","audio_stream"="Audio HLS Stream", "audio_drama_stream"="Dramatized Audio HLS Stream"})
      *         )
      *     )
      * )

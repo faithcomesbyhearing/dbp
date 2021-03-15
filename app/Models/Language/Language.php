@@ -44,7 +44,7 @@ use App\Models\Resource\Resource;
  * @property string $use
  * @property string $location
  * @property string $area
- * @property string $population
+ * @property number $population
  * @property string $notes
  * @property string $typology
  * @property string $description
@@ -94,7 +94,8 @@ class Language extends Model
      * @OA\Property(
      *     title="id",
      *     description="The incrementing ID for the language",
-     *     type="integer"
+     *     type="integer",
+     *     example=6411
      * )
      *
      */
@@ -107,7 +108,7 @@ class Language extends Model
      *     title="glotto_id",
      *     description="The glottolog ID for the language",
      *     type="string",
-     *     example="abkh1244",
+     *     example="stan1288",
      *     @OA\ExternalDocumentation(
      *         description="For more info please refer to the Glottolog",
      *         url="http://glottolog.org/"
@@ -125,7 +126,7 @@ class Language extends Model
      *     title="iso",
      *     description="The iso 639-3 for the language",
      *     type="string",
-     *     example="abk",
+     *     example="spa",
      *     maxLength=3,
      *     @OA\ExternalDocumentation(
      *         description="For more info",
@@ -140,14 +141,12 @@ class Language extends Model
     /**
      * iso2B
      *
-     * @OA\Property(
+     *  OpenAPI Note: this property was removed from the documentation because the values are mostly null
      *     title="iso 2b",
      *     description="The iso 639-2, B variant for the language",
      *     type="string",
-     *     example="abk",
+     *     example="spa",
      *     maxLength=3
-
-     * )
      *
      */
     protected $iso2B;
@@ -155,11 +154,11 @@ class Language extends Model
     /**
      * iso2T
      *
-     * @OA\Property(
+     *  OpenAPI Note: this property was removed from the documentation because the values are mostly null
      *     title="iso 2t",
      *     description="The iso 639-2, T variant for the language",
      *     type="string",
-     *     example="abk",
+     *     example="spa",
      *     maxLength=3
      * )
      *
@@ -167,11 +166,11 @@ class Language extends Model
     protected $iso2T;
 
     /**
-     * @OA\Property(
+     *  OpenAPI Note: this property was removed from the documentation because the values are mostly null
      *     title="iso1",
      *     description="The iso 639-1 for the language",
      *     type="string",
-     *     example="ab",
+     *     example="es",
      *     maxLength=3
      * )
      *
@@ -183,7 +182,7 @@ class Language extends Model
      *     title="Name",
      *     description="The name of the language",
      *     type="string",
-     *     example="Abkhazian",
+     *     example="Spanish",
      *     maxLength=191
      * )
      *
@@ -194,17 +193,20 @@ class Language extends Model
      * @OA\Property(
      *     title="Maps",
      *     description="The general area where the language can be found",
-     *     type="string"
+     *     type="string",
+     *     example="Andorra and France"
      * )
      *
      */
     protected $maps;
 
     /**
+     * 
      * @OA\Property(
      *     title="Development",
      *     description="The development of the growth of the language",
-     *     type="string"
+     *     type="string",
+     *     example="Fully developed. Bible: 1553-2000."
      * )
      *
      */
@@ -214,7 +216,8 @@ class Language extends Model
      * @OA\Property(
      *     title="use",
      *     description="The use of the language",
-     *     type="string"
+     *     type="string",
+     *     example="60,000,000 L2 speakers."
      * )
      *
      */
@@ -234,7 +237,8 @@ class Language extends Model
      * @OA\Property(
      *     title="Area",
      *     description="The area of the language",
-     *     type="string"
+     *     type="string",
+     *     example="Central, south; Canary Islands. Also in Andorra, ..."
      * )
      *
      */
@@ -244,7 +248,8 @@ class Language extends Model
      * @OA\Property(
      *     title="Population",
      *     description="The estimated number of people that speak the language",
-     *     type="string"
+     *     type="number",
+     *     example=24900
      * )
      *
      */
@@ -252,9 +257,10 @@ class Language extends Model
 
     /**
      * @OA\Property(
-     *     title="Population",
+     *     title="Population Notes",
      *     description="Any notes regarding the estimated number of people",
-     *     type="string"
+     *     type="string",
+     *     example="58,200,000 in United Kingdom (Crystal 2003). Population total all countries: 334,800,758."
      * )
      *
      */
@@ -264,7 +270,8 @@ class Language extends Model
      * @OA\Property(
      *     title="Notes",
      *     description="Any notes regarding the language",
-     *     type="string"
+     *     type="string",
+     *     example="The Aragonese dialect of Spanish is different from Aragonese language [arg]. Christian."
      * )
      *
      */
@@ -274,7 +281,8 @@ class Language extends Model
      * @OA\Property(
      *     title="Typology",
      *     description="The language's Typology",
-     *     type="string"
+     *     type="string",
+     *     example="SVO,prepositions,genitives, relatives after noun heads,articles, numerals before noun heads..."
      * )
      *
      */
@@ -282,16 +290,17 @@ class Language extends Model
 
     /**
      * @OA\Property(
-     *     title="Typology",
+     *     title="Description",
      *     description="The description of the language",
-     *     type="string"
+     *     type="string",
+     *     example="language description"
      * )
      *
      */
     protected $description;
 
     /**
-     * @OA\Property(
+     * Note: Removed from API
      *     title="Latitude",
      *     description="A generalized latitude for the location of the language",
      *     type="string"
@@ -301,7 +310,7 @@ class Language extends Model
     protected $latitude;
 
     /**
-     * @OA\Property(
+     * Note: Removed from API
      *     title="Longitude",
      *     description="A generalized longitude for the location of the language",
      *     type="string"
@@ -314,7 +323,8 @@ class Language extends Model
      * @OA\Property(
      *     title="Status",
      *     description="A status of the language",
-     *     type="string"
+     *     type="string",
+     *     example="6a"
      * )
      *
      */
@@ -324,7 +334,8 @@ class Language extends Model
      * @OA\Property(
      *     title="country_id",
      *     description="The primary country where the language is spoken",
-     *     type="string"
+     *     type="string",
+     *     example="ES"
      * )
      *
      */
@@ -352,19 +363,17 @@ class Language extends Model
         });
     }
 
-    public function scopeIncludeExtraLanguageTranslations($query, $include_alt_names)
+    public function scopeIncludeExtraLanguageTranslations($query, $include_translations)
     {
-        return $query->when($include_alt_names, function ($query) {
+        return $query->when($include_translations, function ($query) {
             $query->with('translations');
         });
     }
 
-    public function scopeIncludeExtraLanguages($query, $show_restricted, $access_control_hashes)
+    public function scopeIncludeExtraLanguages($query, $access_control_hashes)
     {
-        return $query->when(!$show_restricted, function ($query) use ($access_control_hashes) {
-            $query->whereHas('filesets', function ($query) use ($access_control_hashes) {
+        return $query->whereHas('filesets', function ($query) use ($access_control_hashes) {
                 $query->whereRaw('hash_id in (' . $access_control_hashes . ')');
-            });
         });
     }
 

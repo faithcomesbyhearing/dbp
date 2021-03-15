@@ -74,26 +74,9 @@ class BibleFileset extends Model
      */
     protected $set_size_code;
 
-    /**
-     *
-     * @OA\Property(
-     *   title="created_at",
-     *   type="string",
-     *   description="The timestamp at which the fileset was originally created"
-     * )
-     *
-     */
+
     protected $created_at;
 
-    /**
-     *
-     * @OA\Property(
-     *   title="updated_at",
-     *   type="string",
-     *   description="The timestamp at which the fileset was last updated"
-     * )
-     *
-     */
     protected $updated_at;
 
     public function copyright()

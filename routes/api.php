@@ -52,9 +52,9 @@ Route::name('v4_bible.defaults')->get(
     'Bible\BiblesController@defaults'
 ); // used
 Route::name('v4_bible.books')->get(
-    'bibles/{bible_id}/book/{book?}',
+    'bibles/{bible_id}/book',
     'Bible\BiblesController@books'
-); // used, but book is not specified
+); // used by bible.is, but book is not specified. suggest unifying on this one. (fixed)The signature looks wrong - the code doesn't accept book_id as a path param, only a query param
 Route::name('v4_bible.one')->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
@@ -85,11 +85,22 @@ Route::name('v4_internal_filesets.checkTypes')->post(
     'bibles/filesets/check/types',
     'Bible\BibleFileSetsController@checkTypes'
 );
-Route::name('v4_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
-Route::name('v4_filesets.show')->get(
+Route::name('v4_internal_bible_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
+
+// Deprecate this endpoint. Prefer instead v4_filesets.chapter. Reasons: It takes book and chapter as query parameters. 
+Route::name('v4_internal_filesets.show')->get(
     'bibles/filesets/{fileset_id?}',
     'Bible\BibleFileSetsController@show'
 );
+
+// not used by bible.is
+// is there anything in this that cannot be provided by bibles/books?
+// try to remove it
+// Route::name('v4_filesets.books')->get(
+//     'bibles/filesets/{fileset_id}/books',
+//     'Bible\BooksController@show'
+// );
+
 Route::name('v4_filesets.books')->get(
     'bibles/filesets/{fileset_id}/books',
     'Bible\BooksController@show'
@@ -112,6 +123,21 @@ Route::name('v4_bible.verseinfo')->get(
     'Bible\TextController@index'
 );
 
+// VERSION 4 | Timestamps 
+Route::name('v4_timestamps')->get(
+    'timestamps',
+    'Bible\AudioController@availableTimestamps'
+);
+Route::name('v4_timestamps.tag')->get(
+    'timestamps/search',
+    'Bible\AudioController@timestampsByTag'
+);
+Route::name('v4_timestamps.verse')->get(
+    'timestamps/{id}/{book}/{chapter}',
+    'Bible\AudioController@timestampsByReference'
+);
+
+
 // VERSION 4 | Stream
 Route::name('v4_media_stream')->get(
     'bible/filesets/{fileset_id}/{file_id}/playlist.m3u8',
@@ -121,6 +147,7 @@ Route::name('v4_media_stream_ts')->get(
     'bible/filesets/{fileset_id}/{file_id}/{file_name}',
     'Bible\StreamController@transportStream'
 );
+## this is no good. StreamController::index does not process book_id/chapter/verse_start/verse_end
 Route::name('v4_media_stream')->get(
     'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start}-{verse_end}/playlist.m3u8',
     'Bible\StreamController@index'
@@ -143,7 +170,6 @@ Route::name('v4_video_jesus_film_file')->get(
     'arclight/jesus-film',
     'Bible\VideoStreamController@jesusFilmFile'
 );// used by bible.is
-
 
 
 
@@ -390,7 +416,7 @@ Route::name('v4_internal_lexicon_index')->get(
     'Bible\Study\LexiconController@index'
 );
 // Bible Equivalents will be updated at some point in the future. Not to be removed
-Route::name('v4_bible_equivalents.all')->get(
+Route::name('v4_internal_bible_equivalents.all')->get(
     'bible/equivalents',
     'Bible\BibleEquivalentsController@index'
 );
@@ -412,19 +438,7 @@ Route::name('v4_internal_push_tokens.destroy')
     ->middleware('APIToken:check')
     ->delete('push_notifications/{token}', 'User\PushTokensController@destroy');
 
-// VERSION 4 | Timestamps (attic...deprecated, no longer used in bible.is, )
-Route::name('v4_internal_timestamps')->get(
-    'timestamps',
-    'Bible\AudioController@availableTimestamps'
-);
-Route::name('v4_internal_timestamps.tag')->get(
-    'timestamps/search',
-    'Bible\AudioController@timestampsByTag'
-);
-Route::name('v4_internal_timestamps.verse')->get(
-    'timestamps/{id}/{book}/{chapter}',
-    'Bible\AudioController@timestampsByReference'
-);
+
 
 Route::name('v4_bible.links')->get(
     'bibles/links',

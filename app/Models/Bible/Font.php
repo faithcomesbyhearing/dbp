@@ -35,7 +35,8 @@ class Font extends Model
      * @OA\Property(
      *   title="data",
      *   type="string",
-     *   description="The base64 data raw"
+     *   description="The base64 data raw",
+     *   example="no example provided -- base64 encoded font"
      * )
      *
      */

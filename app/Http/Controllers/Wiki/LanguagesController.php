@@ -28,10 +28,10 @@ class LanguagesController extends APIController
      *          name="country",
      *          in="query",
      *          @OA\Schema(ref="#/components/schemas/Country/properties/id"),
-     *          description="The country"
+     *          description="The ISO Country Code. For a complete list of Country codes,  please refer to the ISO Registration Authority. https://www.iso.org/iso-3166-country-codes.html"
      *     ),
      *     @OA\Parameter(
-     *          name="iso",
+     *          name="language_code",
      *          in="query",
      *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
      *          description="The iso code to filter languages by. For a complete list see the `iso` field in the `/languages` route"
@@ -43,32 +43,12 @@ class LanguagesController extends APIController
      *          description="The language_name field will filter results by a specific language name"
      *     ),
      *     @OA\Parameter(
-     *          name="include_alt_names",
+     *          name="include_translations",
      *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Language/properties/name"),
-     *          description="The include_alt_names"
-     *     ),
-     *     @OA\Parameter(
-     *          name="show_all",
-     *          in="query",
-     *          @OA\Schema(type="boolean"),
-     *          description="Will show all entries"
-     *     ),
-     *     @OA\Parameter(
-     *          name="random",
-     *          in="query",
-     *          @OA\Schema(type="boolean"),
-     *          description="Will order the entries randomly"
-     *     ),
-     *     @OA\Parameter(
-     *          name="show_bibles",
-     *          in="query",
-     *          @OA\Schema(type="boolean"),
-     *          description="Will show all bibles details"
+     *           @OA\Schema(type="boolean"),
+     *          description="Include the ISO language ids for available translations"
      *     ),
      *     @OA\Parameter(ref="#/components/parameters/l10n"),
-     *     @OA\Parameter(ref="#/components/parameters/sort_by"),
-     *     @OA\Parameter(ref="#/components/parameters/sort_dir"),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Response(
@@ -77,7 +57,6 @@ class LanguagesController extends APIController
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_languages.all"))
      *     )
      * )
-     * @link https://api.dbp.test/languages?key=1234&v=4&pretty
      * @return \Illuminate\Http\Response
      *
      * @OA\Schema(
@@ -90,8 +69,8 @@ class LanguagesController extends APIController
      *          @OA\Property(property="iso",        ref="#/components/schemas/Language/properties/iso"),
      *          @OA\Property(property="name",       ref="#/components/schemas/Language/properties/name"),
      *          @OA\Property(property="autonym",    ref="#/components/schemas/LanguageTranslation/properties/name"),
-     *          @OA\Property(property="bibles",     type="integer"),
-     *          @OA\Property(property="filesets",   type="integer"),
+     *          @OA\Property(property="bibles",     type="integer", example=12),
+     *          @OA\Property(property="filesets",   type="integer", example=4),
      *          @OA\Property(property="country_population", ref="#/components/schemas/Language/properties/population"),
      *      )
      *   )
@@ -104,13 +83,9 @@ class LanguagesController extends APIController
         }
 
         $country               = checkParam('country');
-        $code                  = checkParam('code|iso');
-        $sort_by               = checkParam('sort_by') ?? 'name';
-        $include_alt_names     = checkParam('include_alt_names');
+        $code                  = checkParam('code|iso|language_code');
+        $include_translations  = checkParam('include_translations|include_alt_names');
         $name                  = checkParam('name|language_name');
-        $random                  = checkParam('random');
-        $show_restricted       = checkBoolean('show_all|show_restricted');
-        $show_bibles           = checkBoolean('show_bibles');
         $limit      = checkParam('limit');
         $page       = checkParam('page');
 
@@ -118,26 +93,20 @@ class LanguagesController extends APIController
             return $this->accessControl($this->key);
         });
 
-        $cache_params = [$this->v,  $country, $code, $GLOBALS['i18n_id'], $sort_by, $name, $show_restricted, $include_alt_names, $access_control->string, $limit, $page, $show_bibles, $random];
+        $cache_params = [$this->v,  $country, $code, $GLOBALS['i18n_id'], $name, $include_translations, $access_control->string, $limit, $page];
 
         $order = $country ? 'country_population.population' : 'ifnull(current_translation.name, languages.name)';
         $order_dir = $country ? 'desc' : 'asc';
         $select_country_population = $country ? 'country_population.population' : 'null';
-        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_alt_names, $code, $name, $show_restricted, $access_control, $order, $order_dir, $select_country_population, $limit, $page, $random) {
+        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $access_control, $order, $order_dir, $select_country_population, $limit, $page) {
             $languages = Language::includeCurrentTranslation()
                 ->includeAutonymTranslation()
-                ->includeExtraLanguages($show_restricted, arrayToCommaSeparatedValues($access_control->hashes))
-                ->includeExtraLanguageTranslations($include_alt_names)
+                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->hashes))
+                ->includeExtraLanguageTranslations($include_translations)
                 ->includeCountryPopulation($country)
                 ->filterableByCountry($country)
                 ->filterableByIsoCode($code)
-                ->filterableByName($name)
-                ->when($random, function ($query) {
-                    return $query->inRandomOrder();
-                })
-                ->unless($random, function ($query) use ($order, $order_dir) {
-                    return $query->orderByRaw($order . ' ' . $order_dir);
-                })
+                ->filterableByName($name) 
                 ->select([
                     'languages.id',
                     'languages.glotto_id',
@@ -173,8 +142,8 @@ class LanguagesController extends APIController
      * @OA\Get(
      *     path="/languages/{id}",
      *     tags={"Languages"},
-     *     summary="Returns a single Language",
-     *     description="Returns a single Language",
+     *     summary="Returns details on a single Language",
+     *     description="Returns details on a single Language",
      *     operationId="v4_languages.one",
      *     @OA\Parameter(
      *          name="id",
@@ -208,7 +177,7 @@ class LanguagesController extends APIController
         $cache_params = [$id, $access_control->string];
         $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $access_control) {
             $language = Language::where('id', $id)->orWhere('iso', $id)
-                ->includeExtraLanguages(false, arrayToCommaSeparatedValues($access_control->hashes), false)
+                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->hashes), false)
                 ->first();
             if (!$language) {
                 return $this->setStatusCode(404)->replyWithError("Language not found for ID: $id");

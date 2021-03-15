@@ -84,11 +84,9 @@ class BibleFile extends Model
      *
      * @OA\Property(
      *   title="chapter_start",
-     *   type="integer",
+     *   type="string",
      *   description="The chapter_start",
-     *   minimum=0,
-     *   maximum=150,
-     *   example=4
+     *   example="4"
      * )
      *
      */
@@ -97,12 +95,10 @@ class BibleFile extends Model
      *
      * @OA\Property(
      *   title="chapter_end",
-     *   type="integer",
+     *   type="string",
      *   description="If the Bible File spans multiple chapters this field indicates the last chapter of the selection",
      *   nullable=true,
-     *   minimum=0,
-     *   maximum=150,
-     *   example=5
+     *   example="5"
      * )
      *
      */
@@ -111,11 +107,9 @@ class BibleFile extends Model
      *
      * @OA\Property(
      *   title="verse_start",
-     *   type="integer",
+     *   type="string",
      *   description="The starting verse at which the BibleFile reference begins",
-     *   minimum=1,
-     *   maximum=176,
-     *   example=5
+     *   example="5"
      * )
      *
      */
@@ -128,9 +122,7 @@ class BibleFile extends Model
      *   type="string",
      *   description="If the Bible File spans multiple verses this value will indicate the last verse in that reference. This value is inclusive, so for the reference John 1:1-4. The value would be 4 and the reference would contain verse 4.",
      *   nullable=true,
-     *   minimum=1,
-     *   maximum=176,
-     *   example=5
+     *   example="5"
      * )
      *
      */
@@ -167,7 +159,7 @@ class BibleFile extends Model
      *   title="file_size",
      *   type="integer",
      *   description="The file size",
-     *   example="5486618"
+     *   example=5486618
      * )
      *
      */
