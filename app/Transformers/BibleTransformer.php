@@ -121,7 +121,7 @@ class BibleTransformer extends BaseTransformer
              *              )
              *     )
              *    ),
-             *    @OA\Property(property="meta",ref="#/components/schemas/pagination.new")
+             *    @OA\Property(property="meta",ref="#/components/schemas/pagination")
              *   )
              * )
              */
