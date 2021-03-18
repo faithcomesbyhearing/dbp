@@ -125,21 +125,6 @@ Route::name('status')->get(
 // ------------------------------ working attic-----------------------------------------------------
 //Localization::localizedRoutesGroup(function () {
 
-    // Route::name('welcome')->get('/', 'User\DocsController@index');
-    // Route::name('docs')->get('/docs', 'User\DocsController@index');
-
-    // Legal Overview
-    Route::get('/about/legal', 'WelcomeController@legal')->name(
-        'legal_overview'
-    );
-    Route::get('/about/license', 'WelcomeController@license')->name(
-        'legal_license'
-    );
-    Route::get('/terms', 'WelcomeController@terms')->name('legal_terms');
-    Route::get('/privacy', 'WelcomeController@privacyPolicy')->name(
-        'privacy_policy'
-    );
-
     // About
     Route::get('/about/contact', 'User\ContactController@create')->name(
         'contact.create'
@@ -178,6 +163,14 @@ Route::name('status')->get(
     );
     // Validate
     Route::group(['middleware' => ['web']], function () {
+        // Docs Generator Routes
+        Route::name('swagger_docs_gen')->get(
+            'open-api-{version}.json',
+            'User\SwaggerDocsController@swaggerDocsGen'
+        );
+
+
+
         Route::name('validate.index')->get(
             '/validate',
             'ValidateController@index'
@@ -204,26 +197,6 @@ Route::name('status')->get(
         );
         // Docs Routes
         Route::name('docs')->get('docs', 'User\DocsController@index');
-        Route::name('core_concepts')->get(
-            'docs/core-concepts',
-            'User\DocsController@coreConcepts'
-        );
-        Route::name('available_content')->get(
-            'docs/available-content',
-            'User\DocsController@availableContent'
-        );
-        Route::name('user_flows')->get(
-            'docs/user-flows',
-            'User\DocsController@userFlows'
-        );
-        Route::name('glossary')->get(
-            'docs/glossary',
-            'User\DocsController@glossary'
-        );
-        Route::name('api_reference')->get(
-            'docs/api-reference',
-            'User\DocsController@apiReference'
-        );
 
         Route::name('swagger')->get(
             'docs/swagger/{version?}',
@@ -264,11 +237,6 @@ Route::name('status')->get(
         Route::name('docs_alphabets')->get(
             'docs/alphabets',
             'User\DocsController@alphabets'
-        );
-        // Docs Generator Routes
-        Route::name('swagger_docs_gen')->get(
-            'open-api-{version}.json',
-            'User\SwaggerDocsController@swaggerDocsGen'
         );
 
         Route::name('apiDocs_bible_equivalents')->get(

@@ -16,26 +16,6 @@ class DocsController extends APIController
         return view('docs.routes.index');
     }
 
-    public function coreConcepts()
-    {
-        return view('docs.routes.coreConcepts');
-    }
-    public function availableContent()
-    {
-        return view('docs.routes.availableContent');
-    }
-    public function userFlows()
-    {
-        return view('docs.routes.userFlows');
-    }
-    public function glossary()
-    {
-        return view('docs.routes.glossary');
-    }
-    public function apiReference()
-    {
-        return view('docs.routes.apiReference');
-    }
 
     public function start()
     {

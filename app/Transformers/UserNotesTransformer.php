@@ -15,7 +15,7 @@ class UserNotesTransformer extends TransformerAbstract
      *        title="v4_user_notes",
      *      @OA\Xml(name="v4_internal_notes_index"),
      *      allOf={
-     *        @OA\Schema(ref="#/components/schemas/pagination.alternate"),
+     *        @OA\Schema(ref="#/components/schemas/pagination"),
      *      },
      *   @OA\Property(property="data", type="array",
      *      @OA\Items(ref="#/components/schemas/v4_note")

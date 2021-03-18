@@ -206,7 +206,7 @@ class TextController extends APIController
      *   schema="v4_text_search",
      *   type="object",
      *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter"),
-     *   @OA\Property(property="meta",ref="#/components/schemas/pagination.new")
+     *   @OA\Property(property="meta",ref="#/components/schemas/pagination")
      * 
      * )
      */

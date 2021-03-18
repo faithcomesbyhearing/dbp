@@ -290,12 +290,11 @@ class UsersController extends APIController
         if (!$user) {
             return false;
         }
-        $temp = md5('password');
         $oldPassword = \Hash::check(md5($password), $user->password);
         $newPassword = \Hash::check($password, $user->password);
-        // if (!$oldPassword && !$newPassword) {
-        //     return false;
-        // }
+        if (!$oldPassword && !$newPassword) {
+            return false;
+        }
 
         return $user;
     }

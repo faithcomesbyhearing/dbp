@@ -258,7 +258,7 @@ class BiblesController extends APIController
         $verify_content = checkBoolean('verify_content');
         $verse_count = checkBoolean('verse_count');
 
-        $bible = Bible::find($bible_id); // FIXME: I think this can be removed. verify and remove
+        $bible = Bible::find($bible_id); // FIXME: I think this can be removed. Jose, can you evaluate and remove if possible?
         $access_control = $this->accessControl($this->key);
         $cache_params = [$bible_id, $access_control->string, $verify_content];
         $bible = cacheRemember('bible_books_bible', $cache_params, now()->addDay(), function () use ($access_control, $bible_id, $verify_content) {
@@ -281,9 +281,6 @@ class BiblesController extends APIController
         $cache_params = [$bible_id, $book_id];
         $books = cacheRemember('bible_books_books', $cache_params, now()->addDay(), function () use ($bible_id, $book_id, $bible) {
             $books = BibleBook::where('bible_id', $bible_id)
-                // ->when($testament, function ($query) use ($testament) {
-                //     $query->where('book_testament', $testament);
-                // })
                 ->when($book_id, function ($query) use ($book_id) {
                     $query->where('book_id', $book_id);
                 })
