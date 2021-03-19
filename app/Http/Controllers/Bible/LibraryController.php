@@ -240,8 +240,7 @@ class LibraryController extends APIController
      *         @OA\Schema(
      *          type="string",
      *          @OA\ExternalDocumentation(
-     *              description="For a complete list of media types please see the v4_bible_filesets.types route",
-     *              url="/docs/swagger/v4#/Bibles/v4_bible_filesets_types"
+     *              description="For a complete list of media types please see the v4_bible_filesets.types route"
      *          )
      *         )
      *     ),
@@ -257,8 +256,7 @@ class LibraryController extends APIController
      *          description="The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `/languages` route",
      *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
      *          @OA\ExternalDocumentation(
-     *              description="For a complete list see the `iso` field in the `/languages` route",
-     *              url="/docs/swagger/v2#/Languages"
+     *              description="For a complete list see the `iso` field in the `/languages` route"
      *          )),
      *     @OA\Parameter(
      *          name="language_family_code",
