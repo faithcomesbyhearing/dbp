@@ -16,15 +16,9 @@ class DocsController extends APIController
         return view('docs.routes.index');
     }
 
-
     public function start()
     {
         return Redirect::to(config('app.get_started_url'));
-    }
-
-    public function swagger($version)
-    {
-        return view('docs.swagger_docs');
     }
 
     public function bibles()
