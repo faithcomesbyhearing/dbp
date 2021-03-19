@@ -11,7 +11,7 @@
 
 Localization::localizedRoutesGroup(function () {
 
-    // Primary documentation resides in WebFlow, which is accessed from biblebrain.com
+    // Primary documentation resides in WebFlow. Home page is now redirected to WebFlow
     Route::get('/', 'WelcomeController@redirect')->name('welcome');
     
 
@@ -23,15 +23,14 @@ Localization::localizedRoutesGroup(function () {
     - v4_internal_user.password_reset (api route)
     */
 
-    // I think register/login/logout is all done via API
-    // Route::name('login')->match(
-    //     ['get', 'post'],
-    //     'login',
-    //     'User\UsersController@login'
-    // );
-    // Route::name('logout')->post('logout', 'User\UsersController@logout');
-    // Route::name('register')->get('register', 'User\UsersController@create');
-    // Route::post('register', 'User\UsersController@store');
+    Route::name('login')->match(
+        ['get', 'post'],
+        'login',
+        'User\UsersController@login'
+    );
+    Route::name('logout')->post('logout', 'User\UsersController@logout');
+    Route::name('register')->get('register', 'User\UsersController@create');
+    Route::post('register', 'User\UsersController@store');
 
     Route::name('password.request')->get(
         'password/reset',
@@ -119,10 +118,17 @@ Route::name('status')->get(
     'ApiMetadataController@getCacheStatus'
 );
 
+Route::group(['middleware' => ['web']], function () {
+    // Docs Generator Routes
+    Route::name('swagger_docs_gen')->get(
+        'open-api-{version}.json',
+        'User\SwaggerDocsController@swaggerDocsGen'
+    );
+}
+);
 
 
-
-// ------------------------------ working attic-----------------------------------------------------
+// ------------------------------  attic. Will likely be removed, but needs research -----------------------------------------------------
 //Localization::localizedRoutesGroup(function () {
 
     // About
@@ -163,13 +169,6 @@ Route::name('status')->get(
     );
     // Validate
     Route::group(['middleware' => ['web']], function () {
-        // Docs Generator Routes
-        Route::name('swagger_docs_gen')->get(
-            'open-api-{version}.json',
-            'User\SwaggerDocsController@swaggerDocsGen'
-        );
-
-
 
         Route::name('validate.index')->get(
             '/validate',
@@ -198,10 +197,6 @@ Route::name('status')->get(
         // Docs Routes
         Route::name('docs')->get('docs', 'User\DocsController@index');
 
-        Route::name('swagger')->get(
-            'docs/swagger/{version?}',
-            'User\DocsController@swagger'
-        );
         Route::name('docs.getting_started')->get(
             'guides/getting-started',
             'User\DocsController@start'
@@ -364,10 +359,6 @@ Route::group(['middleware' => ['auth']], function () {
         'keys/generate/{email_token}',
         'User\Dashboard\KeysController@generateAPIKey'
     );
-
-
-
-
 
 });
 });
