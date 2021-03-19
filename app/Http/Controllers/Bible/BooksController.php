@@ -14,7 +14,7 @@ class BooksController extends APIController
 {
 
     /**
-     * Note: this now conflicts with another route: "The specified bible_id `books` could not be found"
+     * Note: this now conflicts with another route: "The specified bible_id `books` could not be found". Removed from api.php
      * Returns a static list of Scriptural Books and Accompanying meta data
      *
      * @version 4
@@ -36,14 +36,14 @@ class BooksController extends APIController
      *
      * @return JsonResponse
      */
-    public function index()
-    {
-        $books = cacheRememberForever('v4_books:index', function () {
-            $books = Book::orderBy('protestant_order')->get();
-            return fractal($books, new BooksTransformer(), $this->serializer);
-        });
-        return $this->reply($books);
-    }
+    // public function index()
+    // {
+    //     $books = cacheRememberForever('v4_books:index', function () {
+    //         $books = Book::orderBy('protestant_order')->get();
+    //         return fractal($books, new BooksTransformer(), $this->serializer);
+    //     });
+    //     return $this->reply($books);
+    // }
 
     /**
      *
