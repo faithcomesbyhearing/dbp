@@ -444,10 +444,10 @@ Route::name('v4_bible.links')->get(
     'bibles/links',
     'Bible\BibleLinksController@index'
 );
-Route::name('v4_bible_books_all')->get(
-    'bibles/books/',
-    'Bible\BooksController@index'
-); // not used by bible.is, essentially a duplicate of /bibles/id/book
+// Route::name('v4_bible_books_all')->get(
+//     'bibles/books/',
+//     'Bible\BooksController@index'
+// ); // not used by bible.is, essentially a duplicate of /bibles/id/book
 
 # Podcast is not currently supported in DBP4, but will be in the near future.
 #Route::name('v4_internal_filesets.podcast')->get('bibles/filesets/{fileset_id}/podcast',    'Bible\BibleFilesetsPodcastController@index');

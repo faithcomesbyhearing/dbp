@@ -33,7 +33,7 @@ class APIController extends Controller
      *   ),
      *   @OA\ExternalDocumentation(
      *     description="find more info here",
-     *     url="https://faithcomesbyhearing.com/biblebrain"
+     *     url="https://www.biblebrain.com"
      *   )
      * )
      * 
@@ -62,7 +62,7 @@ class APIController extends Controller
      * )
      * 
      * @OA\Parameter(parameter="version_number",name="v",in="query",description="The Version Number",required=true,@OA\Schema(type="integer",enum={4,2},example=4))
-     * @OA\Parameter(parameter="key2",name="key",in="query",description="The key granted to the API developer upon sign up",required=true,@OA\Schema(type="string",example="f4cdf23a-22c3-66c9-cc4f-05dc711b41c6"))
+     * @OA\Parameter(parameter="key",name="key",in="query",description="The key granted to the API developer upon sign up",required=true,@OA\Schema(type="string",example="f4cdf23a-22c3-66c9-cc4f-05dc711b41c6"))
      * @OA\Parameter(parameter="limit", name="limit",  in="query", description="The number of search results to return", @OA\Schema(type="integer",default=25))
      * @OA\Parameter(parameter="page", name="page",  in="query", description="The current page of the results", @OA\Schema(type="integer",default=1))
      * @OA\Parameter(parameter="sort_by", name="sort_by", in="query", description="The field to sort by", @OA\Schema(type="string"))
@@ -70,20 +70,17 @@ class APIController extends Controller
      * @OA\Parameter(name="l10n", in="query", description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route",
      *      @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
      *
-
      * 
      */
-
-
      
    /**
      * Pagination 
      * @OA\Schema (
      *   type="object",
-     *   schema="pagination.new",
+     *   schema="pagination",
      *   title="Pagination",
      *   description="The new pagination meta response.",
-     *   @OA\Xml(name="pagination.new"),
+     *   @OA\Xml(name="pagination"),
      *   @OA\Property(property="pagination", type="object",
      *      @OA\Property(property="total", type="integer", example=1801),
      *      @OA\Property(property="count", type="integer", example=25),
@@ -96,29 +93,7 @@ class APIController extends Controller
      * )
      */
 
-    /**
-     * Pagination alternate
-     * @OA\Schema (
-     *   type="object",
-     *   schema="pagination.alternate",
-     *   title="Pagination",
-     *   description="The alternate pagination meta response.",
-     *   @OA\Xml(name="pagination.alternate"),
-     *   @OA\Property(property="meta", type="object",
-     *     @OA\Property(property="pagination", type="object",
-     *       @OA\Property(property="total", type="integer"),
-     *       @OA\Property(property="count", type="integer"),
-     *       @OA\Property(property="per_page", type="integer"),
-     *       @OA\Property(property="current_page", type="integer"),
-     *       @OA\Property(property="total_pages", type="integer"),
-     *       @OA\Property(property="links", type="object",
-     *        @OA\Property(property="prev", type="string"),
-     *        @OA\Property(property="next", type="string")
-     *       )
-     *    )
-     *   )
-     * )
-     */
+
 
     /**
      * Version 2 Tags
