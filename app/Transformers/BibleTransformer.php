@@ -108,7 +108,7 @@ class BibleTransformer extends BaseTransformer
              *    property="data",
              *    type="array",
              *    @OA\Items(
-             *              @OA\Property(property="id",                ref="#/components/schemas/Bible/properties/id"),
+             *              @OA\Property(property="abbr",              ref="#/components/schemas/Bible/properties/id"),
              *              @OA\Property(property="name",              ref="#/components/schemas/BibleTranslation/properties/name"),
              *              @OA\Property(property="vname",             ref="#/components/schemas/BibleTranslation/properties/name"),
              *              @OA\Property(property="language",          ref="#/components/schemas/Language/properties/name"),
@@ -199,7 +199,7 @@ class BibleTransformer extends BaseTransformer
                  *   title="v4_bible.one",
                  *   @OA\Xml(name="v4_bible.one"),
                  *   @OA\Items(
-                 *              @OA\Property(property="id",          ref="#/components/schemas/Bible/properties/id"),
+                 *              @OA\Property(property="abbr",          ref="#/components/schemas/Bible/properties/id"),
                  *              @OA\Property(property="alphabet",      ref="#/components/schemas/Alphabet/properties/script"),
                  *              @OA\Property(property="mark",          ref="#/components/schemas/Bible/properties/copyright"),
                  *              @OA\Property(property="name",          ref="#/components/schemas/BibleTranslation/properties/name"),
