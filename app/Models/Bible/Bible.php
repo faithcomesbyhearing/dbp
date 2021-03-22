@@ -110,7 +110,7 @@ class Bible extends Model
      *   type="integer",
      *   description="The year the Bible was originally published",
      *   minimum=1,
-     *   maximum=2030,
+     *   maximum=4,
      *   example=1963
      * )
      *
@@ -158,7 +158,7 @@ class Bible extends Model
 
     /**
      *
-     * @OA\Property(
+     * API Note: removed 
      *   title="in_progress",
      *   type="string",
      *   description="If the Bible being described is currently in progress.",
@@ -184,7 +184,8 @@ class Bible extends Model
      * @OA\Property(
      *   title="created_at",
      *   type="string",
-     *   description="The timestamp at which the bible was originally created"
+     *   description="The timestamp at which the bible was originally created",
+     *   example="2018-02-12 13:32:23"
      * )
      *
      */
@@ -194,7 +195,8 @@ class Bible extends Model
      * @OA\Property(
      *   title="updated_at",
      *   type="string",
-     *   description="The timestamp at which the bible was last updated"
+     *   description="The timestamp at which the bible was last updated",
+     *   example="2018-02-12 13:32:23"
      * )
      *
      */
@@ -299,9 +301,6 @@ class Bible extends Model
     {
         return $query->whereHas('filesets', function ($q) use ($type_filters) {
             $q->whereIn('bible_filesets.hash_id', $type_filters['access_control']->hashes);
-            if ($type_filters['asset_id']) {
-                $q->whereIn('asset_id', explode(',', $type_filters['asset_id']));
-            }
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
@@ -322,9 +321,6 @@ class Bible extends Model
         })->with(['filesets' => function ($q) use ($type_filters) {
             $q->whereIn('bible_filesets.hash_id', $type_filters['access_control']->hashes)
               ->select(['id','set_type_code','set_size_code','asset_id']);
-            if ($type_filters['asset_id']) {
-                $q->whereIn('asset_id', explode(',', $type_filters['asset_id']));
-            }
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }

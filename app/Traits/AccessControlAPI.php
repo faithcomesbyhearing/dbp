@@ -70,4 +70,16 @@ trait AccessControlAPI
 
         return false;
     }
+
+    public function blockedByBulkAccessControl($fileset)
+    {
+        $access_blocked = $this->blockedByAccessControl($fileset);
+        $keys_with_bulk_access = explode(',', config('settings.keysWithFilesetBulkAccess'));
+        $key_has_permission = in_array($this->key, $keys_with_bulk_access);
+
+        if (!$key_has_permission || $access_blocked) {
+            return $this->setStatusCode(404)->replyWithError('Not found');
+        }
+        return false;
+    }
 }

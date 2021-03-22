@@ -104,9 +104,6 @@ class BibleTransformer extends BaseTransformer
              *   description="The bibles being returned",
              *   title="v4_bible.all",
              *   @OA\Xml(name="v4_bible.all"),
-             *   allOf={
-             *      @OA\Schema(ref="#/components/schemas/pagination.alternate"),
-             *   },
              *   @OA\Property(
              *    property="data",
              *    type="array",
@@ -123,7 +120,8 @@ class BibleTransformer extends BaseTransformer
              *                         @OA\Property(property="dbp-prod",type="array", @OA\Items(ref="#/components/schemas/BibleFileset"))
              *              )
              *     )
-             *    )
+             *    ),
+             *    @OA\Property(property="meta",ref="#/components/schemas/pagination")
              *   )
              * )
              */

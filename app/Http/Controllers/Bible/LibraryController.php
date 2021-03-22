@@ -29,7 +29,6 @@ class LibraryController extends APIController
      *     description="",
      *     operationId="v2_library_metadata",
      *     @OA\Parameter(name="dam_id", in="query", description="The DAM ID for which to retrieve library metadata.", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
-     *     @OA\Parameter(name="asset_id", in="query", description="Will filter the results by the given Asset", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -241,8 +240,7 @@ class LibraryController extends APIController
      *         @OA\Schema(
      *          type="string",
      *          @OA\ExternalDocumentation(
-     *              description="For a complete list of media types please see the v4_bible_filesets.types route",
-     *              url="/docs/swagger/v4#/Bibles/v4_bible_filesets_types"
+     *              description="For a complete list of media types please see the v4_bible_filesets.types route"
      *          )
      *         )
      *     ),
@@ -258,8 +256,7 @@ class LibraryController extends APIController
      *          description="The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `/languages` route",
      *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
      *          @OA\ExternalDocumentation(
-     *              description="For a complete list see the `iso` field in the `/languages` route",
-     *              url="/docs/swagger/v2#/Languages"
+     *              description="For a complete list see the `iso` field in the `/languages` route"
      *          )),
      *     @OA\Parameter(
      *          name="language_family_code",
@@ -326,7 +323,7 @@ class LibraryController extends APIController
             $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
                 ->whereIn('bible_filesets.hash_id', $access_control->hashes)
-                ->uniqueFileset($dam_id, 'dbp-prod', $media, true)
+                ->uniqueFileset($dam_id, $media, true)
                 ->withBible($language_name, $language_id, $organization)
                 ->when($language_id, function ($query) use ($language_id) {
                     $query->whereHas('bible', function ($subquery) use ($language_id) {
