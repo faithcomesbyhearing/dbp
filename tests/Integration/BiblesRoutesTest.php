@@ -76,7 +76,7 @@ class BiblesRoutesTest extends ApiV4Test
 
     /**
      * @category V4_API
-     * @category Route Name: v4_filesets.copyright
+     * @category Route Name: v4_internal_bible_filesets.copyright
      * @category Route Path: https://api.dbp.test/bibles/filesets/ENGESV/copyright?v=4&key={key}
      * @see      \App\Http\Controllers\Bible\BibleFileSetsController::copyright
      * @group    BibleRoutes
@@ -87,7 +87,7 @@ class BiblesRoutesTest extends ApiV4Test
     public function bibleFilesetsCopyright()
     {
         $params = array_merge(['fileset_id' => 'UBUANDP2DA','type' => 'audio_drama'], $this->params);
-        $path = route('v4_filesets.copyright', $params);
+        $path = route('v4_internal_bible_filesets.copyright', $params);
         echo "\nTesting: $path";
 
         $response = $this->withHeaders($this->params)->get($path);

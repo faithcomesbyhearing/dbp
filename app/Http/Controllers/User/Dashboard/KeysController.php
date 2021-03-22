@@ -13,9 +13,8 @@ class KeysController extends APIController
     {
         $user = Auth::user();
         $key = Key::with('access')->where('id', $request->id)->where('user_id', $user->id)->first();
-
         $new_key = $key->replicate(['id']);
-        $new_key->key = unique_random('user_keys', 'key', 24);
+        $new_key->key = unique_random('dbp_users.user_keys', 'key', 24);
         $new_key->save();
 
         return view('dashboard.keys.create');
@@ -43,7 +42,7 @@ class KeysController extends APIController
     public function store(Request $request)
     {
         Auth::user()->keys()->create([
-            'key'         => unique_random('user_keys', 'key', 24),
+            'key'         => unique_random('dbp_users.user_keys', 'key', 24),
             'name'        => $request->name,
             'description' => $request->description,
         ]);

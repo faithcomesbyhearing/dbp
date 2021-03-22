@@ -16,7 +16,7 @@ class UserHighlightsTransformer extends TransformerAbstract
      *    title="v4_internal_highlights_index",
      *    @OA\Xml(name="v4_internal_highlights_index"),
      *      allOf={
-     *        @OA\Schema(ref="#/components/schemas/pagination.alternate"),
+     *        @OA\Schema(ref="#/components/schemas/pagination"),
      *      },
      *    @OA\Property(property="data", type="array",
      *      @OA\Items(

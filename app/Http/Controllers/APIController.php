@@ -21,14 +21,23 @@ class APIController extends Controller
     // Top Level Swagger Docs
 
     /**
-     * @OA\Info(
-     *     description="A Bible API",
-     *     version="4.0-beta",
+     * @OA\OpenApi(
+     *   security={{"dbp_key": {}}},
+     *   @OA\Info(
+     *     description="Fast, easy, and free API access to video, audio, and text Bibles.",
+     *     version="4.0.0-beta",
      *     title="Digital Bible Platform",
      *     termsOfService="http://digitalbibleplatform/terms/",
      *     @OA\Contact(email="support@digitalbibleplatform.com"),
      *     @OA\License(name="Apache 2.0",url="http://www.apache.org/licenses/LICENSE-2.0.html")
+     *   ),
+     *   @OA\ExternalDocumentation(
+     *     description="find more info here",
+     *     url="https://www.biblebrain.com"
+     *   )
      * )
+     * 
+
      *
      * @OA\Server(
      *     url=API_URL_DOCS,
@@ -36,78 +45,55 @@ class APIController extends Controller
      *     @OA\ServerVariable( serverVariable="schema", enum={"https"}, default="https")
      * )
      *
-     * @OA\Server(
-     *     url="TBD",
-     *     description="Postman Mock server",
-     *     @OA\ServerVariable( serverVariable="schema", enum={"https"}, default="https")
-     * )
      *
      * @OA\SecurityScheme(
-     *   securityScheme="api_token",
-     *   name="api_token",
-     *   in="query",
+     *   securityScheme="dbp_key",
      *   type="apiKey",
-     *   description="The key granted to the user upon sign up or login"
+     *   description="The key granted to the API developer upon sign up",
+     *   name="key",
+     *   in="query"
      * )
-     *
+     * @OA\SecurityScheme(
+     *   securityScheme="dbp_user_token",
+     *   type="apiKey",
+     *   description="The token granted to an authenticated end user upon login",
+     *   name="api_token",
+     *   in="query"
+     * )
+     * 
      * @OA\Parameter(parameter="version_number",name="v",in="query",description="The Version Number",required=true,@OA\Schema(type="integer",enum={4,2},example=4))
-     * @OA\Parameter(parameter="key",name="key",in="query",description="The Key granted to the api user upon sign up",required=true,@OA\Schema(type="string",example="ar45g3h4ae644"))
-     * @OA\Parameter(parameter="pretty",name="pretty",in="query",description="Setting this param to true will add human readable whitespace to the return",@OA\Schema(type="boolean"))
-     * @OA\Parameter(parameter="format",name="format",in="query",description="Setting this param to true will add format the return as a specific file type. The currently supported return types are `xml`, `csv`, `json`, and `yaml`",@OA\Schema(type="string",enum={"json","csv","xml","yaml"}))
-     * @OA\Parameter(name="limit",  in="query", description="The number of search results to return", @OA\Schema(type="integer",default=25))
-     * @OA\Parameter(name="page",  in="query", description="The current page of the results", @OA\Schema(type="integer",default=1))
-     * @OA\Parameter(name="sort_by", in="query", description="The field to sort by", @OA\Schema(type="string"))
-     * @OA\Parameter(name="sort_dir", in="query", description="The direction to sort by", @OA\Schema(type="string",enum={"asc","desc"}))
+     * @OA\Parameter(parameter="key",name="key",in="query",description="The key granted to the API developer upon sign up",required=true,@OA\Schema(type="string",example="f4cdf23a-22c3-66c9-cc4f-05dc711b41c6"))
+     * @OA\Parameter(parameter="limit", name="limit",  in="query", description="The number of search results to return", @OA\Schema(type="integer",default=25))
+     * @OA\Parameter(parameter="page", name="page",  in="query", description="The current page of the results", @OA\Schema(type="integer",default=1))
+     * @OA\Parameter(parameter="sort_by", name="sort_by", in="query", description="The field to sort by", @OA\Schema(type="string"))
+     * @OA\Parameter(parameter="sort_dir", name="sort_dir", in="query", description="The direction to sort by", @OA\Schema(type="string",enum={"asc","desc"}))
      * @OA\Parameter(name="l10n", in="query", description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route",
      *      @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
      *
+     * 
      */
-
-    /**
-     * Pagination
+     
+   /**
+     * Pagination 
      * @OA\Schema (
      *   type="object",
      *   schema="pagination",
      *   title="Pagination",
-     *   description="The pagination meta response.",
+     *   description="The new pagination meta response.",
      *   @OA\Xml(name="pagination"),
-     *   @OA\Property(property="current_page", type="integer"),
-     *   @OA\Property(property="first_page_url", type="string"),
-     *   @OA\Property(property="from", type="integer"),
-     *   @OA\Property(property="last_page", type="integer"),
-     *   @OA\Property(property="last_page_url", type="string"),
-     *   @OA\Property(property="next_page_url", type="string"),
-     *   @OA\Property(property="path", type="string"),
-     *   @OA\Property(property="per_page", type="integer"),
-     *   @OA\Property(property="prev_page_url", type="string"),
-     *   @OA\Property(property="to", type="integer"),
-     *   @OA\Property(property="total", type="integer")
-     * )
-     */
-
-    /**
-     * Pagination alternate
-     * @OA\Schema (
-     *   type="object",
-     *   schema="pagination.alternate",
-     *   title="Pagination",
-     *   description="The alternate pagination meta response.",
-     *   @OA\Xml(name="pagination.alternate"),
-     *   @OA\Property(property="meta", type="object",
-     *     @OA\Property(property="pagination", type="object",
-     *       @OA\Property(property="total", type="integer"),
-     *       @OA\Property(property="count", type="integer"),
-     *       @OA\Property(property="per_page", type="integer"),
-     *       @OA\Property(property="current_page", type="integer"),
-     *       @OA\Property(property="total_pages", type="integer"),
-     *       @OA\Property(property="links", type="object",
-     *        @OA\Property(property="prev", type="string"),
-     *        @OA\Property(property="next", type="string")
-     *       )
+     *   @OA\Property(property="pagination", type="object",
+     *      @OA\Property(property="total", type="integer", example=1801),
+     *      @OA\Property(property="count", type="integer", example=25),
+     *      @OA\Property(property="per_page", type="integer", example=25),
+     *      @OA\Property(property="current_page", type="integer", example=1),
+     *      @OA\Property(property="total_pages", type="integer", example=73),
+     *    )
      *    )
      *   )
      * )
      */
+
+
 
     /**
      * Version 2 Tags
@@ -124,19 +110,22 @@ class APIController extends Controller
     /**
      * Version 4 Tags
      *
-     * @OA\Tag(name="Languages",       description="v4 Routes for obtaining Languages Data",
-     *     @OA\ExternalDocumentation(
+     * @OA\Tag(name="Languages",       
+     *      description="v4 Routes for obtaining Languages Data",
+     *      @OA\ExternalDocumentation(
      *         description="For more info please refer to the Ethnologue Registration Authority",
      *         url="https://www.iso.org/iso-639-language-codes.html"
-     *     )
+     *      )
      * )
-     * @OA\Tag(name="Countries",       description="v4 Routes for obtaining Countries Data",
-     *     @OA\ExternalDocumentation(
+     * @OA\Tag(name="Countries",       
+     *      description="v4 Routes for obtaining Countries Data",
+     *      @OA\ExternalDocumentation(
      *         description="For more info please refer to the Iso Registration Authority",
      *         url="https://www.iso.org/iso-3166-country-codes.html"
-     *     )
+     *      )
      * )
      * @OA\Tag(name="Bibles",          description="v4 Routes for obtaining Bibles Data")
+     * @OA\Tag(name="Audio Timing", description="v4 Routes for obtaining Audio timing information. This data could be used to search audio bibles for a specific term, make karaoke verse & audio readings, or to jump to a specific location in an audio file.")
      * @OA\Tag(name="Users",           description="v4_internal Routes for obtaining Users Data")
      * @OA\Tag(name="Playlists",       description="v4_internal Routes for obtaining Playlists Data")
      * @OA\Tag(name="Plans",           description="v4_internal Routes for obtaining Plans Data")
@@ -179,7 +168,7 @@ class APIController extends Controller
             $this->user = $keyExists->user ?? null;
 
             if (!$this->user) {
-                abort(401, 'You need to provide a valid API key. To request an api key please email access@dbp4.org');
+                abort(401, 'You need to provide a valid API key. To request an api key please email support@digitalbibleplatform.com');
             }
 
             // i18n

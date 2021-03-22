@@ -1,46 +1,72 @@
-@extends('layouts.app')
-
-@section('head')
-    <style>
-        small {
-            display: block;
-        }
-
-        .docs {
-            padding:20px;
-        }
-        .supported {
-            background-color:darkgreen;
-        }
-    </style>
-@endsection
-
+@extends('layouts.docs')
+     
 @section('content')
-    <div class="row docs">
-    <h1>Docs (Library Catalog)</h1>
+          <!-- Right Content Area -->
+          <div class="col-9 content-column">
+            <h2>Developer Documentation</h2>
+            <p class="txt-intro">Everything you need to know when working with the Digital Bible Platform API</p>
 
-        <a href="{{ route('swagger', ['version' => 4]) }}">Swagger Spec v4</a>
-        <a href="{{ route('swagger', ['version' => 4]) }}">Swagger Spec v2</a>
+            <div class="row">
+              <div class="col-sm-4">
+                <a href="{{ route('core_concepts') }}" class="card">
+                  <div class="card-body">
+                    <div class="card-title txt-intro--regular">Core Concepts</div>
+                    <p class="card-text txt-md">Provides some of the fundamental concepts for understanding how to interface with the DBP.</p>
+                  </div>
+                </a>
+              </div>
 
-        <div class="medium-3 columns centered">
-        <a class="button" href="/docs/progress">Progress</a></div>
-    <ul>
-        <li><a href="{{ route('docs_bibles') }}">Bibles</a>
-            <ul>
-                <li><a href="{{ route('docs_bible_books') }}">Bible Books</a></li>
-                <li><a href="{{ route('docs_bible_equivalents') }}">Bible Equivalents Table</a></li>
-            </ul>
-        </li>
-        <li><a href="{{ route('docs_languages') }}">Languages <span>Language Listing</span></a></li>
-        <li><a href="{{ route('docs_language_create') }}">Language Create</a></li>
-        <li><a href="{{ route('docs_language_update') }}">Language Update</a></li>
-            <ul>
-                <li><a href="{{ route('docs_alphabets') }}">Alphabets & fonts</a></li>
-            </ul>
+              <div class="col-sm-4">
+                <a href="{{ route('available_content') }}" class="card">
+                  <div class="card-body">
+                    <div class="card-title txt-intro--regular">Available Content</div>
+                    <p class="card-text txt-md">Provides information on what content is available</p>
+                  </div>
+                </a>
+            </div>
+
+              <div class="col-sm-4">
+                <a href="{{ route('user_flows') }}" class="card">
+                  <div class="card-body">
+                    <div class="card-title txt-intro--regular">User Flows</div>
+                    <p class="card-text txt-md">Provides examples of user experience, from selecting a language to listening to or reading the Bible.</p>
+                  </div>
+                </a>
+              </div>
+              
+            </div>
+
+            <div class="row">
+
+              <div class="col-sm-4">
+                <a href="{{ route('glossary') }}" class="card">
+                  <div class="card-body">
+                    <div class="card-title txt-intro--regular">Glossary</div>
+                    <p class="card-text txt-md">Provides definitions for commonly-used terms</p>
+                  </div>
+                </a>
+              </div>
+
+              <div class="col-sm-4">
+                <a href="{{ route('api_reference') }}" class="card">
+                  <div class="card-body">
+                    <div class="card-title txt-intro--regular">API Reference</div>
+                    <p class="card-text txt-md">Provides specific information about API request and response structure</p>
+                  </div>
+                </a>
+              </div>
 
 
-        <li><a href="{{ route('docs_countries') }}">Countries</a></li>
-    </ul>
-    </div>
+
+              
+            </div>
+
+            <div class="row">
+              <div class="col-8"><p class="txt-subtitle">Before you begin building with the DBP you’ll need to ensure you have an API Key.</p></div>
+              <div class="col-4"><a href="{{ route('api_key.request') }}" class="btn btn-lg">Get Your API Key</a></div>
+            </div>
+
+
+          </div> <!-- end div col-9 content-column -->
 
 @endsection

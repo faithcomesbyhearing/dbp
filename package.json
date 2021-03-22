@@ -57,7 +57,7 @@
     },
     "husky": {
         "hooks": {
-            "pre-commit": "composer cs && git add ."
+           "pre-commit": ""
         }
     }
 }

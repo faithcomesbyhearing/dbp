@@ -7,7 +7,6 @@ use Auth;
 
 class DashboardController extends APIController
 {
-
     /**
      * Create a new controller instance.
      *

@@ -18,123 +18,20 @@ class AudioController extends APIController
     use CallsBucketsTrait;
 
     /**
-     *
-     * Returns an array of signed audio urls
-     *
-     * @version  4
-     * @category v2_audio_path
-     * @link     http://api.dbp4.org/audio/path - V4 Access
-     * @link     https://api.dbp.test/audio/path?key=1234&v=4&pretty - V4 Test Access
-     * @link     https://dbp.test/eng/docs/swagger/gen#/Version_2/v4_alphabets.one - V4 Test Docs
-     *
-     * @OA\Get(
-     *     path="/audio/path",
-     *     tags={"Library Audio"},
-     *     summary="Returns Audio File path information",
-     *     description="This call returns the file path information for audio files within a volume
-     *         This information can be used with the response of the /audio/location call to create
-     *         a URI to retrieve the audio files.",
-     *     operationId="v2_audio_path",
-     *     @OA\Parameter(name="dam_id",
-     *         in="query",
-     *         description="The DAM ID for which to retrieve file path info.",
-     *         required=true,
-     *         @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
-     *     ),
-     *     @OA\Parameter(name="chapter_id",
-     *         in="query",
-     *         @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start"),
-     *         description="If this value is the return will be limited to the provided chapter",
-     *     ),
-     *     @OA\Parameter(
-     *         name="encoding",
-     *         in="query",
-     *         @OA\Schema(type="string",title="encoding",deprecated=true),
-     *         description="The audio encoding format desired (No longer in use as Audio Files default to mp3)."
-     *     ),
-     *     @OA\Parameter(
-     *         name="asset_id",
-     *         in="query",
-     *         @OA\Schema(ref="#/components/schemas/Asset/properties/id"),
-     *         description="The asset id that contains the resource."
-     *     ),
-     *     @OA\Parameter(name="book_id",
-     *         in="query",
-     *         @OA\Schema(ref="#/components/schemas/Book/properties/id"),
-     *         description="The USFM 2.4 book ID. For a complete list see the `book_id` field in the `/bibles/books` route."
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v2_audio_path")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v2_audio_path")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v2_audio_path")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v2_audio_path"))
-     *     )
-     * )
-     *
-     * @see https://api.dbp.test/audio/path?key=1234&v=2&dam_id=ABIWBTN1DA&book_id=LUK
-     * @return mixed
-     * @throws \Exception
-     */
-    public function index()
-    {
-        // Check Params
-        $fileset_id = checkParam('dam_id', true);
-        $book_id    = checkParam('book_id');
-        $chapter_id = checkParam('chapter_id');
-        $asset_id   = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
-
-        $cache_params = [$asset_id, $fileset_id, $book_id, $chapter_id];
-
-        $audioChapters = cacheRemember('audio_index', $cache_params, now()->addDay(), function () use ($fileset_id, $book_id, $chapter_id, $asset_id) {
-            // Account for various book ids
-
-            $book_id = optional(Book::where('id_osis', $book_id)->first())->id;
-
-            // Fetch the Fileset
-            $hash_id = optional(BibleFileset::uniqueFileset($fileset_id, $asset_id, 'audio', true)->select('hash_id')->first())->hash_id;
-            if (!$hash_id) {
-                return $this->setStatusCode(404)->replyWithError('No Audio Fileset could be found for: ' . $hash_id);
-            }
-
-            // Fetch The files
-            $response = BibleFile::with('book', 'bible')->where('hash_id', $hash_id)
-                ->when($chapter_id, function ($query) use ($chapter_id) {
-                    return $query->where('chapter_start', $chapter_id);
-                })->when($book_id, function ($query) use ($book_id) {
-                    return $query->where('book_id', $book_id);
-                })->orderBy('file_name');
-
-            return $response->get();
-        });
-
-        // Transaction id to be passed to signedUrl
-        $transaction_id = random_int(0, 10000000);
-        foreach ($audioChapters as $key => $audio_chapter) {
-            $audioChapters[$key]->file_name = $this->signedUrl('audio/' . $audio_chapter->bible->first()->id . '/' . $fileset_id . '/' . $audio_chapter->file_name, $asset_id, $transaction_id);
-        }
-
-        return $this->reply(fractal($audioChapters, new AudioTransformer(), $this->serializer), [], $transaction_id);
-    }
-
-    /**
      * Available Timestamps
      *
      * @OA\Get(
      *     path="/timestamps",
-     *     tags={"Bibles"},
-     *     summary="Returns Bible Filesets which have Audio timestamps",
+     *     tags={"Audio Timing"},
+     *     summary="Returns Bible Filesets which have audio timestamps",
      *     description="This call returns a list of fileset that have timestamp metadata associated with them. This data could be used to search audio bibles for a specific term, make karaoke verse & audio readings, or to jump to a specific location in an audio file.",
      *     operationId="v4_timestamps",
-     *     @OA\Response(response=204, description="No timestamps are available at this time"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_timestamps"))
      *     )
      * )
-     *
      *
      * @OA\Schema (
      *   type="array",
@@ -169,30 +66,10 @@ class AudioController extends APIController
      * Returns a List of timestamps for a given Scripture Reference
      *
      * @OA\Get(
-     *     path="/audio/versestart",
-     *     tags={"Library Audio"},
-     *     summary="Returns Audio timestamps for a specific reference",
-     *     description="This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
-     *     operationId="v2_audio_timestamps",
-     *     @OA\Parameter(name="fileset_id", in="query", description="The specific fileset to return references for", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
-     *     @OA\Parameter(name="book", in="query", description="The Book ID for which to return timestamps. For a complete list see the `book_id` field in the `/bibles/books` route.", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
-     *     @OA\Parameter(name="chapter", in="query", description="The chapter for which to return timestamps", @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
-     *     @OA\Parameter(name="asset_id", in="query", description="The asset id for which to return timestamps.", @OA\Schema(ref="#/components/schemas/Asset/properties/id")),
-     *     @OA\Response(
-     *         response=200,
-     *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v2_audio_timestamps")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v2_audio_timestamps")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v2_audio_timestamps")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v2_audio_timestamps"))
-     *     )
-     * )
-     *
-     * @OA\Get(
      *     path="/timestamps/{fileset_id}/{book}/{chapter}",
-     *     tags={"Bible"},
-     *     summary="Returns Audio timestamps for a specific reference",
-     *     description="This route will return timestamps restricted to specific book and chapter combination for a fileset. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
+     *     tags={"Bibles","Audio Timing"},
+     *     summary="Returns audio timestamps for a chapter",
+     *     description="This route will return timestamps for a chapter. Note that the fileset id must be available via the path `/timestamps`. At first, only a few filesets may have timestamps metadata applied.",
      *     operationId="v4_timestamps.verse",
      *     @OA\Parameter(name="fileset_id", in="path", description="The specific fileset to return references for", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
      *     @OA\Parameter(name="book", in="path", required=true, description="The Book ID for which to return timestamps. For a complete list see the `book_id` field in the `/bibles/books` route.", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
@@ -207,16 +84,16 @@ class AudioController extends APIController
      *
      * @return mixed
      */
-    public function timestampsByReference($fileset_id_param = null, $book_url_param = null, $chapter_url_param = null, $asset_id = null)
+    public function timestampsByReference($fileset_id_param = null, $book_url_param = null, $chapter_url_param = null)
     {
         // Check Params
         $id       = checkParam('fileset_id|dam_id|id', true, $fileset_id_param);
-        $asset_id = checkParam('asset_id', false, $asset_id) ?? config('filesystems.disks.s3_fcbh.bucket');
-        $book     = checkParam('book|osis_code', false, $book_url_param);
-        $chapter  = checkParam('chapter_id|chapter_number', false, $chapter_url_param);
+        $book     = checkParam('book|osis_code', true, $book_url_param);
+        $chapter  = checkParam('chapter_id|chapter_number', true, $chapter_url_param);
 
         // Fetch Fileset & Files
-        $fileset = BibleFileset::uniqueFileset($id, $asset_id, 'audio', true)->first();
+        $fileset = BibleFileset::uniqueFileset($id, 'audio', true)->first();  // BWF suggest removing audio and true. For audio, the filesetid is unique
+        //$fileset = BibleFileset::uniqueFileset($id)->first();  
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $id]));
         }
@@ -258,18 +135,16 @@ class AudioController extends APIController
 
 
     /**
+     * Note: this is very slow. It is not used by bible.is so will be removed from the Public API until we can investigate further
      * Returns a List of timestamps for a given word
      *
      * @OA\Get(
      *     path="/timestamps/search",
-     *     tags={"Bibles"},
      *     summary="Returns audio timestamps for a specific word",
      *     description="This route will search the text for a specific word or phrase and return a collection of timestamps associated with the verse references connected to the term",
-     *     operationId="v4_timestamps.tag",
+     *     operationId="v4_internal_timestamps.tag",
      *     @OA\Parameter(name="audio_fileset_id", in="query", description="The specific audio fileset to return references for", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
-     *     @OA\Parameter(name="audio_asset_id", in="query", description="The specific audio asset id to return references for", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")),
      *     @OA\Parameter(name="text_fileset_id", in="query", description="The specific text fileset to return references for", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
-     *     @OA\Parameter(name="text_asset_id", in="query", description="The specific text asset id to return references for", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")),
      *     @OA\Parameter(name="book_id", in="query", description="The specific book id to return references for.  For a complete list see the `book_id` field in the `/bibles/books` route.", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
      *     @OA\Parameter(name="query", in="query", required=true, description="The tag for which to return timestamps", @OA\Schema(type="string")),
      *     @OA\Response(
@@ -286,18 +161,16 @@ class AudioController extends APIController
     {
         // Check Params
         $audio_fileset_id = checkParam('audio_fileset_id');
-        $audio_asset_id   = checkParam('audio_asset_id');
         $text_fileset_id  = checkParam('text_fileset_id');
-        $text_asset_id   = checkParam('text_asset_id');
         $book_id          = checkParam('book_id');
         $query            = checkParam('query', true);
 
         // Fetch Fileset & Books
-        $audio_fileset = BibleFileset::uniqueFileset($audio_fileset_id, $audio_asset_id, 'audio', true)->first();
+        $audio_fileset = BibleFileset::uniqueFileset($audio_fileset_id, 'audio', true)->first();
         if (!$audio_fileset) {
             return $this->setStatusCode(404)->replyWithError('Audio Fileset not found');
         }
-        $text_fileset  = BibleFileset::uniqueFileset($text_fileset_id, $text_asset_id, 'text', true)->first();
+        $text_fileset  = BibleFileset::uniqueFileset($text_fileset_id, 'text', true)->first();
         if (!$text_fileset) {
             return $this->setStatusCode(404)->replyWithError('Text Comparison Fileset not found');
         }
@@ -326,61 +199,5 @@ class AudioController extends APIController
         }
         $bible_files = $bible_files->limit(100)->get();
         return $this->reply(fractal($bible_files, new AudioTransformer()));
-    }
-
-
-    /**
-     * Old path route for v2 of the API
-     *
-     * @version 2
-     * @category v2_audio_location
-     * @link http://api.dbp4.org/location - V2 Access
-     * @link https://api.dbp.test/audio/location?key=TEST_KEY&v=4 - V2 Test Access
-     *
-     * @OA\Get(
-     *     path="/audio/location",
-     *     tags={"Library Audio"},
-     *     summary="Returns Audio Server Information",
-     *     description="This route offers information about the media distribution servers and the protocols they support. It is currently depreciated and only remains to account for the possibility that someone might still be using this old method of uri generation",
-     *     operationId="v2_audio_location",
-     *     @OA\Response(
-     *         response=200,
-     *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v2_audio_location")),
-     *         @OA\MediaType(mediaType="application/xml",  @OA\Schema(ref="#/components/schemas/v2_audio_location")),
-     *         @OA\MediaType(mediaType="text/x-yaml",      @OA\Schema(ref="#/components/schemas/v2_audio_location")),
-     *         @OA\MediaType(mediaType="text/csv",      @OA\Schema(ref="#/components/schemas/v2_audio_location"))
-     *     )
-     * )
-     *
-     * @OA\Schema (
-     *     type="array",
-     *     schema="v2_audio_location",
-     *     description="v2_audio_location",
-     *     title="v2_audio_location",
-     *     @OA\Xml(name="v2_audio_location"),
-     *     @OA\Items(
-     *      @OA\Property(property="server",type="string",example="cloud.faithcomesbyhearing.com"),
-     *      @OA\Property(property="root_path",type="string",example="/mp3audiobibles2"),
-     *      @OA\Property(property="protocol",type="string",example="http"),
-     *      @OA\Property(property="CDN",type="string",example="1"),
-     *      @OA\Property(property="priority",type="string",example="5")
-     *    )
-     * )
-     *
-     * @return array
-     *
-     */
-    public function location()
-    {
-        return $this->reply([
-            [
-                'server'    => 'dbp.test.s3.us-west-2.amazonaws.com',
-                'root_path' => '/audio',
-                'protocol'  => 'https',
-                'CDN'       => '1',
-                'priority'  => '5',
-            ],
-        ]);
     }
 }

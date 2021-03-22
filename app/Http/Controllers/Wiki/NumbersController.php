@@ -16,7 +16,7 @@ class NumbersController extends APIController
      * @OA\Get(
      *     path="/numbers/range",
      *     tags={"Languages"},
-     *     summary="Return a range of numbers",
+     *     summary="Return a range of vernacular numbers",
      *     description="This route returns the vernacular numbers for a set range.",
      *     operationId="v4_numbers.range",
      *     @OA\Parameter(
@@ -31,14 +31,16 @@ class NumbersController extends APIController
      *          in="query",
      *          required=true,
      *          description="The start of the range to select for",
-     *          @OA\Schema(type="integer")
+     *          @OA\Schema(type="integer"),
+     *          example=1
      *     ),
      *     @OA\Parameter(
      *          name="end",
      *          in="query",
      *          required=true,
      *          description="The end of the range to select for",
-     *          @OA\Schema(type="integer")
+     *          @OA\Schema(type="integer"),
+     *          example=2
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -57,8 +59,8 @@ class NumbersController extends APIController
      *     @OA\Xml(name="v4_numbers_range"),
      *     @OA\Property(property="data", type="array",
      *      @OA\Items(
-     *        @OA\Property(property="numeral", type="string"),
-     *        @OA\Property(property="numeral_vernacular", type="string")
+     *        @OA\Property(property="numeral", type="string", example="1"),
+     *        @OA\Property(property="numeral_vernacular", type="string", example="১")
      *      )
      *     )
      * )
@@ -101,9 +103,9 @@ class NumbersController extends APIController
      *     schema="v4_numbers.index",
      *     @OA\Property(property="data", type="array",
      *      @OA\Items(
-     *        @OA\Property(property="id", type="string"),
-     *        @OA\Property(property="description", type="string"),
-     *        @OA\Property(property="notes", type="string")
+     *        @OA\Property(property="id", type="string", example="bengali"),
+     *        @OA\Property(property="description", type="string", example="description for bengali"),
+     *        @OA\Property(property="notes", type="string", example="notes for bengali")
      *      )
      *     )
      * )

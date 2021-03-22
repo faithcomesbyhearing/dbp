@@ -31,8 +31,7 @@ class BibleFilesetsPodcastController extends APIController
      */
     public function index($id)
     {
-        $asset_id = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
-        $fileset  = BibleFileset::with('translations', 'files.currentTitle', 'bible.books')->uniqueFileset($id, $asset_id, 'audio', true)->first();
+        $fileset  = BibleFileset::with('translations', 'files.currentTitle', 'bible.books')->uniqueFileset($id, 'audio', true)->first();
         if (!$fileset) {
             return $this->replyWithError(trans('api.bible_fileset_errors_404'));
         }
