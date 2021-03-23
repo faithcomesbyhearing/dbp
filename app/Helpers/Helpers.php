@@ -191,22 +191,40 @@ if (!function_exists('unique_random')) {
 }
 
 if (!function_exists('getFilesetFromDamId')) {
-    function getFilesetFromDamId($dam_id, $filesets)
+    function getFilesetFromDamId($dam_id, $use_sync_file = false, $filesets = [])
     {
-        $fileset = $filesets->where('id', $dam_id)->first();
+        if ($use_sync_file === true) {
+            $syncFile = config('settings.bibleSyncFilePath');
+            $file = fopen($syncFile, 'r');
+            $transition_bibles = [];
+            
+            while (!feof($file)) {
+                $line = fgetcsv($file);
+                $transition_bibles[$line[0]] = $line[1];
+            }
+            fclose($file);
 
-        if (!$fileset) {
-            $fileset = $filesets->where('id', substr($dam_id, 0, -4))->first();
-        }
-        if (!$fileset) {
-            $fileset = $filesets->where('id', substr($dam_id, 0, -2))->first();
-        }
-        if (!$fileset) {
-            // echo "\n Error!! Could not find FILESET_ID: " . substr($dam_id, 0, 6);
-            return false;
-        }
+            if (array_key_exists($dam_id, $transition_bibles)) {
+                $dam_id = $transition_bibles[$dam_id];
+            }
+            return $dam_id;
+        } else {
+            $fileset = $filesets->where('id', $dam_id)->first();
 
-        return $fileset;
+            if (!$fileset) {
+                $fileset = $filesets->where('id', substr($dam_id, 0, -4))->first();
+            }
+            if (!$fileset) {
+                $fileset = $filesets->where('id', substr($dam_id, 0, -2))->first();
+            }
+            
+            if (!$fileset) {
+                // echo "\n Error!! Could not find FILESET_ID: " . substr($dam_id, 0, 6);
+                return false;
+            }
+
+            return $fileset;
+        }
     }
 }
 

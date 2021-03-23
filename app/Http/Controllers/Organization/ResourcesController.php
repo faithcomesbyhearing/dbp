@@ -28,7 +28,7 @@ class ResourcesController extends APIController
 
         $resources = Resource::with('translations', 'links', 'organization.translations', 'language')
             ->when($iso, function ($query) use ($iso, $dialects) {
-                $query->whereHas('language', function ($subquery) use ($iso,$dialects) {
+                $query->whereHas('language', function ($subquery) use ($iso, $dialects) {
                     if (!$dialects) {
                         $subquery->where('iso', $iso);
                     } else {
