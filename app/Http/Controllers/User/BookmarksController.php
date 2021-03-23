@@ -154,8 +154,10 @@ class BookmarksController extends APIController
         $book = Book::where('id', $request->book_id)->first();
         $request['book_id'] = $book->id;
         $request['bible_id'] = $request->dam_id ?? $request->bible_id;
-
-        $invalidBookmark = $this->validateBookmark();
+        $request['bible_id'] = getFilesetFromDamId($request['bible_id'], true);
+        
+        // Validate Bookmark
+        $invalidBookmark = $this->validateBookmark($request['bible_id']);
         if ($invalidBookmark) {
             return $this->setStatusCode(422)->replyWithError($invalidBookmark);
         }
@@ -267,9 +269,11 @@ class BookmarksController extends APIController
         return $this->reply('bookmark successfully deleted');
     }
 
-    private function validateBookmark()
+    private function validateBookmark($bible_id = false)
     {
-        $validator = Validator::make(request()->all(), [
+        $bookmark_data = request()->all();
+        $bookmark_data['bible_id'] = $bible_id ? $bible_id : $bookmark_data['bible_id'];
+        $validator = Validator::make($bookmark_data, [
             'bible_id'    => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.bibles,id',
             'user_id'     => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp_users.users,id',
             'book_id'     => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.books,id',

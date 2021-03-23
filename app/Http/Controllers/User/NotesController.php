@@ -177,7 +177,11 @@ class NotesController extends APIController
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
-        $invalidNote = $this->invalidNote($request);
+        $request['bible_id'] = $request->dam_id ?? $request->bible_id;
+        $request['bible_id'] = getFilesetFromDamId($request['bible_id'], true);
+        
+        // Validate note
+        $invalidNote = $this->invalidNote($request['bible_id']);
         if ($invalidNote) {
             return $invalidNote;
         }
@@ -305,15 +309,17 @@ class NotesController extends APIController
         return $this->reply(['success' => 'Note Deleted']);
     }
 
-    private function invalidNote($request)
+    private function invalidNote($bible_id)
     {
-        $validator = Validator::make($request->all(), [
-            'bible_id'    => (($request->method === 'POST') ? 'required|' : '') . 'exists:dbp.bibles,id',
-            'user_id'     => (($request->method === 'POST') ? 'required|' : '') . 'exists:dbp_users.users,id',
-            'book_id'     => (($request->method === 'POST') ? 'required|' : '') . 'exists:dbp.books,id',
-            'chapter'     => (($request->method === 'POST') ? 'required|' : '') . 'max:150|min:1',
-            'verse_start' => (($request->method === 'POST') ? 'required|' : '') . 'max:177|min:1',
-            'notes'       => (($request->method === 'POST') ? 'required|' : '') . '',
+        $note_data = request()->all();
+        $note_data['bible_id'] = $bible_id ? $bible_id : $note_data['bible_id'];
+        $validator = Validator::make($note_data, [
+            'bible_id'    => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.bibles,id',
+            'user_id'     => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp_users.users,id',
+            'book_id'     => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.books,id',
+            'chapter'     => ((request()->method() === 'POST') ? 'required|' : '') . 'max:150|min:1',
+            'verse_start' => ((request()->method() === 'POST') ? 'required|' : '') . 'max:177|min:1',
+            'notes'       => ((request()->method() === 'POST') ? 'required|' : '') . '',
         ]);
         if ($validator->fails()) {
             return ['errors' => $validator->errors()];
