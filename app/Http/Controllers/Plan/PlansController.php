@@ -960,20 +960,21 @@ class PlansController extends APIController
         $translated_items = [];
         $metadata_items = [];
         $total_translated_items = 0;
-        foreach ($playlist->items as $item) {
-            $ordered_types = $audio_fileset_types->filter(function ($type) use ($item) {
-                return $type !== $item->fileset->set_type_code;
-            })->prepend($item->fileset->set_type_code);
-            $preferred_fileset = $ordered_types->map(function ($type) use ($bible_audio_filesets, $item, $playlist_controller) {
-                return $playlist_controller->getFileset($bible_audio_filesets, $type, $item->fileset->set_size_code);
-            })->firstWhere('id');
-            $has_translation = isset($preferred_fileset);
-            $is_streaming = true;
+        if (isset($playlist->items)) {
+            foreach ($playlist->items as $item) {
+                $ordered_types = $audio_fileset_types->filter(function ($type) use ($item) {
+                    return $type !== $item->fileset->set_type_code;
+                })->prepend($item->fileset->set_type_code);
+                $preferred_fileset = $ordered_types->map(function ($type) use ($bible_audio_filesets, $item, $playlist_controller) {
+                    return $playlist_controller->getFileset($bible_audio_filesets, $type, $item->fileset->set_size_code);
+                })->firstWhere('id');
+                $has_translation = isset($preferred_fileset);
+                $is_streaming = true;
 
-            if ($has_translation) {
-                $item->fileset_id = $preferred_fileset->id;
-                $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' || $preferred_fileset->set_type_code === 'audio_drama_stream';
-                $translated_items[] = (object)[
+                if ($has_translation) {
+                    $item->fileset_id = $preferred_fileset->id;
+                    $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' || $preferred_fileset->set_type_code === 'audio_drama_stream';
+                    $translated_items[] = (object)[
                     'translated_id' => $item->id,
                     'fileset_id' => $item->fileset_id,
                     'book_id' => $item->book_id,
@@ -982,11 +983,12 @@ class PlansController extends APIController
                     'verse_start' => $is_streaming ? $item->verse_start : null,
                     'verse_end' => $is_streaming ? $item->verse_end : null,
                 ];
-                $total_translated_items += 1;
+                    $total_translated_items += 1;
+                }
+                $metadata_items[] = $item;
             }
-            $metadata_items[] = $item;
+            $translated_percentage = sizeof($playlist->items) ? $total_translated_items / sizeof($playlist->items) : 0;
         }
-        $translated_percentage = sizeof($playlist->items) ? $total_translated_items / sizeof($playlist->items) : 0;
         $playlist_data = [
             'user_id'           => $user->id,
             'name'              => $playlist->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
