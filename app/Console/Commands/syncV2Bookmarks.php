@@ -65,7 +65,7 @@ class syncV2Bookmarks extends Command
                             $carry[$item] = $this->dam_ids[$item];
                             return $carry;
                         }
-                        $fileset = getFilesetFromDamId($item, $filesets);
+                        $fileset = getFilesetFromDamId($item, true, $filesets);
                         if ($fileset) {
                             $carry[$item] = $fileset;
                             $this->dam_ids[$item] = $fileset;
