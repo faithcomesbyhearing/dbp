@@ -262,7 +262,6 @@ class HighlightsController extends APIController
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
-        $request['bible_id'] = getFilesetFromDamId($request['bible_id'], true);
         // Validate Highlight
         $highlight_validation = $this->validateHighlight($request['bible_id']);
         if (\is_array($highlight_validation)) {
