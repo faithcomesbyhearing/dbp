@@ -177,9 +177,7 @@ class NotesController extends APIController
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
-        $request['bible_id'] = $request->dam_id ?? $request->bible_id;
-        $request['bible_id'] = getFilesetFromDamId($request['bible_id'], true);
-        
+        $request['bible_id'] = $request->dam_id ?? $request->bible_id;        
         // Validate note
         $invalidNote = $this->invalidNote($request['bible_id']);
         if ($invalidNote) {

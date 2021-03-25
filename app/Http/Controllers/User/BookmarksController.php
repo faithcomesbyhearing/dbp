@@ -154,7 +154,6 @@ class BookmarksController extends APIController
         $book = Book::where('id', $request->book_id)->first();
         $request['book_id'] = $book->id;
         $request['bible_id'] = $request->dam_id ?? $request->bible_id;
-        $request['bible_id'] = getFilesetFromDamId($request['bible_id'], true);
         
         // Validate Bookmark
         $invalidBookmark = $this->validateBookmark($request['bible_id']);
