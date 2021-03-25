@@ -254,6 +254,7 @@ class HighlightsController extends APIController
     {
         $user = $request->user();
         $request['user_id'] = $user ? $user->id : $request->user_id;
+        $request['bible_id'] = $request->dam_id ?? $request->bible_id;
 
         // Validate Project / User Connection
         $user_is_member = $this->compareProjects($request->user_id, $this->key);
@@ -262,7 +263,7 @@ class HighlightsController extends APIController
         }
 
         // Validate Highlight
-        $highlight_validation = $this->validateHighlight();
+        $highlight_validation = $this->validateHighlight($request['bible_id']);
         if (\is_array($highlight_validation)) {
             return $highlight_validation;
         }
@@ -443,9 +444,11 @@ class HighlightsController extends APIController
         return $this->reply($colors);
     }
 
-    private function validateHighlight()
+    private function validateHighlight($bible_id = false)
     {
-        $validator = Validator::make(request()->all(), [
+        $highlight_data = request()->all();
+        $highlight_data['bible_id'] = $bible_id ? $bible_id : $highlight_data['bible_id'];
+        $validator = Validator::make($highlight_data, [
             'bible_id'          => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.bibles,id',
             'user_id'           => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp_users.users,id',
             'book_id'           => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.books,id',
