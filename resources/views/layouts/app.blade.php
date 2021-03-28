@@ -26,7 +26,7 @@
   <body style="opacity: 1;" class="fcbh" data-new-gr-c-s-check-loaded="14.1001.0" data-gr-ext-installed>
     <div class="default-width-container">
       <section class="dbp-header pt-40 pb-60">
-        <a href="/bible-brain" class="dbp-header__link w-inline-block">
+        <a href="https://www.faithcomesbyhearing.com/bible-brain" class="dbp-header__link w-inline-block">
           <img src="https://assets.website-files.com/5e73b0590a912b0d2533e44f/604fa88733da41cfc9530358_BibleBrainFull.svg" loading="lazy" alt="Bible Brain logo" class="dbp-header__link-img" data-src="https://assets.website-files.com/5e73b0590a912b0d2533e44f/604fa88733da41cfc9530358_BibleBrainFull.svg">
         </a>
         <div class="dbp-header__buttons">
