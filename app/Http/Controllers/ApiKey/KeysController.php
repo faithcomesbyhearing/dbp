@@ -15,13 +15,13 @@ class KeysController extends APIController
             return view('api_key.request_key');
         }
         $rules = [
-      'name' => 'required|string',
-      'email' => 'required|email',
-      'description' => 'required|string',
-      'question' => 'string',
-      'agreement' => 'required'
-    ];
-
+          'name' => 'required|string',
+          'email' => 'required|email',
+          'description' => 'required|string',
+          'question' => 'string',
+          'agreement' => 'required'
+        ];
+  
         $validator = Validator::make(request()->all(), $rules);
         if ($validator->fails()) {
             return redirect()

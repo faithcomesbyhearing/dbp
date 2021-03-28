@@ -66,11 +66,6 @@ pre {
 
 body {
   color: #757763;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  margin: 0;
-  padding: 0;
 }
 
 a {
@@ -2624,26 +2619,6 @@ a.has-text-danger:focus {
 .content pre:not(:last-child),
 .content table:not(:last-child) {
   margin-bottom: 1em;
-}
-
-.content h1,
-.content h2,
-.content h3,
-.content h4,
-.content h5,
-.content h6 {
-  color: #363636;
-  font-weight: 600;
-  line-height: 1.125;
-}
-
-.content h1 {
-  font-size: 2em;
-  margin-bottom: 0.5em;
-}
-
-.content h1:not(:first-child) {
-  margin-top: 1em;
 }
 
 .content h2 {
