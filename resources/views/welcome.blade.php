@@ -1,1 +1,1 @@
-<script>window.location.href = "http://www.biblebrain.com";</script>
+<script>window.location.href = "https://www.faithcomesbyhearing.com/bible-brain";</script>
