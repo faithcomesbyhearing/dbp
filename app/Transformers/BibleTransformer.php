@@ -43,6 +43,8 @@ class BibleTransformer extends BaseTransformer
         }
 
         $parent = optional($bible->language->parent);
+        
+        $name = isset($bible->currentTranslation->name) ? $bible->currentTranslation->name : 'Wycliffe Bible Translators, Inc.';
 
         return [
             [
@@ -68,7 +70,7 @@ class BibleTransformer extends BaseTransformer
               'language_family_iso_2T'    => $parent->iso2T ?? $bible->language->iso2T,
               'language_family_iso_1'     => $parent->iso1 ?? $bible->language->iso1,
               'version_code'              => substr($bible->id, 3) ?? '',
-              'version_name'              => 'Wycliffe Bible Translators, Inc.',
+              'version_name'              => $name,
               'version_english'           => optional($bible->currentTranslation)->name,
               'collection_code'           => ($bible->name === 'Old Testament') ? 'OT' : 'NT',
               'rich'                      => '0',
