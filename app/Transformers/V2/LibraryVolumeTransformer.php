@@ -51,6 +51,16 @@ class LibraryVolumeTransformer extends BaseTransformer
                 ];
                 break;
 
+            case 'v2_library_version':
+                return [
+                    [
+                        'version_code' => substr($fileset->id, 3) ?? '',
+                        'version_name' => $fileset->ver_title,
+                        'english_name' => $fileset->eng_title
+                    ]
+                ];
+                break;
+
             /**
              * @see \App\Http\Controllers\Connections\V2Controllers\LibraryCatalog\LibraryVolumeController@libraryVolume
              *
