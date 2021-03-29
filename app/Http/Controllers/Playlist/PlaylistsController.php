@@ -320,9 +320,9 @@ class PlaylistsController extends APIController
         }
 
         if (isset($playlist->items)) {
-          foreach ($playlist->items as $item) {
-              $item->verse_text = $item->getVerseText();
-          }
+            foreach ($playlist->items as $item) {
+                $item->verse_text = $item->getVerseText();
+            }
         }
 
         return $this->reply($playlist->items->pluck('verse_text', 'id'));
@@ -952,7 +952,7 @@ class PlaylistsController extends APIController
     public function getFileset($filesets, $type, $size)
     {
         $available_filesets = [];
-
+        
         $complete_fileset = $filesets->where('set_type_code', $type)->where('set_size_code', 'C')->first();
         if ($complete_fileset) {
             $available_filesets[] = $complete_fileset;
@@ -964,7 +964,13 @@ class PlaylistsController extends APIController
         }
 
         $size__partial_filesets = $filesets->filter(function ($item) use ($type, $size) {
-            return $item->set_type_code === $type && strpos($item->set_size_code, $size . 'P') !== false;
+            $valid_item = isset($item->set_type_code) && isset($item->set_size_code);
+            return (
+                $valid_item &&
+                is_string($size) &&
+                $item->set_type_code === $type &&
+                strpos($item->set_size_code, $size . 'P') !== false
+            );
         })->first();
         if ($size__partial_filesets) {
             $available_filesets[] = $size__partial_filesets;

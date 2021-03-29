@@ -72,10 +72,10 @@ class BiblesController extends APIController
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.all"))
      *     )
      * )
-     * API Notes (Mar 2021): 
+     * API Notes (Mar 2021):
      * I removed organization as a search criteria. There is no organization endpoint currently. Can be added back in, but the data needs validation first.
      * I removed size and size_exclude because there is no way for the API developer to see the list of available sizes. Need to add an endpoint showing available size types, or at least an enum
-     * 
+     *
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
      */
     public function index()
@@ -803,7 +803,11 @@ class BiblesController extends APIController
         $available_filesets = [];
 
         $completeFileset = $filesets->filter(function ($fileset) use ($type) {
-            return $fileset->set_type_code === $type && $fileset->set_size_code === 'C';
+            return (
+                $this->validateFileset($fileset) &&
+                $fileset->set_type_code === $type &&
+                $fileset->set_size_code === 'C'
+            );
         })->first();
 
         if ($completeFileset) {
@@ -811,7 +815,12 @@ class BiblesController extends APIController
         }
 
         $size_filesets = $filesets->filter(function ($fileset) use ($type, $testament) {
-            return $fileset->set_type_code === $type && $fileset->set_size_code === $testament;
+            return (
+              $this->validateFileset($fileset) &&
+              is_string($testament) &&
+              $fileset->set_type_code === $type &&
+              $fileset->set_size_code === $testament
+            );
         })->toArray();
 
         if (!empty($size_filesets)) {
@@ -819,7 +828,12 @@ class BiblesController extends APIController
         }
 
         $size_partial_filesets = $filesets->filter(function ($fileset) use ($type, $testament) {
-            return $fileset->set_type_code === $type && strpos($fileset->set_size_code, $testament) !== false;
+            return (
+                $this->validateFileset($fileset) &&
+                is_string($testament) &&
+                $fileset->set_type_code === $type &&
+                strpos($fileset->set_size_code, $testament) !== false
+            );
         })->toArray();
 
         if (!empty($size_partial_filesets)) {
@@ -827,7 +841,11 @@ class BiblesController extends APIController
         }
 
         $partial_fileset = $filesets->filter(function ($fileset) use ($type) {
-            return $fileset->set_type_code === $type && $fileset->set_size_code === 'P';
+            return (
+                $this->validateFileset($fileset) &&
+                $fileset->set_type_code === $type &&
+                $fileset->set_size_code === 'P'
+            );
         })->first();
 
         if ($partial_fileset) {
@@ -841,6 +859,11 @@ class BiblesController extends APIController
         }
 
         return false;
+    }
+
+    private function validateFileset($fileset)
+    {
+        return isset($fileset->set_type_code) && isset($fileset->set_size_code);
     }
 
     private function getAudioFilesetData($results, $bible, $book, $chapter, $type, $name, $download = false, $secondary_type, $secondary_name, $get_secondary = false)
