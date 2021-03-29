@@ -18,6 +18,7 @@ use App\Models\Language\Language;
 use App\Transformers\FileSetTransformer;
 use App\Transformers\TextTransformer;
 
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
 class BibleFileSetsController extends APIController
@@ -51,7 +52,7 @@ class BibleFileSetsController extends APIController
      *     ),
      *     deprecated=true
      * )
-     *     API Note: this is confusing. If ENGESV is provided as fileset, and no type is provided, it returns ENGESVN1DA. Thus it is not part of the public API. 
+     *     API Note: this is confusing. If ENGESV is provided as fileset, and no type is provided, it returns ENGESVN1DA. Thus it is not part of the public API.
      *     Prefer instead v4_filesets.chapter
      *     If we implement a key-based access control, this endpoint should be limited to bible.is and gideons
      *
@@ -639,12 +640,12 @@ class BibleFileSetsController extends APIController
      *   title="Fileset check types response",
      *   description="The v4 fileset check types response.",
      *   @OA\Items(
-     *      @OA\Property(property="fileset_id", ref="#/components/schemas/PlaylistItems/properties/fileset_id"),
-     *      @OA\Property(property="book_id", ref="#/components/schemas/PlaylistItems/properties/book_id"),
-     *      @OA\Property(property="chapter_start", ref="#/components/schemas/PlaylistItems/properties/chapter_start"),
+     *      @OA\Property(property="fileset_id", ref="#/components/schemas/PlaylistItems/properties/fileset_id", required=true),
+     *      @OA\Property(property="book_id", ref="#/components/schemas/PlaylistItems/properties/book_id", required=true),
+     *      @OA\Property(property="chapter_start", ref="#/components/schemas/PlaylistItems/properties/chapter_start", required=true),
      *      @OA\Property(property="chapter_end", ref="#/components/schemas/PlaylistItems/properties/chapter_end"),
      *      @OA\Property(property="verse_start", ref="#/components/schemas/PlaylistItems/properties/verse_start"),
-     *      @OA\Property(property="verse_end", ref="#/components/schemas/PlaylistItems/properties/verse_end"),
+     *      @OA\Property(property="verse_end", ref="#/components/schemas/PlaylistItems/properties/verse_end", required=true),
      *      @OA\Property(property="has_audio", type="boolean"),
      *      @OA\Property(property="has_video", type="boolean")
      *   )
@@ -655,6 +656,10 @@ class BibleFileSetsController extends APIController
         $bible_locations = json_decode($request->getContent());
         $result = [];
         foreach ($bible_locations as $bible_location) {
+            $invalid_bible_fileset = $this->validateBibleFileset($bible_location);
+            if ($invalid_bible_fileset) {
+                return $this->setStatusCode(422)->replyWithError($invalid_bible_fileset);
+            }
             $cache_params = [$bible_location->fileset_id];
             $hashes = cacheRemember(
                 'v4_bible_filesets.checkTypes',
@@ -816,5 +821,19 @@ class BibleFileSetsController extends APIController
             }
         }
         return true;
+    }
+
+    private function validateBibleFileset($request)
+    {
+        $validator = Validator::make((array) $request, [
+            'book_id'           => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.books,id',
+            'fileset_id'        => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.bible_filesets,id',
+            'chapter_start'     => ((request()->method() === 'POST') ? 'required|' : '') . 'max:150|min:1|integer',
+            'chapter_end'     => ((request()->method() === 'POST') ? 'required|' : '') . 'max:150|min:1|integer',
+            'verse_end'         => ((request()->method() === 'POST') ? 'required|' : '') . 'max:177|min:1|integer',
+        ]);
+        if ($validator->fails()) {
+            return ['errors' => $validator->errors()];
+        }
     }
 }
