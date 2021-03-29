@@ -54,42 +54,42 @@ Localization::localizedRoutesGroup(function () {
     );
 
 
-// API KEY routes
-Route::name('api_key.login')->match(
+    // API KEY routes
+    Route::name('api_key.login')->match(
     ['get', 'post'],
     'admin/login',
     'User\UsersController@adminLogin'
 );
-Route::name('api_key.logout')->get(
+    Route::name('api_key.logout')->get(
     '/api_key/logout',
     'User\UsersController@adminLogout'
 );
-Route::name('api_key.dashboard')->get(
+    Route::name('api_key.dashboard')->get(
     '/api_key/dashboard',
     'ApiKey\DashboardController@home'
 );
-Route::name('api_key.request')->match(
+    Route::name('api_key.request')->match(
     ['get', 'post'],
     '/api_key/request',
     'ApiKey\KeysController@request'
 );
-Route::name('api_key.requested')->get(
+    Route::name('api_key.requested')->get(
     '/api_key/requested',
     'ApiKey\KeysController@requested'
 );
-Route::name('api_key.send_email')->post(
+    Route::name('api_key.send_email')->post(
     '/api_key/send_email',
     'ApiKey\DashboardController@sendEmail'
 );
-Route::name('api_key.save_note')->post(
+    Route::name('api_key.save_note')->post(
     '/api_key/save_note',
     'ApiKey\DashboardController@saveNote'
 );
-Route::name('api_key.approve_api_key')->post(
+    Route::name('api_key.approve_api_key')->post(
     '/api_key/approve_api_key',
     'ApiKey\DashboardController@approveApiKey'
 );
-Route::name('api_key.change_api_key_state')->post(
+    Route::name('api_key.change_api_key_state')->post(
   '/api_key/change_api_key_state',
   'ApiKey\DashboardController@changeApiKeyState'
 );
@@ -98,7 +98,6 @@ Route::name('api_key.change_api_key_state')->post(
 
 
     Route::group(['middleware' => ['auth']], function () {
-
         Route::name('dashboard')->get(
             'home',
             'User\Dashboard\DashboardController@home'
@@ -107,8 +106,6 @@ Route::name('api_key.change_api_key_state')->post(
             'dashboard',
             'User\Dashboard\DashboardController@home'
         );
-
-
     });
 });
 
@@ -169,7 +166,6 @@ Route::group(['middleware' => ['web']], function () {
     );
     // Validate
     Route::group(['middleware' => ['web']], function () {
-
         Route::name('validate.index')->get(
             '/validate',
             'ValidateController@index'
@@ -253,112 +249,111 @@ Route::group(['middleware' => ['web']], function () {
             '/login/{provider}/callback',
             'User\SocialController@callback'
         );
-    // }); end of localization
+        // }); end of localization
     
-// not part of localization.. part of auth
-Route::group(['middleware' => ['auth']], function () {
+        // not part of localization.. part of auth
+        Route::group(['middleware' => ['auth']], function () {
 
         // Bible Management
-        Route::name('dashboard.bibles')->get(
+            Route::name('dashboard.bibles')->get(
             'dashboard/bibles',
             'User\Dashboard\BibleManagementController@index'
         );
-        Route::name('dashboard.bibles.create')->get(
+            Route::name('dashboard.bibles.create')->get(
             'dashboard/bibles/create',
             'User\Dashboard\BibleManagementController@create'
         );
-        Route::name('dashboard.bibles.store')->post(
+            Route::name('dashboard.bibles.store')->post(
             'dashboard/bibles',
             'User\Dashboard\BibleManagementController@store'
         );
-        Route::name('dashboard.bibles.edit')->get(
+            Route::name('dashboard.bibles.edit')->get(
             'dashboard/bibles/{bible_id}',
             'User\Dashboard\BibleManagementController@edit'
         );
-        Route::name('dashboard.bibles.update')->put(
+            Route::name('dashboard.bibles.update')->put(
             'dashboard/bibles/{bible_id}',
             'User\Dashboard\BibleManagementController@update'
         );
 
-        // Projects Management
-        Route::name('dashboard.projects.index')->get(
+            // Projects Management
+            Route::name('dashboard.projects.index')->get(
             'api/projects',
             'User\Dashboard\ProjectsController@index'
         );
-        Route::name('dashboard.projects.create')->get(
+            Route::name('dashboard.projects.create')->get(
             'api/projects/create',
             'User\Dashboard\ProjectsController@create'
         );
-        Route::name('dashboard.projects.store')->post(
+            Route::name('dashboard.projects.store')->post(
             'api/projects',
             'User\Dashboard\ProjectsController@store'
         );
-        Route::name('dashboard.projects.members')->get(
+            Route::name('dashboard.projects.members')->get(
             'api/projects/{project_id}/members',
             'User\Dashboard\ProjectsController@members'
         );
-        Route::name('dashboard.projects.edit')->get(
+            Route::name('dashboard.projects.edit')->get(
             'api/projects/{project_id}/edit',
             'User\Dashboard\ProjectsController@edit'
         );
-        Route::name('dashboard.projects.update')->put(
+            Route::name('dashboard.projects.update')->put(
             'api/projects/{project_id}/',
             'User\Dashboard\ProjectsController@update'
         );
 
-        // Profiles
-        Route::name('profile')->get(
+            // Profiles
+            Route::name('profile')->get(
             'profile',
             'User\Dashboard\ProfileController@profile'
         );
-        Route::name('profile.update')->put(
+            Route::name('profile.update')->put(
             'profile/{user_id}',
             'User\Dashboard\ProfileController@updateProfile'
         );
 
-        // Keys
-        Route::resource('api/keys', 'User\Dashboard\KeysController');
-        Route::name('dashboard.keys.create')->get(
+            // Keys
+            Route::resource('api/keys', 'User\Dashboard\KeysController');
+            Route::name('dashboard.keys.create')->get(
             'api/keys/create',
             'User\Dashboard\KeysController@create'
         );
-        Route::name('dashboard.keys.store')->post(
+            Route::name('dashboard.keys.store')->post(
             'api/keys',
             'User\Dashboard\KeysController@store'
         );
-        Route::name('dashboard.keys.clone')->post(
+            Route::name('dashboard.keys.clone')->post(
             'api/keys/{id}/clone',
             'User\Dashboard\KeysController@clone'
         );
-        Route::name('dashboard.keys.edit')->get(
+            Route::name('dashboard.keys.edit')->get(
             'api/keys/{id}/edit',
             'User\Dashboard\KeysController@edit'
         );
-        Route::name('dashboard.keys.update')->put(
+            Route::name('dashboard.keys.update')->put(
             'api/keys/{id}',
             'User\Dashboard\KeysController@update'
         );
-        Route::name('dashboard.keys.access')->get(
+            Route::name('dashboard.keys.access')->get(
             'api/keys/{id}/accessGroups',
             'User\Dashboard\KeysController@accessGroups'
         );
-        Route::name('dashboard.keys.delete')->get(
+            Route::name('dashboard.keys.delete')->get(
             'api/keys/{id}/delete',
             'User\Dashboard\KeysController@delete'
         );
-        Route::name('dashboard.keys.destroy')->post(
+            Route::name('dashboard.keys.destroy')->post(
             'api/keys/{id}/delete',
             'User\Dashboard\KeysController@destroy'
         );
-    // API Key (old?)
-    Route::name('api_key_email')->post(
+            // API Key (old?)
+            Route::name('api_key_email')->post(
         'keys/email',
         'User\Dashboard\KeysController@sendKeyEmail'
     );
-    Route::name('api_key_generate')->get(
+            Route::name('api_key_generate')->get(
         'keys/generate/{email_token}',
         'User\Dashboard\KeysController@generateAPIKey'
     );
-
-});
-});
+        });
+    });
