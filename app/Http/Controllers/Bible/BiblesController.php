@@ -72,10 +72,10 @@ class BiblesController extends APIController
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.all"))
      *     )
      * )
-     * API Notes (Mar 2021): 
+     * API Notes (Mar 2021):
      * I removed organization as a search criteria. There is no organization endpoint currently. Can be added back in, but the data needs validation first.
      * I removed size and size_exclude because there is no way for the API developer to see the list of available sizes. Need to add an endpoint showing available size types, or at least an enum
-     * 
+     *
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
      */
     public function index()
@@ -197,8 +197,9 @@ class BiblesController extends APIController
      *
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id = null)
     {
+        $id   = checkParam('dam_id', false, $id);
         $access_control = $this->accessControl($this->key);
         $cache_params = [$id, $access_control->string];
         $bible = cacheRemember('bibles_show', $cache_params, now()->addDay(), function () use ($access_control, $id) {

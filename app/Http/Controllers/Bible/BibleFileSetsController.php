@@ -51,7 +51,7 @@ class BibleFileSetsController extends APIController
      *     ),
      *     deprecated=true
      * )
-     *     API Note: this is confusing. If ENGESV is provided as fileset, and no type is provided, it returns ENGESVN1DA. Thus it is not part of the public API. 
+     *     API Note: this is confusing. If ENGESV is provided as fileset, and no type is provided, it returns ENGESVN1DA. Thus it is not part of the public API.
      *     Prefer instead v4_filesets.chapter
      *     If we implement a key-based access control, this endpoint should be limited to bible.is and gideons
      *
