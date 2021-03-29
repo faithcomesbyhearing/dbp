@@ -339,23 +339,14 @@ class TextController extends APIController
         $all_playlists = $playlists->merge($followed_playlists)->sortBy('name');
 
         $highlights = Highlight::where('user_id', $user->id)
-            ->orderBy('user_highlights.updated_at')->limit($limit)->get()
-            ->filter(function ($highlight) use ($query) {
-                return str_contains(strtolower($highlight->book->name . ' ' . $highlight->verse_text), $query);
-            });
+            ->orderBy('user_highlights.updated_at')->limit($limit)->get();
+        $highlights = $this->filter_annotations($highlights, $query);
 
-        $bookmarks = Bookmark::where('user_id', $user->id)
-            ->limit($limit)->get()
-            ->filter(function ($bookmark) use ($query) {
-                return str_contains(strtolower($bookmark->book->name . ' ' . $bookmark->verse_text), $query);
-            });
+        $bookmarks = Bookmark::where('user_id', $user->id)->limit($limit)->get();
+        $bookmarks = $this->filter_annotations($bookmarks, $query);
 
-        $notes = Note::where('user_id', $user->id)
-            ->limit($limit)->get()
-            ->filter(function ($note) use ($query) {
-                return str_contains(strtolower($note->book->name . ' ' . $note->verse_text), $query);
-            });
-
+        $notes = Note::where('user_id', $user->id)->limit($limit)->get();
+        $notes = $this->filter_annotations($notes, $query);
 
         return $this->reply([
             'bookmarks' => fractal($bookmarks, UserBookmarksTransformer::class)->toArray()['data'],
@@ -364,6 +355,16 @@ class TextController extends APIController
             'plans' => $plans,
             'playlists' => $all_playlists,
         ]);
+    }
+
+    private function filter_annotations($annotation_query, $search_query)
+    {
+        return $annotation_query->filter(function ($annotation) use ($search_query) {
+            if (isset($annotation->verse_text, $annotation->book, $annotation->book->name)) {
+                return str_contains(strtolower($annotation->book->name . ' ' . $annotation->verse_text), $search_query);
+            }
+            return false;
+        });
     }
 
     /**
