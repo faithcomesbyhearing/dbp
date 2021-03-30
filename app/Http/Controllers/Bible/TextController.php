@@ -434,9 +434,9 @@ class TextController extends APIController
 
         return $this->reply([
             [
-                ['total_results' => $verses->sum('resultsCount')]
+                ['total_results' => strval($verses->sum('resultsCount'))]
             ],
-            fractal()->collection($verses)->transformWith(new TextTransformer())->serializeWith($this->serializer),
+            fractal($verses, new TextTransformer(), $this->serializer)
         ]);
     }
 
