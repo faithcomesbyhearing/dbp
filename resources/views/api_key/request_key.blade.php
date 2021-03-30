@@ -1,66 +1,58 @@
 @extends('layouts.apiKey')
 @section('head')
 <title>Request your API key</title>
-<script>
-    function showAgreement(show) {
-        const display = show ? "block" : "none";
-        document.getElementById("agreement_modal").style.display = display;
-    }
-
-    function acceptAgreement() {
-        showAgreement(false);
-        document.getElementById("agreement").checked = true;
-    }
-</script>
-<link rel="stylesheet" href="{{ mix('css/app_api_key.css') }}" />
 @endsection
 
 @section('content')
-<div class="second-bg">
-    <div class="card request-card">
-        <p class="card-header request-title">Request your API Key</p>
-        <form id="key_request" method="POST" action="{{ route('api_key.request') }}">
-            <div class="col input-request">
-                <label for="name">Name</label>
-                <input class="input no-icon-input" id="name" type="text" name="name" value="{{ old('name') }}" required autofocus placeholder="Type your name...">
-                @if($errors->has('name')) <p>{{ $errors->first('name') }}</p> @endif
-            </div>
-            <div class="col input-request">
-                <label for="email">E-mail Address</label>
-                <input class="input no-icon-input" id="email" type="text" autocomplete="email" name="email" value="{{ old('email') }}" required placeholder="Type your e-mail address...">
-                @if($errors->has('email')) <p>{{ $errors->first('email') }}</p> @endif
-            </div>
-            <div class="col input-request">
-                <label for="description">How will you use the key?</label>
-                <textarea class="input no-icon-input" id="description" type="text" name="description" required placeholder="Please describe how the key will be user, include any relevant URL's">{{ old('description') }}</textarea>
-                @if($errors->has('description')) <p>{{ $errors->first('description') }}</p> @endif
-            </div>
-            <div class="col input-request last">
-                <label for="questions">Do you have any comments or questions?</label>
-                <textarea class="input no-icon-input" id="questions" type="text" name="questions" placeholder="Please describe...">{{ old('questions') }}</textarea>
-                @if($errors->has('questions')) <p>{{ $errors->first('questions') }}</p> @endif
-            </div>
-            <div class="input-request checkbox">
-                <input id="agreement" name="agreement" type="checkbox" {{ old('agreement') ? 'checked' : '' }} required>
-                <label for="agreement">I have read and agreed to the <a href="https://www.biblebrain.com/license"  target="_blank">DBP License Agreement</a></label>
-                @if($errors->has('agreement')) <p>{{ $errors->first('agreement') }}</p> @endif
-            </div>
-            <div class="col input-request">
-                <button class="btn btn-success btn-request" type="submit">Submit</button>
-            </div>
-            <input name="_token" value="{{ csrf_token() }}" type="hidden" />
-        </form>
-    </div>
+<div role="banner" class="hero-default hero-default--bible-brain">
+  <div class="hero-default__text mt-0" style="opacity: 1; transform: translate3d(0px, 0px, 0px) scale3d(1, 1, 1) rotateX(0deg) rotateY(0deg) rotateZ(0deg) skew(0deg, 0deg); transform-style: preserve-3d;">
+    <h1 class="txt-h2">Request Your API Key</h1>
+  </div>
 </div>
 
-<div class="modal-container" id="agreement_modal" >
-    <div class="card agreement-modal">
-        <div class="agreement-header">
-            <a href="#" class="close" onclick="showAgreement(false);"></a>
-            <p class="card-header agreement-title">Digital Bible Platform License Agreement</p>
+<div class="section">
+  <div class="api-form-container">
+    <div class="form-single-col__container w-form">
+      <form id="key_request" method="POST" name="wf-form-API-Key-Request" data-name="API Key Request" class="form-single-col" action="{{ route('api_key.request') }}">
+        @csrf <!-- add csrf field on your form -->
+        <div class="full-col__input-wrapper mb-24">
+          <label for="Name" class="default-form__label">Name</label>
+          <input type="text" class="default-input w-input" maxlength="256" id="name" name="name" data-name="name" placeholder="Type your name..." id="API-key-request-name" required="" value="{{ old('name') }}">
         </div>
-
-        <button class="btn btn-success agreement-btn" onclick="acceptAgreement();">I Agree</button>
+        <div class="full-col__input-wrapper mb-24">
+          <label for="Email" class="default-form__label">Email</label>
+          <input type="email" class="default-input w-input" maxlength="256" id="email" name="email" data-name="email" placeholder="Type your email address...." id="API-key-request-email" required="" value="{{ old('email') }}">
+        </div>
+        <div class="full-col__input-wrapper mb-24">
+          <label for="API-use" class="default-form__label">How will you use the key?</label>
+          <textarea placeholder="Please describe how the key will be user, include any relevant URL's" maxlength="5000" id="description" type="text" name="description" data-name="description" class="default-input default-input--text w-input">{{ old('description') }}</textarea>
+        </div>
+        <div class="full-col__input-wrapper mb-24">
+          <label for="API-comments-2" class="default-form__label">Do you have any comments or questions?</label>
+          <textarea placeholder="Please describe..." maxlength="5000" id="questions" type="text" name="questions" data-name="questions" class="default-input default-input--text w-input">{{ old('questions') }}</textarea>
+        </div>
+        <div class="full-col__input-wrapper">
+          <label class="w-checkbox default-checkbox__container">
+            <input id="agreement" name="agreement" type="checkbox" data-name="agreement" checked="" class="w-checkbox-input default-checkbox default-checkbox--visible" required="">
+            <span for="Receive Email Updates" class="txt-sm pl-16 w-form-label">
+              <br>I have read and agreed to the<strong> </strong>
+              <a href="https://www.faithcomesbyhearing.com/bible-brain/license" target="_blank" class="txt-link">DBP License Agreement</a>
+              <br>‍
+            </span>
+          </label>
+        </div>
+        <div class="full-col__input-wrapper align-center">
+          <input type="submit" value="Submit" data-wait="Please wait..." class="btn-md btn--send mb-40 w-button">
+        </div>
+      </form>
+      <div class="success w-form-done">
+        <div class="txt-md">Your download will start shortly, please wait. If it doesn't start click <a href="#">here.</a></div>
+      </div>
+      <div class="error-message w-form-fail">
+        <div class="txt-deep-red txt-center">Oops! Something went wrong while submitting the form.</div>
+      </div>
     </div>
+  </div>
 </div>
+
 @endsection
