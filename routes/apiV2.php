@@ -42,8 +42,8 @@ Route::name('v2_audio_path')->get('audio/path',                                 
 Route::name('v2_audio_timestamps')->get('audio/versestart',                        'Bible\AudioControllerV2@timestampsByReference');
 
 // VERSION 2 | Video
-Route::name('v2_video_location')->get('video/location',                            'Organization\FilmsController@location');
-Route::name('v2_video_path')->get('video/path',                                    'Organization\FilmsController@videoPath');
+Route::name('v2_video_location')->get('video/videolocation',                       'Organization\FilmsController@location');
+Route::name('v2_video_path')->get('video/videopath',                               'Organization\FilmsController@videoPath');
 Route::name('v2_api_jesusFilms')->get('library/jesusfilm',                         'Organization\ResourcesController@jesusFilmListing');
 
 Route::name('v2_api_jesusFilm_index')->get('video/jesusfilm',                     'Connections\ArclightController@index');
