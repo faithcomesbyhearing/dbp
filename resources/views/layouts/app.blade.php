@@ -5,6 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
     
@@ -14,62 +16,47 @@
     <!-- Bible.is CSS -->
     <link rel="stylesheet" href="/css/style.css">
     
+    <!-- Bible brain CSS -->
+    <link href="https://assets.website-files.com/5e73b0590a912b0d2533e44f/css/fcbh.b94faf5c0.min.css" rel="stylesheet" type="text/css">
     
-    <title>Digital Bible Platform</title>
+    <title>API Key Request - Bible Brain</title>
+    <link href="https://assets.website-files.com/5e73b0590a912b0d2533e44f/5f40222b2dc091e13df7d4b9_favicon.png" rel="shortcut icon" type="image/x-icon">
     @yield('head')
   </head>
-  <body>
-    <div class="wrapper">
-      <header>
-        <nav class="navbar navbar-expand-lg">
-          <a class="navbar-brand" href="{{ route('welcome') }}"><img src="/images/dbp_logo.png"></a>
-          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-        
-          <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
-            @if(Auth::user())
-            <li class="nav-item active">
-              {{ Auth::user()->email }}
-            </li>                 
-            <a class="logout-a" href="{{ route('api_key.logout') }}">Log Out</a>
-            
-          @endif
-          </div>
-        </nav>
-      </header>
-
-      <div class="container">
-        <div class="row">
-          <!-- Left Side Navigation -->
-          <div class="col-3 nav-column">
-
-          @yield('left-nav')
-
-		  </div> <!-- end div col-3 nav-column -->
-<!-- there are two open divs that need to be closed after docs content -->
-<!-- there is another div for the wrapper that needs to be closed -->
-
-@yield('content')
-
-<!-- close out divs for left nav -->
-		</div>
-      </div>
-    </div>
-<!-- end close out divs for left nav -->      
-
-
-    <footer class="class="container-fluid"">
-      <div class="container foot-wrapper">
-        <div class="row">
-          <div class="col-6 footer-left"> </div>
-          <div class="col-6 footer-right">
-
-          </div>
+  <body style="opacity: 1;" class="fcbh" data-new-gr-c-s-check-loaded="14.1001.0" data-gr-ext-installed>
+    <div class="default-width-container">
+      <section class="dbp-header pt-40 pb-60">
+        <a href="https://www.faithcomesbyhearing.com/bible-brain" class="dbp-header__link w-inline-block">
+          <img src="https://assets.website-files.com/5e73b0590a912b0d2533e44f/604fa88733da41cfc9530358_BibleBrainFull.svg" loading="lazy" alt="Bible Brain logo" class="dbp-header__link-img" data-src="https://assets.website-files.com/5e73b0590a912b0d2533e44f/604fa88733da41cfc9530358_BibleBrainFull.svg">
+        </a>
+        <div class="dbp-header__buttons">
+          <div class="txt-h5 dbp-header__section-name">API Key Request</div>
         </div>
+      </section>
+    </div>
+
+    <div class="container">
+        <!-- Left Side Navigation -->
+        <div class="col-3 nav-column">
+          @yield('left-nav')
+        </div> <!-- end div col-3 nav-column -->
+        @yield('content')
+    </div>
+
+
+    <footer>
+      <div class="default-width-container">
+        <section class="dbp-footer pt-60 pb-24">
+          <a href="https://www.faithcomesbyhearing.com/bible-brain" class="dbp-footer__logo w-inline-block">
+            <img src="https://assets.website-files.com/5e73b0590a912b0d2533e44f/604fa88733da41cfc9530358_BibleBrainFull.svg" loading="lazy" alt="Bible Brain logo" class="dbp-footer__logo-img" data-src="https://assets.website-files.com/5e73b0590a912b0d2533e44f/604fa88733da41cfc9530358_BibleBrainFull.svg">
+          </a>
+          <div class="dbp-footer__links">
+            <a href="https://www.faithcomesbyhearing.com/" target="_blank" class="txt-sm txt-link dbp-footer__link">© 2021 Faith Comes By Hearing</a>
+            <a href="https://www.faithcomesbyhearing.com/bible-brain/legal" class="txt-sm txt-link dbp-footer__link">Legal</a>
+            <a href="mailto:support@digitalbibleplatform.com?subject=DBP%20Contact" class="txt-sm txt-link dbp-footer__link dbp-footer__link--last">Support</a>
+          </div>
+        </section>
       </div>
-      
-      
     </footer>
 
 
