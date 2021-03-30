@@ -207,7 +207,7 @@ class TextController extends APIController
      *   type="object",
      *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter"),
      *   @OA\Property(property="meta",ref="#/components/schemas/pagination")
-     * 
+     *
      * )
      */
     public function search()

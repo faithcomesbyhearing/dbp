@@ -158,7 +158,7 @@ class Bible extends Model
 
     /**
      *
-     * API Note: removed 
+     * API Note: removed
      *   title="in_progress",
      *   type="string",
      *   description="If the Bible being described is currently in progress.",
