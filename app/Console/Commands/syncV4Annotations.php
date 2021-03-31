@@ -72,7 +72,9 @@ class syncV4Annotations extends Command
         
         while (!feof($file)) {
             $line = fgetcsv($file);
-            $transition_bibles[$line[0]] = $line[1];
+            if ($line && isset($line[0]) && isset($line[1]) && $line[1]) {
+                $transition_bibles[$line[0]] = $line[1];
+            }
         }
         fclose($file);
 
