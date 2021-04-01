@@ -93,7 +93,7 @@ class AudioController extends APIController
 
         // Fetch Fileset & Files
         $fileset = BibleFileset::uniqueFileset($id, 'audio', true)->first();  // BWF suggest removing audio and true. For audio, the filesetid is unique
-        //$fileset = BibleFileset::uniqueFileset($id)->first();  
+        //$fileset = BibleFileset::uniqueFileset($id)->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $id]));
         }
