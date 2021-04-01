@@ -87,7 +87,7 @@ Route::name('v4_internal_filesets.checkTypes')->post(
 );
 Route::name('v4_internal_bible_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
 
-// Deprecate this endpoint. Prefer instead v4_filesets.chapter. Reasons: It takes book and chapter as query parameters. 
+// Deprecate this endpoint. Prefer instead v4_filesets.chapter. Reasons: It takes book and chapter as query parameters.
 Route::name('v4_internal_filesets.show')->get(
     'bibles/filesets/{fileset_id?}',
     'Bible\BibleFileSetsController@show'
@@ -123,7 +123,7 @@ Route::name('v4_bible.verseinfo')->get(
     'Bible\TextController@index'
 );
 
-// VERSION 4 | Timestamps 
+// VERSION 4 | Timestamps
 Route::name('v4_timestamps')->get(
     'timestamps',
     'Bible\AudioController@availableTimestamps'
