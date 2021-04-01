@@ -197,8 +197,9 @@ class BiblesController extends APIController
      *
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id = null)
     {
+        $id   = checkParam('dam_id', false, $id);
         $access_control = $this->accessControl($this->key);
         $cache_params = [$id, $access_control->string];
         $bible = cacheRemember('bibles_show', $cache_params, now()->addDay(), function () use ($access_control, $id) {
