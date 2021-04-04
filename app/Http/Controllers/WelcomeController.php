@@ -8,5 +8,4 @@ class WelcomeController extends APIController
     {
         return view('redirect');
     }
-
 }

@@ -41,7 +41,7 @@ class TextTransformer extends BaseTransformer
              */
             case 'v2_text_search':
                 return [
-                    'dam_id' => (string) $text->dam_id,
+                    'dam_id' => (string) $text->bible_id,
                     'book_name' => (string) $text->book_name,
                     'book_id' => (string) $text->book_id,
                     'chapter_id' => (string) $text->chapter,
@@ -75,11 +75,11 @@ class TextTransformer extends BaseTransformer
                     'dam_id' => $text->bible_id ?? '',
                     'book_name' => $text->book_name ?? '',
                     'book_id' => $text->book_id ?? '',
-                    'chapter_id' => $text->chapter ?? '',
-                    'verse_id' => $text->verse_start ?? '',
+                    'chapter_id' => (string) $text->chapter ?? '',
+                    'verse_id' => (string) $text->verse_start ?? '',
                     'verse_text' => $text->verse_text ?? '',
-                    'results' => $text->resultsCount ?? '',
-                    'book_order' => $text->protestant_order ?? ''
+                    'results' => (string) $text->resultsCount ?? '',
+                    'book_order' => (string) $text->protestant_order ?? ''
                 ];
 
 

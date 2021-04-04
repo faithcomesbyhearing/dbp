@@ -79,6 +79,13 @@ class NumbersController extends APIController
         $numbers = NumeralSystemGlyph::where('numeral_system_id', $script)
             ->where('value', '>=', $start)
             ->where('value', '<=', $end)->select('value as numeral', 'glyph as numeral_vernacular')->get();
+        
+        if ($this->v === 2 || $this->v === 3) {
+            foreach ($numbers as $number) {
+                $formatted_numbers["num_$number->numeral"] = $number->numeral_vernacular ?? '';
+            }
+            return $this->reply([$formatted_numbers]);
+        }
 
         return $this->reply($numbers);
     }

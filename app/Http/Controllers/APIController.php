@@ -36,7 +36,7 @@ class APIController extends Controller
      *     url="https://www.biblebrain.com"
      *   )
      * )
-     * 
+     *
 
      *
      * @OA\Server(
@@ -60,7 +60,7 @@ class APIController extends Controller
      *   name="api_token",
      *   in="query"
      * )
-     * 
+     *
      * @OA\Parameter(parameter="version_number",name="v",in="query",description="The Version Number",required=true,@OA\Schema(type="integer",enum={4,2},example=4))
      * @OA\Parameter(parameter="key",name="key",in="query",description="The key granted to the API developer upon sign up",required=true,@OA\Schema(type="string",example="f4cdf23a-22c3-66c9-cc4f-05dc711b41c6"))
      * @OA\Parameter(parameter="limit", name="limit",  in="query", description="The number of search results to return", @OA\Schema(type="integer",default=25))
@@ -70,28 +70,28 @@ class APIController extends Controller
      * @OA\Parameter(name="l10n", in="query", description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route",
      *      @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
      *
-     * 
+     *
      */
      
-   /**
-     * Pagination 
-     * @OA\Schema (
-     *   type="object",
-     *   schema="pagination",
-     *   title="Pagination",
-     *   description="The new pagination meta response.",
-     *   @OA\Xml(name="pagination"),
-     *   @OA\Property(property="pagination", type="object",
-     *      @OA\Property(property="total", type="integer", example=1801),
-     *      @OA\Property(property="count", type="integer", example=25),
-     *      @OA\Property(property="per_page", type="integer", example=25),
-     *      @OA\Property(property="current_page", type="integer", example=1),
-     *      @OA\Property(property="total_pages", type="integer", example=73),
-     *    )
-     *    )
-     *   )
-     * )
-     */
+    /**
+      * Pagination
+      * @OA\Schema (
+      *   type="object",
+      *   schema="pagination",
+      *   title="Pagination",
+      *   description="The new pagination meta response.",
+      *   @OA\Xml(name="pagination"),
+      *   @OA\Property(property="pagination", type="object",
+      *      @OA\Property(property="total", type="integer", example=1801),
+      *      @OA\Property(property="count", type="integer", example=25),
+      *      @OA\Property(property="per_page", type="integer", example=25),
+      *      @OA\Property(property="current_page", type="integer", example=1),
+      *      @OA\Property(property="total_pages", type="integer", example=73),
+      *    )
+      *    )
+      *   )
+      * )
+      */
 
 
 
@@ -110,14 +110,14 @@ class APIController extends Controller
     /**
      * Version 4 Tags
      *
-     * @OA\Tag(name="Languages",       
+     * @OA\Tag(name="Languages",
      *      description="v4 Routes for obtaining Languages Data",
      *      @OA\ExternalDocumentation(
      *         description="For more info please refer to the Ethnologue Registration Authority",
      *         url="https://www.iso.org/iso-639-language-codes.html"
      *      )
      * )
-     * @OA\Tag(name="Countries",       
+     * @OA\Tag(name="Countries",
      *      description="v4 Routes for obtaining Countries Data",
      *      @OA\ExternalDocumentation(
      *         description="For more info please refer to the Iso Registration Authority",

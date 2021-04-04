@@ -146,7 +146,7 @@ class Alphabet extends Model
      *     title="Family",
      *     description="The linguistic family the alphabet can be categorized within",
      *     type="string",
-     *     nullable=true, 
+     *     nullable=true,
      *     example="American"
      * )
      *
