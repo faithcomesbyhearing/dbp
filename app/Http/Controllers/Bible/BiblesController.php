@@ -201,11 +201,7 @@ class BiblesController extends APIController
     {
         $id   = checkParam('dam_id', false, $id);
         $access_control = $this->accessControl($this->key);
-        $fileset = BibleFileset::with('bible')->uniqueFileset($id)->first();
-        if (!$fileset) {
-            return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
-        }
-        $id = $fileset->id;
+        
         $cache_params = [$id, $access_control->string];
         $bible = cacheRemember('bibles_show', $cache_params, now()->addDay(), function () use ($access_control, $id) {
             return Bible::with([
