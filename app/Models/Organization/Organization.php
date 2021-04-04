@@ -88,7 +88,7 @@ class Organization extends Model
      *     title="id",
      *     description="The Organization's incrementing id",
      *     type="integer",
-     *     minimum=0, 
+     *     minimum=0,
      *     example=1
      * )
      *

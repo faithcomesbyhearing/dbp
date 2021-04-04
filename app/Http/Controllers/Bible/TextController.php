@@ -207,7 +207,7 @@ class TextController extends APIController
      *   type="object",
      *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter"),
      *   @OA\Property(property="meta",ref="#/components/schemas/pagination")
-     * 
+     *
      * )
      */
     public function search()
@@ -233,7 +233,6 @@ class TextController extends APIController
         })->flatten()->toArray();
 
         $search_text  = '%' . $query . '%';
-
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)
             ->withVernacularMetaData($bible)
             ->when($book_id, function ($query) use ($book_id) {
@@ -243,6 +242,7 @@ class TextController extends APIController
             ->where('bible_verses.verse_text', 'like', $search_text)
             ->select([
                 'bible_verses.book_id as book_id',
+                'bible_books.bible_id as bible_id',
                 'books.name as book_name',
                 'bible_books.name as book_vernacular_name',
                 'bible_verses.chapter',
@@ -253,13 +253,21 @@ class TextController extends APIController
                 'glyph_start.glyph as verse_start_vernacular',
                 'glyph_end.glyph as verse_end_vernacular',
             ]);
+        
 
-        if ($page) {
-            $verses  = $verses->paginate($limit);
-            return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses->getCollection(), TextTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($verses))]);
+        if ($this->v === 2 || $this->v === 3) {
+            return $this->reply([
+                [['total_results' => strval($verses->count())]],
+                fractal($verses->get(), new TextTransformer(), $this->serializer)
+            ]);
+        } else {
+            if ($page) {
+                $verses  = $verses->paginate($limit);
+                return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses->getCollection(), TextTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($verses))]);
+            }
+            $verses  = $verses->limit($limit)->get();
+            return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses, new TextTransformer(), $this->serializer)]);
         }
-        $verses  = $verses->limit($limit)->get();
-        return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses, new TextTransformer(), $this->serializer)]);
     }
     /**
      *
@@ -434,9 +442,9 @@ class TextController extends APIController
 
         return $this->reply([
             [
-                ['total_results' => $verses->sum('resultsCount')]
+                ['total_results' => strval($verses->sum('resultsCount'))]
             ],
-            fractal()->collection($verses)->transformWith(new TextTransformer())->serializeWith($this->serializer),
+            fractal($verses, new TextTransformer(), $this->serializer)
         ]);
     }
 
@@ -519,42 +527,45 @@ class TextController extends APIController
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }
-
+        $bible = optional($fileset->bible)->first();
         $book = Book::where('id', $book_id)->orWhere('id_osis', $book_id)->first();
 
-        $verse_info = BibleVerse::where('hash_id', $fileset->hash_id)->where([
-            ['book_id', '=', $book->id],
-            ])->when($chapter_id, function ($query) use ($chapter_id) {
-                return $query->where('chapter', '=', $chapter_id);
-            })->when($verse_start, function ($query) use ($verse_start) {
-                return $query->where('verse_start', '>=', $verse_start);
-            })->when($verse_end, function ($query) use ($verse_end) {
-                return $query->where('verse_start', '<=', $verse_end);
-            })->select(['book_id', 'chapter as chapter_number', 'verse_start', 'verse_end', 'verse_text'])->get();
+        if (!$book) {
+            return $this->setStatusCode(404)->replyWithError('No book found for the provided params');
+        }
 
-        // foreach ($verse_info as $key => $verse) {
-        //     $verse_info[$key]->bible_id           = $fileset->id;
-        //     $verse_info[$key]->bible_variation_id = null;
-        // }
-
-        /**
-         * @OA\Schema (
-         *   type="array",
-         *   schema="v2_library_verseInfo",
-         *   description="The v2_audio_timestamps response",
-         *   title="v2_library_verseInfo",
-         *   @OA\Xml(name="v2_library_verseInfo"),
-         *   @OA\Items(
-         *     @OA\Property(property="book_id",        ref="#/components/schemas/BibleVerse/properties/book_id"),
-         *     @OA\Property(property="chapter_number", ref="#/components/schemas/BibleVerse/properties/chapter"),
-         *     @OA\Property(property="verse_start",    ref="#/components/schemas/BibleVerse/properties/verse_number"),
-         *     @OA\Property(property="verse_end",      type="integer"),
-         *     @OA\Property(property="verse_text",     ref="#/components/schemas/BibleVerse/properties/verse_text"),
-         *     )
-         *   )
-         * )
-         */
-        //return $this->reply($verse_info);
-        return $this->reply(fractal($verse_info, new TextTransformer(), $this->serializer));
+        $cache_params = [$fileset_id, $book_id, $chapter_id, $verse_start, $verse_end];
+        $verses = cacheRemember('verse_info', $cache_params, now()->addDay(), function () use ($fileset, $bible, $book, $chapter_id, $verse_start, $verse_end) {
+            return BibleVerse::withVernacularMetaData($bible)
+                ->where('hash_id', $fileset->hash_id)
+                ->where('bible_verses.book_id', $book->id)
+                ->when($verse_start, function ($query) use ($verse_start) {
+                    return $query->where('verse_start', '>=', $verse_start);
+                })
+                ->when($chapter_id, function ($query) use ($chapter_id) {
+                    return $query->where('chapter', $chapter_id);
+                })
+                ->when($verse_end, function ($query) use ($verse_end) {
+                    return $query->where('verse_start', '<=', $verse_end);
+                })
+                ->orderBy('chapter')
+                ->orderBy('verse_start')
+                ->select([
+                    'bible_verses.chapter',
+                    'bible_verses.verse_start',
+                ])->get();
+        });
+        
+        $chapters = [];
+        foreach ($verses as $verse) {
+            if (!isset($chapters[$verse->chapter])) {
+                $verse_count = [];
+            }
+            $verse_count[] = "$verse->verse_start";
+            $chapters[$verse->chapter] = $verse_count;
+        }
+        $book_verse_info[(string) $book->name] = $chapters;
+        
+        return $this->reply($book_verse_info);
     }
 }

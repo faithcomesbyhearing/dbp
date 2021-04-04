@@ -128,7 +128,7 @@ class LibraryController extends APIController
      */
     public function version()
     {
-        $code = checkParam('code');
+        $code = checkParam('code|fileset_id');
         $name = checkParam('name');
         $sort = checkParam('sort_by');
 
@@ -145,27 +145,27 @@ class LibraryController extends APIController
                     $join->on('eng_title.bible_id', 'bibles.bible_id')->where('eng_title.language_id', $english_id);
                 })
                 ->when($code, function ($q) use ($code) {
-                    $q->where('bible_filesets.id', $code);
+                    $q->where('bible_filesets.id', 'LIKE', '%' . $code)->get();
                 })->when($sort, function ($q) use ($sort) {
                     $q->orderBy($sort, 'asc');
                 })->select([
                     'eng_title.name as eng_title',
                     'ver_title.name as ver_title',
                     'bible_filesets.id'
-                ])->getQuery()->get();
-
+                ])->get();
+            
             if ($name) {
                 $subsetVersions = $versions->where('eng_title', $name)->first();
                 if (!$subsetVersions) {
                     $subsetVersions = $versions->where('ver_title', $name)->first();
                 }
-                $versions = $subsetVersions;
+                $versions = [$subsetVersions];
             }
 
             return $versions;
         });
 
-        return $this->reply($versions);
+        return $this->reply(fractal($versions[0], new LibraryVolumeTransformer(), $this->serializer));
     }
 
     /**
