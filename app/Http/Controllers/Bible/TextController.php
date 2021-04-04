@@ -232,13 +232,14 @@ class TextController extends APIController
             return Str::contains($fs->set_type_code, 'audio');
         })->flatten()->toArray();
 
-        $search_text  = \DB::connection()->getPdo()->quote($query);
+        $search_text  = '%' . $query . '%';
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)
             ->withVernacularMetaData($bible)
             ->when($book_id, function ($query) use ($book_id) {
                 $books = explode(',', $book_id);
                 $query->whereIn('bible_verses.book_id', $books);
             })
+            ->where('bible_verses.verse_text', 'like', $search_text)
             ->select([
                 'bible_verses.book_id as book_id',
                 'bible_books.bible_id as bible_id',
@@ -251,12 +252,7 @@ class TextController extends APIController
                 'glyph_chapter.glyph as chapter_vernacular',
                 'glyph_start.glyph as verse_start_vernacular',
                 'glyph_end.glyph as verse_end_vernacular',
-            ])
-            ->whereRaw(
-                DB::raw(
-                  "MATCH (bible_verses.verse_text) AGAINST($search_text IN NATURAL LANGUAGE MODE)"
-                )
-            );
+            ]);
         
 
         if ($this->v === 2 || $this->v === 3) {
