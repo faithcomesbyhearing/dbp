@@ -53,9 +53,9 @@ class FilmsController extends APIController
     {
         return $this->reply([
             [
-                'server'    => 'dbp-video.s3.amazonaws.com',
-                'root_path' => '',
-                'protocol'  => 'http',
+                'server'    => config('services.cdn.video_server'),
+                'root_path' => 'video',
+                'protocol'  => 'https',
                 'CDN'       => 0,
                 'priority'  => 5,
             ],

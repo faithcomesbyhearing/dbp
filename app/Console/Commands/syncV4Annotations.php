@@ -33,7 +33,7 @@ class syncV4Annotations extends Command
      * @return mixed
      */
 
-    private function update_annotations($annotation_type, $transition_bibles, $target_annotations) 
+    private function update_annotations($annotation_type, $transition_bibles, $target_annotations)
     {
         if (sizeof($target_annotations) >= 1) {
             foreach ($target_annotations->chunk(5000) as $key=>$chunk) {
@@ -81,8 +81,8 @@ class syncV4Annotations extends Command
         $valid_bibles = Bible::whereIn('id', array_values($transition_bibles))->count();
         // does not count the title of the csv
         if ((sizeof($transition_bibles) - 1) > $valid_bibles) {
-          $this->error('One or more bibles on the translation to v4 dont exist');
-          return;
+            $this->error('One or more bibles on the translation to v4 dont exist');
+            return;
         }
 
         $this->alert(Carbon::now() . ' Sync starting for v4 Highlights');

@@ -82,7 +82,8 @@ return [
 
     // CDN server
     'cdn' => [
-        'server' => env('CDN_SERVER', 'content.cdn.dbp-prod.dbp4.org')
+        'server' => env('CDN_SERVER', 'content.cdn.dbp-prod.dbp4.org'),
+        'video_server' => env('CDN_VIDEO_SERVER', 'content.cdn.dbp-vid.dbp4.org')
     ]
 
 ];
