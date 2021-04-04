@@ -902,5 +902,4 @@ class UsersController extends APIController
         Auth::logout();
         return redirect()->to(route('api_key.login'));
     }
-
 }

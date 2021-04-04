@@ -207,7 +207,7 @@ if (!function_exists('getFilesetFromDamId')) {
             if (array_key_exists($dam_id, $transition_bibles)) {
                 $dam_id = $transition_bibles[$dam_id];
             }
-        } 
+        }
         
         $fileset = $filesets->where('id', $dam_id)->first();
 
@@ -224,7 +224,6 @@ if (!function_exists('getFilesetFromDamId')) {
         }
 
         return $fileset;
-        
     }
 }
 
