@@ -108,4 +108,6 @@ return [
     * Bible sync path
     */
   'bibleSyncFilePath' => env('BIBLE_SYNC_FILE_PATH', ''),
+
+  'apiLatestVersion' => env('API_LATEST_VERSION', '4'),
 ];
