@@ -67,16 +67,7 @@ class syncV4Annotations extends Command
 
         $this->alert(Carbon::now() . ' Sync starting for v4 annotations');
         $syncFile = config('settings.bibleSyncFilePath');
-        $file = fopen($syncFile, 'r');
-        $transition_bibles = [];
-        
-        while (!feof($file)) {
-            $line = fgetcsv($file);
-            if ($line && $line[0] && $line[1] && $line[0] !== " " && $line[1] !== " ") {
-                $transition_bibles[$line[0]] = $line[1];
-            }
-        }
-        fclose($file);
+        $transition_bibles = convertCsvToArrayMap($syncFile);
 
         $valid_bibles = Bible::whereIn('id', array_values($transition_bibles))->count();
         // does not count the title of the csv
