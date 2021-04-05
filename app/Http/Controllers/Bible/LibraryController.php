@@ -238,10 +238,7 @@ class LibraryController extends APIController
      *          in="query",
      *          description="If set, will filter results by the type of media for which filesets are available.",
      *         @OA\Schema(
-     *          type="string",
-     *          @OA\ExternalDocumentation(
-     *              description="For a complete list of media types please see the v4_bible_filesets.types route"
-     *          )
+     *          type="string"
      *         )
      *     ),
      *     @OA\Parameter(
@@ -254,10 +251,7 @@ class LibraryController extends APIController
      *          name="language_code",
      *          in="query",
      *          description="The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `/languages` route",
-     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
-     *          @OA\ExternalDocumentation(
-     *              description="For a complete list see the `iso` field in the `/languages` route"
-     *          )),
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
      *     @OA\Parameter(
      *          name="language_family_code",
      *          in="query",
