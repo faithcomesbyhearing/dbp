@@ -14,5 +14,5 @@ class SwaggerDocsController extends Controller
         } else {
             return response('Not Found', 404);
         }
-    }    
+    }
 }

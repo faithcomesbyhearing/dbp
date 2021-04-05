@@ -233,7 +233,6 @@ class TextController extends APIController
         })->flatten()->toArray();
 
         $search_text  = '%' . $query . '%';
-
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)
             ->withVernacularMetaData($bible)
             ->when($book_id, function ($query) use ($book_id) {
@@ -243,6 +242,7 @@ class TextController extends APIController
             ->where('bible_verses.verse_text', 'like', $search_text)
             ->select([
                 'bible_verses.book_id as book_id',
+                'bible_books.bible_id as bible_id',
                 'books.name as book_name',
                 'bible_books.name as book_vernacular_name',
                 'bible_verses.chapter',
@@ -253,13 +253,21 @@ class TextController extends APIController
                 'glyph_start.glyph as verse_start_vernacular',
                 'glyph_end.glyph as verse_end_vernacular',
             ]);
+        
 
-        if ($page) {
-            $verses  = $verses->paginate($limit);
-            return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses->getCollection(), TextTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($verses))]);
+        if ($this->v === 2 || $this->v === 3) {
+            return $this->reply([
+                [['total_results' => strval($verses->count())]],
+                fractal($verses->get(), new TextTransformer(), $this->serializer)
+            ]);
+        } else {
+            if ($page) {
+                $verses  = $verses->paginate($limit);
+                return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses->getCollection(), TextTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($verses))]);
+            }
+            $verses  = $verses->limit($limit)->get();
+            return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses, new TextTransformer(), $this->serializer)]);
         }
-        $verses  = $verses->limit($limit)->get();
-        return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses, new TextTransformer(), $this->serializer)]);
     }
     /**
      *
@@ -434,9 +442,9 @@ class TextController extends APIController
 
         return $this->reply([
             [
-                ['total_results' => $verses->sum('resultsCount')]
+                ['total_results' => strval($verses->sum('resultsCount'))]
             ],
-            fractal()->collection($verses)->transformWith(new TextTransformer())->serializeWith($this->serializer),
+            fractal($verses, new TextTransformer(), $this->serializer)
         ]);
     }
 

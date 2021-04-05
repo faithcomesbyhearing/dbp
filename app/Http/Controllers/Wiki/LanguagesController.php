@@ -106,7 +106,7 @@ class LanguagesController extends APIController
                 ->includeCountryPopulation($country)
                 ->filterableByCountry($country)
                 ->filterableByIsoCode($code)
-                ->filterableByName($name) 
+                ->filterableByName($name)
                 ->select([
                     'languages.id',
                     'languages.glotto_id',

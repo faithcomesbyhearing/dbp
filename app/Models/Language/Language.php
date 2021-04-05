@@ -201,7 +201,7 @@ class Language extends Model
     protected $maps;
 
     /**
-     * 
+     *
      * @OA\Property(
      *     title="Development",
      *     description="The development of the growth of the language",
@@ -373,7 +373,7 @@ class Language extends Model
     public function scopeIncludeExtraLanguages($query, $access_control_hashes)
     {
         return $query->whereHas('filesets', function ($query) use ($access_control_hashes) {
-                $query->whereRaw('hash_id in (' . $access_control_hashes . ')');
+            $query->whereRaw('hash_id in (' . $access_control_hashes . ')');
         });
     }
 
