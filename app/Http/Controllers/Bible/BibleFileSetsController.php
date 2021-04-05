@@ -640,12 +640,12 @@ class BibleFileSetsController extends APIController
      *   title="Fileset check types response",
      *   description="The v4 fileset check types response.",
      *   @OA\Items(
-     *      @OA\Property(property="fileset_id", ref="#/components/schemas/PlaylistItems/properties/fileset_id", required=true),
-     *      @OA\Property(property="book_id", ref="#/components/schemas/PlaylistItems/properties/book_id", required=true),
-     *      @OA\Property(property="chapter_start", ref="#/components/schemas/PlaylistItems/properties/chapter_start", required=true),
+     *      @OA\Property(property="fileset_id", ref="#/components/schemas/PlaylistItems/properties/fileset_id"),
+     *      @OA\Property(property="book_id", ref="#/components/schemas/PlaylistItems/properties/book_id"),
+     *      @OA\Property(property="chapter_start", ref="#/components/schemas/PlaylistItems/properties/chapter_start"),
      *      @OA\Property(property="chapter_end", ref="#/components/schemas/PlaylistItems/properties/chapter_end"),
      *      @OA\Property(property="verse_start", ref="#/components/schemas/PlaylistItems/properties/verse_start"),
-     *      @OA\Property(property="verse_end", ref="#/components/schemas/PlaylistItems/properties/verse_end", required=true),
+     *      @OA\Property(property="verse_end", ref="#/components/schemas/PlaylistItems/properties/verse_end"),
      *      @OA\Property(property="has_audio", type="boolean"),
      *      @OA\Property(property="has_video", type="boolean")
      *   )
