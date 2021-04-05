@@ -201,7 +201,10 @@ class BiblesController extends APIController
     {
         $id   = checkParam('dam_id', false, $id);
         $access_control = $this->accessControl($this->key);
-        
+        if ($this->v === 2 || $this->v === 3) {
+            $id = substr($id, 0, 6);
+        }
+
         $cache_params = [$id, $access_control->string];
         $bible = cacheRemember('bibles_show', $cache_params, now()->addDay(), function () use ($access_control, $id) {
             return Bible::with([

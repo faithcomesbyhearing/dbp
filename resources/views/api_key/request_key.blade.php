@@ -33,7 +33,7 @@
         </div>
         <div class="full-col__input-wrapper">
           <label class="w-checkbox default-checkbox__container">
-            <input id="agreement" name="agreement" type="checkbox" data-name="agreement" checked="" class="w-checkbox-input default-checkbox default-checkbox--visible" required="">
+            <input id="agreement" name="agreement" type="checkbox" data-name="agreement" class="w-checkbox-input default-checkbox default-checkbox--visible" required="">
             <span for="Receive Email Updates" class="txt-sm pl-16 w-form-label">
               <br>I have read and agreed to the<strong> </strong>
               <a href="https://www.faithcomesbyhearing.com/bible-brain/license" target="_blank" class="txt-link">DBP License Agreement</a>
