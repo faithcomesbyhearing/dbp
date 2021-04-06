@@ -32,17 +32,20 @@ Route::name('v2_volume_organization_list')->get('library/volumeorganization',   
 // VERSION 2 | Text
 Route::name('v2_text_font')->get('text/font',                                      'Bible\TextController@fonts');
 Route::name('v2_text_verse')->get('text/verse',                                    'Bible\TextController@index');
+Route::name('v2_verseInfo')->get('text/verseinfo',                                 'Bible\TextController@info'); // I cannot see a difference between library/verseinfo and text/verseinfo
 Route::name('v2_text_search')->get('text/search',                                  'Bible\TextController@search');
 Route::name('v2_text_search_group')->get('text/searchgroup',                       'Bible\TextController@searchGroup');
+Route::name('v2_text_volume')->get('/text/volume',                                 'Bible\BiblesController@show');
+
 
 // VERSION 2 | Audio
-Route::name('v2_audio_location')->get('audio/location',                            'Bible\AudioController@location');
-Route::name('v2_audio_path')->get('audio/path',                                    'Bible\AudioController@index');
-Route::name('v2_audio_timestamps')->get('audio/versestart',                        'Bible\AudioController@timestampsByReference');
+Route::name('v2_audio_location')->get('audio/location',                            'Bible\AudioControllerV2@location');
+Route::name('v2_audio_path')->get('audio/path',                                    'Bible\AudioControllerV2@index');
+Route::name('v2_audio_timestamps')->get('audio/versestart',                        'Bible\AudioControllerV2@timestampsByReference');
 
 // VERSION 2 | Video
-Route::name('v2_video_location')->get('video/location',                            'Organization\FilmsController@location');
-Route::name('v2_video_path')->get('video/path',                                    'Organization\FilmsController@videoPath');
+Route::name('v2_video_location')->get('video/videolocation',                       'Organization\FilmsController@location');
+Route::name('v2_video_path')->get('video/videopath',                               'Organization\FilmsController@videoPath');
 Route::name('v2_api_jesusFilms')->get('library/jesusfilm',                         'Organization\ResourcesController@jesusFilmListing');
 
 Route::name('v2_api_jesusFilm_index')->get('video/jesusfilm',                     'Connections\ArclightController@index');

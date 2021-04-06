@@ -146,6 +146,7 @@ class Alphabet extends Model
      *     title="Family",
      *     description="The linguistic family the alphabet can be categorized within",
      *     type="string",
+     *     nullable=true,
      *     example="American"
      * )
      *
@@ -158,6 +159,7 @@ class Alphabet extends Model
      *     title="Type",
      *     description="The type of alphabet be described",
      *     type="string",
+     *     nullable=true,
      *     example="abugida"
      * )
      *
@@ -351,7 +353,8 @@ class Alphabet extends Model
      *     title="Direction",
      *     description="The direction that the alphabet is read",
      *     type="string",
-     *     enum={"rtl","ltr"},
+     *     nullable=true,
+     *     enum={"rtl","ltr", ""},
      *     example="ltr",
      *     @OA\ExternalDocumentation(
      *         description="For more information please refer to the Script Source Feature Definitions",

@@ -173,7 +173,7 @@ class PlaylistsController extends APIController
             if ($show_details) {
                 $playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $playlist->id, 'v' => $this->v, 'key' => $this->key]);
             }
-            if ($show_text) {
+            if ($show_text && isset($playlist->items)) {
                 foreach ($playlist->items as $item) {
                     $item->verse_text = $item->getVerseText();
                 }
@@ -319,8 +319,10 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
         }
 
-        foreach ($playlist->items as $item) {
-            $item->verse_text = $item->getVerseText();
+        if (isset($playlist->items)) {
+            foreach ($playlist->items as $item) {
+                $item->verse_text = $item->getVerseText();
+            }
         }
 
         return $this->reply($playlist->items->pluck('verse_text', 'id'));
@@ -836,34 +838,35 @@ class PlaylistsController extends APIController
         $translated_items = [];
         $metadata_items = [];
         $total_translated_items = 0;
-        foreach ($playlist->items as $item) {
-            $ordered_types = $audio_fileset_types->filter(function ($type) use ($item) {
-                return $type !== $item->fileset->set_type_code;
-            })->prepend($item->fileset->set_type_code);
-            $preferred_fileset = $ordered_types->map(function ($type) use ($bible_audio_filesets, $item) {
-                return $this->getFileset($bible_audio_filesets, $type, $item->fileset->set_size_code);
-            })->firstWhere('id');
-            $has_translation = isset($preferred_fileset);
-            $is_streaming = true;
+        if (isset($playlist->items)) {
+            foreach ($playlist->items as $item) {
+                $ordered_types = $audio_fileset_types->filter(function ($type) use ($item) {
+                    return $type !== $item->fileset->set_type_code;
+                })->prepend($item->fileset->set_type_code);
+                $preferred_fileset = $ordered_types->map(function ($type) use ($bible_audio_filesets, $item) {
+                    return $this->getFileset($bible_audio_filesets, $type, $item->fileset->set_size_code);
+                })->firstWhere('id');
+                $has_translation = isset($preferred_fileset);
+                $is_streaming = true;
 
-            if ($has_translation) {
-                $item->fileset_id = $preferred_fileset->id;
-                $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' || $preferred_fileset->set_type_code === 'audio_drama_stream';
-                $translated_items[] = (object)[
-                    'translated_id' => $item->id,
-                    'fileset_id' => $item->fileset_id,
-                    'book_id' => $item->book_id,
-                    'chapter_start' => $item->chapter_start,
-                    'chapter_end' => $item->chapter_end,
-                    'verse_start' => $is_streaming ? $item->verse_start : null,
-                    'verse_end' => $is_streaming ? $item->verse_end : null,
-                ];
-                $total_translated_items += 1;
+                if ($has_translation) {
+                    $item->fileset_id = $preferred_fileset->id;
+                    $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' || $preferred_fileset->set_type_code === 'audio_drama_stream';
+                    $translated_items[] = (object)[
+                        'translated_id' => $item->id,
+                        'fileset_id' => $item->fileset_id,
+                        'book_id' => $item->book_id,
+                        'chapter_start' => $item->chapter_start,
+                        'chapter_end' => $item->chapter_end,
+                        'verse_start' => $is_streaming ? $item->verse_start : null,
+                        'verse_end' => $is_streaming ? $item->verse_end : null,
+                    ];
+                    $total_translated_items += 1;
+                }
+                $metadata_items[] = $item;
             }
-            $metadata_items[] = $item;
+            $translated_percentage = sizeof($playlist->items) ? $total_translated_items / sizeof($playlist->items) : 0;
         }
-        $translated_percentage = sizeof($playlist->items) ? $total_translated_items / sizeof($playlist->items) : 0;
-
         $playlist_data = [
             'user_id'           => $user->id,
             'name'              => $playlist->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
@@ -949,7 +952,7 @@ class PlaylistsController extends APIController
     public function getFileset($filesets, $type, $size)
     {
         $available_filesets = [];
-
+        
         $complete_fileset = $filesets->where('set_type_code', $type)->where('set_size_code', 'C')->first();
         if ($complete_fileset) {
             $available_filesets[] = $complete_fileset;
@@ -961,7 +964,13 @@ class PlaylistsController extends APIController
         }
 
         $size__partial_filesets = $filesets->filter(function ($item) use ($type, $size) {
-            return $item->set_type_code === $type && strpos($item->set_size_code, $size . 'P') !== false;
+            $valid_item = isset($item->set_type_code) && isset($item->set_size_code);
+            return (
+                $valid_item &&
+                is_string($size) &&
+                $item->set_type_code === $type &&
+                strpos($item->set_size_code, $size . 'P') !== false
+            );
         })->first();
         if ($size__partial_filesets) {
             $available_filesets[] = $size__partial_filesets;

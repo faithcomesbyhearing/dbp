@@ -31,9 +31,6 @@ class BibleVerse extends Model
      */
     protected $id;
 
-    /**
-     * @OA\Property(ref="#/components/schemas/BibleFileset/properties/hash_id")
-     */
     protected $hash_id;
 
     /**

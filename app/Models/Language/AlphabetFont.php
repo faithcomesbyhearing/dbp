@@ -127,6 +127,7 @@ class AlphabetFont extends Model
     *     title="Notes",
     *     description="Any notes for the font file name",
     *     type="string",
+    *     example="notes specific to this font",
     *     nullable=true
     * )
     *

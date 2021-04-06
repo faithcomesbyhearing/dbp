@@ -43,53 +43,57 @@ class BibleTransformer extends BaseTransformer
         }
 
         $parent = optional($bible->language->parent);
+        
+        $name = isset($bible->currentTranslation->name) ? $bible->currentTranslation->name : 'Wycliffe Bible Translators, Inc.';
 
         return [
-            'dam_id'                    => $bible->id,
-            'fcbh_id'                   => $bible->id,
-            'volume_name'               => optional($bible->currentTranslation)->name ?? '',
-            'status'                    => 'live', // for the moment these default to Live
-            'dbp_agreement'             => 'true', // for the moment these default to True
-            'expiration'                => '0000-00-00',
-            'language_code'             => strtoupper($bible->iso) ?? '',
-            'language_name'             => optional($bible->language)->autonym ?? optional($bible->language)->name,
-            'language_english'          => optional($bible->language)->name ?? '',
-            'language_iso'              => $bible->iso ?? '',
-            'language_iso_2B'           => optional($bible->language)->iso2B ?? '',
-            'language_iso_2T'           => optional($bible->language)->iso2T ?? '',
-            'language_iso_1'            => optional($bible->language)->iso1 ?? '',
-            'language_iso_name'         => optional($bible->language)->name ?? '',
-            'language_family_code'      => strtoupper($parent->iso) ?? strtoupper($bible->iso),
-            'language_family_name'      => $parent->autonym ?? $bible->language->name,
-            'language_family_english'   => $parent->name ?? $bible->language->name,
-            'language_family_iso'       => $iso ?? null,
-            'language_family_iso_2B'    => $parent->iso2B ?? $bible->language->iso2B,
-            'language_family_iso_2T'    => $parent->iso2T ?? $bible->language->iso2T,
-            'language_family_iso_1'     => $parent->iso1 ?? $bible->language->iso1,
-            'version_code'              => substr($bible->id, 3) ?? '',
-            'version_name'              => 'Wycliffe Bible Translators, Inc.',
-            'version_english'           => optional($bible->currentTranslation)->name,
-            'collection_code'           => ($bible->name === 'Old Testament') ? 'OT' : 'NT',
-            'rich'                      => '0',
-            'collection_name'           => $bible->name,
-            'updated_on'                => (string) $bible->updated_at,
-            'created_on'                => (string) $bible->created_at,
-            'right_to_left'             => optional($bible->alphabet)->direction == 'rtl' ? 'true' : 'false',
-            'num_art'                   => '0',
-            'num_sample_audio'          => '0',
-            'sku'                       => '',
-            'audio_zip_path'            => '',
-            'font'                      => null,
-            'arclight_language_id'      => '',
-            'media'                     => (strpos($bible->set_type_code, 'audio') !== false) ? 'Audio' : 'Text',
-            'media_type'                => 'Drama',
-            'delivery'                  => [
-                'mobile',
-                'web',
-                'local_bundled',
-                'subsplash'
-            ],
-            'resolution'                => []
+            [
+              'dam_id'                    => $bible->id,
+              'fcbh_id'                   => $bible->id,
+              'volume_name'               => optional($bible->currentTranslation)->name ?? '',
+              'status'                    => 'live', // for the moment these default to Live
+              'dbp_agreement'             => 'true', // for the moment these default to True
+              'expiration'                => '0000-00-00',
+              'language_code'             => strtoupper($bible->iso) ?? '',
+              'language_name'             => optional($bible->language)->autonym ?? optional($bible->language)->name,
+              'language_english'          => optional($bible->language)->name ?? '',
+              'language_iso'              => $bible->iso ?? '',
+              'language_iso_2B'           => optional($bible->language)->iso2B ?? '',
+              'language_iso_2T'           => optional($bible->language)->iso2T ?? '',
+              'language_iso_1'            => optional($bible->language)->iso1 ?? '',
+              'language_iso_name'         => optional($bible->language)->name ?? '',
+              'language_family_code'      => strtoupper($parent->iso) ?? strtoupper($bible->iso),
+              'language_family_name'      => $parent->autonym ?? $bible->language->name,
+              'language_family_english'   => $parent->name ?? $bible->language->name,
+              'language_family_iso'       => $iso ?? null,
+              'language_family_iso_2B'    => $parent->iso2B ?? $bible->language->iso2B,
+              'language_family_iso_2T'    => $parent->iso2T ?? $bible->language->iso2T,
+              'language_family_iso_1'     => $parent->iso1 ?? $bible->language->iso1,
+              'version_code'              => substr($bible->id, 3) ?? '',
+              'version_name'              => $name,
+              'version_english'           => optional($bible->currentTranslation)->name,
+              'collection_code'           => ($bible->name === 'Old Testament') ? 'OT' : 'NT',
+              'rich'                      => '0',
+              'collection_name'           => $bible->name,
+              'updated_on'                => (string) $bible->updated_at,
+              'created_on'                => (string) $bible->created_at,
+              'right_to_left'             => optional($bible->alphabet)->direction == 'rtl' ? 'true' : 'false',
+              'num_art'                   => '0',
+              'num_sample_audio'          => '0',
+              'sku'                       => '',
+              'audio_zip_path'            => '',
+              'font'                      => null,
+              'arclight_language_id'      => '',
+              'media'                     => (strpos($bible->set_type_code, 'audio') !== false) ? 'Audio' : 'Text',
+              'media_type'                => 'Drama',
+              'delivery'                  => [
+                  'mobile',
+                  'web',
+                  'local_bundled',
+                  'subsplash'
+              ],
+              'resolution'                => []
+            ]
         ];
     }
 
@@ -104,9 +108,6 @@ class BibleTransformer extends BaseTransformer
              *   description="The bibles being returned",
              *   title="v4_bible.all",
              *   @OA\Xml(name="v4_bible.all"),
-             *   allOf={
-             *      @OA\Schema(ref="#/components/schemas/pagination.alternate"),
-             *   },
              *   @OA\Property(
              *    property="data",
              *    type="array",
@@ -123,7 +124,8 @@ class BibleTransformer extends BaseTransformer
              *                         @OA\Property(property="dbp-prod",type="array", @OA\Items(ref="#/components/schemas/BibleFileset"))
              *              )
              *     )
-             *    )
+             *    ),
+             *    @OA\Property(property="meta",ref="#/components/schemas/pagination")
              *   )
              * )
              */

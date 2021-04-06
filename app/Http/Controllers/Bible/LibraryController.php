@@ -29,7 +29,6 @@ class LibraryController extends APIController
      *     description="",
      *     operationId="v2_library_metadata",
      *     @OA\Parameter(name="dam_id", in="query", description="The DAM ID for which to retrieve library metadata.", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
-     *     @OA\Parameter(name="asset_id", in="query", description="Will filter the results by the given Asset", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -129,7 +128,7 @@ class LibraryController extends APIController
      */
     public function version()
     {
-        $code = checkParam('code');
+        $code = checkParam('code|fileset_id');
         $name = checkParam('name');
         $sort = checkParam('sort_by');
 
@@ -146,27 +145,27 @@ class LibraryController extends APIController
                     $join->on('eng_title.bible_id', 'bibles.bible_id')->where('eng_title.language_id', $english_id);
                 })
                 ->when($code, function ($q) use ($code) {
-                    $q->where('bible_filesets.id', $code);
+                    $q->where('bible_filesets.id', 'LIKE', '%' . $code)->get();
                 })->when($sort, function ($q) use ($sort) {
                     $q->orderBy($sort, 'asc');
                 })->select([
                     'eng_title.name as eng_title',
                     'ver_title.name as ver_title',
                     'bible_filesets.id'
-                ])->getQuery()->get();
-
+                ])->get();
+            
             if ($name) {
                 $subsetVersions = $versions->where('eng_title', $name)->first();
                 if (!$subsetVersions) {
                     $subsetVersions = $versions->where('ver_title', $name)->first();
                 }
-                $versions = $subsetVersions;
+                $versions = [$subsetVersions];
             }
 
             return $versions;
         });
 
-        return $this->reply($versions);
+        return $this->reply(fractal($versions[0], new LibraryVolumeTransformer(), $this->serializer));
     }
 
     /**
@@ -239,11 +238,7 @@ class LibraryController extends APIController
      *          in="query",
      *          description="If set, will filter results by the type of media for which filesets are available.",
      *         @OA\Schema(
-     *          type="string",
-     *          @OA\ExternalDocumentation(
-     *              description="For a complete list of media types please see the v4_bible_filesets.types route",
-     *              url="/docs/swagger/v4#/Bibles/v4_bible_filesets_types"
-     *          )
+     *          type="string"
      *         )
      *     ),
      *     @OA\Parameter(
@@ -256,11 +251,7 @@ class LibraryController extends APIController
      *          name="language_code",
      *          in="query",
      *          description="The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `/languages` route",
-     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
-     *          @OA\ExternalDocumentation(
-     *              description="For a complete list see the `iso` field in the `/languages` route",
-     *              url="/docs/swagger/v2#/Languages"
-     *          )),
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
      *     @OA\Parameter(
      *          name="language_family_code",
      *          in="query",
@@ -326,7 +317,7 @@ class LibraryController extends APIController
             $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
                 ->whereIn('bible_filesets.hash_id', $access_control->hashes)
-                ->uniqueFileset($dam_id, 'dbp-prod', $media, true)
+                ->uniqueFileset($dam_id, $media, true)
                 ->withBible($language_name, $language_id, $organization)
                 ->when($language_id, function ($query) use ($language_id) {
                     $query->whereHas('bible', function ($subquery) use ($language_id) {

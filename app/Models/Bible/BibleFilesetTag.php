@@ -33,13 +33,6 @@ class BibleFilesetTag extends Model
     protected $hidden = ['created_at', 'updated_at','bible_fileset_id','admin_only','notes'];
     protected $fillable = ['name','description','admin_only','notes','iso'];
 
-    /**
-     *
-     * @OA\Property(ref="#/components/schemas/BibleFileset/properties/hash_id")
-     * @method static BibleFilesetTag whereHashId($value)
-     * @property string $hash_id
-     *
-     */
     protected $hash_id;
 
     /**
