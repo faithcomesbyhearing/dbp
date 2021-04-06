@@ -21,11 +21,6 @@ function checkParam(string $paramName, $required = false, $inPathValue = null)
         return $inPathValue;
     }
 
-    // Authorization params (with key => Authorization translation)
-    if ($paramName === 'key' && request()->header('Authorization')) {
-        return str_replace('Bearer ', '', request()->header('Authorization'));
-    }
-
     foreach (explode('|', $paramName) as $current_param) {
         // Header params
         if ($url_header = request()->header($current_param)) {
@@ -195,17 +190,43 @@ if (!function_exists('unique_random')) {
     }
 }
 
-if (!function_exists('getFilesetFromDamId')) {
-    function getFilesetFromDamId($dam_id, $filesets)
-    {
-        $fileset = $filesets->where('id', $dam_id)->first();
+if (!function_exists('convertCsvToArrayMap')) {
+    function convertCsvToArrayMap($syncFile) {
+        $file = fopen($syncFile, 'r');
+        $mapped_csv = [];
+    
+        while (!feof($file)) {
+            $line = fgetcsv($file);
+            if ($line && $line[0] && $line[1] && $line[0] !== " " && $line[1] !== " ") {
+                $mapped_csv[$line[0]] = $line[1];
+            }
+        }
+        fclose($file);
+        return $mapped_csv;
+    }
+}
 
+if (!function_exists('getFilesetFromDamId')) {
+    function getFilesetFromDamId($dam_id, $use_sync_file = false, $filesets = [])
+    {
+        if ($use_sync_file === true) {
+            $syncFile = config('settings.bibleSyncFilePath');
+            $transition_bibles = convertCsvToArrayMap($syncFile);
+            
+            if (array_key_exists($dam_id, $transition_bibles)) {
+                $dam_id = $transition_bibles[$dam_id];
+            }
+        }
+        
+        $fileset = $filesets->where('id', $dam_id)->first();
+        
         if (!$fileset) {
             $fileset = $filesets->where('id', substr($dam_id, 0, -4))->first();
         }
         if (!$fileset) {
             $fileset = $filesets->where('id', substr($dam_id, 0, -2))->first();
         }
+        
         if (!$fileset) {
             // echo "\n Error!! Could not find FILESET_ID: " . substr($dam_id, 0, 6);
             return false;

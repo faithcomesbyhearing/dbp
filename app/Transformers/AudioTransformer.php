@@ -34,7 +34,7 @@ class AudioTransformer extends BaseTransformer
              *   @OA\Xml(name="v2_audio_timestamps"),
              *   @OA\Items(
              *              @OA\Property(property="verse_start", ref="#/components/schemas/BibleFile/properties/verse_start"),
-             *              @OA\Property(property="timestamp", type="number",example="1",description="The duration of the timestamp in seconds")
+             *              @OA\Property(property="timestamp", ref="#/components/schemas/BibleFileTimestamp/properties/timestamp")
              *     )
              *   )
              * )
@@ -86,7 +86,7 @@ class AudioTransformer extends BaseTransformer
              *              @OA\Property(property="book", ref="#/components/schemas/BibleFile/properties/book_id"),
              *              @OA\Property(property="chapter", ref="#/components/schemas/BibleFile/properties/chapter_start"),
              *              @OA\Property(property="verse_start", ref="#/components/schemas/BibleFile/properties/verse_start"),
-             *              @OA\Property(property="timestamp", type="string",example="13",description="The duration of the timestamp in seconds")
+             *              @OA\Property(property="timestamp", ref="#/components/schemas/BibleFileTimestamp/properties/timestamp")
              *    )
              *   )
              * )
@@ -131,10 +131,10 @@ class AudioTransformer extends BaseTransformer
                 return [
                     'book_id'       => $audio->book_id,
                     'book_name'     => $audio->book->currentTranslation->name ?? $audio->book->name,
-                    'chapter_start' => $audio->chapter_start,
-                    'chapter_end'   => $audio->chapter_end,
-                    'verse_start'   => $audio->verse_start,
-                    'verse_end'     => $audio->verse_end,
+                    'chapter_start' => (string)$audio->chapter_start,
+                    'chapter_end'   => (string)$audio->chapter_end,
+                    'verse_start'   => (string)$audio->verse_start,
+                    'verse_end'     => (string)$audio->verse_end,
                     'timestamp'     => $audio->timestamps,
                     'path'          => $audio->file_name
                 ];

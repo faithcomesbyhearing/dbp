@@ -38,7 +38,7 @@ class SeedBibleText extends Seeder
                     continue;
                 }
 
-                \DB::connection('sophia')->table($table)->orderBy('canon_order')->chunk(5000, function ($verses) use ($fileset,$books,$table) {
+                \DB::connection('sophia')->table($table)->orderBy('canon_order')->chunk(5000, function ($verses) use ($fileset, $books, $table) {
                     $verse_text_combined = '';
                     $verse_number_combined = 0;
 

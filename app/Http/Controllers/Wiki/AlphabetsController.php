@@ -15,15 +15,12 @@ class AlphabetsController extends APIController
      *
      * @version 4
      * @category v4_alphabets.all
-     * @link http://bible.build/alphabets - V4 Access
-     * @link https://api.dbp.test/alphabets?key=1234&v=4&pretty - V4 Test Access
-     * @link https://dbp.test/eng/docs/swagger/v4#/Wiki/v4_alphabets_all - V4 Test Docs
      *
      * @OA\Get(
      *     path="/alphabets",
      *     tags={"Languages"},
      *     summary="Returns Alphabets",
-     *     description="Returns a list of the world's known scripts. This route might be useful to you if you'd like to you if you'd like to query information about fonts, alphabets, and the world's writing systems. Some fileset returns may not display correctly without a font delivered by these via the `alphabets/{id}` routes.",
+     *     description="Returns a list of the world's known scripts. This route might be useful to you if you'd like to query information about fonts, alphabets, and the world's writing systems. Some fileset returns may not display correctly without a font delivered by these via the `alphabets/{script_id}` routes.",
      *     operationId="v4_alphabets.all",
      *     @OA\Response(
      *         response=200,
@@ -49,23 +46,16 @@ class AlphabetsController extends APIController
     /**
      * Returns Single Alphabet
      *
-     * @version  4
-     * @category v4_alphabets.one
-     * @link     http://bible.build/alphabets - V4 Access
-     * @link     https://api.dbp.test/alphabets/Latn?key=1234&v=4&pretty - V4 Test Access
-     * @link     https://dbp.test/eng/docs/swagger/v4#/Wiki/v4_alphabets_one - V4 Test Docs
-     *
-     *
      * @OA\Get(
-     *     path="/alphabets/{id}",
+     *     path="/alphabets/{script_id}",
      *     tags={"Languages"},
-     *     summary="Return a single Alphabets",
+     *     summary="Return details on a single Alphabet",
      *     description="Returns a single alphabet along with whatever bibles and languages using it.",
      *     operationId="v4_alphabets.one",
      *     @OA\Parameter(
-     *          name="id",
+     *          name="script_id",
      *          in="path",
-     *          description="The alphabet ID",
+     *          description="The alphabet Script, which is used as the identifier",
      *          required=true,
      *          @OA\Schema(ref="#/components/schemas/Alphabet/properties/script")
      *      ),
@@ -79,14 +69,14 @@ class AlphabetsController extends APIController
      *     )
      * )
      *
-     * @param string $id
+     * @param string $script_id
      * @return mixed $alphabets string - A JSON string that contains the status code and error messages if applicable.
      *
      */
-    public function show($id)
+    public function show($script_id)
     {
-        $alphabet = cacheRemember('alphabet', [$id], now()->addDay(), function () use ($id) {
-            $alphabet = Alphabet::with('fonts', 'languages', 'bibles.currentTranslation')->find($id);
+        $alphabet = cacheRemember('alphabet', [$script_id], now()->addDay(), function () use ($script_id) {
+            $alphabet = Alphabet::with('fonts', 'languages', 'bibles.currentTranslation')->find($script_id);
             return fractal($alphabet, AlphabetTransformer::class, $this->serializer);
         });
         if (!$alphabet) {

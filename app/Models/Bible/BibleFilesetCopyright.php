@@ -29,14 +29,6 @@ class BibleFilesetCopyright extends Model
 
     /**
      *
-     * @OA\Property(
-     *   title="hash id",
-     *   type="string",
-     *   description="The hash value for the created fileset",
-     *   minLength=12,
-     *   maxLength=12,
-     *   example="1248f044fe62"
-     * )
      *
      * @method static BibleFilesetCopyright whereHashId($value)
      * @property string $hash_id

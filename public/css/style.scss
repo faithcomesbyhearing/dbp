@@ -1,0 +1,303 @@
+/*
+For style guide, go to:
+https://www.faithcomesbyhearing.com/style-guide
+ */
+
+ body {
+  min-height: 100vh;
+  font-family: 'Roboto', sans-serif;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: 'Raleway Extrabold', sans-serif;
+}
+
+h1 {
+  margin-bottom: 12px;
+  font-size: 3.625rem;
+  line-height: 3.9rem;
+  letter-spacing: .044rem;
+}
+
+h2 {
+  font-size: 2.75rem;
+  line-height: 3.25rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+  line-height: 1.55rem;
+}
+
+h4 {
+  font-size: 1.525rem;
+  line-height: 2.1rem;
+}
+
+h5 {
+  margin-bottom: 12px;
+  font-size: .875rem;
+  line-height: 1.375rem;
+  letter-spacing: .02rem;
+}
+
+h2, h3, h4  {
+  margin-bottom: 12px;
+  letter-spacing: .044rem;
+}
+
+.txt-intro-heading {
+  font-family: 'Raleway ExtraLight',sans-serif;
+  color: #242833;
+  font-size: 2rem;
+  line-height: 2.8rem;
+  font-weight: 300;
+  letter-spacing: .031rem;
+}
+
+.txt-intro {
+  font-family: 'Roboto Light',sans-serif;
+  color: #242833;
+  font-size: 1.5rem;
+  line-height: 2.3rem;
+  font-weight: 300;
+}
+
+.txt-intro--regular {
+  font-family: 'Roboto Regular',sans-serif;
+  color: #657b92;
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.txt-subtitle {
+  font-family: 'Roboto Regular',sans-serif;
+  color: #657b92;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 300;
+}
+
+.txt-md {
+  font-family: 'Roboto Regular',sans-serif;
+  color: #657b92;
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+ .wrapper{
+  margin: 0 auto;
+  max-width: 980px; 
+
+  header {
+    padding: 20px 0;
+
+    nav {
+      background-color: #fff;
+
+      .navbar-brand {
+        img {
+          height: 40px;
+          width: auto;
+        }
+      }
+
+      .nav-item {
+        margin-left: 20px;
+      }
+      .nav-item a{
+        font-family: 'Raleway Bold',sans-serif;
+        color: #242833;
+        font-size: .75rem;
+        text-transform: uppercase;
+        letter-spacing: .075rem;
+        font-weight: 700;
+      }
+
+      .nav-item a:hover {
+        color: #ce0e2d;
+      }
+    }
+}
+    
+.nav-column {
+
+  .navcolUL {
+    list-style-type: none;
+    padding: 0;
+
+    li {
+      margin-bottom: 12px;
+    }
+
+    a {
+      font-family: 'Raleway Bold',sans-serif;
+        color: #242833;
+        font-size: .75rem;
+        text-transform: uppercase;
+        letter-spacing: .075rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    a:hover {
+      color: #ce0e2d;
+      cursor: pointer;
+    }
+  }
+
+  .accordionNav {
+    padding-left: 12px;
+
+    .sideNavBtn {
+      border: none;
+      background-color: #fff;
+      font-family: 'Raleway',sans-serif;
+      color: #849cb5;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .075rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .sideNavBtn:hover {
+      color: #ce0e2d;
+      cursor: pointer;
+    }
+
+    ul{
+      list-style-type: none;
+      padding-left: 12px;
+        
+      li {
+        font-family: 'Raleway',sans-serif;
+        font-size: .75rem;
+        line-height: 1.188rem;
+        font-weight: normal;
+        letter-spacing: .075rem;
+        text-transform: uppercase;
+        }
+        
+      li a{
+        color: #849cb5;
+        text-decoration: none;
+      }
+
+      li a:hover {
+        color: #ce0e2d;
+      }
+    }
+
+    .collapse {
+      ul {
+        li:first-child {
+          padding-top: 6px;
+        }
+      }
+    }
+
+  }
+
+
+}
+
+
+
+    .content-column {
+      a {
+        text-decoration: none;
+
+        .card-body {
+          min-height: 210px;
+        }
+      }
+
+      a:hover {
+        background-color: #dce5ee;
+      }
+
+      .card {
+        margin-bottom: 30px;
+      }
+
+      a.btn{
+
+        color: #aa182c;
+        border-color: #aa182c;
+      }
+    
+      a.btn:hover{
+        color: #fff;
+        border-color: #aa182c;
+        background-color: #aa182c;
+      }
+    }
+
+  
+
+  }
+
+  .btn{
+    color: #aa182c;
+    border-color: #aa182c;
+    margin-left: 20px;
+  }
+
+  .btn:hover{
+    color: #fff;
+    border-color: #aa182c;
+    background-color: #aa182c;
+  }
+
+  a.btn-big{
+    color: #aa182c;
+    border-color: #aa182c;
+    margin-left: 20px;
+  }
+
+  a.btn-big:hover{
+    color: #fff;
+    border-color: #aa182c;
+    background-color: #aa182c;
+  }
+
+  footer {
+   //position: absolute;
+   // bottom: 0;
+    width: 100%;
+    padding-top: 60px;
+
+    .foot-wrapper {
+      margin: 0 auto;
+      padding: 40px 0;
+      max-width: 980px;
+      border-top: 1px solid #dce5ee;
+
+      .footer-right {
+        text-align: right;
+
+        ul{
+          list-style-type: none;
+          
+          li {
+          margin-bottom: 12px;
+          font-family: 'Raleway Bold',sans-serif;
+          font-size: .75rem;
+          line-height: 1.188rem;
+          font-weight: 700;
+          letter-spacing: .075rem;
+          text-transform: uppercase;
+          }
+          li a{
+            color: #242833;
+            text-decoration: none;
+          }
+
+          li a:hover {
+            color: #ce0e2d;
+          }
+        }
+      }
+    }
+  }

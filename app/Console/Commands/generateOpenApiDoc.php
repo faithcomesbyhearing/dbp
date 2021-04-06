@@ -100,9 +100,6 @@ class generateOpenApiDoc extends Command
             $parameters = [];
         }
         $parameters[] = new Parameter(['ref' => '#/components/parameters/version_number']);
-        $parameters[] = new Parameter(['ref' => '#/components/parameters/key']);
-        $parameters[] = new Parameter(['ref' => '#/components/parameters/format']);
-        $parameters[] = new Parameter(['ref' => '#/components/parameters/pretty']);
         return $parameters;
     }
     

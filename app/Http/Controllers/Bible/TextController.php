@@ -41,28 +41,7 @@ class TextController extends APIController
      * @param string|null $book_url_param
      * @param string|null $chapter_url_param
      *
-     * @OA\Get(
-     *     path="/bibles/filesets/{id}/{book}/{chapter}",
-     *     tags={"Text"},
-     *     summary="Get Bible Text",
-     *     description="V4's base fileset route",
-     *     operationId="v4_bible_filesets.chapter",
-     *     @OA\Parameter(name="id", in="path", description="The Bible fileset ID", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
-     *     @OA\Parameter(name="book", in="path", description="The Book ID. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true, @OA\Schema(ref="#/components/schemas/Book/properties/id")),
-     *     @OA\Parameter(name="chapter", in="path", description="The chapter number", required=true, @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
-     *     @OA\Parameter(name="verse_start", in="query", description="Will filter the results by the given start verse",
-     *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_start")
-     *     ),
-     *     @OA\Parameter(name="verse_end", in="query", description="Will filter the results by the given end verse",
-     *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_end")
-     *     ),
-     *     @OA\Parameter(name="asset_id", in="query", description="Will filter the results by the given Asset", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")),
-     *     @OA\Response(
-     *         response=200,
-     *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible_filesets_chapter"))
-     *     )
-     * )
+     * API Note: I removed the v4 openapi docs. Returning text for a fileset/book/chapter is now handled in BibleFileSetsController:showChapter, along with all other filesets
      *
      * @OA\Get(
      *     path="/text/verse",
@@ -92,11 +71,10 @@ class TextController extends APIController
         $chapter     = checkParam('chapter_id', false, $chapter_url_param);
         $verse_start = checkParam('verse_start') ?? 1;
         $verse_end   = checkParam('verse_end');
-        $asset_id    = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3.bucket');
 
         $book = Book::where('id', $book_id)->orWhere('id_osis', $book_id)->first();
 
-        $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, $asset_id, 'text_plain')->first();
+        $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, 'text_plain')->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }
@@ -106,7 +84,7 @@ class TextController extends APIController
         if ($access_blocked) {
             return $access_blocked;
         }
-
+        $asset_id = $fileset->asset_id;
         $cache_params = [$asset_id, $fileset_id, $book_id, $chapter, $verse_start, $verse_end];
         $verses = cacheRemember('bible_text', $cache_params, now()->addDay(), function () use ($fileset, $bible, $book, $chapter, $verse_start, $verse_end) {
             return BibleVerse::withVernacularMetaData($bible)
@@ -193,7 +171,7 @@ class TextController extends APIController
      *
      * @OA\Get(
      *     path="/search",
-     *     tags={"Text"},
+     *     tags={"Search"},
      *     summary="Search a bible for a word",
      *     description="",
      *     operationId="v4_text_search",
@@ -201,7 +179,8 @@ class TextController extends APIController
      *          name="query",
      *          in="query",
      *          description="The word or phrase being searched", required=true,
-     *          @OA\Schema(type="string")
+     *          @OA\Schema(type="string"),
+     *          example="Jesus"
      *     ),
      *     @OA\Parameter(
      *          name="fileset_id",
@@ -209,22 +188,10 @@ class TextController extends APIController
      *          description="The Bible fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
-     *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          description="The Bible fileset asset_id", required=false,
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")
-     *     ),
-     *     @OA\Parameter(
-     *          name="relevance_order",
-     *          in="query",
-     *          description="When set to true the returned result will be ordered by relevance",
-     *          @OA\Schema(type="boolean",default=false)
-     *     ),
      *     @OA\Parameter(name="limit",  in="query", description="The number of search results to return",
      *          @OA\Schema(type="integer",default=15)),
      *     @OA\Parameter(ref="#/components/parameters/page"),
-     *     @OA\Parameter(name="books",  in="query", description="The usfm book ids to search through seperated by a comma",
+     *     @OA\Parameter(name="books",  in="query", description="The usfm book ids to search through separated by a comma",
      *          @OA\Schema(type="string",example="GEN,EXO,MAT")),
      *     @OA\Response(
      *         response=200,
@@ -238,10 +205,9 @@ class TextController extends APIController
      * @OA\Schema(
      *   schema="v4_text_search",
      *   type="object",
-     *   allOf={
-     *      @OA\Schema(ref="#/components/schemas/pagination.alternate"),
-     *   },
-     *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter")
+     *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter"),
+     *   @OA\Property(property="meta",ref="#/components/schemas/pagination")
+     *
      * )
      */
     public function search()
@@ -254,12 +220,10 @@ class TextController extends APIController
         $query      = checkParam('query', true);
         $fileset_id = checkParam('fileset_id|dam_id', true);
         $book_id    = checkParam('book|book_id|books');
-        $asset_id   = checkParam('asset_id') ?? config('filesystems.disks.s3.bucket');
-        $relevance_order   = checkParam('relevance_order');
         $limit      = checkParam('limit') ?? 15;
         $page       = checkParam('page');
 
-        $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, $asset_id, 'text_plain')->first();
+        $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, 'text_plain')->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }
@@ -269,7 +233,6 @@ class TextController extends APIController
         })->flatten()->toArray();
 
         $search_text  = '%' . $query . '%';
-
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)
             ->withVernacularMetaData($bible)
             ->when($book_id, function ($query) use ($book_id) {
@@ -279,6 +242,7 @@ class TextController extends APIController
             ->where('bible_verses.verse_text', 'like', $search_text)
             ->select([
                 'bible_verses.book_id as book_id',
+                'bible_books.bible_id as bible_id',
                 'books.name as book_name',
                 'bible_books.name as book_vernacular_name',
                 'bible_verses.chapter',
@@ -288,17 +252,22 @@ class TextController extends APIController
                 'glyph_chapter.glyph as chapter_vernacular',
                 'glyph_start.glyph as verse_start_vernacular',
                 'glyph_end.glyph as verse_end_vernacular',
-            ])
-            ->unless($relevance_order, function ($query) {
-                $query->orderByRaw('books.book_testament DESC, IFNULL(books.testament_order, books.protestant_order), bible_verses.chapter, bible_verses.verse_start');
-            });
+            ]);
+        
 
-        if ($page) {
-            $verses  = $verses->paginate($limit);
-            return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses->getCollection(), TextTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($verses))]);
+        if ($this->v === 2 || $this->v === 3) {
+            return $this->reply([
+                [['total_results' => strval($verses->count())]],
+                fractal($verses->get(), new TextTransformer(), $this->serializer)
+            ]);
+        } else {
+            if ($page) {
+                $verses  = $verses->paginate($limit);
+                return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses->getCollection(), TextTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($verses))]);
+            }
+            $verses  = $verses->limit($limit)->get();
+            return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses, new TextTransformer(), $this->serializer)]);
         }
-        $verses  = $verses->limit($limit)->get();
-        return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses, new TextTransformer(), $this->serializer)]);
     }
     /**
      *
@@ -378,23 +347,14 @@ class TextController extends APIController
         $all_playlists = $playlists->merge($followed_playlists)->sortBy('name');
 
         $highlights = Highlight::where('user_id', $user->id)
-            ->orderBy('user_highlights.updated_at')->limit($limit)->get()
-            ->filter(function ($highlight) use ($query) {
-                return str_contains(strtolower($highlight->book->name . ' ' . $highlight->verse_text), $query);
-            });
+            ->orderBy('user_highlights.updated_at')->limit($limit)->get();
+        $highlights = $this->filter_annotations($highlights, $query);
 
-        $bookmarks = Bookmark::where('user_id', $user->id)
-            ->limit($limit)->get()
-            ->filter(function ($bookmark) use ($query) {
-                return str_contains(strtolower($bookmark->book->name . ' ' . $bookmark->verse_text), $query);
-            });
+        $bookmarks = Bookmark::where('user_id', $user->id)->limit($limit)->get();
+        $bookmarks = $this->filter_annotations($bookmarks, $query);
 
-        $notes = Note::where('user_id', $user->id)
-            ->limit($limit)->get()
-            ->filter(function ($note) use ($query) {
-                return str_contains(strtolower($note->book->name . ' ' . $note->verse_text), $query);
-            });
-
+        $notes = Note::where('user_id', $user->id)->limit($limit)->get();
+        $notes = $this->filter_annotations($notes, $query);
 
         return $this->reply([
             'bookmarks' => fractal($bookmarks, UserBookmarksTransformer::class)->toArray()['data'],
@@ -403,6 +363,16 @@ class TextController extends APIController
             'plans' => $plans,
             'playlists' => $all_playlists,
         ]);
+    }
+
+    private function filter_annotations($annotation_query, $search_query)
+    {
+        return $annotation_query->filter(function ($annotation) use ($search_query) {
+            if (isset($annotation->verse_text, $annotation->book, $annotation->book->name)) {
+                return str_contains(strtolower($annotation->book->name . ' ' . $annotation->verse_text), $search_query);
+            }
+            return false;
+        });
     }
 
     /**
@@ -427,7 +397,6 @@ class TextController extends APIController
      *          required=true,
      *          @OA\Schema(type="string")
      *     ),
-     *     @OA\Parameter(name="asset_id", in="query", description="Will filter the results by the given Asset", @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -444,9 +413,8 @@ class TextController extends APIController
     {
         $query      = checkParam('query', true);
         $fileset_id = checkParam('dam_id');
-        $asset_id   = checkParam('asset_id') ?? config('filesystems.disks.s3.bucket');
 
-        $fileset = BibleFileset::uniqueFileset($fileset_id, $asset_id, 'text_plain')->select('hash_id')->first();
+        $fileset = BibleFileset::uniqueFileset($fileset_id, 'text_plain')->select('hash_id')->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }
@@ -474,9 +442,9 @@ class TextController extends APIController
 
         return $this->reply([
             [
-                ['total_results' => $verses->sum('resultsCount')]
+                ['total_results' => strval($verses->sum('resultsCount'))]
             ],
-            fractal()->collection($verses)->transformWith(new TextTransformer())->serializeWith($this->serializer),
+            fractal($verses, new TextTransformer(), $this->serializer)
         ]);
     }
 
@@ -515,12 +483,6 @@ class TextController extends APIController
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
      *     @OA\Parameter(
-     *          name="asset_id",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/asset_id"),
-     *          description="If specified returns verse text ONLY for the specified fileset"
-     *     ),
-     *     @OA\Parameter(
      *          name="chapter",
      *          in="path",
      *          required=true,
@@ -543,11 +505,7 @@ class TextController extends APIController
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v2_library_verseInfo")),
-     *         @OA\MediaType(mediaType="application/xml", @OA\Schema(ref="#/components/schemas/v2_library_verseInfo")),
-     *         @OA\MediaType(mediaType="text/csv", @OA\Schema(ref="#/components/schemas/v2_library_verseInfo")),
-     *         @OA\MediaType(mediaType="text/x-yaml", @OA\Schema(ref="#/components/schemas/v2_library_verseInfo"))
+     *         description="successful operation"
      *     )
      * )
      *
@@ -560,43 +518,50 @@ class TextController extends APIController
         $chapter_id  = checkParam('chapter|chapter_id');
         $verse_start = checkParam('verse_start') ?? 1;
         $verse_end   = checkParam('verse_end');
-        $asset_id    = checkParam('asset_id') ?? config('filesystems.disks.s3.bucket');
 
-        $fileset = BibleFileset::uniqueFileset($fileset_id, $asset_id, 'text_plain')->select('hash_id', 'id')->first();
+        $fileset = BibleFileset::uniqueFileset($fileset_id, 'text_plain')->select('hash_id', 'id')->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }
+        $bible = optional($fileset->bible)->first();
+        $book = Book::where('id', $book_id)->orWhere('id_osis', $book_id)->first();
 
-        $verse_info = BibleVerse::where('hash_id', $fileset->hash_id)->where([
-            ['book_id', '=', $book_id],
-            ['chapter', '=', $chapter_id],
-            ['verse_start', '>=', $verse_start],
-        ])->when($verse_end, function ($query) use ($verse_end) {
-            return $query->where('verse_start', '<=', $verse_end);
-        })->select(['book_id', 'chapter as chapter_number', 'verse_start', 'verse_end', 'verse_text'])->get();
-
-        foreach ($verse_info as $key => $verse) {
-            $verse_info[$key]->bible_id           = $fileset->id;
-            $verse_info[$key]->bible_variation_id = null;
+        if (!$book) {
+            return $this->setStatusCode(404)->replyWithError('No book found for the provided params');
         }
 
-        /**
-         * @OA\Schema (
-         *   type="array",
-         *   schema="v2_library_verseInfo",
-         *   description="The v2_audio_timestamps response",
-         *   title="v2_library_verseInfo",
-         *   @OA\Xml(name="v2_library_verseInfo"),
-         *   @OA\Items(
-         *     @OA\Property(property="book_id",        ref="#/components/schemas/BibleVerse/properties/book_id"),
-         *     @OA\Property(property="chapter_number", ref="#/components/schemas/BibleVerse/properties/chapter"),
-         *     @OA\Property(property="verse_start",    ref="#/components/schemas/BibleVerse/properties/verse_number"),
-         *     @OA\Property(property="verse_end",      type="integer"),
-         *     @OA\Property(property="verse_text",     ref="#/components/schemas/BibleVerse/properties/verse_text"),
-         *     )
-         *   )
-         * )
-         */
-        return $this->reply($verse_info);
+        $cache_params = [$fileset_id, $book_id, $chapter_id, $verse_start, $verse_end];
+        $verses = cacheRemember('verse_info', $cache_params, now()->addDay(), function () use ($fileset, $bible, $book, $chapter_id, $verse_start, $verse_end) {
+            return BibleVerse::withVernacularMetaData($bible)
+                ->where('hash_id', $fileset->hash_id)
+                ->where('bible_verses.book_id', $book->id)
+                ->when($verse_start, function ($query) use ($verse_start) {
+                    return $query->where('verse_start', '>=', $verse_start);
+                })
+                ->when($chapter_id, function ($query) use ($chapter_id) {
+                    return $query->where('chapter', $chapter_id);
+                })
+                ->when($verse_end, function ($query) use ($verse_end) {
+                    return $query->where('verse_start', '<=', $verse_end);
+                })
+                ->orderBy('chapter')
+                ->orderBy('verse_start')
+                ->select([
+                    'bible_verses.chapter',
+                    'bible_verses.verse_start',
+                ])->get();
+        });
+        
+        $chapters = [];
+        foreach ($verses as $verse) {
+            if (!isset($chapters[$verse->chapter])) {
+                $verse_count = [];
+            }
+            $verse_count[] = "$verse->verse_start";
+            $chapters[$verse->chapter] = $verse_count;
+        }
+        $book_verse_info[(string) $book->name] = $chapters;
+        
+        return $this->reply($book_verse_info);
     }
 }
