@@ -447,7 +447,9 @@ class HighlightsController extends APIController
     private function validateHighlight($bible_id = false)
     {
         $highlight_data = request()->all();
-        $highlight_data['bible_id'] = $bible_id ? $bible_id : $highlight_data['bible_id'];
+        if (request()->method() === 'POST') {
+            $highlight_data['bible_id'] = $bible_id ? $bible_id : $highlight_data['bible_id'];
+        }
         $validator = Validator::make($highlight_data, [
             'bible_id'          => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.bibles,id',
             'user_id'           => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp_users.users,id',
