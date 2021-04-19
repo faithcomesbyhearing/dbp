@@ -271,7 +271,9 @@ class BookmarksController extends APIController
     private function validateBookmark($bible_id = false)
     {
         $bookmark_data = request()->all();
-        $bookmark_data['bible_id'] = $bible_id ? $bible_id : $bookmark_data['bible_id'];
+        if (request()->method() === 'POST') {
+            $bookmark_data['bible_id'] = $bible_id ? $bible_id : $bookmark_data['bible_id'];
+        }
         $validator = Validator::make($bookmark_data, [
             'bible_id'    => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.bibles,id',
             'user_id'     => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp_users.users,id',

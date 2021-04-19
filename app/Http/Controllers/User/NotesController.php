@@ -312,8 +312,11 @@ class NotesController extends APIController
     private function invalidNote($bible_id = false, $user_id = false)
     {
         $note_data = request()->all();
-        $note_data['bible_id'] = $bible_id ? $bible_id : $note_data['bible_id'];
-        $note_data['user_id'] = $user_id ? $user_id : $note_data['user_id'];
+        
+        if (request()->method() === 'POST') {
+            $note_data['bible_id'] = $bible_id ? $bible_id : $note_data['bible_id'];
+            $note_data['user_id'] = $user_id ? $user_id : $note_data['user_id'];
+        }
         $validator = Validator::make($note_data, [
             'bible_id'    => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.bibles,id',
             'user_id'     => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp_users.users,id',
