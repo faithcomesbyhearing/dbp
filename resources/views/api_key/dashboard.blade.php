@@ -241,19 +241,22 @@
 @endsection
 
 @section('content')
-@if($user->roles->where('slug','admin')->first())
+<!-- @#if($user->roles->where('slug','admin')->first()) -->
 <h2 class="dashboard-title">Key Management</h2>
 <div class="dashboard-card">
     <div class="key-filter">
         <form method="GET" action="{{ route('api_key.dashboard') }}">
-            <label for="state_filter">Filter By State</label>
-            <select name="state" id="state_filter" onchange="this.form.submit()">
-                @foreach($options as $option)
-                <option value="{{$option['value']}}" {{$option['selected'] ? 'selected':''  }}>{{$option['name']}}</option>
-                @endforeach
-            </select>
-            <label class="search-filter" for="search_filter">Search</label>
-            <input type="text" name="search" id="search_filter" placeholder="Filter by name, email or key" value="{{ $search }}" />
+            <div class="row">
+                <label for="state_filter">Filter By State</label>
+                <select name="state" id="state_filter" onchange="this.form.submit()">
+                    @foreach($options as $option)
+                    <option value="{{$option['value']}}" {{$option['selected'] ? 'selected':''  }}>{{$option['name']}}</option>
+                    @endforeach
+                </select>
+                <label class="search-filter" for="search_filter">Search</label>
+                <input type="text" name="search" id="search_filter" placeholder="Filter by name, email or key" value="{{ $search }}" />
+            </div>
+            
         </form>
     </div>
     @if(!$key_requests->isEmpty())
@@ -299,9 +302,9 @@
     <p>Empty Results</p>
     @endif
 </div>
-@else
-    <p>You are not an admin</p>
-@endif
+<!-- @#else -->
+    <!-- <p>You are not an admin</p> -->
+<!-- @e#ndif -->
 
 <div class="pagination">
     {{$key_requests->appends(['state' => $state,'search' => $search])->links()}}
