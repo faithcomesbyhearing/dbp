@@ -120,7 +120,6 @@
             var state = $(this).data(state).state;
             var keydate = $(this).data(keydate).keydate;
             var options = $(this).data(options).options;
-            console.log(options);
             var noteComponent = 
               `<div>
                   <a href="#" id="note-${key.id}" data-id="${key.id}" class="note_row">
