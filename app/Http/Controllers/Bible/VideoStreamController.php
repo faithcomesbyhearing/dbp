@@ -80,29 +80,26 @@ class VideoStreamController extends APIController
             $metadataLanguageTag = isset($media_languages->bcp47) ? $media_languages->bcp47 : '';
             $cache_params =  [$arclight_id, $metadataLanguageTag];
 
-            $metadata = cacheRemember('arclight_chapters_metadata', $cache_params, now()->addDay(), function () use ($arclight_id, $metadataLanguageTag) {
-                $media_components = $this->fetchArclight('media-components', $arclight_id, true, 'metadataLanguageTags=' . $metadataLanguageTag . ',en');
-                $metadata = collect($media_components->mediaComponents)
-                    ->map(function ($component) use ($arclight_id) {
-                        return [
-                            'mediaComponentId' => $component->mediaComponentId,
-                            'meta' => [
-                                'thumbnail' => $component->imageUrls->thumbnail,
-                                'thumbnail_high' => $component->imageUrls->mobileCinematicHigh,
-                                'title' => $component->title,
-                                'shortDescription' => $component->shortDescription,
-                                'longDescription' => $component->longDescription,
-                                'file_name' => route('v4_video_jesus_film_file', [
-                                    'chapter_id'  => $component->mediaComponentId,
-                                    'arclight_id' => $arclight_id,
-                                    'v'           => $this->v,
-                                    'key'         => $this->key
-                                ])
-                            ]
-                        ];
-                    })->pluck('meta', 'mediaComponentId');
-                return $metadata;
-            });
+            $media_components = $this->fetchArclight('media-components', $arclight_id, true, 'metadataLanguageTags=' . $metadataLanguageTag . ',en');
+            $metadata = collect($media_components->mediaComponents)
+                ->map(function ($component) use ($arclight_id) {
+                    return [
+                        'mediaComponentId' => $component->mediaComponentId,
+                        'meta' => [
+                            'thumbnail' => $component->imageUrls->thumbnail,
+                            'thumbnail_high' => $component->imageUrls->mobileCinematicHigh,
+                            'title' => $component->title,
+                            'shortDescription' => $component->shortDescription,
+                            'longDescription' => $component->longDescription,
+                            'file_name' => route('v4_video_jesus_film_file', [
+                                'chapter_id'  => $component->mediaComponentId,
+                                'arclight_id' => $arclight_id,
+                                'v'           => $this->v,
+                                'key'         => $this->key
+                            ])
+                        ]
+                    ];
+                })->pluck('meta', 'mediaComponentId');
 
             return $this->reply([
                 'verses'                   => $this->getIdReferences($component->mediaComponentId),
@@ -131,11 +128,8 @@ class VideoStreamController extends APIController
             $language_id  = checkParam('arclight_id', true);
             $chapter_id   = checkParam('chapter_id') ?? '1_jf-0-0';
 
-            $cache_params = [$chapter_id, $language_id];
-            $stream_file  = cacheRemember('arclight_media_components', $cache_params, now()->addDay(), function () use ($chapter_id, $language_id) {
-                $media_components = $this->fetchArclight('media-components/' . $chapter_id . '/languages/' . $language_id, $language_id, false);
-                return file_get_contents($media_components->streamingUrls->m3u8[0]->url);
-            });
+            $media_components = $this->fetchArclight('media-components/' . $chapter_id . '/languages/' . $language_id, $language_id, false);
+            $stream_file = file_get_contents($media_components->streamingUrls->m3u8[0]->url);
         } catch (Exception $e) {
             $stream_file = '';
         }
