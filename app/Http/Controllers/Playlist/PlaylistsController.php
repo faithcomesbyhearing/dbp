@@ -1064,38 +1064,40 @@ class PlaylistsController extends APIController
         $durations = [];
         $hls_items = '';
         foreach ($bible_files as $bible_file) {
-            $currentBandwidth = $bible_file->streamBandwidth->first();
-            $transportStream = sizeof($currentBandwidth->transportStreamBytes) ? $currentBandwidth->transportStreamBytes : $currentBandwidth->transportStreamTS;
-
-            // Fix verse audio stream starting from different initial verses causing audio missmatch
-            if ($item->verse_end && $item->verse_start) {
-                if (isset($transportStream[0]->timestamp)) {
-                    $timestamps_count = BibleFileTimestamp::where('bible_file_id', $transportStream[0]->timestamp->bible_file_id)->count();
-                    if ($timestamps_count === $transportStream->count() && $transportStream[0]->timestamp->verse_start !== 0) {
-                        $transportStream->prepend((object)[]);
+            if (isset($bible_file->streamBandwidth) && isset($bible_file->fileset)) {
+                $currentBandwidth = $bible_file->streamBandwidth->first();
+                $transportStream = sizeof($currentBandwidth->transportStreamBytes) ? $currentBandwidth->transportStreamBytes : $currentBandwidth->transportStreamTS;
+    
+                // Fix verse audio stream starting from different initial verses causing audio missmatch
+                if (isset($item->verse_end) && isset($item->verse_start)) {
+                    if (isset($transportStream[0]->timestamp)) {
+                        $timestamps_count = BibleFileTimestamp::where('bible_file_id', $transportStream[0]->timestamp->bible_file_id)->count();
+                        if ($timestamps_count === $transportStream->count() && $transportStream[0]->timestamp->verse_start !== 0) {
+                            $transportStream->prepend((object)[]);
+                        }
                     }
+    
+                    $transportStream = $this->processVersesOnTransportStream($item, $transportStream, $bible_file);
                 }
-
-                $transportStream = $this->processVersesOnTransportStream($item, $transportStream, $bible_file);
-            }
-
-            $fileset = $bible_file->fileset;
-
-            foreach ($transportStream as $stream) {
-                $durations[] = $stream->runtime;
-                $hls_items .= "\n#EXTINF:$stream->runtime," . $item->id;
-                if (isset($stream->timestamp)) {
-                    $hls_items .= "\n#EXT-X-BYTERANGE:$stream->bytes@$stream->offset";
-                    $fileset = $stream->timestamp->bibleFile->fileset;
-                    $stream->file_name = $stream->timestamp->bibleFile->file_name;
+    
+                $fileset = $bible_file->fileset;
+    
+                foreach ($transportStream as $stream) {
+                    $durations[] = $stream->runtime;
+                    $hls_items .= "\n#EXTINF:$stream->runtime," . $item->id;
+                    if (isset($stream->timestamp)) {
+                        $hls_items .= "\n#EXT-X-BYTERANGE:$stream->bytes@$stream->offset";
+                        $fileset = $stream->timestamp->bibleFile->fileset;
+                        $stream->file_name = $stream->timestamp->bibleFile->file_name;
+                    }
+                    $bible_path = $bible_file->fileset->bible->first()->id;
+                    $file_path = 'audio/' . $bible_path . '/' . $fileset->id . '/' . $stream->file_name;
+                    if (!isset($signed_files[$file_path])) {
+                        $signed_files[$file_path] = $this->signedUrl($file_path, $fileset->asset_id, $transaction_id);
+                    }
+                    $hls_file_path = $download ? $file_path : $signed_files[$file_path];
+                    $hls_items .= "\n" . $hls_file_path;
                 }
-                $bible_path = $bible_file->fileset->bible->first()->id;
-                $file_path = 'audio/' . $bible_path . '/' . $fileset->id . '/' . $stream->file_name;
-                if (!isset($signed_files[$file_path])) {
-                    $signed_files[$file_path] = $this->signedUrl($file_path, $fileset->asset_id, $transaction_id);
-                }
-                $hls_file_path = $download ? $file_path : $signed_files[$file_path];
-                $hls_items .= "\n" . $hls_file_path;
             }
         }
 
@@ -1107,27 +1109,29 @@ class PlaylistsController extends APIController
         $durations = [];
         $hls_items = '';
         foreach ($bible_files as $bible_file) {
-            $default_duration = $bible_file->duration ?? 180;
-            $durations[] = $default_duration;
-            if (isset($item->id)) {
-                $hls_items .= "\n#EXTINF:$default_duration," . $item->id;
-            }
-
-            if (isset($bible_file->fileset)) {
-                $bible_data = $bible_file->fileset->bible->first();
-
-                if ($bible_data) {
-                    $bible_path = $bible_data->id;
-                    $file_path = 'audio/' . $bible_path . '/' . $bible_file->fileset->id . '/' . $bible_file->file_name;
-                    $hls_items .= "\n";
+            if ($bible_file) {
+                $default_duration = $bible_file->duration ?? 180;
+                $durations[] = $default_duration;
+                if (isset($item->id)) {
+                    $hls_items .= "\n#EXTINF:$default_duration," . $item->id;
                 }
-              
-                if (!isset($signed_files[$file_path])) {
-                    $signed_files[$file_path] = $this->signedUrl($file_path, $bible_file->fileset->asset_id, $transaction_id);
+    
+                if (isset($bible_file->fileset)) {
+                    $bible_data = $bible_file->fileset->bible->first();
+    
+                    if ($bible_data) {
+                        $bible_path = $bible_data->id;
+                        $file_path = 'audio/' . $bible_path . '/' . $bible_file->fileset->id . '/' . $bible_file->file_name;
+                        $hls_items .= "\n";
+                    }
+                  
+                    if (!isset($signed_files[$file_path])) {
+                        $signed_files[$file_path] = $this->signedUrl($file_path, $bible_file->fileset->asset_id, $transaction_id);
+                    }
                 }
+                $hls_file_path = $download ? $file_path : $signed_files[$file_path];
+                $hls_items .= "\n" . $hls_file_path;
             }
-            $hls_file_path = $download ? $file_path : $signed_files[$file_path];
-            $hls_items .= "\n" . $hls_file_path;
         }
 
         return (object) ['hls_items' => $hls_items, 'signed_files' => $signed_files, 'durations' => $durations];
@@ -1164,29 +1168,31 @@ class PlaylistsController extends APIController
         $hls_items = [];
 
         foreach ($items as $item) {
-            $fileset = $item->fileset;
+            if (isset($item->fileset)) {
+                $fileset = $item->fileset;
 
-            if (!Str::contains($fileset->set_type_code, 'audio')) {
-                continue;
-            }
-            $bible_files = BibleFile::with('streamBandwidth.transportStreamTS')->with('streamBandwidth.transportStreamBytes')->where([
-                'hash_id' => $fileset->hash_id,
-                'book_id' => $item->book_id,
-            ])
-                ->where('chapter_start', '>=', $item->chapter_start)
-                ->where('chapter_start', '<=', $item->chapter_end)
-                ->get();
-
-            if ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream') {
-                $result = $this->processHLSAudio($bible_files, $signed_files, $transaction_id, $item, $download);
-                $hls_items[] = $result->hls_items;
-                $signed_files = $result->signed_files;
-                $durations[] = collect($result->durations)->sum();
-            } else {
-                $result = $this->processMp3Audio($bible_files, $signed_files, $transaction_id, $download, $item);
-                $hls_items[] = $result->hls_items;
-                $signed_files = $result->signed_files;
-                $durations[] = collect($result->durations)->sum();
+                if (!Str::contains($fileset->set_type_code, 'audio')) {
+                    continue;
+                }
+                $bible_files = BibleFile::with('streamBandwidth.transportStreamTS')->with('streamBandwidth.transportStreamBytes')->where([
+                    'hash_id' => $fileset->hash_id,
+                    'book_id' => $item->book_id,
+                ])
+                    ->where('chapter_start', '>=', $item->chapter_start)
+                    ->where('chapter_start', '<=', $item->chapter_end)
+                    ->get();
+    
+                if ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream') {
+                    $result = $this->processHLSAudio($bible_files, $signed_files, $transaction_id, $item, $download);
+                    $hls_items[] = $result->hls_items;
+                    $signed_files = $result->signed_files;
+                    $durations[] = collect($result->durations)->sum();
+                } else {
+                    $result = $this->processMp3Audio($bible_files, $signed_files, $transaction_id, $download, $item);
+                    $hls_items[] = $result->hls_items;
+                    $signed_files = $result->signed_files;
+                    $durations[] = collect($result->durations)->sum();
+                }
             }
         }
         $hls_items = join("\n" . '#EXT-X-DISCONTINUITY', $hls_items);
