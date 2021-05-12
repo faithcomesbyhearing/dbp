@@ -42,6 +42,9 @@ class VideoStreamController extends APIController
     {
         try {
             $iso = checkParam('iso') ?? $iso;
+            $forbidden_isos = explode(',', config('settings.forbiddenArclightIso'));
+            $iso = in_array($iso, $forbidden_isos) ? 'eng' : $iso;
+
             if ($iso) {
                 $languages = cacheRemember('arclight_languages', [$iso], now()->addDay(), function () use ($iso) {
                     $languages = collect($this->fetchArclight('media-languages', false, false, 'iso3=' . $iso)->mediaLanguages);
