@@ -51,7 +51,7 @@
           sendAjaxRequest("{{route('api_key.approve_api_key')}}", formData);
           break;
         case '3':
-          sendAjaxRequest("{{route('api_key.change_api_key_state')}}", formData);
+          sendAjaxRequest("{{route('api_key.delete_api_key')}}", formData);
           break;
         default:
           break;
