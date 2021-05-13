@@ -30,7 +30,7 @@ class seedFilesetTags extends Seeder
 
             $type .= (substr($dam_volume->dam_id, -3, 1) === 2) ? '_drama' : '';
 
-            $fileset =  \App\Models\Bible\BibleFileset::uniqueFileset($dam_volume->dam_id, 'dbp-prod', $type)->first();
+            $fileset =  \App\Models\Bible\BibleFileset::uniqueFileset($dam_volume->dam_id, $type, true)->first();
             if (!$fileset) {
                 continue;
             }
