@@ -45,7 +45,7 @@ class BiblesRoutesTest extends ApiV4Test
      */
     public function bibleFilesetsPodcast()
     {
-        $fileset = BibleFileset::uniqueFileset(null, 'dbp-prod', 'audio')->inRandomOrder()->first();
+        $fileset = BibleFileset::uniqueFileset(null, 'audio')->inRandomOrder()->first();
         $this->params['id'] = $fileset->id;
         $path = route('v4_filesets.podcast', $this->params);
         echo "\nTesting: $path";

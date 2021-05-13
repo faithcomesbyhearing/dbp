@@ -264,7 +264,7 @@ class UsersControllerV2 extends APIController
             }
 
             $book = Book::where('id_osis', request()->book_id)->first();
-            $bibleFileset = BibleFileset::with('bible')->uniqueFileset(request()->dam_id, 'dbp-prod', 'text_plain')->first();
+            $bibleFileset = BibleFileset::with('bible')->uniqueFileset(request()->dam_id, 'text_plain', true)->first();
             $bookmark = Bookmark::create([
                 'bible_id'    => $bibleFileset->bible->id,
                 'book_id'     => $book->id,
@@ -335,7 +335,7 @@ class UsersControllerV2 extends APIController
             }
 
             $book = Book::where('id_osis', request()->book_id)->first();
-            $fileset = BibleFileset::uniqueFileset(request()->dam_id, 'dbp-prod', 'text_plain')->first();
+            $fileset = BibleFileset::uniqueFileset(request()->dam_id, 'text_plain', true)->first();
             $chapter = BibleVerse::where('hash_id', $fileset->hash_id)->where('chapter', request()->chapter_id)
                 ->where('book_id', $book->id)->where('verse_start', request()->verse_id)->first();
             if (!$chapter) {
