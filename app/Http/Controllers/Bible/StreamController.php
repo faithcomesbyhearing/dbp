@@ -178,7 +178,7 @@ class StreamController extends APIController
         $parts = explode('-', $file_id_location);
         $asset_id = checkParam('asset_id') ?? config('filesystems.disks.s3_fcbh_video.bucket');
 
-        $audio_fileset = BibleFileset::uniqueFileset($fileset_id, $asset_id, 'audio', true)->select('hash_id', 'id', 'asset_id')->first();
+        $audio_fileset = BibleFileset::uniqueFileset($fileset_id, 'audio', true)->select('hash_id', 'id', 'asset_id')->first();
 
         $bible_files = BibleFile::where([
             'hash_id' => $audio_fileset->hash_id,

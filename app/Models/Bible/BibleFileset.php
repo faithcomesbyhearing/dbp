@@ -189,16 +189,18 @@ class BibleFileset extends Model
                 }
             });
         })
-            ->when($testament_filter, function ($query) use ($testament_filter) {
+        ->when($testament_filter, function ($query) use ($testament_filter) {
+            if (is_array($testament_filter)) {
                 $query->whereIn('bible_filesets.set_size_code', $testament_filter);
-            })
-            ->when($fileset_type, function ($query) use ($fileset_type, $ambigious_fileset_type) {
-                if ($ambigious_fileset_type) {
-                    $query->where('bible_filesets.set_type_code', 'LIKE', $fileset_type . '%');
-                } else {
-                    $query->where('bible_filesets.set_type_code', $fileset_type);
-                }
-            });
+            }
+        })
+        ->when($fileset_type, function ($query) use ($fileset_type, $ambigious_fileset_type) {
+            if ($ambigious_fileset_type) {
+                $query->where('bible_filesets.set_type_code', 'LIKE', $fileset_type . '%');
+            } else {
+                $query->where('bible_filesets.set_type_code', $fileset_type);
+            }
+        });
     }
 
     public function scopeLanguage()
