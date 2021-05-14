@@ -22,12 +22,12 @@ class DashboardController extends APIController
     public function __construct()
     {
         parent::__construct();
-        #$this->middleware('auth');
+        $this->middleware('auth');
     }
 
     public function home()
     {
-        #$user = Auth::user() ?? $this->user;
+        $user = Auth::user() ?? $this->user;
         $search = checkParam('search');
         $state = checkParam('state');
         $page = checkParam('page');
@@ -57,7 +57,7 @@ class DashboardController extends APIController
 
         return view(
         'api_key.dashboard',
-        compact(/*'user', */'key_requests', 'search', 'options', 'state', 'state_names')
+        compact('user', 'key_requests', 'search', 'options', 'state', 'state_names')
       );
     }
 
@@ -248,8 +248,7 @@ class DashboardController extends APIController
 
     private function isAdmin()
     {
-        #$user = Auth::user() ?? $this->user;
-        #return $user->roles->where('slug', 'admin')->first();
-        return  true;
+        $user = Auth::user() ?? $this->user;
+        return $user->roles->where('slug', 'admin')->first();
     }
 }

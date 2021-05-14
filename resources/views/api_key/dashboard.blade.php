@@ -280,7 +280,7 @@
 @endsection
 
 @section('content')
-<!-- @#if($user->roles->where('slug','admin')->first()) -->
+@if($user->roles->where('slug','admin')->first())
 <h2 class="dashboard-title">Key Management</h2>
 <div class="dashboard-card">
     <div class="key-filter">
@@ -351,9 +351,9 @@
     <p>Empty Results</p>
     @endif
 </div>
-<!-- @#else -->
-    <!-- <p>You are not an admin</p> -->
-<!-- @e#ndif -->
+@else
+<p>You are not an admin</p>
+@endif
 
 <div class="pagination">
     {{$key_requests->appends(['state' => $state,'search' => $search])->links()}}
