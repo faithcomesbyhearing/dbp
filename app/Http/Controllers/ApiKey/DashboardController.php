@@ -33,11 +33,11 @@ class DashboardController extends APIController
         $page = checkParam('page');
         $state_names = [0 => '', 1 => 'Requested', 2 => 'Approved', 3 => 'Denied'];
         $options = [
-        ['name' => $state_names[0], 'value' => 0, 'selected' => $state == 0],
-        ['name' => $state_names[1], 'value' => 1, 'selected' => $state == 1],
-        ['name' => $state_names[2], 'value' => 2, 'selected' => $state == 2],
-        ['name' => $state_names[3], 'value' => 3, 'selected' => $state == 3]
-      ];
+          ['name' => $state_names[0], 'value' => 0, 'selected' => $state == 0],
+          ['name' => $state_names[1], 'value' => 1, 'selected' => $state == 1],
+          ['name' => $state_names[2], 'value' => 2, 'selected' => $state == 2],
+          ['name' => $state_names[3], 'value' => 3, 'selected' => $state == 3]
+        ];
 
         $key_requests = KeyRequest::select('*')
         ->when($state, function ($query, $state) {
@@ -124,25 +124,33 @@ class DashboardController extends APIController
         }
     }
 
+    private function validateApiKeyRequest($rules)
+    {
+      if (!$this->isAdmin()) {
+          return $this->setStatusCode(403)->replyWithError('Unauthorized');
+      }
+
+      $validator = Validator::make(request()->all(), $rules);
+      if ($validator->fails()) {
+          $error_message = '';
+          foreach ($validator->errors()->all() as $error) {
+              $error_message .= $error . "\n";
+          }
+          return $this->setStatusCode(422)->replyWithError($error_message);
+      } else {
+        return true;
+      }
+    }
+
     public function changeApiKeyState()
     {
-        if (!$this->isAdmin()) {
-            return $this->setStatusCode(403)->replyWithError('Unauthorized');
-        }
-
         $rules = [
           'key_request_id' => 'required',
           'state' => 'required'
         ];
 
-        $validator = Validator::make(request()->all(), $rules);
-        if ($validator->fails()) {
-            $error_message = '';
-            foreach ($validator->errors()->all() as $error) {
-                $error_message .= $error . "\n";
-            }
-            return $this->setStatusCode(422)->replyWithError($error_message);
-        } else {
+        $validator = $this->validateApiKeyRequest($rules);
+        if ($validator) {
             $key_request_id = checkParam('key_request_id');
             $key_state = checkParam('state');
 
@@ -156,23 +164,13 @@ class DashboardController extends APIController
 
     public function approveApiKey()
     {
-        if (!$this->isAdmin()) {
-            return $this->setStatusCode(403)->replyWithError('Unauthorized');
-        }
-
         $rules = [
             'key_request_id' => 'required',
             'email' => 'required|email'
         ];
 
-        $validator = Validator::make(request()->all(), $rules);
-        if ($validator->fails()) {
-            $error_message = '';
-            foreach ($validator->errors()->all() as $error) {
-                $error_message .= $error . "\n";
-            }
-            return $this->setStatusCode(422)->replyWithError($error_message);
-        } else {
+        $validator = $this->validateApiKeyRequest($rules);
+        if ($validator) {
             $key_request_id = checkParam('key_request_id');
             $description = checkParam('description');
             $email = checkParam('email');
@@ -208,6 +206,30 @@ class DashboardController extends APIController
             }
 
             return $created_key;
+        }
+    }
+
+    public function deleteApiKey()
+    {
+        $rules = [
+            'key_request_id' => 'required',
+            'email' => 'required|email'
+        ];
+
+        $validator = $this->validateApiKeyRequest($rules);
+        if ($validator) {
+            $key_request_id = checkParam('key_request_id');
+            $key = checkParam('key');
+
+            $key_request = KeyRequest::whereId($key_request_id)->first();
+            $key_request->state = 3;
+            $key_request->save();
+
+            $target_key = Key::where('key', $key)->first();
+            AccessGroupKey::where('key_id', $target_key->id)->delete();
+            $deleted_key = $target_key->delete();
+
+            return $target_key;
         }
     }
 
