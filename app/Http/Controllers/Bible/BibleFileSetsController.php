@@ -288,6 +288,8 @@ class BibleFileSetsController extends APIController
         $cache_params = [$this->v, $fileset_id, $book_id];
         $limit        = (int) (checkParam('limit') ?? 5000);
         $limit        = max($limit, 5000);
+        $page         = checkParam('page') ?? 1;
+        $cache_key    = $cache_key . $page;
 
         $fileset_chapters = cacheRemember(
             $cache_key,
