@@ -316,9 +316,10 @@ class BibleFileSetsController extends APIController
                     );
                 }
 
-                $bulk_access_blocked = $this->blockedByBulkAccessControl($fileset);
-                if ($bulk_access_blocked) {
-                    return $bulk_access_blocked;
+                $bulk_access_control = $this->allowedByBulkAccessControl($fileset);
+  
+                if (isset($bulk_access_control->original['error'])) {
+                    return $bulk_access_control;
                 }
 
                 $asset_id = $fileset->asset_id;
