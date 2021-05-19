@@ -374,7 +374,10 @@ class PlaylistItems extends Model implements Sortable
         $cache_params = [$fileset_id, $book, $chapter_start, $chapter_end, $verse_start, $verse_end];
         return cacheRemember('playlist_item_timestamps', $cache_params, now()->addDay(), function () use ($fileset_id, $book, $chapter_start, $chapter_end, $verse_start, $verse_end) {
             $fileset = BibleFileset::where('id', $fileset_id)->first();
-
+            if (!$fileset) {
+                return null;
+            }
+            
             $bible_files = BibleFile::where('hash_id', $fileset->hash_id)
                 ->when($book, function ($query) use ($book) {
                     return $query->where('book_id', $book);
@@ -490,11 +493,18 @@ class PlaylistItems extends Model implements Sortable
             [$fileset_id, $book_id],
             now()->addDay(),
             function () use ($fileset_id, $book_id) {
-                $bible = BibleFileset::whereId($fileset_id)->first()->bible->first();
-                if (!$bible) {
+                $bible_fileset = BibleFileset::whereId($fileset_id)->first();
+
+                // check if there exists an invalid fileset for each playlist item (data issue)
+                if (isset($bible_fileset)) {
+                    $bible = $bible_fileset->bible->first();
+                    if (!$bible) {
+                        return null;
+                    }
+                    $bible = Bible::whereId($bible->id)->with(['translations', 'books.book'])->first();
+                } else {
                     return null;
                 }
-                $bible = Bible::whereId($bible->id)->with(['translations', 'books.book'])->first();
 
                 return [
                     'bible_id' => $bible->id,

@@ -375,6 +375,7 @@ class PlaylistsController extends APIController
         
         if ($show_text && isset($playlist->items)) {
             $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist_id);
+            
             foreach ($playlist->items as $item) {
                 $item->verse_text = $item->getVerseText($playlist_text_filesets);
                 $item->item_timestamps = $item->getTimestamps();
@@ -1277,9 +1278,11 @@ class PlaylistsController extends APIController
 
         if (isset($playlist->items)) {
             $playlist->items = $playlist->items->map(function ($item) {
-                $bible = $item->fileset->bible->first();
-                if ($bible) {
-                    $item->bible_id = $bible->id;
+                if (isset($item->fileset, $item->fileset->bible)) {
+                    $bible = $item->fileset->bible->first();
+                    if ($bible) {
+                        $item->bible_id = $bible->id;
+                    }
                 }
                 unset($item->fileset);
                 return $item;
@@ -1316,8 +1319,10 @@ class PlaylistsController extends APIController
         $bible_hash = $hashes_bibles->pluck('bible_id', 'hash_id');
 
         foreach ($filesets as $fileset) {
-            $bible_id = $bible_hash[$fileset_text_info[$fileset]];
-            $fileset_text_info[$fileset] = $text_filesets[$bible_id] ?? null;
+            if (isset($fileset_text_info[$fileset])) {
+                $bible_id = $bible_hash[$fileset_text_info[$fileset]];
+                $fileset_text_info[$fileset] = $text_filesets[$bible_id] ?? null;
+            }
         }
         return $fileset_text_info;
     }
