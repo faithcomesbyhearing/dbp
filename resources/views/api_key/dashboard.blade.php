@@ -51,7 +51,7 @@
           sendAjaxRequest("{{route('api_key.approve_api_key')}}", formData);
           break;
         case '3':
-          sendAjaxRequest("{{route('api_key.change_api_key_state')}}", formData);
+          sendAjaxRequest("{{route('api_key.delete_api_key')}}", formData);
           break;
         default:
           break;
@@ -65,32 +65,101 @@
               return [$item['id'] => $item];
           })
         ); ?>;
+
+        $.fn.displayEmail = function (e, keyId) {
+          var id = $(this).data('id') || keyId;
+          var email = keys[id].email;
+          $("#email_error").css('display', 'none');
+          $("#email_error").html('');
+          $("#to_email").val(email);
+          $("#subject").val("Your API Key request for Digital Bible Platform");
+          $("#email_modal").data('id', id);
+          $("#email_modal").css('display', 'flex');
+        };
+
+        $.fn.displayNote = function (e, keyId) {
+          e.preventDefault();
+          var id = $(this).data('id') || keyId;
+          var note = keys[parseInt(id)].notes;
+          var info = $(this).data('info');
+
+          $("#note_error, #note_info").css('display', 'none');
+          $("#note_error, #note_info").html('');
+          $("#button_save_note").data('id', id);
+
+          if (note) {
+              $("#note_modal h3").html('Revise a note');
+              $("#note_content").attr('disabled', true);
+              $("#note_content").val(note);
+              $("#button_save_note").val('OK');
+              $("#button_save_note").data('isNew', false);
+          } else {
+              if (info) {
+                  $("#note_info").show();
+                  $("#note_info").html(info);
+              }
+              $("#note_modal h3").html('Add a note');
+              $("#note_content").val('{{date("m/d/Y", time())}}\n');
+              $("#note_content").attr('disabled', false);
+              $("#button_save_note").val('Save');
+              $("#button_save_note").data('isNew', true);
+          }
+          $("#note_modal").css('display', 'flex');
+        };
+
+        $(".note_row").off().on('click', function(e) {
+          $(".note_row").displayNote(e);
+        });
+
+        $(".email_row").off().on('click', function(e) {
+          $(".note_row").displayEmail(e);
+        });
+
         $(".request_detail").off().on('click', function(e) {
             var key = $(this).data(key).key;
             var state = $(this).data(state).state;
             var keydate = $(this).data(keydate).keydate;
-      
+            var options = $(this).data(options).options;
+            var noteComponent = 
+              `<div>
+                  <a href="#" id="note-${key.id}" data-id="${key.id}" class="note_row">
+                      ${key.notes ?? 'Add a note'}
+                  </a>
+              </div>`;
+            var emailComponent = 
+              `<div>
+                <span>${key.email}</span>
+                <a href="#" class="email_row" data-id="${key.id}">(Send Email)</a>
+              </div>`;
+            var stateOptions = [];
+            options.forEach(option => {
+              if (option.value !== 0) {
+                stateOptions.push(`<option value="${option.value}" ${key.state} ${key.state === option.value ? 'selected' : ''}>${option.name}</option>`);
+              }
+            });
+            var stateComponent = 
+              `<select name="key_state" onchange="changeItemState(${key.id}, this.value)">
+                  ${stateOptions.join('')}
+                </select>`;
+
             $("#detail_modal").data('key', key);
             $("#detail_modal").css('display', 'flex');
             $('#detail_name').text(`${key.name}`);
-            $('#detail_email').text(`${key.email}`);
+            $('#detail_email').html(emailComponent);
+            $('#detail_email').off().on('click', function(e){
+              $("#detail_modal").hide();
+              $('#detail_email').displayEmail(e, key.id);
+            });
             $('#detail_description').text(`${key.description}`);
             $('#detail_questions').text(`${key.questions}`);
             $('#detail_key').text(`${key.temporary_key}`);
-            $('#detail_state').text(`${state}`);
-            $('#detail_notes').text(`${key.notes}`);
+            $('#detail_state').html(stateComponent);
+            $('#detail_notes').html(noteComponent);
+            $('#detail_notes').off().on('click', function(e){
+              $("#detail_modal").hide();
+              $('#detail_notes').displayNote(e, key.id);
+            });
             $('#detail_date').text(`${keydate}`);
-        });
-
-        $(".email_row").off().on('click', function(e) {
-            var id = $(this).data('id');
-            var email = keys[id].email;
-            $("#email_error").css('display', 'none');
-            $("#email_error").html('');
-            $("#to_email").val(email);
-            $("#subject").val("Your API Key request for Digital Bible Platform");
-            $("#email_modal").data('id', id);
-            $("#email_modal").css('display', 'flex');
         });
 
         $("#button_send_email").off().on('click', function(e) {
@@ -126,6 +195,7 @@
                     success: function(data) {
                         $("#email_modal").hide();
                         resetEmailFields();
+                        window.location.reload(); 
                     },
                     error: function(xhr) {
                         resetEmailFields();
@@ -135,40 +205,9 @@
                     }
                 });
             }
-            window.location.reload();
         });
 
-        $(".note_row").off().on('click', function(e) {
-            e.preventDefault();
-            var id = $(this).data('id');
-            var note = keys[parseInt(id)].notes;
-            var info = $(this).data('info');
-
-            $("#note_error, #note_info").css('display', 'none');
-            $("#note_error, #note_info").html('');
-            $("#button_save_note").data('id', id);
-
-            if (note) {
-                $("#note_modal h3").html('Revise a note');
-                $("#note_content").attr('disabled', true);
-                $("#note_content").val(note);
-                $("#button_save_note").val('OK');
-                $("#button_save_note").data('isNew', false);
-            } else {
-                if (info) {
-                    $("#note_info").show();
-                    $("#note_info").html(info);
-                }
-                $("#note_modal h3").html('Add a note');
-                $("#note_content").val('{{date("m/d/Y", time())}}\n');
-                $("#note_content").attr('disabled', false);
-                $("#button_save_note").val('Save');
-                $("#button_save_note").data('isNew', true);
-            }
-            $("#note_modal").css('display', 'flex');
-        });
-
-        $("#button_save_note").click(function(e) {
+        $("#button_save_note").off().on('click', function(e) {
             e.preventDefault();
             var id = $("#button_save_note").data('id');
             var isNew = $("#button_save_note").data('isNew');
@@ -205,6 +244,7 @@
                         $("#note-" + data.id).html(data.notes);
                         resetNoteFields();
                         $("#note_modal").hide();
+                        window.location.reload(); 
                     },
                     error: function(xhr) {
                         resetNoteFields();
@@ -213,7 +253,6 @@
                         $("#note_error").show();
                     }
                 });
-                window.location.reload();
             }
         });
 
@@ -246,21 +285,24 @@
 <div class="dashboard-card">
     <div class="key-filter">
         <form method="GET" action="{{ route('api_key.dashboard') }}">
-            <label for="state_filter">Filter By State</label>
-            <select name="state" id="state_filter" onchange="this.form.submit()">
-                @foreach($options as $option)
-                <option value="{{$option['value']}}" {{$option['selected'] ? 'selected':''  }}>{{$option['name']}}</option>
-                @endforeach
-            </select>
-            <label class="search-filter" for="search_filter">Search</label>
-            <input type="text" name="search" id="search_filter" placeholder="Filter by name, email or key" value="{{ $search }}" />
+            <div class="row">
+                <label for="state_filter">Filter By State</label>
+                <select name="state" id="state_filter" onchange="this.form.submit()">
+                    @foreach($options as $option)
+                    <option value="{{$option['value']}}" {{$option['selected'] ? 'selected':''  }}>{{$option['name']}}</option>
+                    @endforeach
+                </select>
+                <label class="search-filter" for="search_filter">Search</label>
+                <input type="text" name="search" id="search_filter" placeholder="Filter by name, email or key" value="{{ $search }}" />
+            </div>
+            
         </form>
     </div>
     @if(!$key_requests->isEmpty())
     <table class="key-table">
-        <thead>
+        <thead class="key-table-head">
             <tr>
-                <th></th>
+                <th> </th>
                 <th scope="col">Date</th>
                 <th scope="col">Name</th>
                 <th scope="col">E-mail</th>
@@ -270,17 +312,27 @@
                 <th scope="col">State</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody class="key-table-body">
             @foreach($key_requests as $key_request)
             <tr >
-                <td><a href="#" class="request_detail"  data-key="{{ $key_request }}" data-state="{{ $state_names[$key_request->state] }}" data-keydate="{{ date_format($key_request['created_at'],'d/m/Y H:i:s') }}">details</a></td>
+                <td><a href="#" class="request_detail"  data-key="{{ $key_request }}" data-options="{{ json_encode($options) }}" data-state="{{ $state_names[$key_request->state] }}" data-keydate="{{ date_format($key_request['created_at'],'d/m/Y H:i:s') }}">details</a></td>
                 <td>{{ date_format($key_request->created_at,"d/m/Y") }}</th>
-                <td>{{ $key_request->name }}</td>
-                <td><a href="#" class="email_row" data-id="{{ $key_request->id }}">{{ $key_request->email }}</a></td>
-                <td>{{ $key_request->description }}</td>
-                <td>{{ $key_request->questions }}</td>
+                <td><div class="table-content">{{ $key_request->name }}</div></td>
                 <td>
-                    <div id="note-{{$key_request->id}}" data-id="{{$key_request->id}}" class="note_row">{{ $key_request->notes ?? 'Add a note' }}</div>
+                    <div class="table-content">
+                        <a href="#" class="email_row" data-id="{{ $key_request->id }}">
+                            {{ $key_request->email }}
+                        </a>
+                    </div>
+                </td>
+                <td><div class="table-content">{{ $key_request->description }}</div></td>
+                <td><div class="table-content">{{ $key_request->questions }}</div></td>
+                <td>
+                    <div class="table-content">
+                        <a href="#" id="note-{{$key_request->id}}" data-id="{{$key_request->id}}" class="note_row">
+                            {{ $key_request->notes ?? 'Add a note' }}
+                        </a>
+                    </div>
                 </td>
                 <td>
                     <select name="key_state" onchange="changeItemState({{ $key_request->id }},this.value)">
@@ -300,7 +352,7 @@
     @endif
 </div>
 @else
-    <p>You are not an admin</p>
+<p>You are not an admin</p>
 @endif
 
 <div class="pagination">
@@ -370,16 +422,15 @@
 </div>
 
 <div class="dashboard_modal" id="note_modal">
-    <div class="card">
-        <div>
-            <h3></h3><a class="close_modal" href="#">X</a>
-        </div>
+    <div class="card email-card">
+        <a class="close_modal close" href="#"></a>
+        <p class="card-header email-title">Create note</p>
         <p class="field_error" id="note_error"></p>
         <p id="note_info"></p>
-        <div>
-            <textarea id="note_content" required></textarea>
+        <div class="row input-request">
+            <textarea class="input email-input comment" id="note_content" required></textarea>
         </div>
-        <input id="button_save_note" type="button" value="Save" />
+        <input class="btn btn-success agreement-btn" id="button_save_note" type="button" value="Save" />
     </div>
 </div>
 

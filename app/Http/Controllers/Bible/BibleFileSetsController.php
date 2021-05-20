@@ -288,6 +288,8 @@ class BibleFileSetsController extends APIController
         $cache_params = [$this->v, $fileset_id, $book_id];
         $limit        = (int) (checkParam('limit') ?? 5000);
         $limit        = max($limit, 5000);
+        $page         = checkParam('page') ?? 1;
+        $cache_key    = $cache_key . $page;
 
         $fileset_chapters = cacheRemember(
             $cache_key,
@@ -316,9 +318,10 @@ class BibleFileSetsController extends APIController
                     );
                 }
 
-                $bulk_access_blocked = $this->blockedByBulkAccessControl($fileset);
-                if ($bulk_access_blocked) {
-                    return $bulk_access_blocked;
+                $bulk_access_control = $this->allowedByBulkAccessControl($fileset);
+  
+                if (isset($bulk_access_control->original['error'])) {
+                    return $bulk_access_control;
                 }
 
                 $asset_id = $fileset->asset_id;
