@@ -195,6 +195,10 @@ class AccountsController extends APIController
         $user_id      = checkParam('user_id');
 
         $user     = $this->verifyProjectUserConnection();
+        if (!isset($user->accounts)) {
+            return $this->setStatusCode(404)->replyWithError('Account not found');
+        }
+    
         $accounts = $user->accounts;
         $account  = $accounts->where('provider_id', $provider_id)
             ->where('user_id', $user_id)
@@ -202,9 +206,8 @@ class AccountsController extends APIController
         if (!$account) {
             return $this->setStatusCode(404)->replyWithError('Account not found');
         }
-        $account->delete();
 
-        $user     = $this->verifyProjectUserConnection();
+        $account->delete();
         return $this->reply($user->accounts->all());
     }
 
@@ -214,7 +217,7 @@ class AccountsController extends APIController
         $user_id    = checkParam('user_id');
 
         $project_member = ProjectMember::where('project_id', $project_id)->where('user_id', $user_id)->first();
-        if (!$project_member) {
+        if (!$project_member || !isset($project_member->user)) {
             return $this->setStatusCode(404)->replyWithError(trans('api.project_users_404'));
         }
 
