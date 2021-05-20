@@ -135,19 +135,18 @@ pre code {
   padding: 0;
 }
 
-table td,
-table th {
-  text-align: left;
-  vertical-align: top;
-  width: 26vmax;
-  height: 2vmax;
+table td{
   border-bottom: solid thin #d1d1d1;
   padding: 1% 2%;
-  white-space: nowrap;
-  margin-right: 50px;
+  width: 10%;
+  max-width: 10vmax;
 }
 
 table th {
+  border-bottom: solid thin #d1d1d1;
+  padding: 1% 2%;
+  width: 10%;
+  max-width: 10vmax;
   color: #363636;
 }
 
@@ -2738,12 +2737,6 @@ a.has-text-danger:focus {
   text-align: left;
 }
 
-.content table thead td,
-.content table thead th {
-  border-width: 0 0 2px;
-  color: #363636;
-}
-
 .content table tfoot td,
 .content table tfoot th {
   border-width: 2px 0 0;
@@ -4703,6 +4696,7 @@ textarea {
   width: 100%;
   top: 0px;
   bottom: 0px;
+  left: 0px;
   overflow: hidden;
 }
 
@@ -4719,18 +4713,45 @@ textarea {
   margin: 1vmax 0 1vmax 4%;
 }
 
+.key-table-body, .key-table-head
+{
+    display: inline-block;
+    width: 100%;
+}
+
+.key-table-body
+{
+  overflow: auto;
+  height: 375px;
+  width: 100%;
+}
+
+.table-title
+{
+  width: 150px;
+  padding-right: 20px;
+}
+
+.table-content 
+{
+  width: 100%;
+  max-width: 150px;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow: ellipsis;
+  padding-right: 2%;
+}
+
 .dashboard-card {
   background: linear-gradient(180deg, #dfe6ed 4vmax, #fff 0%);
   -webkit-box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1),
     0 0 0 1px rgba(10, 10, 10, 0.1);
   box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
   color: #313131;
-  width: 92%;
+  width: 100%;
   height: 500px;
-  position: relative;
   margin: auto;
   padding: 1.2% 0 1.5% 0;
-  overflow: scroll;
 }
 
 .key-table {
