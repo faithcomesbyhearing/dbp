@@ -104,4 +104,9 @@ return [
   'bibleSyncFilePath' => env('BIBLE_SYNC_FILE_PATH', ''),
 
   'apiLatestVersion' => env('API_LATEST_VERSION', '4'),
+
+  /*
+   * Arclight forbiddenn iso list
+   */
+  'forbiddenArclightIso' => env('FORBIDDEN_ARCLIGHT_ISO', 'hun'),
 ];
