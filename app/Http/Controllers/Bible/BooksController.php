@@ -80,18 +80,18 @@ class BooksController extends APIController
      * @param $id
      * @return JsonResponse
      */
-    // public function show($id)
-    // {
-    //     $fileset_type = checkParam('fileset_type') ?? 'text_plain';
+    public function show($id)
+    {
+        $fileset_type = checkParam('fileset_type') ?? 'text_plain';
 
-    //     $cache_params = [$id, $fileset_type];
-    //     $books = cacheRemember('v4_books', $cache_params, now()->addDay(), function () use ($fileset_type, $id) {
-    //         $books = $this->getActiveBooksFromFileset($id, $fileset_type);
-    //         return fractal($books, new BooksTransformer(), $this->serializer);
-    //     });
+        $cache_params = [$id, $fileset_type];
+        $books = cacheRemember('v4_books', $cache_params, now()->addDay(), function () use ($fileset_type, $id) {
+            $books = $this->getActiveBooksFromFileset($id, $fileset_type);
+            return fractal($books, new BooksTransformer(), $this->serializer);
+        });
 
-    //     return $this->reply($books);
-    // }
+        return $this->reply($books);
+    }
 
     public function getActiveBooksFromFileset($id, $fileset_type)
     {
