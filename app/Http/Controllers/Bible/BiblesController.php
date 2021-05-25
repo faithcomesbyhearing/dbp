@@ -659,9 +659,9 @@ class BiblesController extends APIController
             $notes_controller = new NotesController();
             $request->request->add(['bible_id' => $bible_id]);
             $result->annotations = (object) [
-                'highlights' => $highlights_controller->index($request, $user->id)->original['data'],
-                'bookmarks' => $bookmarks_controller->index($request, $user->id)->original['data'],
-                'notes' => $notes_controller->index($request, $user->id)->original['data'],
+                'highlights' => optional($highlights_controller->index($request, $user->id)->original)['data'] ?? [],
+                'bookmarks' => optional($bookmarks_controller->index($request, $user->id)->original)['data'] ?? [],
+                'notes' => optional($notes_controller->index($request, $user->id)->original)['data'] ?? [],
             ];
         }
         $result->bible_id = $bible->id;
