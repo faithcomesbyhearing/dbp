@@ -188,7 +188,6 @@ class BibleTransformer extends BaseTransformer
                             'id' => $item['id'],
                             'type' => $item->set_type_code,
                             'size' => $item->set_size_code,
-                            'bitrate' => optional($item->meta->first())->description
                         ]];
                     });
                 }
