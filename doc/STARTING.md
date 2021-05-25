@@ -277,7 +277,9 @@ Here's what your response might look like:
                         "id": "ENGESHP2DV",
                         "type": "video_stream",
                         "size": "NTP",
-                        "bitrate": null
+                        "bitrate": "64kbps",
+                        "codec" : "mp3",
+                        "container" : "mp3"
                     }
                 ]
             }
