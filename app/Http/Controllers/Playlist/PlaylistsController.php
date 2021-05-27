@@ -956,18 +956,31 @@ class PlaylistsController extends APIController
     public function getFileset($filesets, $type, $size)
     {
         $available_filesets = [];
-        
-        $complete_fileset = $filesets->where('set_type_code', $type)->where('set_size_code', 'C')->first();
+
+        // This code avoids using filesets that have audio, but are not usable for translations i.e opus
+        $valid_filesets = $filesets->filter(function ($fileset) {
+            $valid_item = isset($fileset->set_type_code);
+            $codec_meta = $this->getCodecMetadata($fileset);
+            $is_mp3 = isset($codec_meta['description']) && $codec_meta['description'] === 'mp3';
+            $is_audio_stream =
+              str_contains($fileset->set_type_code, 'audio') &&
+              str_contains($fileset->set_type_code, 'stream');
+            $is_audio_fileset = $is_mp3 || $is_audio_stream;
+            return ($valid_item && $is_audio_fileset);
+        });
+        $valid_filesets = collect($valid_filesets);
+
+        $complete_fileset = $valid_filesets->where('set_type_code', $type)->where('set_size_code', 'C')->first();
         if ($complete_fileset) {
             $available_filesets[] = $complete_fileset;
         }
 
-        $size_filesets = $filesets->where('set_type_code', $type)->where('set_size_code', $size)->first();
+        $size_filesets = $valid_filesets->where('set_type_code', $type)->where('set_size_code', $size)->first();
         if ($size_filesets) {
             $available_filesets[] = $size_filesets;
         }
 
-        $size__partial_filesets = $filesets->filter(function ($item) use ($type, $size) {
+        $size__partial_filesets = $valid_filesets->filter(function ($item) use ($type, $size) {
             $valid_item = isset($item->set_type_code) && isset($item->set_size_code);
             return (
                 $valid_item &&
@@ -980,7 +993,7 @@ class PlaylistsController extends APIController
             $available_filesets[] = $size__partial_filesets;
         }
 
-        $partial_fileset = $filesets->where('set_type_code', $type)->where('set_size_code', 'P')->first();
+        $partial_fileset = $valid_filesets->where('set_type_code', $type)->where('set_size_code', 'P')->first();
         if ($partial_fileset) {
             $available_filesets[] = $partial_fileset;
         }
@@ -988,13 +1001,25 @@ class PlaylistsController extends APIController
         if (!empty($available_filesets)) {
             $available_filesets =
                 collect($available_filesets)->sortBy(function ($item) {
-                    return  strpos($item->id, '16');
+                    return strpos($item->id, '16');
                 });
-
+            
             return $available_filesets->first();
         }
 
         return false;
+    }
+
+    private function getCodecMetadata($fileset)
+    {
+        if (isset($fileset->meta)) {
+            $codec_meta = $fileset->meta->filter(function ($metadata) {
+                return $metadata['name'] === 'codec';
+            })->first();
+
+            return $codec_meta;
+        }
+        return null;
     }
 
     public function itemHls(Response $response, $playlist_item_id, $book_id = null, $chapter = null, $verse_start = null, $verse_end = null)
