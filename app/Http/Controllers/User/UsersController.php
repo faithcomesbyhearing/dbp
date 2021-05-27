@@ -595,13 +595,16 @@ class UsersController extends APIController
 
         if ($request->profile) {
             $user->profile->fill($request->profile);
-            $valid_country = $this->validUserCountry($user->profile);
-            if (!$valid_country) {
-                return $this->setStatusCode(400)->replyWithError(
-                    trans('api.countries_errors_404')
-                );
+            if (isset($user->profile['country_id'])) {
+                $valid_country = $this->validUserCountry($user->profile);
+                if (!$valid_country) {
+                    return $this->setStatusCode(400)->replyWithError(
+                        trans('api.countries_errors_404')
+                    );
+                }
+                $user->profile['country_id'] = $valid_country;
             }
-            $user->profile['country_id'] = $valid_country;
+            
             $user->profile->save();
         }
 
