@@ -184,11 +184,7 @@ class BibleTransformer extends BaseTransformer
 
                 if ($bible->relationLoaded('filesets')) {
                     $output['filesets'] = $bible->filesets->mapToGroups(function ($item, $key) {
-                        return [$item['asset_id'] => [
-                            'id' => $item['id'],
-                            'type' => $item->set_type_code,
-                            'size' => $item->set_size_code,
-                        ]];
+                        return [$item['asset_id'] => $this->filesetWithMeta($item)];
                     });
                 }
 
@@ -253,8 +249,8 @@ class BibleTransformer extends BaseTransformer
                         return $book;
                     })->values(),
                     'links'        => $bible->links,
-                    'filesets'     => $bible->filesets->mapToGroups(function ($item, $key) use ($fonts) {
-                        return [$item['asset_id'] => ['id' => $item['id'], 'type' => $item->set_type_code, 'size' => $item->set_size_code]];
+                    'filesets'     => $bible->filesets->mapToGroups(function ($item, $key) {
+                        return [$item['asset_id'] => $this->filesetWithMeta($item)];
                     }),
                     'fonts' => $bible->filesets->reduce(function ($carry, $item) {
                         foreach ($item->fonts as $font) {
@@ -271,5 +267,21 @@ class BibleTransformer extends BaseTransformer
             default:
                 return [];
         }
+    }
+
+    private function filesetWithMeta($fileset) {
+        $fileset_data = [
+            'id' => $fileset['id'],
+            'type' => $fileset->set_type_code,
+            'size' => $fileset->set_size_code,
+        ];
+        if (isset($fileset->meta)) {
+            foreach ($fileset->meta as $metadata) {
+                if (isset($metadata['name'], $metadata['description'])) {
+                    $fileset_data[$metadata['name']] = $metadata['description'];
+                }
+            }
+        }
+        return $fileset_data;
     }
 }

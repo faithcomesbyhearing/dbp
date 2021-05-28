@@ -964,6 +964,7 @@ class PlansController extends APIController
         if (isset($playlist->items)) {
             foreach ($playlist->items as $item) {
                 if (isset($item->fileset, $item->fileset->set_type_code)) {
+                    $item->fileset = formatFilesetMeta($item->fileset);
                     $ordered_types = $audio_fileset_types->filter(function ($type) use ($item) {
                       return $type !== $item->fileset->set_type_code;
                     })->prepend($item->fileset->set_type_code);

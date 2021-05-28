@@ -804,6 +804,9 @@ class BiblesController extends APIController
     public function getFileset($filesets, $type, $testament)
     {
         $available_filesets = [];
+        foreach ($filesets as $fileset) {
+            $fileset = formatFilesetMeta($fileset);
+        }
 
         $completeFileset = $filesets->filter(function ($fileset) use ($type) {
             return (
