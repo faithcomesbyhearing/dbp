@@ -254,7 +254,10 @@ class Bible extends Model
 
     public function filesets()
     {
-        return $this->hasManyThrough(BibleFileset::class, BibleFilesetConnection::class, 'bible_id', 'hash_id', 'id', 'hash_id');
+        return $this->hasManyThrough(BibleFileset::class, BibleFilesetConnection::class, 'bible_id', 'hash_id', 'id', 'hash_id')
+        ->with(['meta' => function ($subQuery) {
+            $subQuery->where('admin_only', 0);
+        }]);
     }
 
     public function files()
@@ -328,7 +331,9 @@ class Bible extends Model
             if ($type_filters['size_exclude']) {
                 $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
             }
-        }]);
+        }])->with(['filesets.meta' => function ($subQuery) {
+          $subQuery->where('admin_only', 0);
+      }]);
     }
 
     public function scopeFilterByLanguage($query, $language_codes)
