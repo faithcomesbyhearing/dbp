@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
 </head>
-<body>
-    <p>{{ $content }}</p>
-</body>
+    <body>
+        {!! $content !!}
+    </body>
 </html>
