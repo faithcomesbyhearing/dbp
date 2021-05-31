@@ -72,7 +72,19 @@
           $("#email_error").css('display', 'none');
           $("#email_error").html('');
           $("#to_email").val(email);
-          $("#subject").val("Your API Key request for Digital Bible Platform");
+          $("#subject").val("DBP4 API Key approved");
+          $("#email_message").html('');
+          $("#email_message").html(
+            "<p>Hello,</p></br>" + 
+            "<p>Your recent request for a Digital Bible Platform version 4 (DBP4) API Key has been approved.</p>"+
+            "<p>Your API Key is listed below. Please do not share it with anyone.</p>" + 
+            "<p>With your access to DBP4 (also known as Bible Brain),  you get access to more content (for instance Gospel Films, and more verse timings)," + 
+            "and in more formats (for instance smaller Opus, and HLS) than in previous versions.<p></br>" +
+            "<p>If you have questions, please email support@digitalbibleplatform.com </p>" +
+            "To learn more, go to https://biblebrain.com</p></br>" +
+            `<p>Your API Key: ${keys[id].temporary_key}</p>`+
+            "<p>Please do not share your API key.</p>");
+        
           $("#email_modal").data('id', id);
           $("#email_modal").css('display', 'flex');
         };
@@ -167,7 +179,8 @@
             var id = $("#email_modal").data('id');
             var email = $("#to_email").val();
             var subject = $("#subject").val();
-            var message = $("#email_message").val();
+            var message = $("#email_message").html();
+
             $("#email_error").html('');
             if (!id || !email || !subject || !message) {
                 $("#email_error").html('Please complete all the fields');
@@ -414,9 +427,7 @@
             <label class="email-label" for="subject">Subject</label>
             <input class="input email-input" id="subject" name="subject" type="text" value="" required />
         </div>
-        <div class="row input-request">
-            <textarea class="input email-input comment" id="email_message" name="email_message" required>Hi! Your API Key...</textarea>
-        </div>
+        <div class="input email-input comment editable" contenteditable="true" id="email_message" name="email_message" required></div>
         <input class="btn btn-success agreement-btn" id="button_send_email" type="button" value="Send" />
     </div>
 </div>
