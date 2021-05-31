@@ -888,6 +888,7 @@ class BiblesController extends APIController
                 'set_type_code' => $fileset->set_type_code,
                 'set_size_code' => $fileset->set_size_code,
             ])->first();
+            $fileset = formatFilesetMeta($fileset);
 
             // Get fileset
             $fileset_result = $fileset_controller->show($fileset->id, $fileset->set_type_code, 'v4_chapter_filesets_show')->original['data'] ?? [];
@@ -913,6 +914,7 @@ class BiblesController extends APIController
             $audioTimestamps = $audio_controller->timestampsByReference($fileset->id, $book->id,  $chapter)->original['data'] ?? [];
             $results->timestamps->$name = $audioTimestamps;
         }
+
         return $results;
     }
 
