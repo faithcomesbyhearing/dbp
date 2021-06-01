@@ -87,7 +87,6 @@ class BiblesController extends APIController
         $media_exclude      = checkParam('media_exclude');
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
-        $bitrate            = checkParam('bitrate'); #removed from API for initial release
         $limit              = checkParam('limit');
         $page               = checkParam('page');
 
@@ -101,15 +100,14 @@ class BiblesController extends APIController
 
         $access_control = $this->accessControl($this->key) ;
         $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
-        $cache_params = [$language_code, $organization, $country, $access_control->string, $media, $media_exclude, $size, $size_exclude, $bitrate, $limit, $page];
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $bitrate, $limit, $page) {
+        $cache_params = [$language_code, $organization, $country, $access_control->string, $media, $media_exclude, $size, $size_exclude, $limit, $page];
+        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $limit, $page) {
             $bibles = Bible::withRequiredFilesets([
                     'access_control' => $access_control,
                     'media'          => $media,
                     'media_exclude'  => $media_exclude,
                     'size'           => $size,
-                    'size_exclude'   => $size_exclude,
-                    'bitrate'        => $bitrate
+                    'size_exclude'   => $size_exclude
             ])
                 ->leftJoin('bible_translations as ver_title', function ($join) {
                     $join->on('ver_title.bible_id', '=', 'bibles.id')->where('ver_title.vernacular', 1);
@@ -806,6 +804,9 @@ class BiblesController extends APIController
     public function getFileset($filesets, $type, $testament)
     {
         $available_filesets = [];
+        foreach ($filesets as $fileset) {
+            $fileset = formatFilesetMeta($fileset);
+        }
 
         $completeFileset = $filesets->filter(function ($fileset) use ($type) {
             return (
@@ -887,6 +888,7 @@ class BiblesController extends APIController
                 'set_type_code' => $fileset->set_type_code,
                 'set_size_code' => $fileset->set_size_code,
             ])->first();
+            $fileset = formatFilesetMeta($fileset);
 
             // Get fileset
             $fileset_result = $fileset_controller->show($fileset->id, $fileset->set_type_code, 'v4_chapter_filesets_show')->original['data'] ?? [];
@@ -912,6 +914,7 @@ class BiblesController extends APIController
             $audioTimestamps = $audio_controller->timestampsByReference($fileset->id, $book->id,  $chapter)->original['data'] ?? [];
             $results->timestamps->$name = $audioTimestamps;
         }
+
         return $results;
     }
 
