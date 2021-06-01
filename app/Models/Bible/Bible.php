@@ -254,7 +254,10 @@ class Bible extends Model
 
     public function filesets()
     {
-        return $this->hasManyThrough(BibleFileset::class, BibleFilesetConnection::class, 'bible_id', 'hash_id', 'id', 'hash_id');
+        return $this->hasManyThrough(BibleFileset::class, BibleFilesetConnection::class, 'bible_id', 'hash_id', 'id', 'hash_id')
+        ->with(['meta' => function ($subQuery) {
+            $subQuery->where('admin_only', 0);
+        }]);
     }
 
     public function files()
@@ -313,11 +316,6 @@ class Bible extends Model
             if ($type_filters['size_exclude']) {
                 $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
             }
-            if ($type_filters['bitrate']) {
-                $q->whereHas('meta', function ($subQuery) use ($type_filters) {
-                    $subQuery->where('name', 'bitrate')->where('description', $type_filters['bitrate']);
-                });
-            }
         })->with(['filesets' => function ($q) use ($type_filters) {
             $q->whereIn('bible_filesets.hash_id', $type_filters['access_control']->hashes)
               ->select(['id','set_type_code','set_size_code','asset_id']);
@@ -333,11 +331,9 @@ class Bible extends Model
             if ($type_filters['size_exclude']) {
                 $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
             }
-        }])->when($type_filters['bitrate'], function ($q) use ($type_filters) {
-            $q->with(['filesets.meta' => function ($subQuery) use ($type_filters) {
-                $subQuery->where('name', 'bitrate');
-            }]);
-        });
+        }])->with(['filesets.meta' => function ($subQuery) {
+          $subQuery->where('admin_only', 0);
+      }]);
     }
 
     public function scopeFilterByLanguage($query, $language_codes)
