@@ -102,7 +102,7 @@ class BiblesController extends APIController
         $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
         $cache_key = 'bibles' . $page;
         $cache_params = [$language_code, $organization, $country, $access_control->string, $media, $media_exclude, $size, $size_exclude, $limit, $page];
-        $bibles = cacheRemember('bibles' . $page, $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $limit, $page) {
+        $bibles = cacheRemember($cache_key, $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $limit, $page) {
             $bibles = Bible::withRequiredFilesets([
                     'access_control' => $access_control,
                     'media'          => $media,
