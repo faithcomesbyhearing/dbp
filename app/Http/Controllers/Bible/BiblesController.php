@@ -87,8 +87,8 @@ class BiblesController extends APIController
         $media_exclude      = checkParam('media_exclude');
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
-        $limit              = checkParam('limit');
-        $page               = checkParam('page');
+        $limit              = checkParam('limit') ?? 50;
+        $page               = checkParam('page') ?? 1;
 
         if ($media) {
             $media_types = BibleFilesetType::select('set_type_code')->get();
@@ -100,8 +100,9 @@ class BiblesController extends APIController
 
         $access_control = $this->accessControl($this->key) ;
         $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
+        $cache_key = 'bibles' . $page;
         $cache_params = [$language_code, $organization, $country, $access_control->string, $media, $media_exclude, $size, $size_exclude, $limit, $page];
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $limit, $page) {
+        $bibles = cacheRemember($cache_key, $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $limit, $page) {
             $bibles = Bible::withRequiredFilesets([
                     'access_control' => $access_control,
                     'media'          => $media,
@@ -161,13 +162,14 @@ class BiblesController extends APIController
                 )
                 ->orderBy('bibles.priority', 'desc')->groupBy('bibles.id');
 
-            if ($page) {
-                $bibles  = $bibles->paginate($limit);
-                return $this->reply(fractal($bibles->getCollection(), BibleTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($bibles)));
-            }
 
-            $bibles = $bibles->limit($limit)->get();
-            return fractal($bibles, new BibleTransformer(), new DataArraySerializer());
+            $bibles = $bibles->paginate($limit);
+            $bibles_return = fractal(
+                $bibles->getCollection(),
+                BibleTransformer::class,
+                new DataArraySerializer()
+            );
+            return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
         });
 
         return $this->reply($bibles);
