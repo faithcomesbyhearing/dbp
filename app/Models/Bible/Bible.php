@@ -301,9 +301,16 @@ class Bible extends Model
     }
 
     public function scopeWithRequiredFilesets($query, $type_filters)
-    {
-        return $query->whereHas('filesets', function ($q) use ($type_filters) {
-            $q->whereIn('bible_filesets.hash_id', $type_filters['access_control']->hashes);
+    {   
+        $permitted_filesets = $type_filters['access_control']->hashes;
+
+        if ($type_filters['tag_exclude']) {
+            $opus_filesets = BibleFilesetTag::select('hash_id')->where('description', $type_filters['tag_exclude'])->pluck('hash_id')->toArray();
+            $permitted_filesets = array_diff($type_filters['access_control']->hashes, $opus_filesets);
+        }
+        
+        return $query->whereHas('filesets', function ($q) use ($type_filters, $permitted_filesets) {
+            $q->whereIn('bible_filesets.hash_id', $permitted_filesets);
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
@@ -316,9 +323,11 @@ class Bible extends Model
             if ($type_filters['size_exclude']) {
                 $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
             }
-        })->with(['filesets' => function ($q) use ($type_filters) {
-            $q->whereIn('bible_filesets.hash_id', $type_filters['access_control']->hashes)
-              ->select(['id','set_type_code','set_size_code','asset_id']);
+        })->with(['filesets' => function ($q) use ($type_filters, $permitted_filesets) {
+            $q->with(['meta' => function ($subQuery) {
+              $subQuery->where('admin_only', 0);
+            }]);
+            $q->whereIn('bible_filesets.hash_id', $permitted_filesets);
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
@@ -331,9 +340,7 @@ class Bible extends Model
             if ($type_filters['size_exclude']) {
                 $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
             }
-        }])->with(['filesets.meta' => function ($subQuery) {
-          $subQuery->where('admin_only', 0);
-      }]);
+        }]);
     }
 
     public function scopeFilterByLanguage($query, $language_codes)
