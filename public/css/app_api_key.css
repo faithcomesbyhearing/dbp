@@ -4398,6 +4398,13 @@ a.has-text-danger:focus {
   min-height: 80vh;
 }
 
+.note-card {
+  background-color: #f7f9fa;
+  padding: 1% 4% 0 4%;
+  width: 30%;
+  min-height: 32vh;
+}
+
 .detail-card {
   background-color: #f7f9fa;
   padding: 1% 4% 0 4%;
