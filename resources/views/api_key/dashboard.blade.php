@@ -83,7 +83,12 @@
             "<p>If you have questions, please email support@digitalbibleplatform.com </p>" +
             "To learn more, go to https://biblebrain.com</p></br>" +
             `<p>Your API Key: ${keys[id].temporary_key}</p>`+
-            "<p>Please do not share your API key.</p>");
+            "<p>Please do not share your API key.</p> <br>--</br>" + 
+            "<p>Thank you,</p><br>" +
+            '<a href="https://www.faithcomesbyhearing.com/"> Digital Bible Platform</a> Team' +
+            ' | <a href="https://www.faithcomesbyhearing.com/">Faith Comes By Hearing </a>' +
+            "<p><strong>God's Word never changes...the way we interact with it does.</strong><p>"
+          );
         
           $("#email_modal").data('id', id);
           $("#email_modal").css('display', 'flex');
