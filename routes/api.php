@@ -59,7 +59,9 @@ Route::name('v4_bible.one')->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
 ); // see note in Postman. the content is suspect
-Route::name('v4_bible.all')->get('bibles', 'Bible\BiblesController@index'); // used
+Route::name('v4_bible.all')
+    ->middleware('BibleIsBackwardCompatibility')
+    ->get('bibles', 'Bible\BiblesController@index'); // used
 Route::name('v4_bible.copyright')->get(
     'bibles/{bible_id}/copyright',
     'Bible\BiblesController@copyright'
