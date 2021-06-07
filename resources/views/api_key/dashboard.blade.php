@@ -66,8 +66,7 @@
           })
         ); ?>;
 
-        $.fn.displayEmail = function (e, keyId) {
-          var id = $(this).data('id') || keyId;
+        $.fn.displayEmail = function (e, id) {
           var email = keys[id].email;
           $("#email_error").css('display', 'none');
           $("#email_error").html('');
@@ -94,12 +93,9 @@
           $("#email_modal").css('display', 'flex');
         };
 
-        $.fn.displayNote = function (e, keyId) {
+        $.fn.displayNote = function (e, id, info) {
           e.preventDefault();
-          var id = $(this).data('id') || keyId;
           var note = keys[parseInt(id)].notes;
-          var info = $(this).data('info');
-
           $("#note_error, #note_info").css('display', 'none');
           $("#note_error, #note_info").html('');
           $("#button_save_note").data('id', id);
@@ -125,11 +121,14 @@
         };
 
         $(".note_row").off().on('click', function(e) {
-          $(".note_row").displayNote(e);
+          var keyId = $(this).data('id');
+          var info = $(this).data('info');
+          $(".note_row").displayNote(e, keyId, info);
         });
 
         $(".email_row").off().on('click', function(e) {
-          $(".note_row").displayEmail(e);
+          var keyId = keyId || $(this).data('id');
+          $(".note_row").displayEmail(e, keyId);
         });
 
         $(".request_detail").off().on('click', function(e) {
@@ -438,7 +437,7 @@
 </div>
 
 <div class="dashboard_modal" id="note_modal">
-    <div class="card email-card">
+    <div class="card note-card">
         <a class="close_modal close" href="#"></a>
         <p class="card-header email-title">Create note</p>
         <p class="field_error" id="note_error"></p>
