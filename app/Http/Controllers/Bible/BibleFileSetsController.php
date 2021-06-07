@@ -164,11 +164,12 @@ class BibleFileSetsController extends APIController
         $chapter_url_param = null,
         $cache_key = 'bible_filesets_show'
     ) {
-        $fileset_id    = checkParam('dam_id|fileset_id', true, $fileset_url_param);
-        $book_id     = checkParam('book_id', true, $book_url_param);
-        $chapter_id    = checkParam('chapter_id|chapter', true, $chapter_url_param);
-        $verse_start = checkParam('verse_start') ?? 1;
-        $verse_end   = checkParam('verse_end');
+        $fileset_id   = checkParam('dam_id|fileset_id', true, $fileset_url_param);
+        $book_id      = checkParam('book_id', true, $book_url_param);
+        $chapter_id   = checkParam('chapter_id|chapter', true, $chapter_url_param);
+        $verse_start  = checkParam('verse_start') ?? 1;
+        $verse_end    = checkParam('verse_end');
+        $type         = checkParam('type') ?? '';
 
         $cache_params = [
             $this->v,
@@ -178,22 +179,31 @@ class BibleFileSetsController extends APIController
             $verse_start,
             $verse_end
         ];
-
+        // fixes data issue where text filesets use the same filesetID
+        if (in_array($type, ['text_plain', 'text_format'])) {
+            $cache_params[] = $type;
+        }
+        
         $fileset_chapters = cacheRemember(
             $cache_key,
             $cache_params,
             now()->addHours(12),
-            function () use ($fileset_id, $book_id, $chapter_id, $verse_start, $verse_end) {
+            function () use ($fileset_id, $book_id, $chapter_id, $verse_start, $verse_end, $type) {
                 $book = Book::where('id', $book_id)
                     ->orWhere('id_osis', $book_id)
                     ->orWhere('id_usfx', $book_id)
                     ->first();
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 $fileset_type = $fileset_from_id['set_type_code'];
-                // Default to text plain until text_format type has a different filesetId
-                $fileset_type = ($fileset_type === 'text_format')
-                    ? 'text_plain'
-                    : $fileset_type;
+                // fixes data issue where text filesets use the same filesetID
+                $is_text_fileset = in_array($fileset_type, ['text_plain', 'text_format']);
+                if ($is_text_fileset && $type === '') {
+                    return $this->setStatusCode(404)->replyWithError(
+                        trans('api.bible_fileset_errors_404')
+                    );
+                } else if ($is_text_fileset) {
+                    $fileset_type = $type;
+                }
                 $fileset = BibleFileset::with('bible')
                     ->uniqueFileset($fileset_id, $fileset_type)
                     ->first();
@@ -285,17 +295,23 @@ class BibleFileSetsController extends APIController
     ) {
         $fileset_id   = checkParam('dam_id|fileset_id', true, $fileset_url_param);
         $book_id      = checkParam('book_id', false, $book_url_param);
+        $type         = checkParam('type') ?? '';
         $cache_params = [$this->v, $fileset_id, $book_id];
         $limit        = (int) (checkParam('limit') ?? 5000);
         $limit        = max($limit, 5000);
         $page         = checkParam('page') ?? 1;
         $cache_key    = $cache_key . $page;
 
+        // fixes data issue where text filesets use the same filesetID
+        if (in_array($type, ['text_plain', 'text_format'])) {
+            $cache_params[] = $type;
+        }
+
         $fileset_chapters = cacheRemember(
             $cache_key,
             $cache_params,
             now()->addHours(12),
-            function () use ($fileset_id, $book_id, $limit) {
+            function () use ($fileset_id, $book_id, $limit, $type) {
                 $book = $book_id
                     ? Book::where('id', $book_id)
                         ->orWhere('id_osis', $book_id)
@@ -304,10 +320,16 @@ class BibleFileSetsController extends APIController
                     : null;
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 $fileset_type = $fileset_from_id['set_type_code'];
-                // Default to text plain until text_format type has a different filesetId
-                $fileset_type = ($fileset_type === 'text_format')
-                    ? 'text_plain'
-                    : $fileset_type;
+                // fixes data issue where text filesets use the same filesetID
+                $is_text_fileset = in_array($fileset_type, ['text_plain', 'text_format']);
+                if ($is_text_fileset && $type === '') {
+                    return $this->setStatusCode(404)->replyWithError(
+                        trans('api.bible_fileset_errors_404')
+                    );
+                } else if ($is_text_fileset) {
+                    $fileset_type = $type;
+                }
+
                 $fileset = BibleFileset::with('bible')
                     ->uniqueFileset($fileset_id, $fileset_type)
                     ->first();
