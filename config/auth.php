@@ -78,6 +78,10 @@ return [
 
     ],
 
+    'compat_users' => [
+        'api_keys' => env('BIBLEIS_GIDEON_KEYS')
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Resetting Passwords
