@@ -4394,6 +4394,13 @@ a.has-text-danger:focus {
 .email-card {
   background-color: #f7f9fa;
   padding: 1% 4% 0 4%;
+  width: 40%;
+  min-height: 80vh;
+}
+
+.note-card {
+  background-color: #f7f9fa;
+  padding: 1% 4% 0 4%;
   width: 30%;
   min-height: 32vh;
 }
@@ -4821,5 +4828,6 @@ textarea {
 .input.email-input.comment {
   margin: auto;
   width: 100%;
-  height: 8vmax;
+  height: 20vmax;
+  overflow: scroll;
 }
