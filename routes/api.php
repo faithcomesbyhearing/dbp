@@ -59,7 +59,9 @@ Route::name('v4_bible.one')->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
 ); // see note in Postman. the content is suspect
-Route::name('v4_bible.all')->get('bibles', 'Bible\BiblesController@index'); // used
+Route::name('v4_bible.all')
+    ->middleware('BibleIsBackwardCompatibility')
+    ->get('bibles', 'Bible\BiblesController@index'); // used
 Route::name('v4_bible.copyright')->get(
     'bibles/{bible_id}/copyright',
     'Bible\BiblesController@copyright'
@@ -93,18 +95,13 @@ Route::name('v4_internal_filesets.show')->get(
     'Bible\BibleFileSetsController@show'
 );
 
-// not used by bible.is
-// is there anything in this that cannot be provided by bibles/books?
-// try to remove it
-// Route::name('v4_filesets.books')->get(
-//     'bibles/filesets/{fileset_id}/books',
-//     'Bible\BooksController@show'
-// );
-
+// not used by bible.is after 3.0.x
+// needs to remain in the API for backward compatibility until 3.0.x and older are gone
 Route::name('v4_filesets.books')->get(
     'bibles/filesets/{fileset_id}/books',
     'Bible\BooksController@show'
 );
+
 // the order of the routes matters, the most general have to go first
 Route::name('v4_filesets.bulk')->get(
   'bibles/filesets/bulk/{fileset_id}/{book?}',

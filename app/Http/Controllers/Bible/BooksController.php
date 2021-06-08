@@ -80,24 +80,27 @@ class BooksController extends APIController
      * @param $id
      * @return JsonResponse
      */
-    // public function show($id)
-    // {
-    //     $fileset_type = checkParam('fileset_type') ?? 'text_plain';
+    public function show($id)
+    {
+        $fileset_type = checkParam('fileset_type') ?? 'text_plain';
 
-    //     $cache_params = [$id, $fileset_type];
-    //     $books = cacheRemember('v4_books', $cache_params, now()->addDay(), function () use ($fileset_type, $id) {
-    //         $books = $this->getActiveBooksFromFileset($id, $fileset_type);
-    //         return fractal($books, new BooksTransformer(), $this->serializer);
-    //     });
+        $cache_params = [$id, $fileset_type];
+        $books = cacheRemember('v4_books', $cache_params, now()->addDay(), function () use ($fileset_type, $id) {
+            $books = $this->getActiveBooksFromFileset($id, $fileset_type);
+            if (isset($books->original, $books->original['error'])) {
+                return $this->setStatusCode(404)->replyWithError('Fileset Not Found');
+            }
+            return fractal($books, new BooksTransformer(), $this->serializer);
+        });
 
-    //     return $this->reply($books);
-    // }
+        return $this->reply($books);
+    }
 
     public function getActiveBooksFromFileset($id, $fileset_type)
     {
         $fileset = BibleFileset::with('bible')->where('id', $id)->where('set_type_code', $fileset_type)->first();
         if (!$fileset) {
-            return $this->replyWithError('Fileset Not Found'); // BWF: shouldn't reply like this, as it masks error later on
+            return $this->setStatusCode(404)->replyWithError('Fileset Not Found'); // BWF: shouldn't reply like this, as it masks error later on
         }
         $is_plain_text = BibleVerse::where('hash_id', $fileset->hash_id)->exists();
 

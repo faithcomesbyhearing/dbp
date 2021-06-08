@@ -281,3 +281,17 @@ if (!function_exists('arrayToCommaSeparatedValues')) {
         return  "'" . implode("','", $array) . "'";
     }
 }
+
+if (!function_exists('formatFilesetMeta')) {
+    function formatFilesetMeta($fileset) {
+        if (isset($fileset->meta)) {
+            foreach ($fileset->meta as $metadata) {
+                if (isset($metadata['name'], $metadata['description'])) {
+                    $fileset[$metadata['name']] = $metadata['description'];
+                }
+            }
+            unset($fileset->meta);
+        }
+        return $fileset;
+    }
+}

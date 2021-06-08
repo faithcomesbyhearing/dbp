@@ -66,23 +66,36 @@
           })
         ); ?>;
 
-        $.fn.displayEmail = function (e, keyId) {
-          var id = $(this).data('id') || keyId;
+        $.fn.displayEmail = function (e, id) {
           var email = keys[id].email;
           $("#email_error").css('display', 'none');
           $("#email_error").html('');
           $("#to_email").val(email);
-          $("#subject").val("Your API Key request for Digital Bible Platform");
+          $("#subject").val("DBP4 API Key approved");
+          $("#email_message").html('');
+          $("#email_message").html(
+            "<p>Hello,</p></br>" + 
+            "<p>Your recent request for a Digital Bible Platform version 4 (DBP4) API Key has been approved.</p>"+
+            "<p>Your API Key is listed below. Please do not share it with anyone.</p>" + 
+            "<p>With your access to DBP4 (also known as Bible Brain),  you get access to more content (for instance Gospel Films, and more verse timings)," + 
+            "and in more formats (for instance smaller Opus, and HLS) than in previous versions.<p></br>" +
+            "<p>If you have questions, please email support@digitalbibleplatform.com </p>" +
+            "To learn more, go to https://biblebrain.com</p></br>" +
+            `<p>Your API Key: ${keys[id].temporary_key}</p>`+
+            "<p>Please do not share your API key.</p> <br>--</br>" + 
+            "<p>Thank you,</p><br>" +
+            '<a href="https://www.faithcomesbyhearing.com/bible-brain"> Digital Bible Platform</a> Team' +
+            ' | <a href="https://www.faithcomesbyhearing.com/">Faith Comes By Hearing </a>' +
+            "<p><strong>God's Word never changes...the way we interact with it does.</strong><p>"
+          );
+        
           $("#email_modal").data('id', id);
           $("#email_modal").css('display', 'flex');
         };
 
-        $.fn.displayNote = function (e, keyId) {
+        $.fn.displayNote = function (e, id, info) {
           e.preventDefault();
-          var id = $(this).data('id') || keyId;
           var note = keys[parseInt(id)].notes;
-          var info = $(this).data('info');
-
           $("#note_error, #note_info").css('display', 'none');
           $("#note_error, #note_info").html('');
           $("#button_save_note").data('id', id);
@@ -108,11 +121,14 @@
         };
 
         $(".note_row").off().on('click', function(e) {
-          $(".note_row").displayNote(e);
+          var keyId = $(this).data('id');
+          var info = $(this).data('info');
+          $(".note_row").displayNote(e, keyId, info);
         });
 
         $(".email_row").off().on('click', function(e) {
-          $(".note_row").displayEmail(e);
+          var keyId = keyId || $(this).data('id');
+          $(".note_row").displayEmail(e, keyId);
         });
 
         $(".request_detail").off().on('click', function(e) {
@@ -167,7 +183,8 @@
             var id = $("#email_modal").data('id');
             var email = $("#to_email").val();
             var subject = $("#subject").val();
-            var message = $("#email_message").val();
+            var message = $("#email_message").html();
+
             $("#email_error").html('');
             if (!id || !email || !subject || !message) {
                 $("#email_error").html('Please complete all the fields');
@@ -414,15 +431,13 @@
             <label class="email-label" for="subject">Subject</label>
             <input class="input email-input" id="subject" name="subject" type="text" value="" required />
         </div>
-        <div class="row input-request">
-            <textarea class="input email-input comment" id="email_message" name="email_message" required>Hi! Your API Key...</textarea>
-        </div>
+        <div class="input email-input comment editable" contenteditable="true" id="email_message" name="email_message" required></div>
         <input class="btn btn-success agreement-btn" id="button_send_email" type="button" value="Send" />
     </div>
 </div>
 
 <div class="dashboard_modal" id="note_modal">
-    <div class="card email-card">
+    <div class="card note-card">
         <a class="close_modal close" href="#"></a>
         <p class="card-header email-title">Create note</p>
         <p class="field_error" id="note_error"></p>
