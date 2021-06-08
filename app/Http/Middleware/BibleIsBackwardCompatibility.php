@@ -18,9 +18,10 @@ class BibleIsBackwardCompatibility
         $compat_api_keys = config('auth.compat_users.api_keys');
         $compat_api_keys = explode(',', $compat_api_keys);
         $route_exists = isset($request->route()->action, $request->route()->action['as']);
+        $key = checkParam('key');
         
         if ($route_exists && $request->route()->action['as'] === 'v4_bible.all') {
-            if (in_array($request->key, $compat_api_keys)) {
+            if (in_array($key, $compat_api_keys)) {
                 $request['limit'] = PHP_INT_MAX;
             }
         }
