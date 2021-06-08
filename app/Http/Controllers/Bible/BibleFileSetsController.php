@@ -177,7 +177,8 @@ class BibleFileSetsController extends APIController
             $book_id,
             $chapter_id,
             $verse_start,
-            $verse_end
+            $verse_end,
+            $type
         ];
         
         $fileset_chapters = cacheRemember(
@@ -286,7 +287,7 @@ class BibleFileSetsController extends APIController
         $fileset_id   = checkParam('dam_id|fileset_id', true, $fileset_url_param);
         $book_id      = checkParam('book_id', false, $book_url_param);
         $type         = checkParam('type') ?? '';
-        $cache_params = [$this->v, $fileset_id, $book_id];
+        $cache_params = [$this->v, $fileset_id, $book_id, $type];
         $limit        = (int) (checkParam('limit') ?? 5000);
         $limit        = max($limit, 5000);
         $page         = checkParam('page') ?? 1;
