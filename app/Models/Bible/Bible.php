@@ -254,7 +254,10 @@ class Bible extends Model
 
     public function filesets()
     {
-        return $this->hasManyThrough(BibleFileset::class, BibleFilesetConnection::class, 'bible_id', 'hash_id', 'id', 'hash_id');
+        return $this->hasManyThrough(BibleFileset::class, BibleFilesetConnection::class, 'bible_id', 'hash_id', 'id', 'hash_id')
+        ->with(['meta' => function ($subQuery) {
+            $subQuery->where('admin_only', 0);
+        }]);
     }
 
     public function files()
@@ -298,9 +301,16 @@ class Bible extends Model
     }
 
     public function scopeWithRequiredFilesets($query, $type_filters)
-    {
-        return $query->whereHas('filesets', function ($q) use ($type_filters) {
-            $q->whereIn('bible_filesets.hash_id', $type_filters['access_control']->hashes);
+    {   
+        $permitted_filesets = $type_filters['access_control']->hashes;
+
+        if ($type_filters['tag_exclude']) {
+            $opus_filesets = BibleFilesetTag::select('hash_id')->where('description', $type_filters['tag_exclude'])->pluck('hash_id')->toArray();
+            $permitted_filesets = array_diff($type_filters['access_control']->hashes, $opus_filesets);
+        }
+        
+        return $query->whereHas('filesets', function ($q) use ($type_filters, $permitted_filesets) {
+            $q->whereIn('bible_filesets.hash_id', $permitted_filesets);
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
@@ -313,31 +323,24 @@ class Bible extends Model
             if ($type_filters['size_exclude']) {
                 $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
             }
-            if ($type_filters['bitrate']) {
-                $q->whereHas('meta', function ($subQuery) use ($type_filters) {
-                    $subQuery->where('name', 'bitrate')->where('description', $type_filters['bitrate']);
-                });
-            }
-        })->with(['filesets' => function ($q) use ($type_filters) {
-            $q->whereIn('bible_filesets.hash_id', $type_filters['access_control']->hashes)
-              ->select(['id','set_type_code','set_size_code','asset_id']);
-            if ($type_filters['media']) {
-                $q->where('bible_filesets.set_type_code', $type_filters['media']);
-            }
-            if ($type_filters['media_exclude']) {
-                $q->where('bible_filesets.set_type_code', '!=', $type_filters['media_exclude']);
-            }
-            if ($type_filters['size']) {
-                $q->where('bible_filesets.set_size_code', '=', $type_filters['size']);
-            }
-            if ($type_filters['size_exclude']) {
-                $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
-            }
-        }])->when($type_filters['bitrate'], function ($q) use ($type_filters) {
-            $q->with(['filesets.meta' => function ($subQuery) use ($type_filters) {
-                $subQuery->where('name', 'bitrate');
+        })->with(['filesets' => function ($q) use ($type_filters, $permitted_filesets) {
+            $q->with(['meta' => function ($subQuery) {
+              $subQuery->where('admin_only', 0);
             }]);
-        });
+            $q->whereIn('bible_filesets.hash_id', $permitted_filesets);
+            if ($type_filters['media']) {
+                $q->where('bible_filesets.set_type_code', $type_filters['media']);
+            }
+            if ($type_filters['media_exclude']) {
+                $q->where('bible_filesets.set_type_code', '!=', $type_filters['media_exclude']);
+            }
+            if ($type_filters['size']) {
+                $q->where('bible_filesets.set_size_code', '=', $type_filters['size']);
+            }
+            if ($type_filters['size_exclude']) {
+                $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
+            }
+        }]);
     }
 
     public function scopeFilterByLanguage($query, $language_codes)

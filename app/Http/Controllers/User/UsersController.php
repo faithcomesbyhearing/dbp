@@ -14,6 +14,8 @@ use App\Models\User\User;
 use App\Models\User\Profile;
 use App\Models\User\Key;
 use App\Models\User\Study\Note;
+use App\Models\Country\Country;
+
 use App\Traits\CheckProjectMembership;
 use App\Transformers\UserTransformer;
 use Illuminate\Http\Request;
@@ -583,6 +585,7 @@ class UsersController extends APIController
         $user
             ->fill($request->except(['v', 'key', 'pretty', 'project_id']))
             ->save();
+
         if (!$user->profile) {
             Profile::create(['user_id' => $user->id]);
             $user = User::with('projects')
@@ -591,7 +594,18 @@ class UsersController extends APIController
         }
 
         if ($request->profile) {
-            $user->profile->fill($request->profile)->save();
+            $user->profile->fill($request->profile);
+            if (isset($user->profile['country_id'])) {
+                $valid_country = $this->validUserCountry($user->profile);
+                if (!$valid_country) {
+                    return $this->setStatusCode(400)->replyWithError(
+                        trans('api.countries_errors_404')
+                    );
+                }
+                $user->profile['country_id'] = $valid_country;
+            }
+            
+            $user->profile->save();
         }
 
         if ($this->api) {
@@ -870,6 +884,24 @@ class UsersController extends APIController
             return $this->setStatusCode(422)->replyWithError($validator->errors());
         }
         return false;
+    }
+
+    private function validUserCountry($profile)
+    {
+      $country_id = strtoupper($profile['country_id']);
+      $country_id = preg_replace('/[^a-zA-Z]+/', '', $country_id);
+      // checks for data issues to get US errors
+      if ($country_id === 'USA') {
+          $country_id = 'US';
+      } elseif (str_contains($country_id, 'UNITEDSTATES')) {
+          $country_id = 'US';
+      }
+
+      $valid_country_id = Country::select('id')->where('id', $country_id)->first();
+      if (!$valid_country_id) {
+          return false;
+      }
+      return $valid_country_id['id'];
     }
 
     public function adminLogin(Request $request)

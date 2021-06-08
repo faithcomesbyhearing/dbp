@@ -87,9 +87,9 @@ class BiblesController extends APIController
         $media_exclude      = checkParam('media_exclude');
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
-        $bitrate            = checkParam('bitrate'); #removed from API for initial release
-        $limit              = checkParam('limit');
-        $page               = checkParam('page');
+        $limit              = (int) (checkParam('limit') ?? 50);
+        $page               = checkParam('page') ?? 1;
+        $tag_exclude        = $limit > 1000 ? 'opus' : null;
 
         if ($media) {
             $media_types = BibleFilesetType::select('set_type_code')->get();
@@ -99,77 +99,79 @@ class BiblesController extends APIController
             }
         }
 
-        $access_control = $this->accessControl($this->key) ;
+        $access_control = $this->accessControl($this->key);
         $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
-        $cache_params = [$language_code, $organization, $country, $access_control->string, $media, $media_exclude, $size, $size_exclude, $bitrate, $limit, $page];
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $bitrate, $limit, $page) {
+        $cache_key = 'bibles' . $page;
+        $cache_params = [$language_code, $organization, $country, $access_control->string, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page];
+        $bibles = cacheRemember($cache_key, $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page) {
             $bibles = Bible::withRequiredFilesets([
-                    'access_control' => $access_control,
-                    'media'          => $media,
-                    'media_exclude'  => $media_exclude,
-                    'size'           => $size,
-                    'size_exclude'   => $size_exclude,
-                    'bitrate'        => $bitrate
+                'access_control' => $access_control,
+                'media'          => $media,
+                'media_exclude'  => $media_exclude,
+                'size'           => $size,
+                'size_exclude'   => $size_exclude,
+                'tag_exclude'    => $tag_exclude,
             ])
-                ->leftJoin('bible_translations as ver_title', function ($join) {
-                    $join->on('ver_title.bible_id', '=', 'bibles.id')->where('ver_title.vernacular', 1);
-                })
-                ->leftJoin('bible_translations as current_title', function ($join) {
-                    $join->on('current_title.bible_id', '=', 'bibles.id');
-                    if (isset($GLOBALS['i18n_id'])) {
-                        $join->where('current_title.language_id', '=', $GLOBALS['i18n_id']);
-                    }
-                })
-                ->leftJoin('languages as languages', function ($join) {
-                    $join->on('languages.id', '=', 'bibles.language_id');
-                })
-                ->leftJoin('language_translations as language_autonym', function ($join) {
-                    $join->on('language_autonym.language_source_id', '=', 'bibles.language_id')
-                        ->on('language_autonym.language_translation_id', '=', 'bibles.language_id')
-                        ->orderBy('priority', 'desc');
-                })
-                ->leftJoin('language_translations as language_current', function ($join) {
-                    $join->on('language_current.language_source_id', '=', 'bibles.language_id')
-                        ->orderBy('priority', 'desc');
-                    if (isset($GLOBALS['i18n_id'])) {
-                        $join->where('language_current.language_translation_id', '=', $GLOBALS['i18n_id']);
-                    }
-                })
-                ->filterByLanguage($language_code)
-                ->when($country, function ($q) use ($country) {
-                    $q->whereHas('country', function ($query) use ($country) {
-                        $query->where('countries.id', $country);
-                    });
-                })
-                ->when($organization, function ($q) use ($organization) {
-                    $q->whereHas('organizations', function ($q) use ($organization) {
-                        $q->where('organization_id', $organization->id);
-                    })->orWhereHas('links', function ($q) use ($organization) {
-                        $q->where('organization_id', $organization->id);
-                    });
-                })
-                ->select(
-                    \DB::raw(
-                        'MIN(current_title.name) as ctitle,
-                        MIN(ver_title.name) as vtitle,
-                        MIN(bibles.language_id) as language_id,
-                        MIN(languages.iso) as iso,
-                        MIN(bibles.date) as date,
-                        MIN(language_autonym.name) as language_autonym,
-                        MIN(language_current.name) as language_current,
-                        MIN(bibles.priority) as priority,
-                        MIN(bibles.id) as id'
-                    )
+            ->leftJoin('bible_translations as ver_title', function ($join) {
+                $join->on('ver_title.bible_id', '=', 'bibles.id')->where('ver_title.vernacular', 1);
+            })
+            ->leftJoin('bible_translations as current_title', function ($join) {
+                $join->on('current_title.bible_id', '=', 'bibles.id');
+                if (isset($GLOBALS['i18n_id'])) {
+                    $join->where('current_title.language_id', '=', $GLOBALS['i18n_id']);
+                }
+            })
+            ->leftJoin('languages as languages', function ($join) {
+                $join->on('languages.id', '=', 'bibles.language_id');
+            })
+            ->leftJoin('language_translations as language_autonym', function ($join) {
+                $join->on('language_autonym.language_source_id', '=', 'bibles.language_id')
+                    ->on('language_autonym.language_translation_id', '=', 'bibles.language_id')
+                    ->orderBy('priority', 'desc');
+            })
+            ->leftJoin('language_translations as language_current', function ($join) {
+                $join->on('language_current.language_source_id', '=', 'bibles.language_id')
+                    ->orderBy('priority', 'desc');
+                if (isset($GLOBALS['i18n_id'])) {
+                    $join->where('language_current.language_translation_id', '=', $GLOBALS['i18n_id']);
+                }
+            })
+            ->filterByLanguage($language_code)
+            ->when($country, function ($q) use ($country) {
+                $q->whereHas('country', function ($query) use ($country) {
+                    $query->where('countries.id', $country);
+                });
+            })
+            ->when($organization, function ($q) use ($organization) {
+                $q->whereHas('organizations', function ($q) use ($organization) {
+                    $q->where('organization_id', $organization->id);
+                })->orWhereHas('links', function ($q) use ($organization) {
+                    $q->where('organization_id', $organization->id);
+                });
+            })
+            ->select(
+                \DB::raw(
+                    'MIN(current_title.name) as ctitle,
+                    MIN(ver_title.name) as vtitle,
+                    MIN(bibles.language_id) as language_id,
+                    MIN(languages.iso) as iso,
+                    MIN(bibles.date) as date,
+                    MIN(language_autonym.name) as language_autonym,
+                    MIN(language_current.name) as language_current,
+                    MIN(bibles.priority) as priority,
+                    MIN(bibles.id) as id'
                 )
-                ->orderBy('bibles.priority', 'desc')->groupBy('bibles.id');
+            )
+            ->orderBy('bibles.priority', 'desc')->groupBy('bibles.id');
 
-            if ($page) {
-                $bibles  = $bibles->paginate($limit);
-                return $this->reply(fractal($bibles->getCollection(), BibleTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($bibles)));
-            }
 
-            $bibles = $bibles->limit($limit)->get();
-            return fractal($bibles, new BibleTransformer(), new DataArraySerializer());
+            $bibles = $bibles->paginate($limit);
+            $bibles_return = fractal(
+              $bibles->getCollection(),
+              BibleTransformer::class,
+              new DataArraySerializer()
+          );
+          return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
         });
 
         return $this->reply($bibles);
@@ -659,9 +661,9 @@ class BiblesController extends APIController
             $notes_controller = new NotesController();
             $request->request->add(['bible_id' => $bible_id]);
             $result->annotations = (object) [
-                'highlights' => $highlights_controller->index($request, $user->id)->original['data'],
-                'bookmarks' => $bookmarks_controller->index($request, $user->id)->original['data'],
-                'notes' => $notes_controller->index($request, $user->id)->original['data'],
+                'highlights' => optional($highlights_controller->index($request, $user->id)->original)['data'] ?? [],
+                'bookmarks' => optional($bookmarks_controller->index($request, $user->id)->original)['data'] ?? [],
+                'notes' => optional($notes_controller->index($request, $user->id)->original)['data'] ?? [],
             ];
         }
         $result->bible_id = $bible->id;
@@ -806,6 +808,9 @@ class BiblesController extends APIController
     public function getFileset($filesets, $type, $testament)
     {
         $available_filesets = [];
+        foreach ($filesets as $fileset) {
+            $fileset = formatFilesetMeta($fileset);
+        }
 
         $completeFileset = $filesets->filter(function ($fileset) use ($type) {
             return (
@@ -887,6 +892,7 @@ class BiblesController extends APIController
                 'set_type_code' => $fileset->set_type_code,
                 'set_size_code' => $fileset->set_size_code,
             ])->first();
+            $fileset = formatFilesetMeta($fileset);
 
             // Get fileset
             $fileset_result = $fileset_controller->show($fileset->id, $fileset->set_type_code, 'v4_chapter_filesets_show')->original['data'] ?? [];
@@ -912,6 +918,7 @@ class BiblesController extends APIController
             $audioTimestamps = $audio_controller->timestampsByReference($fileset->id, $book->id,  $chapter)->original['data'] ?? [];
             $results->timestamps->$name = $audioTimestamps;
         }
+
         return $results;
     }
 
