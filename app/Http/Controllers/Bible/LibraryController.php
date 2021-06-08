@@ -312,7 +312,10 @@ class LibraryController extends APIController
         $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code];
         $filesets = cacheRemember('v2_library_volume', $cache_params, now()->addDay(), function () use ($dam_id, $media, $language_name, $iso, $updated, $organization, $version_code) {
             $access_control = $this->accessControl($this->key);
-            $language_id = $iso ? Language::where('iso', $iso)->first()->id : null;
+            $language_id = $iso ? optional(Language::where('iso', $iso)->first())->id : null;
+            if (!$language_id) {
+                return [];
+            }
 
             $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
