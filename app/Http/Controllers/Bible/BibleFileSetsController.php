@@ -179,10 +179,6 @@ class BibleFileSetsController extends APIController
             $verse_start,
             $verse_end
         ];
-        // fixes data issue where text filesets use the same filesetID
-        if (in_array($type, ['text_plain', 'text_format'])) {
-            $cache_params[] = $type;
-        }
         
         $fileset_chapters = cacheRemember(
             $cache_key,
@@ -196,14 +192,8 @@ class BibleFileSetsController extends APIController
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 $fileset_type = $fileset_from_id['set_type_code'];
                 // fixes data issue where text filesets use the same filesetID
-                $is_text_fileset = in_array($fileset_type, ['text_plain', 'text_format']);
-                if ($is_text_fileset && $type === '') {
-                    return $this->setStatusCode(404)->replyWithError(
-                        trans('api.bible_fileset_errors_404')
-                    );
-                } else if ($is_text_fileset) {
-                    $fileset_type = $type;
-                }
+                $fileset_type = $this->getCorrectFilesetType($fileset_type, $type);
+
                 $fileset = BibleFileset::with('bible')
                     ->uniqueFileset($fileset_id, $fileset_type)
                     ->first();
@@ -302,11 +292,6 @@ class BibleFileSetsController extends APIController
         $page         = checkParam('page') ?? 1;
         $cache_key    = $cache_key . $page;
 
-        // fixes data issue where text filesets use the same filesetID
-        if (in_array($type, ['text_plain', 'text_format'])) {
-            $cache_params[] = $type;
-        }
-
         $fileset_chapters = cacheRemember(
             $cache_key,
             $cache_params,
@@ -321,15 +306,7 @@ class BibleFileSetsController extends APIController
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 $fileset_type = $fileset_from_id['set_type_code'];
                 // fixes data issue where text filesets use the same filesetID
-                $is_text_fileset = in_array($fileset_type, ['text_plain', 'text_format']);
-                if ($is_text_fileset && $type === '') {
-                    return $this->setStatusCode(404)->replyWithError(
-                        trans('api.bible_fileset_errors_404')
-                    );
-                } else if ($is_text_fileset) {
-                    $fileset_type = $type;
-                }
-
+                $fileset_type = $this->getCorrectFilesetType($fileset_type, $type);
                 $fileset = BibleFileset::with('bible')
                     ->uniqueFileset($fileset_id, $fileset_type)
                     ->first();
@@ -370,6 +347,20 @@ class BibleFileSetsController extends APIController
         );
 
         return $this->reply($fileset_chapters, [], $transaction_id ?? '');
+    }
+
+    private function getCorrectFilesetType($fileset_type, $param_type)
+    {
+        $is_text_fileset = in_array($fileset_type, ['text_plain', 'text_format', 'text_html', 'text_usx']);
+        if ($is_text_fileset && $param_type === '') {
+            return $this->setStatusCode(404)->replyWithError(
+                trans('api.bible_fileset_errors_404')
+            );
+        } else if ($is_text_fileset) {
+            $fileset_type = $param_type;
+        }
+
+        return $fileset_type;
     }
 
     private function showTextFilesetChapter(
