@@ -353,9 +353,7 @@ class BibleFileSetsController extends APIController
     {
         $is_text_fileset = in_array($fileset_type, ['text_plain', 'text_format', 'text_html', 'text_usx']);
         if ($is_text_fileset && $param_type === '') {
-            return $this->setStatusCode(404)->replyWithError(
-                trans('api.bible_fileset_errors_404')
-            );
+            $fileset_type = 'text_plain';
         } else if ($is_text_fileset) {
             $fileset_type = $param_type;
         }
