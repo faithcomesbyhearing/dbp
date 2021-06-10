@@ -89,7 +89,17 @@ class BiblesController extends APIController
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
         $limit              = (int) (checkParam('limit') ?? 50);
         $page               = checkParam('page') ?? 1;
-        $tag_exclude        = $limit > 1000 ? 'opus' : null;
+
+        // removes opus filesets from the request to avoid memory overflows
+        $tag_exclude = null;
+        $is_bibleis_gideons = null;
+        if (isBibleisOrGideon($this->key)) {
+            $limit = PHP_INT_MAX;
+            $tag_exclude = 'opus';
+            $is_bibleis_gideons = 'bibleis-gideons';
+        } else {
+            $limit = min($limit, 50);
+        }
 
         if ($media) {
             $media_types = BibleFilesetType::select('set_type_code')->get();
@@ -101,9 +111,22 @@ class BiblesController extends APIController
 
         $access_control = $this->accessControl($this->key);
         $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
-        $cache_key = 'bibles' . $page;
-        $cache_params = [$language_code, $organization, $country, $access_control->string, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page];
-        $bibles = cacheRemember($cache_key, $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page) {
+        $cache_params = [
+            $language_code, 
+            $organization, 
+            $country, 
+            $access_control->string, 
+            $media, 
+            $media_exclude, 
+            $size, 
+            $size_exclude, 
+            $tag_exclude, 
+            $limit, 
+            $page,
+            $is_bibleis_gideons
+        ];
+        
+        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page) {
             $bibles = Bible::withRequiredFilesets([
                 'access_control' => $access_control,
                 'media'          => $media,
