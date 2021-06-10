@@ -109,6 +109,16 @@ function generateCacheString($key, $args = [])
     }, $key));
 }
 
+function isBibleisOrGideon($key)
+{
+    $compat_api_keys = config('auth.compat_users.api_keys');
+    $compat_api_keys = explode(',', $compat_api_keys);    
+    if (in_array($key, $compat_api_keys)) {
+        return true;
+    }
+    return false;
+}
+
 if (!function_exists('csvToArray')) {
     function csvToArray($csvfile)
     {
