@@ -308,9 +308,10 @@ class Bible extends Model
             $opus_filesets = BibleFilesetTag::select('hash_id')->where('description', $type_filters['tag_exclude'])->pluck('hash_id')->toArray();
             $permitted_filesets = array_diff($type_filters['access_control']->hashes, $opus_filesets);
         }
-        
-        return $query->whereHas('filesets', function ($q) use ($type_filters, $permitted_filesets) {
-            $q->whereIn('bible_filesets.hash_id', $permitted_filesets);
+
+        $queryIn = sprintf("bible_filesets.hash_id IN ('" . implode("', '", $permitted_filesets) . "')");
+        return $query->whereHas('filesets', function ($q) use ($type_filters, $queryIn) {
+            $q->whereRaw($queryIn);
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
@@ -323,11 +324,11 @@ class Bible extends Model
             if ($type_filters['size_exclude']) {
                 $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
             }
-        })->with(['filesets' => function ($q) use ($type_filters, $permitted_filesets) {
+        })->with(['filesets' => function ($q) use ($type_filters, $queryIn) {
             $q->with(['meta' => function ($subQuery) {
               $subQuery->where('admin_only', 0);
             }]);
-            $q->whereIn('bible_filesets.hash_id', $permitted_filesets);
+            $q->whereRaw($queryIn);
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
