@@ -46,19 +46,24 @@ class LibraryController extends APIController
     {
         $fileset_id = checkParam('dam_id');
         $asset_id  = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
+        // avoids using filesets with more than 7 characters
+        $fileset_id = str_split($fileset_id, 7)[0];
+        if (strlen($fileset_id) < 6) {
+            return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $fileset_id]));
+        }
 
         $cache_params = [$fileset_id];
         $metadata = cacheRemember('v2_library_metadata', $cache_params, now()->addDay(), function () use ($fileset_id, $asset_id) {
             $metadata = BibleFileset::where('asset_id', $asset_id)
                 ->when($fileset_id, function ($q) use ($fileset_id) {
-                    $q->where('id', $fileset_id)->orWhere('id', substr($fileset_id, 0, -4))->orWhere('id', substr($fileset_id, 0, -2));
-                })->with('copyright.organizations.translations', 'copyright.role.roleTitle')->has('copyright')->first();
+                    $q->where('id', 'LIKE', "%$fileset_id%")->orWhere('id', substr($fileset_id, 0, -4))->orWhere('id', substr($fileset_id, 0, -2));
+                })->with('copyright.organizations.translations', 'copyright.role.roleTitle')->has('copyright')->get();
 
             if (!$metadata) {
                 return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $fileset_id]));
             }
 
-            return [fractal($metadata, new LibraryMetadataTransformer())->serializeWith($this->serializer)];
+            return fractal($metadata, new LibraryMetadataTransformer())->serializeWith($this->serializer);
         });
 
         return $this->reply($metadata);

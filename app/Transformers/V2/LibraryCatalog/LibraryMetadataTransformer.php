@@ -54,10 +54,13 @@ class LibraryMetadataTransformer extends TransformerAbstract
      * @return array
      */
     public function transform($bible_fileset)
-    {
+    {   
+        $copyright = optional($bible_fileset->copyright)->copyright;
+        $mark = $this->formatCopyrightMark($copyright);
+
         $output = [
-            'dam_id'         => $bible_fileset->dam_id,
-            'mark'           => optional($bible_fileset->copyright)->copyright,
+            'dam_id'         => isset($bible_fileset->dam_id) ? $bible_fileset->dam_id : $bible_fileset->id,
+            'mark'           => $mark,
             'volume_summary' => optional($bible_fileset->copyright)->copyright_description,
             'font_copyright' => null,
             'font_url'       => null
@@ -82,5 +85,17 @@ class LibraryMetadataTransformer extends TransformerAbstract
             ];
         }
         return $output;
+    }
+
+    private function formatCopyrightMark($copyright)
+    {
+        $mark = null;
+        $mark_types = ['Audio', 'Text', 'Video'];
+        foreach ($mark_types as $type) {
+            if (!$mark) {
+                $mark = optional(explode('Audio:', $copyright))[1];
+            }
+        }     
+        return $mark ? $mark : $copyright;
     }
 }
