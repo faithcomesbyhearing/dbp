@@ -91,15 +91,8 @@ class BiblesController extends APIController
         $page               = checkParam('page') ?? 1;
 
         // removes opus filesets from the request to avoid memory overflows
-        $tag_exclude = null;
-        $is_bibleis_gideons = null;
-        if (isBibleisOrGideon($this->key)) {
-            $limit = PHP_INT_MAX;
-            $tag_exclude = 'opus';
-            $is_bibleis_gideons = 'bibleis-gideons';
-        } else {
-            $limit = min($limit, 50);
-        }
+        list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
+        $tag_exclude = isBibleisOrGideon($this->key) ? 'opus' : null;
 
         if ($media) {
             $media_types = BibleFilesetType::select('set_type_code')->get();
