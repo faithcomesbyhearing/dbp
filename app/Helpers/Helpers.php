@@ -119,6 +119,18 @@ function isBibleisOrGideon($key)
     return false;
 }
 
+function forceBibleisGideonsPagination($key, $limit_param)
+{
+    // remove pagination for bibleis and gideons (temporal fix)
+    $limit = min($limit_param, 50);
+    $is_bibleis_gideons = null;
+    if (isBibleisOrGideon($key)) {
+        $limit = PHP_INT_MAX;
+        $is_bibleis_gideons = 'bibleis-gideons';
+    } 
+    return [$limit, $is_bibleis_gideons];
+}
+
 if (!function_exists('csvToArray')) {
     function csvToArray($csvfile)
     {
