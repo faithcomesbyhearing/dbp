@@ -46,19 +46,24 @@ class LibraryController extends APIController
     {
         $fileset_id = checkParam('dam_id');
         $asset_id  = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
+        // avoids using filesets with more than 7 characters
+        $fileset_id = str_split($fileset_id, 7)[0];
+        if (strlen($fileset_id) < 6) {
+            return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $fileset_id]));
+        }
 
         $cache_params = [$fileset_id];
         $metadata = cacheRemember('v2_library_metadata', $cache_params, now()->addDay(), function () use ($fileset_id, $asset_id) {
             $metadata = BibleFileset::where('asset_id', $asset_id)
                 ->when($fileset_id, function ($q) use ($fileset_id) {
-                    $q->where('id', $fileset_id)->orWhere('id', substr($fileset_id, 0, -4))->orWhere('id', substr($fileset_id, 0, -2));
-                })->with('copyright.organizations.translations', 'copyright.role.roleTitle')->has('copyright')->first();
+                    $q->where('id', 'LIKE', "$fileset_id%")->orWhere('id', substr($fileset_id, 0, -4))->orWhere('id', substr($fileset_id, 0, -2));
+                })->with('copyright.organizations.translations', 'copyright.role.roleTitle')->has('copyright')->get();
 
             if (!$metadata) {
                 return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $fileset_id]));
             }
 
-            return [fractal($metadata, new LibraryMetadataTransformer())->serializeWith($this->serializer)];
+            return fractal($metadata, new LibraryMetadataTransformer())->serializeWith($this->serializer);
         });
 
         return $this->reply($metadata);
@@ -311,15 +316,16 @@ class LibraryController extends APIController
 
         $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code];
         $filesets = cacheRemember('v2_library_volume', $cache_params, now()->addDay(), function () use ($dam_id, $media, $language_name, $iso, $updated, $organization, $version_code) {
-            $access_control = $this->accessControl($this->key);
             $language_id = $iso ? optional(Language::where('iso', $iso)->first())->id : null;
             if (!$language_id) {
                 return [];
             }
 
+            $access_control = $this->accessControl($this->key);
+            $queryIn = sprintf("bible_filesets.hash_id IN ('" . implode("', '", $access_control->hashes) . "')");
             $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
-                ->whereIn('bible_filesets.hash_id', $access_control->hashes)
+                ->whereRaw($queryIn)
                 ->uniqueFileset($dam_id, $media, true)
                 ->withBible($language_name, $language_id, $organization)
                 ->when($language_id, function ($query) use ($language_id) {
@@ -359,7 +365,6 @@ class LibraryController extends APIController
                 })->get()->filter(function ($item) {
                     return $item->english_name;
                 });
-
             return $this->generateV2StyleId($filesets);
         });
 
