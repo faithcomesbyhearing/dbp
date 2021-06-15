@@ -56,7 +56,7 @@ class LibraryController extends APIController
         $metadata = cacheRemember('v2_library_metadata', $cache_params, now()->addDay(), function () use ($fileset_id, $asset_id) {
             $metadata = BibleFileset::where('asset_id', $asset_id)
                 ->when($fileset_id, function ($q) use ($fileset_id) {
-                    $q->where('id', 'LIKE', "%$fileset_id%")->orWhere('id', substr($fileset_id, 0, -4))->orWhere('id', substr($fileset_id, 0, -2));
+                    $q->where('id', 'LIKE', "$fileset_id%")->orWhere('id', substr($fileset_id, 0, -4))->orWhere('id', substr($fileset_id, 0, -2));
                 })->with('copyright.organizations.translations', 'copyright.role.roleTitle')->has('copyright')->get();
 
             if (!$metadata) {
