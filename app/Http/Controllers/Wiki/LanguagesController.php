@@ -90,13 +90,7 @@ class LanguagesController extends APIController
         $page                  = checkParam('page') ?? 1;
 
         // remove pagination for bibleis and gideons (temporal fix)
-        $is_bibleis_gideons = null;
-        if (isBibleisOrGideon($this->key)) {
-            $limit = PHP_INT_MAX;
-            $is_bibleis_gideons = 'bibleis-gideons';
-        } else {
-            $limit = min($limit, 50);
-        }
+        list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
 
         $access_control = cacheRemember('access_control', [$this->key], now()->addHour(), function () {
             return $this->accessControl($this->key);
