@@ -74,7 +74,7 @@ class syncV2Notes extends Command
                 }, []);
 
                 $notes = $notes->filter(function ($note) use ($dam_ids, $books, $v4_users, $v4_notes) {
-                    return validateV2Annotation($note, $dam_ids, $books, $v4_users, $v4_notes);
+                    return validateV2Annotation($note, $dam_ids, $books, $v4_users, $v4_notes, true);
                 });
 
                 $notes = $notes->map(function ($note) use ($v4_users, $books, $dam_ids) {

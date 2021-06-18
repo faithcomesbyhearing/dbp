@@ -11,21 +11,21 @@ use App\Models\User\Study\Highlight;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class syncV2Highlights extends Command
+class syncLiveBibleIsHighlights extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'syncV2:highlights {date?}';
+    protected $signature = 'syncLiveBibleIs:highlights {date?}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Sync the Highlights with the V2 Database';
+    protected $description = 'Sync the Highlights with the live bibleis Database';
 
     /**
      * Execute the console command.
@@ -34,31 +34,29 @@ class syncV2Highlights extends Command
      */
     public function handle()
     {
+        $db_name = config('database.livebibleis_users.database');
+
         $from_date = $this->argument('date');
-        if ($from_date) {
-            $from_date = Carbon::createFromFormat('Y-m-d', $from_date)->startOfDay();
-        } else {
-            $last_highlight_synced = Highlight::whereNotNull('v2_id')->where('v2_id', '!=', 0)->orderBy('id', 'desc')->first();
-            $from_date = $last_highlight_synced->created_at ?? Carbon::now()->startOfDay();
-        }
+        $from_date = Carbon::createFromFormat('Y-m-d', $from_date)->startOfDay();
 
         $this->initColors();
         $filesets = BibleFileset::with('bible')->get();
         $this->dam_ids = [];
         $books = Book::select('id_osis', 'id')->get()->pluck('id', 'id_osis')->toArray();
 
-        echo "\n" . Carbon::now() . ': v2 to v4 highlights sync started.';
+        echo "\n" . Carbon::now() . ': liveBibleis to v4 highlights sync started.';
         $chunk_size = config('settings.v2V4SyncChunkSize');
-        DB::connection('dbp_users_v2')
+        DB::connection($db_name)
             ->table('highlight')
-            ->where('created', '>', $from_date)
+            ->where('created', '>=', $from_date)
             ->orderBy('id')
             ->chunk($chunk_size, function ($highlights) use ($filesets, $books) {
-                $user_v2_ids = $highlights->pluck('user_id')->toArray();
-                $highlight_v2_ids = $highlights->pluck('id')->toArray();
-
-                $v4_users = User::whereIn('v2_id', $user_v2_ids)->pluck('id', 'v2_id');
-                $v4_highlights = Highlight::whereIn('v2_id', $highlight_v2_ids)->pluck('v2_id', 'v2_id');
+                // live bible is user and highlights
+                $user_ids = $highlights->pluck('user_id')->toArray();
+                $highlight_ids = $highlights->pluck('id')->toArray();
+                // v4 data
+                $v4_users = User::whereIn('id', $user_ids)->pluck('id');
+                $v4_highlights = Highlight::whereIn('id', $highlight_ids)->pluck('id');
 
                 $dam_ids = $highlights->pluck('dam_id')->reduce(function ($carry, $item) use ($filesets) {
                     if (!isset($carry[$item])) {
@@ -76,12 +74,11 @@ class syncV2Highlights extends Command
                 }, []);
 
                 $highlights = $highlights->filter(function ($highlight) use ($dam_ids, $books, $v4_users, $v4_highlights) {
-                    return validateV2Annotation($highlight, $dam_ids, $books, $v4_users, $v4_highlights, true);
+                    return validateV2Annotation($highlight, $dam_ids, $books, $v4_users, $v4_highlights, false);
                 });
 
                 $highlights = $highlights->map(function ($highlight) use ($v4_users, $books, $dam_ids) {
                     return [
-                        'v2_id'       => $highlight->id,
                         'user_id'     => $v4_users[$highlight->user_id],
                         'bible_id'    => $dam_ids[$highlight->dam_id]->bible->first()->id,
                         'book_id'     => $books[$highlight->book_id],
@@ -102,9 +99,9 @@ class syncV2Highlights extends Command
                     Highlight::insert($chunk->toArray());
                 }
 
-                echo "\n" . Carbon::now() . ': Inserted ' . sizeof($highlights) . ' new v2 highlights.';
+                echo "\n" . Carbon::now() . ': Inserted ' . sizeof($highlights) . ' new live bibleis highlights.';
             });
-        echo "\n" . Carbon::now() . ": v2 to v4 highlights sync finalized.\n";
+        echo "\n" . Carbon::now() . ": live bibleis to v4 highlights sync finalized.\n";
     }
 
     private function initColors()

@@ -259,9 +259,9 @@ if (!function_exists('getFilesetFromDamId')) {
 }
 
 if (!function_exists('validateV2Annotation')) {
-    function validateV2Annotation($annotation, $filesets, $books, $v4_users, $v4_annotations)
-    {
-        if (isset($v4_annotations[$annotation->id])) {
+    function validateV2Annotation($annotation, $filesets, $books, $v4_users, $v4_annotations, $check_annotation_id)
+    {   
+        if (isset($v4_annotations[$annotation->id]) && $check_annotation_id) {
             // echo "\n Error!! Annotation already inserted: " . $annotation->id;
             return false;
         }
