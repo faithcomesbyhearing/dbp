@@ -34,7 +34,7 @@ class syncLiveBibleIsHighlights extends Command
      */
     public function handle()
     {
-        $db_name = config('database.livebibleis_users.database');
+        $db_name = config('database.connections.livebibleis_users.database');
 
         $from_date = $this->argument('date');
         $from_date = Carbon::createFromFormat('Y-m-d', $from_date)->startOfDay();
@@ -79,17 +79,17 @@ class syncLiveBibleIsHighlights extends Command
 
                 $highlights = $highlights->map(function ($highlight) use ($v4_users, $books, $dam_ids) {
                     return [
-                        'user_id'     => $v4_users[$highlight->user_id],
-                        'bible_id'    => $dam_ids[$highlight->dam_id]->bible->first()->id,
-                        'book_id'     => $books[$highlight->book_id],
-                        'chapter'     => $highlight->chapter_id,
-                        'verse_start' => $highlight->verse_id,
-                        'verse_end'   => $highlight->verse_id,
+                        'user_id'           => $v4_users[$highlight->user_id],
+                        'bible_id'          => $dam_ids[$highlight->dam_id]->bible->first()->id,
+                        'book_id'           => $books[$highlight->book_id],
+                        'chapter'           => $highlight->chapter_id,
+                        'verse_start'       => $highlight->verse_id,
+                        'verse_end'         => $highlight->verse_id,
                         'highlight_start'   => 1,
                         'highlighted_words' => null,
                         'highlighted_color' => $this->getRelatedColorIdForHighlightColorString($highlight->color),
-                        'created_at' => Carbon::createFromTimeString($highlight->created),
-                        'updated_at' => Carbon::createFromTimeString($highlight->updated),
+                        'created_at'        => Carbon::createFromTimeString($highlight->created),
+                        'updated_at'        => Carbon::createFromTimeString($highlight->updated),
                     ];
                 });
 
