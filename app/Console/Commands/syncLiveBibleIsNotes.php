@@ -80,7 +80,7 @@ class syncLiveBibleIsNotes extends Command
                         'user_id'     => $v4_users[$note->user_id],
                         'bible_id'    => $dam_ids[$note->dam_id]->bible->first()->id,
                         'book_id'     => $books[$note->book_id],
-                        'notes'       => encrypt($note->note),
+                        'notes'       => $note->note,
                         'chapter'     => $note->chapter_id,
                         'verse_start' => $note->verse_id,
                         'verse_end'   => $note->verse_id,
