@@ -50,9 +50,6 @@ class syncLiveBibleIsHighlights extends Command
             ->where('created_at', '>=', $from_date)
             ->orderBy('id')
             ->chunk($chunk_size, function ($highlights) use ($filesets) {
-                // live bible is user and highlights
-                $user_ids = $highlights->pluck('user_id')->toArray();
-                $highlight_ids = $highlights->pluck('id')->toArray();
                 // v4 data
                 $bible_ids = $highlights->pluck('bible_id')->reduce(function ($carry, $item) use ($filesets) {
                     if (!isset($carry[$item])) {
@@ -72,7 +69,7 @@ class syncLiveBibleIsHighlights extends Command
                 $highlights = $highlights->map(function ($highlight) use ($bible_ids) {
                     return [
                         'user_id'           => $highlight->user_id,
-                        'bible_id'          => $bible_ids[$highlight->bible_id]->bible,
+                        'bible_id'          => $bible_ids[$highlight->bible_id]->bible->first()->id,
                         'book_id'           => $highlight->book_id,
                         'chapter'           => $highlight->chapter,
                         'verse_start'       => $highlight->verse_start,
@@ -86,7 +83,7 @@ class syncLiveBibleIsHighlights extends Command
                 });
 
                 $chunks = $highlights->chunk(5000);
-
+                die();
                 foreach ($chunks as $chunk) {
                     Highlight::insert($chunk->toArray());
                 }

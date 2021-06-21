@@ -340,7 +340,7 @@ if (!function_exists('validateLiveBibleIsAnnotation')) {
   function validateLiveBibleIsAnnotation($annotation, $filesets)
   {    
       if (!isset($filesets[$annotation->bible_id])) {
-          // echo "\n Error!! Could not find FILESET_ID: " . $annotation->dam_id;
+          // echo "\n Error!! Could not find FILESET_ID: " . $annotation->bible_id;
           return false;
       }
 
