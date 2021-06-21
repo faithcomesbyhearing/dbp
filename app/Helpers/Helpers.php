@@ -297,6 +297,69 @@ if (!function_exists('validateV2Annotation')) {
     }
 }
 
+if (!function_exists('validateV2Annotation')) {
+  function validateV2Annotation($annotation, $filesets, $books, $v4_users, $v4_annotations, $check_annotation_id)
+  {   
+      if (isset($v4_annotations[$annotation->id]) && $check_annotation_id) {
+          // echo "\n Error!! Annotation already inserted: " . $annotation->id;
+          return false;
+      }
+
+      if (!isset($v4_users[$annotation->user_id])) {
+          // echo "\n Error!! Could not find USER_ID: " . $annotation->user_id;
+          return false;
+      }
+
+      if (!isset($books[$annotation->book_id])) {
+          // echo "\n Error!! Could not find BOOK_ID: " . $annotation->book_id;
+          return false;
+      }
+
+      if (!isset($filesets[$annotation->dam_id])) {
+          // echo "\n Error!! Could not find FILESET_ID: " . $annotation->dam_id;
+          return false;
+      }
+
+      $fileset = $filesets[$annotation->dam_id];
+
+      if ($fileset->bible->first()) {
+          if (!isset($fileset->bible->first()->id)) {
+              // echo "\n Error!! Could not find BIBLE_ID";
+              return false;
+          }
+      } else {
+          // echo "\n Error!! Could not find BIBLE_ID";
+          return false;
+      }
+
+      return true;
+  }
+}
+
+if (!function_exists('validateLiveBibleIsAnnotation')) {
+  function validateLiveBibleIsAnnotation($annotation, $filesets)
+  {    
+      if (!isset($filesets[$annotation->bible_id])) {
+          // echo "\n Error!! Could not find FILESET_ID: " . $annotation->dam_id;
+          return false;
+      }
+
+      $fileset = $filesets[$annotation->bible_id];
+
+      if ($fileset->bible->first()) {
+          if (!isset($fileset->bible->first()->id)) {
+              // echo "\n Error!! Could not find BIBLE_ID";
+              return false;
+          }
+      } else {
+          // echo "\n Error!! Could not find BIBLE_ID";
+          return false;
+      }
+
+      return true;
+  }
+}
+
 if (!function_exists('arrayToCommaSeparatedValues')) {
     function arrayToCommaSeparatedValues($array)
     {
