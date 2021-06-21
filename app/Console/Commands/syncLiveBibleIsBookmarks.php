@@ -47,7 +47,7 @@ class syncLiveBibleIsBookmarks extends Command
         echo "\n" . Carbon::now() . ': liveBibleis to v4 bookmarks sync started.';
         $chunk_size = config('settings.v2V4SyncChunkSize');
         DB::connection($db_name)
-            ->table('bookmark')
+            ->table('user_bookmarks')
             ->where('status', 'current')
             ->where('created', '>=', $from_date)
             ->orderBy('id')->chunk($chunk_size, function ($bookmarks) use ($filesets, $books) {
