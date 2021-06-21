@@ -83,7 +83,6 @@ class syncLiveBibleIsHighlights extends Command
                 });
 
                 $chunks = $highlights->chunk(5000);
-                die();
                 foreach ($chunks as $chunk) {
                     Highlight::insert($chunk->toArray());
                 }

@@ -75,7 +75,7 @@ class syncV2Bookmarks extends Command
                 }, []);
 
                 $bookmarks = $bookmarks->filter(function ($bookmark) use ($dam_ids, $books, $v4_users, $v4_bookmarks) {
-                    return validateV2Annotation($bookmark, $dam_ids, $books, $v4_users, $v4_bookmarks, true);
+                    return validateV2Annotation($bookmark, $dam_ids, $books, $v4_users, $v4_bookmarks);
                 });
 
                 $bookmarks = $bookmarks->map(function ($bookmark) use ($v4_users, $books, $dam_ids) {
