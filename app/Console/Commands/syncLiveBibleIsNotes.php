@@ -10,21 +10,21 @@ use App\Models\User\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class syncV2Notes extends Command
+class syncLiveBibleIsNotes extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'syncV2:notes {date?}';
+    protected $signature = 'syncLiveBibleIs:notes {date?}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Sync the Notes with the V2 Database';
+    protected $description = 'Sync the Notes with the live bibleis Database';
 
     /**
      * Execute the console command.
@@ -33,30 +33,28 @@ class syncV2Notes extends Command
      */
     public function handle()
     {
+        $db_name = config('database.connections.livebibleis_users.database');
+
         $from_date = $this->argument('date');
-        if ($from_date) {
-            $from_date = Carbon::createFromFormat('Y-m-d', $from_date)->startOfDay();
-        } else {
-            $last_note_synced = Note::whereNotNull('v2_id')->where('v2_id', '!=', 0)->orderBy('id', 'desc')->first();
-            $from_date = $last_note_synced->created_at ?? Carbon::now()->startOfDay();
-        }
+        $from_date = Carbon::createFromFormat('Y-m-d', $from_date)->startOfDay();
 
         $filesets = BibleFileset::with('bible')->get();
         $this->dam_ids = [];
         $books = Book::select('id_osis', 'id')->get()->pluck('id', 'id_osis')->toArray();
 
-        echo "\n" . Carbon::now() . ': v2 to v4 notes sync started.';
+        echo "\n" . Carbon::now() . ': liveBibleis to v4 notes sync started.';
         $chunk_size = config('settings.v2V4SyncChunkSize');
 
-        DB::connection('dbp_users_v2')->table('note')
+        DB::connection($db_name)
+            ->table('note')
             ->where('status', 'current')
-            ->where('created', '>', $from_date)
+            ->where('created', '>=', $from_date)
             ->orderBy('id')->chunk($chunk_size, function ($notes) use ($filesets, $books) {
-                $user_v2_ids = $notes->pluck('user_id')->toArray();
-                $note_v2_ids = $notes->pluck('id')->toArray();
+                $user_ids = $notes->pluck('user_id')->toArray();
+                $note_ids = $notes->pluck('id')->toArray();
 
-                $v4_users = User::whereIn('v2_id', $user_v2_ids)->pluck('id', 'v2_id');
-                $v4_notes = Note::whereIn('v2_id', $note_v2_ids)->pluck('v2_id', 'v2_id');
+                $v4_users = User::whereIn('id', $user_ids)->pluck('id');
+                $v4_notes = Note::whereIn('id', $note_ids)->pluck('id');
 
                 $dam_ids = $notes->pluck('dam_id')->reduce(function ($carry, $item) use ($filesets) {
                     if (!isset($carry[$item])) {
@@ -74,16 +72,15 @@ class syncV2Notes extends Command
                 }, []);
 
                 $notes = $notes->filter(function ($note) use ($dam_ids, $books, $v4_users, $v4_notes) {
-                    return validateV2Annotation($note, $dam_ids, $books, $v4_users, $v4_notes, true);
+                    return validateV2Annotation($note, $dam_ids, $books, $v4_users, $v4_notes, false);
                 });
 
                 $notes = $notes->map(function ($note) use ($v4_users, $books, $dam_ids) {
                     return [
-                        'v2_id'       => $note->id,
                         'user_id'     => $v4_users[$note->user_id],
                         'bible_id'    => $dam_ids[$note->dam_id]->bible->first()->id,
                         'book_id'     => $books[$note->book_id],
-                        'notes'       => encrypt($note->note),
+                        'notes'       => $note->note,
                         'chapter'     => $note->chapter_id,
                         'verse_start' => $note->verse_id,
                         'verse_end'   => $note->verse_id,
@@ -98,8 +95,8 @@ class syncV2Notes extends Command
                     Note::insert($chunk->toArray());
                 }
 
-                echo "\n" . Carbon::now() . ': Inserted ' . sizeof($notes) . ' new v2 notes.';
+                echo "\n" . Carbon::now() . ': Inserted ' . sizeof($notes) . ' new liveBibleis notes.';
             });
-        echo "\n" . Carbon::now() . ": v2 to v4 notes sync finalized.\n";
+        echo "\n" . Carbon::now() . ": liveBibleis to v4 notes sync finalized.\n";
     }
 }

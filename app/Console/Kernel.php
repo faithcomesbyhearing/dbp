@@ -51,6 +51,10 @@ class Kernel extends ConsoleKernel
         Commands\translatePlaylist::class,
         Commands\encryptNote::class,
 
+        Commands\syncLiveBibleIsHighlights::class,
+        Commands\syncLiveBibleIsNotes::class,
+        Commands\syncLiveBibleIsBookmarks::class,
+
         Commands\syncPlaylistDuration::class,
         Commands\DeleteDraftPlaylistsPlans::class,
         Commands\DeleteTemporaryZipFiles::class,
