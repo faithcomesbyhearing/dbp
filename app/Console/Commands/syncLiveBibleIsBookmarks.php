@@ -12,21 +12,21 @@ use App\Models\User\Study\Bookmark;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class syncV2Bookmarks extends Command
+class syncLiveBibleIsBookmarks extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'syncV2:bookmarks {date?}';
+    protected $signature = 'syncLiveBibleIs:bookmarks {date?}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Sync the Bookmarks with the V2 Database';
+    protected $description = 'Sync the Bookmarks with the live bibleis Database';
 
     /**
      * Execute the console command.
@@ -35,29 +35,27 @@ class syncV2Bookmarks extends Command
      */
     public function handle()
     {
+        $db_name = config('database.connections.livebibleis_users.database');
+
         $from_date = $this->argument('date');
-        if ($from_date) {
-            $from_date = Carbon::createFromFormat('Y-m-d', $from_date)->startOfDay();
-        } else {
-            $last_bookmark_synced = Bookmark::whereNotNull('v2_id')->where('v2_id', '!=', 0)->orderBy('id', 'desc')->first();
-            $from_date = $last_bookmark_synced->created_at ?? Carbon::now()->startOfDay();
-        }
+        $from_date = Carbon::createFromFormat('Y-m-d', $from_date)->startOfDay();
 
         $filesets = BibleFileset::with('bible')->get();
         $this->dam_ids = [];
         $books = Book::select('id_osis', 'id')->get()->pluck('id', 'id_osis')->toArray();
 
-        echo "\n" . Carbon::now() . ': v2 to v4 bookmarks sync started.';
+        echo "\n" . Carbon::now() . ': liveBibleis to v4 bookmarks sync started.';
         $chunk_size = config('settings.v2V4SyncChunkSize');
-        DB::connection('dbp_users_v2')->table('bookmark')
+        DB::connection($db_name)
+            ->table('bookmark')
             ->where('status', 'current')
-            ->where('created', '>', $from_date)
+            ->where('created', '>=', $from_date)
             ->orderBy('id')->chunk($chunk_size, function ($bookmarks) use ($filesets, $books) {
-                $user_v2_ids = $bookmarks->pluck('user_id')->toArray();
-                $bookmark_v2_ids = $bookmarks->pluck('id')->toArray();
+                $user_ids = $bookmarks->pluck('user_id')->toArray();
+                $bookmark_ids = $bookmarks->pluck('id')->toArray();
 
-                $v4_users = User::whereIn('v2_id', $user_v2_ids)->pluck('id', 'v2_id');
-                $v4_bookmarks = Bookmark::whereIn('v2_id', $bookmark_v2_ids)->pluck('v2_id', 'v2_id');
+                $v4_users = User::whereIn('id', $user_ids)->pluck('id');
+                $v4_bookmarks = Bookmark::whereIn('id', $bookmark_ids)->pluck('id');
 
                 $dam_ids = $bookmarks->pluck('dam_id')->reduce(function ($carry, $item) use ($filesets) {
                     if (!isset($carry[$item])) {
@@ -75,19 +73,18 @@ class syncV2Bookmarks extends Command
                 }, []);
 
                 $bookmarks = $bookmarks->filter(function ($bookmark) use ($dam_ids, $books, $v4_users, $v4_bookmarks) {
-                    return validateV2Annotation($bookmark, $dam_ids, $books, $v4_users, $v4_bookmarks, true);
+                    return validateV2Annotation($bookmark, $dam_ids, $books, $v4_users, $v4_bookmarks, false);
                 });
 
                 $bookmarks = $bookmarks->map(function ($bookmark) use ($v4_users, $books, $dam_ids) {
                     return [
-                        'v2_id'       => $bookmark->id,
                         'user_id'     => $v4_users[$bookmark->user_id],
                         'bible_id'    => $dam_ids[$bookmark->dam_id]->bible->first()->id,
                         'book_id'     => $books[$bookmark->book_id],
                         'chapter'     => $bookmark->chapter_id,
                         'verse_start' => $bookmark->verse_id,
-                        'created_at' => Carbon::createFromTimeString($bookmark->created),
-                        'updated_at' => Carbon::createFromTimeString($bookmark->updated),
+                        'created_at'  => Carbon::createFromTimeString($bookmark->created),
+                        'updated_at'  => Carbon::createFromTimeString($bookmark->updated),
                     ];
                 });
 
@@ -97,8 +94,8 @@ class syncV2Bookmarks extends Command
                     Bookmark::insert($chunk->toArray());
                 }
 
-                echo "\n" . Carbon::now() . ': Inserted ' . sizeof($bookmarks) . ' new v2 bookmarks.';
+                echo "\n" . Carbon::now() . ': Inserted ' . sizeof($bookmarks) . ' new live bibleis bookmarks.';
             });
-        echo "\n" . Carbon::now() . ": v2 to v4 bookmarks sync finalized.\n";
+        echo "\n" . Carbon::now() . ": live bibleis to v4 bookmarks sync finalized.\n";
     }
 }
