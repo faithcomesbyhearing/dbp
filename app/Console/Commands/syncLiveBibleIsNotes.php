@@ -39,53 +39,41 @@ class syncLiveBibleIsNotes extends Command
         $from_date = Carbon::createFromFormat('Y-m-d', $from_date)->startOfDay();
 
         $filesets = BibleFileset::with('bible')->get();
-        $this->dam_ids = [];
-        $books = Book::select('id_osis', 'id')->get()->pluck('id', 'id_osis')->toArray();
+        $this->bible_ids = [];
 
         echo "\n" . Carbon::now() . ': liveBibleis to v4 notes sync started.';
         $chunk_size = config('settings.v2V4SyncChunkSize');
 
         DB::connection($db_name)
             ->table('user_notes')
-            ->where('status', 'current')
-            ->where('created', '>=', $from_date)
-            ->orderBy('id')->chunk($chunk_size, function ($notes) use ($filesets, $books) {
-                $user_ids = $notes->pluck('user_id')->toArray();
-                $note_ids = $notes->pluck('id')->toArray();
-
-                $v4_users = User::whereIn('id', $user_ids)->pluck('id');
-                $v4_notes = Note::whereIn('id', $note_ids)->pluck('id');
-
-                $dam_ids = $notes->pluck('dam_id')->reduce(function ($carry, $item) use ($filesets) {
+            ->where('created_at', '>=', $from_date)
+            ->orderBy('id')->chunk($chunk_size, function ($notes) use ($filesets) {
+                $bible_ids = $notes->pluck('bible_id')->reduce(function ($carry, $item) use ($filesets) {
                     if (!isset($carry[$item])) {
-                        if (isset($this->dam_ids[$item])) {
-                            $carry[$item] = $this->dam_ids[$item];
-                            return $carry;
-                        }
                         $fileset = getFilesetFromDamId($item, true, $filesets);
                         if ($fileset) {
                             $carry[$item] = $fileset;
-                            $this->dam_ids[$item] = $fileset;
+                            $this->bible_ids[$item] = $fileset;
                         }
                     }
                     return $carry;
                 }, []);
 
-                $notes = $notes->filter(function ($note) use ($dam_ids, $books, $v4_users, $v4_notes) {
-                    return validateV2Annotation($note, $dam_ids, $books, $v4_users, $v4_notes, false);
+                $notes = $notes->filter(function ($note) use ($bible_ids) {
+                    return validateLiveBibleIsAnnotation($note, $bible_ids);
                 });
 
-                $notes = $notes->map(function ($note) use ($v4_users, $books, $dam_ids) {
+                $notes = $notes->map(function ($note) use ($bible_ids) {
                     return [
-                        'user_id'     => $v4_users[$note->user_id],
-                        'bible_id'    => $dam_ids[$note->dam_id]->bible->first()->id,
-                        'book_id'     => $books[$note->book_id],
-                        'notes'       => $note->note,
-                        'chapter'     => $note->chapter_id,
-                        'verse_start' => $note->verse_id,
-                        'verse_end'   => $note->verse_id,
-                        'created_at'  => Carbon::createFromTimeString($note->created),
-                        'updated_at'  => Carbon::createFromTimeString($note->updated),
+                        'user_id'     => $note->user_id,
+                        'bible_id'    => $bible_ids[$note->bible_id]->bible->first()->id,
+                        'book_id'     => $note->book_id,
+                        'notes'       => $note->notes,
+                        'chapter'     => $note->chapter,
+                        'verse_start' => $note->verse_start,
+                        'verse_end'   => $note->verse_end,
+                        'created_at'  => Carbon::createFromTimeString($note->created_at),
+                        'updated_at'  => Carbon::createFromTimeString($note->updated_at),
                     ];
                 });
 

@@ -76,7 +76,7 @@ class syncV2Highlights extends Command
                 }, []);
 
                 $highlights = $highlights->filter(function ($highlight) use ($dam_ids, $books, $v4_users, $v4_highlights) {
-                    return validateV2Annotation($highlight, $dam_ids, $books, $v4_users, $v4_highlights, true);
+                    return validateV2Annotation($highlight, $dam_ids, $books, $v4_users, $v4_highlights);
                 });
 
                 $highlights = $highlights->map(function ($highlight) use ($v4_users, $books, $dam_ids) {
