@@ -259,9 +259,9 @@ if (!function_exists('getFilesetFromDamId')) {
 }
 
 if (!function_exists('validateV2Annotation')) {
-    function validateV2Annotation($annotation, $filesets, $books, $v4_users, $v4_annotations, $check_annotation_id)
+    function validateV2Annotation($annotation, $filesets, $books, $v4_users, $v4_annotations)
     {   
-        if (isset($v4_annotations[$annotation->id]) && $check_annotation_id) {
+        if (isset($v4_annotations[$annotation->id])) {
             // echo "\n Error!! Annotation already inserted: " . $annotation->id;
             return false;
         }
@@ -295,6 +295,30 @@ if (!function_exists('validateV2Annotation')) {
 
         return true;
     }
+}
+
+if (!function_exists('validateLiveBibleIsAnnotation')) {
+  function validateLiveBibleIsAnnotation($annotation, $filesets)
+  {    
+      if (!isset($filesets[$annotation->bible_id])) {
+          // echo "\n Error!! Could not find FILESET_ID: " . $annotation->bible_id;
+          return false;
+      }
+
+      $fileset = $filesets[$annotation->bible_id];
+
+      if ($fileset->bible->first()) {
+          if (!isset($fileset->bible->first()->id)) {
+              // echo "\n Error!! Could not find BIBLE_ID";
+              return false;
+          }
+      } else {
+          // echo "\n Error!! Could not find BIBLE_ID";
+          return false;
+      }
+
+      return true;
+  }
 }
 
 if (!function_exists('arrayToCommaSeparatedValues')) {
