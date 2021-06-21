@@ -46,7 +46,7 @@ class syncLiveBibleIsNotes extends Command
         $chunk_size = config('settings.v2V4SyncChunkSize');
 
         DB::connection($db_name)
-            ->table('note')
+            ->table('user_notes')
             ->where('status', 'current')
             ->where('created', '>=', $from_date)
             ->orderBy('id')->chunk($chunk_size, function ($notes) use ($filesets, $books) {

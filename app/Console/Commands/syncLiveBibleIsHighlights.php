@@ -47,7 +47,7 @@ class syncLiveBibleIsHighlights extends Command
         echo "\n" . Carbon::now() . ': liveBibleis to v4 highlights sync started.';
         $chunk_size = config('settings.v2V4SyncChunkSize');
         DB::connection($db_name)
-            ->table('highlight')
+            ->table('user_highlights')
             ->where('created', '>=', $from_date)
             ->orderBy('id')
             ->chunk($chunk_size, function ($highlights) use ($filesets, $books) {
