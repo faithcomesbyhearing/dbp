@@ -237,23 +237,24 @@ if (!function_exists('getFilesetFromDamId')) {
             
             if (array_key_exists($dam_id, $transition_bibles)) {
                 $dam_id = $transition_bibles[$dam_id];
+            } else if (array_key_exists($dam_id, array_flip($transition_bibles))) {
+                $dam_id = array_flip($transition_bibles)[$dam_id];
             }
         }
-        
+
         $fileset = $filesets->where('id', $dam_id)->first();
-        
+
         if (!$fileset) {
             $fileset = $filesets->where('id', substr($dam_id, 0, -4))->first();
         }
         if (!$fileset) {
             $fileset = $filesets->where('id', substr($dam_id, 0, -2))->first();
         }
-        
+
         if (!$fileset) {
             // echo "\n Error!! Could not find FILESET_ID: " . substr($dam_id, 0, 6);
             return false;
         }
-
         return $fileset;
     }
 }
@@ -298,14 +299,18 @@ if (!function_exists('validateV2Annotation')) {
 }
 
 if (!function_exists('validateLiveBibleIsAnnotation')) {
-  function validateLiveBibleIsAnnotation($annotation, $filesets)
+  function validateLiveBibleIsAnnotation($annotation, $filesets, $annotation_exists)
   {    
-      if (!isset($filesets[$annotation->bible_id])) {
+      if ($annotation_exists) {
+          return false;
+      }
+
+      if (!isset($filesets[$annotation['bible_id']])) {
           // echo "\n Error!! Could not find FILESET_ID: " . $annotation->bible_id;
           return false;
       }
 
-      $fileset = $filesets[$annotation->bible_id];
+      $fileset = $filesets[$annotation['bible_id']];
 
       if ($fileset->bible->first()) {
           if (!isset($fileset->bible->first()->id)) {
