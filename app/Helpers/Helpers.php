@@ -299,26 +299,20 @@ if (!function_exists('validateV2Annotation')) {
 }
 
 if (!function_exists('validateLiveBibleIsAnnotation')) {
-  function validateLiveBibleIsAnnotation($annotation, $filesets, $annotation_exists)
+  function validateLiveBibleIsAnnotation($annotation, $v4_users, $bibles, $annotation_exists)
   {    
       if ($annotation_exists) {
           return false;
       }
 
-      if (!isset($filesets[$annotation['bible_id']])) {
-          // echo "\n Error!! Could not find FILESET_ID: " . $annotation->bible_id;
+      if (!in_array($annotation['user_id'], $v4_users)) {
+          echo "\n Error!! Could not find USER_ID: " . $annotation['user_id'] . ' (wont insert this annotation)';
           return false;
       }
 
-      $fileset = $filesets[$annotation['bible_id']];
 
-      if ($fileset->bible->first()) {
-          if (!isset($fileset->bible->first()->id)) {
-              // echo "\n Error!! Could not find BIBLE_ID";
-              return false;
-          }
-      } else {
-          // echo "\n Error!! Could not find BIBLE_ID";
+      if (!in_array($annotation['bible_id'], $bibles)) {
+          echo "\n Error!! Could not find BIBLE_ID". $annotation['bible_id'] . ' (wont insert this annotation)';
           return false;
       }
 
