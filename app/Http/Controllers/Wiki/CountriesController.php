@@ -7,6 +7,7 @@ use App\Http\Controllers\APIController;
 use App\Models\Country\JoshuaProject;
 use App\Models\Country\Country;
 use App\Transformers\CountryTransformer;
+use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 
 class CountriesController extends APIController
 {
@@ -52,13 +53,16 @@ class CountriesController extends APIController
     public function index()
     {
         $languages = checkBoolean('include_languages');
+        $limit     = (int) (checkParam('limit') ?? 50);
+        $page      = checkParam('page') ?? 1;
 
-        $cache_params = [$GLOBALS['i18n_iso'], $languages];
+        list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
+        $cache_params = [$GLOBALS['i18n_iso'], $languages, $limit, $is_bibleis_gideons];
 
-        $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($languages) {
+        $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($languages, $limit, $page) {
             $countries = Country::with('currentTranslation')
             ->whereHas('languages.bibles.filesets')
-            ->get();
+            ->paginate($limit);
             if ($languages) {
                 $countries->load([
                     'languagesFiltered' => function ($query) use ($languages) {
@@ -66,7 +70,14 @@ class CountriesController extends APIController
                     },
                 ]);
             }
-            return fractal()->collection($countries)->transformWith(new CountryTransformer());
+
+            $countries_return = fractal(
+                $countries->getCollection(),
+                CountryTransformer::class,
+                $this->serializer
+            );
+
+            return $countries_return->paginateWith(new IlluminatePaginatorAdapter($countries));
         });
         return $this->reply($countries);
     }

@@ -86,14 +86,27 @@ class LanguagesController extends APIController
         $code                  = checkParam('code|iso|language_code');
         $include_translations  = checkParam('include_translations|include_alt_names');
         $name                  = checkParam('name|language_name');
-        $limit      = checkParam('limit');
-        $page       = checkParam('page');
+        $limit                 = (int) (checkParam('limit') ?? 50);
+        $page                  = checkParam('page') ?? 1;
+
+        // remove pagination for bibleis and gideons (temporal fix)
+        list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
 
         $access_control = cacheRemember('access_control', [$this->key], now()->addHour(), function () {
             return $this->accessControl($this->key);
         });
-
-        $cache_params = [$this->v,  $country, $code, $GLOBALS['i18n_id'], $name, $include_translations, $access_control->string, $limit, $page];
+        $cache_params = [
+            $this->v,  
+            $country, 
+            $code, 
+            $GLOBALS['i18n_id'], 
+            $name, 
+            $include_translations, 
+            $access_control->string, 
+            $limit, 
+            $page,
+            $is_bibleis_gideons
+        ];
 
         $order = $country ? 'country_population.population' : 'ifnull(current_translation.name, languages.name)';
         $order_dir = $country ? 'desc' : 'asc';
@@ -123,15 +136,15 @@ class LanguagesController extends APIController
                     'filesets'
                 ]);
 
-            if ($page) {
-                $languages  = $languages->paginate($limit);
-                return $this->reply(fractal($languages->getCollection(), LanguageTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($languages)));
-            }
+            $languages = $languages->paginate($limit);
+            $languages_return = fractal(
+                $languages->getCollection(),
+                LanguageTransformer::class,
+                $this->serializer
+            );
 
-            $languages = $languages->limit($limit)->get();
-            return fractal($languages, new LanguageTransformer(), $this->serializer);
+            return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
         });
-
 
         return $this->reply($languages);
     }
