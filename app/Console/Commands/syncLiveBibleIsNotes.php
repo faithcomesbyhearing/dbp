@@ -60,6 +60,7 @@ class syncLiveBibleIsNotes extends Command
                         'notes'       => $note->notes,
                         'chapter'     => $note->chapter,
                         'verse_start' => $note->verse_start,
+                        'verse_end'   => $note->verse_end ?? $note->verse_start,
                         'created_at'  => Carbon::createFromTimeString($note->created_at),
                         'updated_at'  => Carbon::createFromTimeString($note->updated_at),
                     ];
