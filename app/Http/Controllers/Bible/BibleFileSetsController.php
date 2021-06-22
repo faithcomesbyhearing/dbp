@@ -180,7 +180,7 @@ class BibleFileSetsController extends APIController
             $verse_end,
             $type
         ];
-        
+
         $fileset_chapters = cacheRemember(
             $cache_key,
             $cache_params,
@@ -211,8 +211,8 @@ class BibleFileSetsController extends APIController
                 }
                 $asset_id = $fileset->asset_id;
                 $bible = optional($fileset->bible)->first();
-                
-                if (strpos($fileset_type, 'text') !== false) {
+
+                if ($fileset_type === 'text_plain') {
                     return $this->showTextFilesetChapter(
                         null,
                         $bible,
@@ -326,8 +326,8 @@ class BibleFileSetsController extends APIController
 
                 $asset_id = $fileset->asset_id;
                 $bible = optional($fileset->bible)->first();
-
-                if (strpos($fileset_type, 'text') !== false) {
+                
+                if ($fileset_type === 'text_plain') {
                     return $this->showTextFilesetChapter(
                         $limit,
                         $bible,

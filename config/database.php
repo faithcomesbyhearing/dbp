@@ -117,7 +117,20 @@ return [
             'strict'    => false,
             'engine'    => null,
         ],
-
+        
+        'livebibleis_users' => [
+          'driver'    => 'mysql',
+          'host'      => env('LIVEBIBLEIS_USERS_HOST', '127.0.0.1'),
+          'port'      => env('LIVEBIBLEIS_USERS_PORT', '3306'),
+          'database'  => env('LIVEBIBLEIS_USERS_DATABASE', 'livebibleis_users'),
+          'username'  => env('LIVEBIBLEIS_USERS_USERNAME', 'root'),
+          'password'  => env('LIVEBIBLEIS_USERS_PASSWORD', ''),
+          'charset'   => 'utf8mb4',
+          'collation' => 'utf8mb4_unicode_ci',
+          'prefix'    => '',
+          'strict'    => false,
+          'engine'    => null,
+      ],
     ],
 
     /*

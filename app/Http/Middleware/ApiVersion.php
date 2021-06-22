@@ -19,7 +19,9 @@ class APIVersion
      */
     public function handle($request, Closure $next)
     {
-        $version_name = explode('_', $request->route()->getName())[0];
+        $route = $request->route()->getName();
+        $version_name = explode('_', $route)[0];
+
         if (!($version_name === 'v2' || $version_name === 'v3' ||  $version_name === 'v4')) {
             return $next($request);
         }
@@ -32,8 +34,13 @@ class APIVersion
         } else {
             return $next($request);
         }
-        if ($routeV != $requestV) {
-            return response('Not Found', 404);
+        
+        if ($routeV != $requestV) {     
+            $route_name = $requestV === '3' && $routeV === '2' ? $route : null;
+
+            if (!\Route::has($route_name)) {
+                return response('Not Found', 404);
+            }
         }
 
         return $next($request);

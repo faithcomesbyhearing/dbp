@@ -119,6 +119,18 @@ function isBibleisOrGideon($key)
     return false;
 }
 
+function forceBibleisGideonsPagination($key, $limit_param)
+{
+    // remove pagination for bibleis and gideons (temporal fix)
+    $limit = min($limit_param, 50);
+    $is_bibleis_gideons = null;
+    if (isBibleisOrGideon($key)) {
+        $limit = PHP_INT_MAX;
+        $is_bibleis_gideons = 'bibleis-gideons';
+    } 
+    return [$limit, $is_bibleis_gideons];
+}
+
 if (!function_exists('csvToArray')) {
     function csvToArray($csvfile)
     {
@@ -225,30 +237,31 @@ if (!function_exists('getFilesetFromDamId')) {
             
             if (array_key_exists($dam_id, $transition_bibles)) {
                 $dam_id = $transition_bibles[$dam_id];
+            } else if (array_key_exists($dam_id, array_flip($transition_bibles))) {
+                $dam_id = array_flip($transition_bibles)[$dam_id];
             }
         }
-        
+
         $fileset = $filesets->where('id', $dam_id)->first();
-        
+
         if (!$fileset) {
             $fileset = $filesets->where('id', substr($dam_id, 0, -4))->first();
         }
         if (!$fileset) {
             $fileset = $filesets->where('id', substr($dam_id, 0, -2))->first();
         }
-        
+
         if (!$fileset) {
             // echo "\n Error!! Could not find FILESET_ID: " . substr($dam_id, 0, 6);
             return false;
         }
-
         return $fileset;
     }
 }
 
 if (!function_exists('validateV2Annotation')) {
     function validateV2Annotation($annotation, $filesets, $books, $v4_users, $v4_annotations)
-    {
+    {   
         if (isset($v4_annotations[$annotation->id])) {
             // echo "\n Error!! Annotation already inserted: " . $annotation->id;
             return false;
@@ -283,6 +296,28 @@ if (!function_exists('validateV2Annotation')) {
 
         return true;
     }
+}
+
+if (!function_exists('validateLiveBibleIsAnnotation')) {
+  function validateLiveBibleIsAnnotation($annotation, $v4_users, $bibles, $annotation_exists)
+  {    
+      if ($annotation_exists) {
+          return false;
+      }
+
+      if (!in_array($annotation['user_id'], $v4_users)) {
+          echo "\n Error!! Could not find USER_ID: " . $annotation['user_id'] . ' (wont insert this annotation)';
+          return false;
+      }
+
+
+      if (!in_array($annotation['bible_id'], $bibles)) {
+          echo "\n Error!! Could not find BIBLE_ID". $annotation['bible_id'] . ' (wont insert this annotation)';
+          return false;
+      }
+
+      return true;
+  }
 }
 
 if (!function_exists('arrayToCommaSeparatedValues')) {
