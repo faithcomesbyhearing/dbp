@@ -42,7 +42,7 @@ class syncLiveBibleIsHighlights extends Command
         $bible_ids = $bibles->pluck('id')->toArray();
 
         echo "\n" . Carbon::now() . ': liveBibleis to v4 highlights sync started.';
-        $chunk_size = config('settings.v2V4SyncChunkSize');
+        $chunk_size = config('settings.liveBibleisV4SyncChunkSize');
         $syncFile = config('settings.bibleSyncFilePath');
         $transition_bibles = convertCsvToArrayMap($syncFile);
 
@@ -50,12 +50,18 @@ class syncLiveBibleIsHighlights extends Command
             ->table('user_highlights')
             ->where('created_at', '>=', $from_date)
             ->orderBy('id')
-            ->chunk($chunk_size, function ($highlights) use ($bible_ids, $transition_bibles) {
+            ->chunk($chunk_size, function ($highlights) use ($bible_ids, $transition_bibles, $chunk_size) {
                 $highlights = $highlights->map(function ($highlight) use ($transition_bibles) {
+                    $user_email = DB::connection('livebibleis_users')->table('users')->where('id', $highlight->user_id)->pluck('email')->first();
+                    $v4_user_id = User::where('email', $user_email)->pluck('id')->first();
+                    if (!$user_email || !$v4_user_id) {
+                        return;
+                    }
+
                     $bible_id = $highlight->bible_id;
                     $v4_bible_id = array_key_exists($bible_id, $transition_bibles) ? $transition_bibles[$bible_id] : $bible_id;
                     return [
-                        'user_id'           => $highlight->user_id,
+                        'user_id'           => $v4_user_id,
                         'bible_id'          => $v4_bible_id,
                         'book_id'           => $highlight->book_id,
                         'chapter'           => $highlight->chapter,
@@ -64,14 +70,15 @@ class syncLiveBibleIsHighlights extends Command
                         'highlight_start'   => $highlight->highlight_start ?? 1,
                         'highlighted_words' => $highlight->highlighted_words ?? null,
                         'highlighted_color' => $highlight->highlighted_color,
-                        'created_at'        => Carbon::createFromTimeString($highlight->created_at),
-                        'updated_at'        => Carbon::createFromTimeString($highlight->updated_at),
                     ];
                 });
 
                 $user_ids = $highlights->pluck('user_id')->toArray();
                 $v4_users = User::whereIn('id', $user_ids)->pluck('id')->toArray();
                 $highlights = $highlights->filter(function ($highlight) use ($bible_ids, $v4_users) {
+                    if (!$highlight) {
+                        return false;
+                    }
                     $highlight_exists = Highlight::where([
                         'user_id'           => $highlight['user_id'], 
                         'bible_id'          => $highlight['bible_id'],
@@ -82,7 +89,7 @@ class syncLiveBibleIsHighlights extends Command
                     return validateLiveBibleIsAnnotation($highlight, $v4_users, $bible_ids, $highlight_exists);
                 });
 
-                $chunks = $highlights->chunk(5000);
+                $chunks = $highlights->chunk($chunk_size);
                 foreach ($chunks as $chunk) {
                     Highlight::insert($chunk->toArray());
                 }
