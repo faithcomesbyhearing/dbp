@@ -53,7 +53,7 @@ class syncLiveBibleIsHighlights extends Command
             ->chunk($chunk_size, function ($highlights) use ($bible_ids, $transition_bibles, $chunk_size) {
                 $highlights = $highlights->map(function ($highlight) use ($transition_bibles) {
                     $user_email = DB::connection('livebibleis_users')->table('users')->where('id', $highlight->user_id)->pluck('email')->first();
-                    $v4_user_id = User::where(DB::raw('upper(email)'), '=', strtoupper($user_email))->pluck('id')->first();
+                    $v4_user_id = User::where('email', $user_email)->pluck('id')->first();
                     if (!$user_email || !$v4_user_id) {
                         return;
                     }
