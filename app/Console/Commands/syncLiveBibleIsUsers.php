@@ -52,11 +52,14 @@ class syncLiveBibleIsUsers extends Command
                         'password'    => $user->password,
                         'activated'   => $user->activated,
                         'token'       => $user->token,
+                        'notes'       => 'inserted by syncLiveBibleIsUsers',
                     ];
                 });
                 
                 $users = $users->filter(function ($user) {
-                    $user_exists = User::where('email', $user['email'])->first();
+                    $user_exists = User::where(
+                        \DB::raw('upper(email)'), '=', strtoupper($user['email'])
+                    )->first();
                     return !$user_exists;
                 });
 
