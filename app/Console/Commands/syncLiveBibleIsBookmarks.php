@@ -53,7 +53,7 @@ class syncLiveBibleIsBookmarks extends Command
             ->chunk($chunk_size, function ($bookmarks) use ($bible_ids, $transition_bibles, $chunk_size) {
                 $bookmarks = $bookmarks->map(function ($bookmark) use ($transition_bibles) {
                     $user_email = DB::connection('livebibleis_users')->table('users')->where('id', $bookmark->user_id)->pluck('email')->first();
-                    $v4_user_id = User::where('email', $user_email)->pluck('id')->first();
+                    $v4_user_id = User::where(DB::raw('upper(email)'), '=', strtoupper($user_email))->pluck('id')->first();
                     if ($user_email && $v4_user_id) {
                         $bible_id = $bookmark->bible_id;
                         $v4_bible_id = array_key_exists($bible_id, $transition_bibles) ? $transition_bibles[$bible_id] : $bible_id;
