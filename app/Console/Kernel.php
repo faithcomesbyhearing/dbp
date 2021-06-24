@@ -51,6 +51,7 @@ class Kernel extends ConsoleKernel
         Commands\translatePlaylist::class,
         Commands\encryptNote::class,
 
+        Commands\syncLiveBibleIsUsers::class,
         Commands\syncLiveBibleIsHighlights::class,
         Commands\syncLiveBibleIsNotes::class,
         Commands\syncLiveBibleIsBookmarks::class,

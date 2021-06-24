@@ -42,7 +42,7 @@ class syncLiveBibleIsBookmarks extends Command
         $bible_ids = $bibles->pluck('id')->toArray();
 
         echo "\n" . Carbon::now() . ': liveBibleis to v4 bookmarks sync started.';
-        $chunk_size = config('settings.v2V4SyncChunkSize');
+        $chunk_size = config('settings.liveBibleisV4SyncChunkSize');
         $syncFile = config('settings.bibleSyncFilePath');
         $transition_bibles = convertCsvToArrayMap($syncFile);
         
@@ -50,24 +50,29 @@ class syncLiveBibleIsBookmarks extends Command
             ->table('user_bookmarks')
             ->where('created_at', '>=', $from_date)
             ->orderBy('id')
-            ->chunk($chunk_size, function ($bookmarks) use ($bible_ids, $transition_bibles) {
+            ->chunk($chunk_size, function ($bookmarks) use ($bible_ids, $transition_bibles, $chunk_size) {
                 $bookmarks = $bookmarks->map(function ($bookmark) use ($transition_bibles) {
-                    $bible_id = $bookmark->bible_id;
-                    $v4_bible_id = array_key_exists($bible_id, $transition_bibles) ? $transition_bibles[$bible_id] : $bible_id;
-                    return [
-                        'user_id'     => $bookmark->user_id,
-                        'bible_id'    => $v4_bible_id,
-                        'book_id'     => $bookmark->book_id,
-                        'chapter'     => $bookmark->chapter,
-                        'verse_start' => $bookmark->verse_start,
-                        'created_at'  => Carbon::createFromTimeString($bookmark->created_at),
-                        'updated_at'  => Carbon::createFromTimeString($bookmark->updated_at),
-                    ];
+                    $user_email = DB::connection('livebibleis_users')->table('users')->where('id', $bookmark->user_id)->pluck('email')->first();
+                    $v4_user_id = User::where('email', $user_email)->pluck('id')->first();
+                    if ($user_email && $v4_user_id) {
+                        $bible_id = $bookmark->bible_id;
+                        $v4_bible_id = array_key_exists($bible_id, $transition_bibles) ? $transition_bibles[$bible_id] : $bible_id;
+                        return [
+                            'user_id'     => $v4_user_id,
+                            'bible_id'    => $v4_bible_id,
+                            'book_id'     => $bookmark->book_id,
+                            'chapter'     => $bookmark->chapter,
+                            'verse_start' => $bookmark->verse_start,
+                        ];
+                    }
                 });
-                
+
                 $user_ids = $bookmarks->pluck('user_id')->toArray();
                 $v4_users = User::whereIn('id', $user_ids)->pluck('id')->toArray();
                 $bookmarks = $bookmarks->filter(function ($bookmark) use ($bible_ids, $v4_users) {
+                  if (!$bookmark) {
+                      return false;
+                  }
                   $bookmark_exists = Bookmark::where([
                       'user_id'           => $bookmark['user_id'], 
                       'bible_id'          => $bookmark['bible_id'],
@@ -78,7 +83,7 @@ class syncLiveBibleIsBookmarks extends Command
                   return validateLiveBibleIsAnnotation($bookmark, $v4_users, $bible_ids, $bookmark_exists);
                 });
 
-                $chunks = $bookmarks->chunk(5000);
+                $chunks = $bookmarks->chunk($chunk_size);
                 foreach ($chunks as $chunk) {
                     Bookmark::insert($chunk->toArray());
                 }
