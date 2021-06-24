@@ -50,7 +50,7 @@ class syncLiveBibleIsNotes extends Command
             ->orderBy('id')->chunk($chunk_size, function ($notes) use ($bible_ids, $transition_bibles, $chunk_size) {
                 $notes = $notes->map(function ($note) use ($bible_ids, $transition_bibles) {
                     $user_email = DB::connection('livebibleis_users')->table('users')->where('id', $note->user_id)->pluck('email')->first();
-                    $v4_user_id = User::where('email', $user_email)->pluck('id')->first();
+                    $v4_user_id = User::where(DB::raw('upper(email)'), '=', strtoupper($user_email))->pluck('id')->first();
                     if (!$user_email || !$v4_user_id) {
                         return;
                     }
