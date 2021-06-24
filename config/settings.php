@@ -47,6 +47,11 @@ return [
   'v2V4SyncChunkSize' => env('V2_V4_SYNC_CHUNK_SIZE', 5000),
 
   /*
+   * v2 v4 sync chunk size
+   */
+  'liveBibleisV4SyncChunkSize' => env('LIVE_BIBLEIS_V4_SYNC_CHUNK_SIZE', 500),
+  
+  /*
    * Default project id to assign to v2 to v4 users
    */
   'defaultProjectId' => env('USER_DEFAULT_PROJECT_ID', 52341),
