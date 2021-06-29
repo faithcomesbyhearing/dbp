@@ -152,7 +152,7 @@ class FileSetTransformer extends BaseTransformer
                     'chapter_end'   => $fileset->chapter_end,
                     'verse_start'   => $fileset->verse_start,
                     'verse_end'     => $fileset->verse_end,
-                    'thumbnail'     => $fileset->thumbnail,
+                    'thumbnail'     => $this->route === 'v4_filesets.chapter' ? $fileset->thumbnail : null,
                     'timestamp'     => $fileset->timestamp,
                     'path'          => $fileset->file_name,
                     'duration'      => $fileset->duration
