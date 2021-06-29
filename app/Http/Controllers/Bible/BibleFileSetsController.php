@@ -444,7 +444,7 @@ class BibleFileSetsController extends APIController
             config('database.connections.dbp.database') . '.bible_files_secondary',
             'bible_files_secondary.hash_id',
             'bible_files.hash_id'
-        )->take(1)
+        )
         ->leftJoin(
             config('database.connections.dbp.database') .
                 '.bible_books',
