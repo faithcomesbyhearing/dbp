@@ -1050,7 +1050,10 @@ class BiblesController extends APIController
         $highlights_controller = new HighlightsController();
         $bookmarks_controller = new BookmarksController();
         $notes_controller = new NotesController();
+        // get the max possible annotations for a single chapter
+        $chapter_max_verses = 180;
         $request->request->add(['bible_id' => $bible_id]);
+        $request->request->add(['limit' => $chapter_max_verses]);
         $result->highlights = $highlights_controller->index($request, $user->id)->original['data'];
         $result->bookmarks = $bookmarks_controller->index($request, $user->id)->original['data'];
         $result->notes = $notes_controller->index($request, $user->id)->original['data'];
