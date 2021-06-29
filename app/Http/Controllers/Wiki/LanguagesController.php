@@ -90,6 +90,7 @@ class LanguagesController extends APIController
         $limit                 = (int) (checkParam('limit') ?? 50);
         $page                  = checkParam('page') ?? 1;
 
+        // note: this two commented changes can be removed when bibleis and gideons no longer require a non-paginated response
         // remove pagination for bibleis and gideons (temporal fix)
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
         // this is a band aid to reduce the query with a forced asset_id if uses show_bibles
