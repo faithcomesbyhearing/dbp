@@ -336,24 +336,33 @@ class LibraryController extends APIController
                 ->leftJoin('language_codes as arclight', function ($query) {
                     $query->on('arclight.language_id', 'languages.id')->where('source', 'arclight');
                 })
-                ->select([
-                    'english_name.name as english_name',
-                    'autonym.name as autonym_name',
-                    'bibles.id as bible_id',
-                    'bible_filesets.id',
-                    'bible_filesets.created_at',
-                    'bible_filesets.updated_at',
-                    'bible_filesets.set_type_code',
-                    'bible_filesets.set_size_code',
-                    'alphabets.direction',
-                    'languages.iso',
-                    'languages.iso2B',
-                    'languages.iso2T',
-                    'languages.iso1',
-                    'arclight.code as arclight_code',
-                    'languages.name as language_name',
-                    'language_translations.name as autonym'
-                ])
+                ->leftJoin(
+                    'bible_files_secondary',
+                    'bible_files_secondary.hash_id',
+                    'bible_filesets.hash_id'
+                )
+                ->select(
+                    \DB::raw(
+                        'english_name.name as english_name,
+                        autonym.name as autonym_name,
+                        bibles.id as bible_id,
+                        bible_filesets.id,
+                        bible_filesets.created_at,
+                        bible_filesets.updated_at,
+                        bible_filesets.set_type_code,
+                        bible_filesets.set_size_code,
+                        alphabets.direction,
+                        languages.iso,
+                        languages.iso2B,
+                        languages.iso2T,
+                        languages.iso1,
+                        arclight.code as arclight_code,
+                        languages.name as language_name,
+                        language_translations.name as autonym,
+                        MIN(bible_files_secondary.file_name) as secondary_file_name,
+                        bible_files_secondary.file_type as secondary_file_type'
+                    )
+                )->groupBy(['bible_filesets.hash_id', 'bible_files_secondary.file_type'])
                 ->when($updated, function ($query) use ($updated) {
                     $query->where('bible_filesets.updated_at', '>', $updated);
                 })
@@ -365,6 +374,7 @@ class LibraryController extends APIController
                 })->get()->filter(function ($item) {
                     return $item->english_name;
                 });
+
             return $this->generateV2StyleId($filesets);
         });
 
