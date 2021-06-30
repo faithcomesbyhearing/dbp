@@ -1031,9 +1031,10 @@ class BiblesController extends APIController
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
-
         $book_id = checkParam('book_id');
         $chapter = checkParam('chapter');
+        $chapter_max_verses = 180;
+        $limit   = (int) (checkParam('limit') ?? $chapter_max_verses);
 
         if ($book_id) {
             $book = Book::whereId($book_id)->first();
@@ -1043,17 +1044,12 @@ class BiblesController extends APIController
             }
         }
 
-
         $result = (object) [];
-
-
         $highlights_controller = new HighlightsController();
         $bookmarks_controller = new BookmarksController();
         $notes_controller = new NotesController();
-        // get the max possible annotations for a single chapter
-        $chapter_max_verses = 180;
         $request->request->add(['bible_id' => $bible_id]);
-        $request->request->add(['limit' => $chapter_max_verses]);
+        $request->request->add(['limit' => $limit]);
         $result->highlights = $highlights_controller->index($request, $user->id)->original['data'];
         $result->bookmarks = $bookmarks_controller->index($request, $user->id)->original['data'];
         $result->notes = $notes_controller->index($request, $user->id)->original['data'];
