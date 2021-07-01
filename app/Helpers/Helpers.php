@@ -166,6 +166,25 @@ function storagePath(
       ($secondary_file_name ?? $fileset_chapter['file_name']);
 }
 
+function shouldUseBibleisBackwardCompat($key)
+{
+    // endpoints/functions using this should already be deprecated for all other users
+    // different from bibleis
+    $should_use_backward_compat = false;
+    if (isBibleisOrGideon($key)) {
+        $ios_deprecation_version = (int) config('settings.bibleis_deprecate_from_version.ios');
+        $android_deprecation_version = (int) config('settings.bibleis_deprecate_from_version.android');
+        $user_ag = $_SERVER['HTTP_USER_AGENT'];
+        // add logic to get the ios/android version from the user agennt string
+        $app_version = (int) 'version';
+        if (($app_version < $ios_deprecation_version) || ($app_version < $android_deprecation_version)) {
+            $should_use_backward_compat = true;
+        }
+    }
+    
+    return $should_use_backward_compat;
+}
+
 if (!function_exists('csvToArray')) {
     function csvToArray($csvfile)
     {
