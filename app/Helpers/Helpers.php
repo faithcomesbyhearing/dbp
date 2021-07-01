@@ -124,7 +124,8 @@ function forceBibleisGideonsPagination($key, $limit_param)
     // remove pagination for bibleis and gideons (temporal fix)
     $limit = min($limit_param, 50);
     $is_bibleis_gideons = null;
-    if (isBibleisOrGideon($key)) {
+
+    if (shouldUseBibleisBackwardCompat($key)) {
         $limit = PHP_INT_MAX;
         $is_bibleis_gideons = 'bibleis-gideons';
     } 
@@ -177,6 +178,7 @@ function shouldUseBibleisBackwardCompat($key)
         $user_ag = $_SERVER['HTTP_USER_AGENT'];
         // add logic to get the ios/android version from the user agennt string
         $app_version = (int) 'version';
+
         if (($app_version < $ios_deprecation_version) || ($app_version < $android_deprecation_version)) {
             $should_use_backward_compat = true;
         }
