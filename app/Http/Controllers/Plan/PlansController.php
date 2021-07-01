@@ -104,14 +104,6 @@ class PlansController extends APIController
             return optional(Language::where('iso', $iso)->select('id')->first())->id;
         });
 
-        if ($featured) {
-            $cache_params = [$featured, $limit, $sort_by, $sort_dir, $iso];
-            $plans = cacheRemember('v4_plan_index', $cache_params, now()->addDay(), function () use ($featured, $limit, $sort_by, $sort_dir, $user, $language_id) {
-                return $this->getPlans($featured, $limit, $sort_by, $sort_dir, $user, $language_id);
-            });
-            return $this->reply($plans);
-        }
-
         return $this->reply($this->getPlans($featured, $limit, $sort_by, $sort_dir, $user, $language_id));
     }
 
