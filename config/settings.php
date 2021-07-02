@@ -115,8 +115,8 @@ return [
    */
   'forbiddenArclightIso' => env('FORBIDDEN_ARCLIGHT_ISO', 'hun'),
 
-  'bibleis_deprecate_from_version' => [
-      'ios' => env('BIBLEIS_DEPRECATE_FROM_IOS_VERSION', '900'),
-      'android' => env('BIBLEIS_DEPRECATE_FROM_ANDROID_VERSION', '5000'),
-  ],
+  /*
+   * Version to start bibleis/gid deprecation
+   */
+  'bibleis_deprecate_from_version' => env('BIBLEIS_DEPRECATE_FROM_VERSION', '3.0.10'),
 ];
