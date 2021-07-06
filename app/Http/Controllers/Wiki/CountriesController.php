@@ -57,7 +57,7 @@ class CountriesController extends APIController
         $page      = checkParam('page') ?? 1;
 
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
-        $cache_params = [$GLOBALS['i18n_iso'], $languages, $limit, $is_bibleis_gideons];
+        $cache_params = [$GLOBALS['i18n_iso'], $languages, $limit, $page, $is_bibleis_gideons];
 
         $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($languages, $limit, $page) {
             $countries = Country::with('currentTranslation')
