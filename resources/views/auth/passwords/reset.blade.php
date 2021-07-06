@@ -1,5 +1,43 @@
 @extends('layouts.app')
 
+@section('head')
+<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+<script>
+    $(document).ready(function () {
+        var form = $('#password-reset');
+        form.submit(function (e) {
+            e.preventDefault();
+            var valid = Validate();
+            if (valid) {
+                $.ajax({
+                    type: form.attr('method'),
+                    url:  form.attr('action'),
+                    data: form.serialize(),
+                    dataType: 'json',
+                    success: function (data) {
+                        $( "#message-box" ).prepend( '<div class="alert alert-success has-text-centered">Your password has been reset</div>' );
+                        window.location.href = "https://www.faithcomesbyhearing.com/bible-brain";
+                    }
+                });
+            }
+        });
+
+        function Validate() {
+            $( "#error-box" ).empty();
+            if ($("#password").val().length < 7) {
+                $( "#message-box" ).prepend( '<div class="alert alert-error has-text-centered">Your password must be at least eight characters</div>' );
+                return false;
+            }
+            if($("#password").val() != $("#password-confirm").val()) {
+                $( "#message-box" ).prepend( '<div class="alert alert-error has-text-centered">Your passwords do not match</div>' );
+                return false;
+            }
+            return true;
+        }
+    });
+</script>
+@endsection
+
 @section('content')
 
     @include('layouts.partials.banner', [
@@ -37,44 +75,4 @@
 @endsection
 
 @section('footer')
-    <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
-    <script>
-	    $(document).ready(function () {
-
-	    var form = $('#password-reset');
-	    form.submit(function (e) {
-		    e.preventDefault();
-                var valid = Validate();
-                if(valid) {
-	                $.ajax({
-		                type: form.attr('method'),
-		                url:  form.attr('action'),
-		                data: form.serialize(),
-		                dataType: 'json',
-		                success: function (data) {
-			                $( "#message-box" ).prepend( '<div class="alert alert-success has-text-centered">Your password has been reset</div>' );
-			                window.location.href = "https://live.bible.is";
-		                }
-	                });
-                }
-	    });
-
-	    function Validate() {
-		    $( "#error-box" ).empty();
-
-		    if ($("#password").val().length < 7) {
-			    $( "#message-box" ).prepend( '<div class="alert alert-error has-text-centered">Your password must be at least eight characters</div>' );
-			    return false;
-		    }
-
-		    if($("#password").val() != $("#password-confirm").val()) {
-			    $( "#message-box" ).prepend( '<div class="alert alert-error has-text-centered">Your passwords do not match</div>' );
-			    return false;
-            }
-
-            return true;
-	    }
-
-	    });
-    </script>
 @endsection
