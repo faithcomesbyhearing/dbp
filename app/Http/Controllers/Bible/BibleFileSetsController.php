@@ -565,7 +565,6 @@ class BibleFileSetsController extends APIController
             ($bible ? $bible->id . '/' : '') .
             $fileset->id .
             '/' .
-            // revisa bien este check
             $secondary_file_name ?? $fileset_chapter[$file_name];
     }
 
@@ -781,6 +780,8 @@ class BibleFileSetsController extends APIController
             'hash_id', 
             $fileset->hash_id
         )
+        // this MIN is used to only pick one file name for each type
+        // TODO: discuss and apply  a different way of selecting secondary files (specially for thumbnails)
         ->select(\DB::raw('MIN(file_name) as file_name,  file_type'))
         ->groupBy('file_type')->get();
 
