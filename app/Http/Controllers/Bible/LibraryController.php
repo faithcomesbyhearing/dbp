@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Bible;
 
 use App\Http\Controllers\Connections\ArclightController;
 use App\Traits\AccessControlAPI;
+use App\Traits\CallsBucketsTrait;
 use Illuminate\Http\JsonResponse;
 
 use App\Models\Language\Language;
@@ -17,6 +18,7 @@ use App\Http\Controllers\APIController;
 class LibraryController extends APIController
 {
     use AccessControlAPI;
+    use CallsBucketsTrait;
 
     /**
      *
@@ -351,6 +353,7 @@ class LibraryController extends APIController
                         bible_filesets.updated_at,
                         bible_filesets.set_type_code,
                         bible_filesets.set_size_code,
+                        bible_filesets.asset_id,
                         alphabets.direction,
                         languages.iso,
                         languages.iso2B,
@@ -374,6 +377,18 @@ class LibraryController extends APIController
                 })->get()->filter(function ($item) {
                     return $item->english_name;
                 });
+            foreach ($filesets as $key => $fileset) {
+                $filesets[$key]->secondary_file_path = $this->signedUrl(
+                    storagePath(
+                        $fileset->bible_id, 
+                        $fileset, 
+                        null, 
+                        $fileset->secondary_file_name
+                    ), 
+                    $fileset->asset_id,
+                    random_int(0, 10000000)
+                );
+            }
 
             return $this->generateV2StyleId($filesets);
         });
