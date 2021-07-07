@@ -131,7 +131,7 @@ function forceBibleisGideonsPagination($key, $limit_param)
     return [$limit, $is_bibleis_gideons];
 }
 
-function signedPath(
+function storagePath(
   $bible, 
   $fileset, 
   $fileset_chapter, 

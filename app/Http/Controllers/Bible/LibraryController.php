@@ -379,7 +379,7 @@ class LibraryController extends APIController
                 });
             foreach ($filesets as $key => $fileset) {
                 $filesets[$key]->secondary_file_path = $this->signedUrl(
-                    signedPath(
+                    storagePath(
                         $fileset->bible_id, 
                         $fileset, 
                         null, 
