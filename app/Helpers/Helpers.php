@@ -158,16 +158,12 @@ function storagePath(
           $fileset_type = 'text';
           break;
   }
-  if (!isset($fileset->id)) {
-      echo json_encode($fileset);
-      
-  }
   return $fileset_type .
       '/' .
       ($bible ? $bible . '/' : '') .
       $fileset->id .
       '/' .
-      $secondary_file_name ?? $fileset_chapter[$file_name];
+      ($secondary_file_name ?? $fileset_chapter['file_name']);
 }
 
 if (!function_exists('csvToArray')) {
