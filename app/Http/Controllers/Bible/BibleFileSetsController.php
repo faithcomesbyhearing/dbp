@@ -10,6 +10,7 @@ use App\Http\Controllers\APIController;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleFile;
+use App\Models\Bible\BibleFileSecondary;
 use App\Models\Bible\BibleVerse;
 use App\Models\Bible\BibleFilesetType;
 use App\Models\Bible\Book;
@@ -441,11 +442,6 @@ class BibleFileSetsController extends APIController
     ) {
         $query = BibleFile::where('bible_files.hash_id', $fileset->hash_id)
         ->leftJoin(
-            config('database.connections.dbp.database') . '.bible_files_secondary',
-            'bible_files_secondary.hash_id',
-            'bible_files.hash_id'
-        )
-        ->leftJoin(
             config('database.connections.dbp.database') .
                 '.bible_books',
             function ($q) use ($bible) {
@@ -483,8 +479,6 @@ class BibleFileSetsController extends APIController
             'bible_files.file_name',
             'bible_books.name as book_name',
             'books.protestant_order as book_order',
-            'bible_files_secondary.file_name as secondary_file_name',
-            'bible_files_secondary.file_type as secondary_file_type'
         ]);
 
         if ($type === 'video_stream') {
@@ -495,27 +489,24 @@ class BibleFileSetsController extends APIController
                 ->orderBy('chapter_start', 'ASC')
                 ->orderBy('verse_start', 'ASC');
         }
-
         if ($limit !== null) {
             $fileset_chapters = $query->paginate($limit);
             $filesets_pagination = new IlluminatePaginatorAdapter($fileset_chapters);
         } else {
             $fileset_chapters = $query->get();
         }
-
         if ($fileset_chapters->count() === 0) {
             return $this->setStatusCode(404)->replyWithError(
                 'No Fileset Chapters Found for the provided params'
             );
         }
-        
+
         $fileset_chapters = $this->generateSecondaryFiles(
             $fileset,
             $fileset_chapters,
             $bible,
             $asset_id
         );
-        
         $fileset_return = fractal(
             $this->generateFilesetChapters(
                 $fileset,
@@ -526,6 +517,9 @@ class BibleFileSetsController extends APIController
             new FileSetTransformer(),
             $this->serializer
         );
+        if (isset($fileset_chapters->metadata)) {
+          $fileset_return->addMeta($fileset_chapters->metadata);
+        }
 
         return (
           $limit !== null ?
@@ -534,7 +528,12 @@ class BibleFileSetsController extends APIController
       );
     }
 
-    private function signedPath($bible, $fileset, $fileset_chapter, $file_name_type)
+    private function signedPath(
+        $bible, 
+        $fileset, 
+        $fileset_chapter, 
+        $secondary_file_name = null
+    )
     {
         switch ($fileset->set_type_code) {
             case 'audio_drama':
@@ -562,7 +561,8 @@ class BibleFileSetsController extends APIController
             ($bible ? $bible->id . '/' : '') .
             $fileset->id .
             '/' .
-            $fileset_chapter[$file_name_type];
+            // revisa bien este check
+            $secondary_file_name ?? $fileset_chapter[$file_name];
     }
 
     /**
@@ -773,14 +773,32 @@ class BibleFileSetsController extends APIController
         $bible,
         $asset_id
     ) {
-        foreach ($fileset_chapters as $fileset_chapter) {
-            if ($fileset_chapter->secondary_file_type === 'art') {
-                $fileset_chapter->thumbnail = $this->signedUrl(
-                    $this->signedPath($bible, $fileset, $fileset_chapter, 'secondary_file_name'),
-                    $asset_id,
-                    random_int(0, 10000000)
-                );
+        $secondary_files = BibleFileSecondary::where(
+            'hash_id', 
+            $fileset->hash_id
+        )
+        ->select(\DB::raw('MIN(file_name) as file_name,  file_type'))
+        ->groupBy('file_type')->get();
+
+        $secondary_file_paths = ['thumbnail' => null, 'zip_file' => null,];
+        foreach ($secondary_files as $secondary_file) {
+            $secondary_file_url = $this->signedUrl(
+                $this->signedPath($bible, $fileset, null, $secondary_file->file_name),
+                $asset_id,
+                random_int(0, 10000000)
+            );
+            if ($secondary_file->file_type === 'art') {
+                $secondary_file_paths['thumbnail'] = $secondary_file_url;
+            } else if ($secondary_file->file_type === 'zip') {
+                $secondary_file_paths['zip_file'] = $secondary_file_url;
             }
+        }
+
+        if ($fileset_chapters->count() === 1) {
+            $fileset_chapters[0]->thumbnail = $secondary_file_paths['thumbnail'];
+            $fileset_chapters[0]->zip_file = $secondary_file_paths['zip_file'];
+        } else {
+            $fileset_chapters->metadata = $secondary_file_paths;
         }
         return $fileset_chapters;
     }
@@ -836,8 +854,9 @@ class BibleFileSetsController extends APIController
                 $fileset_chapters[0]->multiple_mp3 = true;
                 $fileset_chapters = [$fileset_chapters[0]];
             } else {
+                
                 foreach ($fileset_chapters as $key => $fileset_chapter) {
-                    $fileset_chapters[$key]->file_name = $this->signedUrl($this->signedPath($bible, $fileset, $fileset_chapter, 'file_name'), $asset_id, random_int(0, 10000000));
+                    $fileset_chapters[$key]->file_name = $this->signedUrl($this->signedPath($bible, $fileset, $fileset_chapter), $asset_id, random_int(0, 10000000));
                 }
             }
         }
