@@ -118,6 +118,25 @@ class FileSetTransformer extends BaseTransformer
                 $meta['channel']['item'] = $items;
                 return $meta;
 
+            case 'v4_filesets.bulk':
+                $schema = [
+                    'book_id'       => $fileset->book_id,
+                    'book_name'     => $fileset->book_name,
+                    'chapter_start' => $fileset->chapter_start,
+                    'chapter_end'   => $fileset->chapter_end,
+                    'verse_start'   => $fileset->verse_start,
+                    'verse_end'     => $fileset->verse_end,
+                    'timestamp'     => $fileset->timestamp,
+                    'path'          => $fileset->file_name,
+                    'duration'      => $fileset->duration
+                ];
+
+                if ($fileset->multiple_mp3) {
+                    $schema['multiple_mp3'] = true;
+                }
+
+                return $schema;
+
             default:
                 /**
                  * @OA\Schema (
@@ -152,10 +171,11 @@ class FileSetTransformer extends BaseTransformer
                     'chapter_end'   => $fileset->chapter_end,
                     'verse_start'   => $fileset->verse_start,
                     'verse_end'     => $fileset->verse_end,
-                    'thumbnail'     => $fileset->thumbnail,
                     'timestamp'     => $fileset->timestamp,
                     'path'          => $fileset->file_name,
-                    'duration'      => $fileset->duration
+                    'duration'      => $fileset->duration,
+                    'thumbnail'     => $fileset->thumbnail,
+                    'zip_file'      => $fileset->zip_file,
                 ];
 
                 if ($fileset->multiple_mp3) {
