@@ -131,6 +131,45 @@ function forceBibleisGideonsPagination($key, $limit_param)
     return [$limit, $is_bibleis_gideons];
 }
 
+function signedPath(
+  $bible, 
+  $fileset, 
+  $fileset_chapter, 
+  $secondary_file_name = null
+)
+{
+  switch ($fileset->set_type_code) {
+      case 'audio_drama':
+      case 'audio':
+          $fileset_type = 'audio';
+          break;
+      case 'text_plain':
+      case 'text_format':
+          $fileset_type = 'text';
+          break;
+      case 'video_stream':
+      case 'video':
+          $fileset_type = 'video';
+          break;
+      case 'app':
+          $fileset_type = 'app';
+          break;
+      default:
+          $fileset_type = 'text';
+          break;
+  }
+  if (!isset($fileset->id)) {
+      echo json_encode($fileset);
+      
+  }
+  return $fileset_type .
+      '/' .
+      ($bible ? $bible . '/' : '') .
+      $fileset->id .
+      '/' .
+      $secondary_file_name ?? $fileset_chapter[$file_name];
+}
+
 if (!function_exists('csvToArray')) {
     function csvToArray($csvfile)
     {

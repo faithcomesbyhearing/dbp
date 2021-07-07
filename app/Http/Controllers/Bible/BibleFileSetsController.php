@@ -532,42 +532,6 @@ class BibleFileSetsController extends APIController
       );
     }
 
-    private function signedPath(
-        $bible, 
-        $fileset, 
-        $fileset_chapter, 
-        $secondary_file_name = null
-    )
-    {
-        switch ($fileset->set_type_code) {
-            case 'audio_drama':
-            case 'audio':
-                $fileset_type = 'audio';
-                break;
-            case 'text_plain':
-            case 'text_format':
-                $fileset_type = 'text';
-                break;
-            case 'video_stream':
-            case 'video':
-                $fileset_type = 'video';
-                break;
-            case 'app':
-                $fileset_type = 'app';
-                break;
-            default:
-                $fileset_type = 'text';
-                break;
-        }
-        
-        return $fileset_type .
-            '/' .
-            ($bible ? $bible->id . '/' : '') .
-            $fileset->id .
-            '/' .
-            $secondary_file_name ?? $fileset_chapter[$file_name];
-    }
-
     /**
      *
      * Copyright
@@ -788,7 +752,7 @@ class BibleFileSetsController extends APIController
         $secondary_file_paths = ['thumbnail' => null, 'zip_file' => null,];
         foreach ($secondary_files as $secondary_file) {
             $secondary_file_url = $this->signedUrl(
-                $this->signedPath($bible, $fileset, null, $secondary_file->file_name),
+                signedPath($bible->id, $fileset, null, $secondary_file->file_name),
                 $asset_id,
                 random_int(0, 10000000)
             );
@@ -859,9 +823,16 @@ class BibleFileSetsController extends APIController
                 $fileset_chapters[0]->multiple_mp3 = true;
                 $fileset_chapters = [$fileset_chapters[0]];
             } else {
-                
                 foreach ($fileset_chapters as $key => $fileset_chapter) {
-                    $fileset_chapters[$key]->file_name = $this->signedUrl($this->signedPath($bible, $fileset, $fileset_chapter), $asset_id, random_int(0, 10000000));
+                    $fileset_chapters[$key]->file_name = $this->signedUrl(
+                        signedPath(
+                            $bible->id, 
+                            $fileset, 
+                            $fileset_chapter
+                        ), 
+                        $asset_id, 
+                        random_int(0, 10000000)
+                    );
                 }
             }
         }
