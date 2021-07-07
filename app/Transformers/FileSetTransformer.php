@@ -175,7 +175,6 @@ class FileSetTransformer extends BaseTransformer
                     'path'          => $fileset->file_name,
                     'duration'      => $fileset->duration,
                     'thumbnail'     => $fileset->thumbnail,
-                    'zip_file'      => $fileset->zip_file,
                 ];
 
                 if ($fileset->multiple_mp3) {
