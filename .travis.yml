@@ -19,7 +19,7 @@ before_install:
 
 before_script:
   - phpenv config-add travis.php.ini
-  - cp .env.travis .env
+  - cp .env.testing .env
   - composer self-update
   - composer install --no-interaction --prefer-dist --no-suggest
   - npm install
