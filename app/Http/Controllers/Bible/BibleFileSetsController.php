@@ -752,7 +752,7 @@ class BibleFileSetsController extends APIController
         $secondary_file_paths = ['thumbnail' => null, 'zip_file' => null,];
         foreach ($secondary_files as $secondary_file) {
             $secondary_file_url = $this->signedUrl(
-                signedPath($bible->id, $fileset, null, $secondary_file->file_name),
+                storagePath($bible->id, $fileset, null, $secondary_file->file_name),
                 $asset_id,
                 random_int(0, 10000000)
             );
@@ -825,7 +825,7 @@ class BibleFileSetsController extends APIController
             } else {
                 foreach ($fileset_chapters as $key => $fileset_chapter) {
                     $fileset_chapters[$key]->file_name = $this->signedUrl(
-                        signedPath(
+                        storagePath(
                             $bible->id, 
                             $fileset, 
                             $fileset_chapter
