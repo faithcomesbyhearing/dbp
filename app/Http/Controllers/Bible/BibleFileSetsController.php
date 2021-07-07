@@ -310,13 +310,17 @@ class BibleFileSetsController extends APIController
                         ->first()
                     : null;
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
+                if (!$fileset_from_id) {
+                    return $this->setStatusCode(404)->replyWithError(
+                        trans('api.bible_fileset_errors_404')
+                    );
+                }
                 $fileset_type = $fileset_from_id['set_type_code'];
                 // fixes data issue where text filesets use the same filesetID
                 $fileset_type = $this->getCorrectFilesetType($fileset_type, $type);
                 $fileset = BibleFileset::with('bible')
                     ->uniqueFileset($fileset_id, $fileset_type)
                     ->first();
-
                 if (!$fileset) {
                     return $this->setStatusCode(404)->replyWithError(
                         trans('api.bible_fileset_errors_404')
