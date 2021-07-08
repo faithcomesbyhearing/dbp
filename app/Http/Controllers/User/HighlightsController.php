@@ -114,7 +114,7 @@ class HighlightsController extends APIController
 
         // Validate Project / User Connection
         $user = User::where('id', $user_id)->select('id')->first();
-
+        
         if (!$user) {
             return $this->setStatusCode(404)->replyWithError(trans('api.users_errors_404'));
         }
@@ -124,12 +124,15 @@ class HighlightsController extends APIController
         if (!$user_is_member) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
-
-        $bible_id     = checkParam('bible_id');
-        $book_id      = checkParam('book_id');
-        $chapter_id   = checkParam('chapter|chapter_id');
-        $color        = checkParam('color');
-        $limit        = (int) (checkParam('limit') ?? 25);
+        
+        $bible_id      = checkParam('bible_id');
+        $book_id       = checkParam('book_id');
+        $chapter_id    = checkParam('chapter|chapter_id');
+        $color         = checkParam('color');
+        // used by chapter annotations to get the max possible annotations for one chapter (180)
+        $chapter_max_verses = 180;
+        $limit              = (int) (checkParam('limit') ?? $chapter_max_verses);
+        $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
 
         $sort_by_book = $sort_by === 'book';
         $order_by = $sort_by_book ? DB::raw('book_order, user_highlights.chapter, user_highlights.verse_start') : 'user_highlights.' . $sort_by;
