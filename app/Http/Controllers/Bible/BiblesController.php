@@ -177,8 +177,7 @@ class BiblesController extends APIController
                     MIN(bibles.priority) as priority,
                     MIN(bibles.id) as id'
                 )
-            )
-            ->orderBy('bibles.priority', 'desc')->groupBy('bibles.id');
+            )->orderBy('bibles.id')->groupBy('bibles.id');
 
 
             $bibles = $bibles->paginate($limit);
@@ -1031,26 +1030,25 @@ class BiblesController extends APIController
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
-
         $book_id = checkParam('book_id');
         $chapter = checkParam('chapter');
+        $chapter_max_verses = 180;
+        $limit              = (int) (checkParam('limit') ?? $chapter_max_verses);
+        $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
 
         if ($book_id) {
             $book = Book::whereId($book_id)->first();
-
             if (!$book) {
                 return $this->setStatusCode(404)->replyWithError('Book not found');
             }
         }
 
-
         $result = (object) [];
-
-
         $highlights_controller = new HighlightsController();
         $bookmarks_controller = new BookmarksController();
         $notes_controller = new NotesController();
         $request->request->add(['bible_id' => $bible_id]);
+        $request->request->add(['limit' => $limit]);
         $result->highlights = $highlights_controller->index($request, $user->id)->original['data'];
         $result->bookmarks = $bookmarks_controller->index($request, $user->id)->original['data'];
         $result->notes = $notes_controller->index($request, $user->id)->original['data'];
