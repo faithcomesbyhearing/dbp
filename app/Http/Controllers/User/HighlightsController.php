@@ -130,9 +130,10 @@ class HighlightsController extends APIController
         $chapter_id    = checkParam('chapter|chapter_id');
         $color         = checkParam('color');
         // used by chapter annotations to get the max possible annotations for one chapter (180)
-        $default_limit = $request->limit ?? 25;
-        $limit         = (int) (checkParam('limit') ?? $default_limit);
-        
+        $chapter_max_verses = 180;
+        $limit              = (int) (checkParam('limit') ?? $chapter_max_verses);
+        $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
+
         $sort_by_book = $sort_by === 'book';
         $order_by = $sort_by_book ? DB::raw('book_order, user_highlights.chapter, user_highlights.verse_start') : 'user_highlights.' . $sort_by;
 
