@@ -1034,11 +1034,11 @@ class BiblesController extends APIController
         $book_id = checkParam('book_id');
         $chapter = checkParam('chapter');
         $chapter_max_verses = 180;
-        $limit   = (int) (checkParam('limit') ?? $chapter_max_verses);
+        $limit              = (int) (checkParam('limit') ?? $chapter_max_verses);
+        $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
 
         if ($book_id) {
             $book = Book::whereId($book_id)->first();
-
             if (!$book) {
                 return $this->setStatusCode(404)->replyWithError('Book not found');
             }
