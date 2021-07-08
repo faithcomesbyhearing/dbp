@@ -177,8 +177,7 @@ class BiblesController extends APIController
                     MIN(bibles.priority) as priority,
                     MIN(bibles.id) as id'
                 )
-            )
-            ->orderBy('bibles.priority', 'desc')->groupBy('bibles.id');
+            )->orderBy('bibles.id')->groupBy('bibles.id');
 
 
             $bibles = $bibles->paginate($limit);
