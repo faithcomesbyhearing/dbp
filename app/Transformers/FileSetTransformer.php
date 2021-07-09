@@ -119,6 +119,8 @@ class FileSetTransformer extends BaseTransformer
                 return $meta;
 
             case 'v4_filesets.bulk':
+                // is_video is used while secondary files for video is loaded and addressed
+                $is_video = $fileset->thumbnail && strpos($fileset->thumbnail, 'video') !== false;
                 $schema = [
                     'book_id'       => $fileset->book_id,
                     'book_name'     => $fileset->book_name,
@@ -130,7 +132,9 @@ class FileSetTransformer extends BaseTransformer
                     'path'          => $fileset->file_name,
                     'duration'      => $fileset->duration
                 ];
-
+                if ($is_video) {
+                  $schema['thumbnail'] = $fileset->thumbnail;
+                }
                 if ($fileset->multiple_mp3) {
                     $schema['multiple_mp3'] = true;
                 }
