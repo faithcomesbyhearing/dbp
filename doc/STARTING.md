@@ -6,7 +6,7 @@ Make your first call: a GET request to `https://api.dbp4.org/api/bibles`
 Here's a sample you can run from the command line if you'd like to try it out
 
 ```bash
-curl -i -H "Authorization: Bearer YOURKEY" -H "v: 4" -X GET https://api.dbp.test/bibles/
+curl -i --insecure -H "Authorization: Bearer YOURKEY" -H "v: 4" -X GET https://api.dbp4.org/api/bibles
 ```
 
 ### Common workflow #1: An app that only displays text Bibles
