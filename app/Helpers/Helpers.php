@@ -167,22 +167,43 @@ function storagePath(
       ($secondary_file_name ?? $fileset_chapter['file_name']);
 }
 
+function formatAppVersion($app_version)
+{
+    $formatted_version = preg_split("/( |\-)/", $app_version)[0];
+    $separated_versions = explode('.', $formatted_version);
+    return [
+        'major_version' => (int) $separated_versions[0] . $separated_versions[1],
+        'minor_version' => (int) $separated_versions[2]
+    ];
+}
+
 function shouldUseBibleisBackwardCompat($key)
 {
     // endpoints/functions using this should already be deprecated for all other users
     // different from bibleis
     $should_use_backward_compat = false;
     if (isBibleisOrGideon($key)) {
-        $deprecation_version = config('settings.bibleis_deprecate_from_version.ios');
+        $deprecation_version = config('settings.deprecate_from_version.bibleis');
+        $deprecation_version = formatAppVersion($deprecation_version);
         $user_ag = $_SERVER['HTTP_USER_AGENT'];
-        if (strpos($user_ag, 'BibleIs/') !== false) {
-            $app_version = explode("BibleIs/", $user_ag)[1];
+        $app_name = '';
+        
+        if (strpos($user_ag, 'Bible.is/') !== false) {
+            $app_name = 'Bible.is';
+        } else if (strpos($user_ag, 'Gideons/') !== false) {
+            $app_name = 'Gideons';
+        }
+
+        if ($app_name) {
+            $app_version = explode($app_name . '/', $user_ag)[1];
             $app_version = explode(" ", $app_version)[0];
-            $formatted_version = preg_split("/( |\-)/", $app_version)[0];
-            if ($formatted_version < $deprecation_version) {
-                $should_use_backward_compat = true;
+            $app_version = formatAppVersion($app_version);
+            if ($app_version['major_version'] <= $deprecation_version['major_version']) {
+                if ($app_version['minor_version'] < $deprecation_version['minor_version']) {
+                    $should_use_backward_compat = true;
+                }
             }
-        }  
+        }
     }
     return $should_use_backward_compat;
 }
