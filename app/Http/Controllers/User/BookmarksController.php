@@ -78,10 +78,13 @@ class BookmarksController extends APIController
         $bible_id     = checkParam('bible_id');
         $book_id      = checkParam('book_id');
         $chapter      = checkParam('chapter|chapter_id');
-        $limit        = (int) (checkParam('limit') ?? 25);
-        $sort_by    = checkParam('sort_by');
-        $sort_dir   = checkParam('sort_dir') ?? 'asc';
-        $query      = checkParam('query');
+        $sort_by      = checkParam('sort_by');
+        $sort_dir     = checkParam('sort_dir') ?? 'asc';
+        $query        = checkParam('query');
+        // used by chapter annotations to get the max possible annotations for one chapter (180)
+        $chapter_max_verses = 180;
+        $limit              = (int) (checkParam('limit') ?? $chapter_max_verses);
+        $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
 
         $bookmarks = Bookmark::with('tags')
             ->where('user_bookmarks.user_id', $user_id)

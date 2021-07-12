@@ -86,11 +86,15 @@ class LanguagesController extends APIController
         $code                  = checkParam('code|iso|language_code');
         $include_translations  = checkParam('include_translations|include_alt_names');
         $name                  = checkParam('name|language_name');
+        $show_bibles           = checkBoolean('show_bibles');
         $limit                 = (int) (checkParam('limit') ?? 50);
         $page                  = checkParam('page') ?? 1;
 
+        // note: this two commented changes can be removed when bibleis and gideons no longer require a non-paginated response
         // remove pagination for bibleis and gideons (temporal fix)
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
+        // this is a band aid to reduce the query with a forced asset_id if uses show_bibles
+        $asset_filter = $is_bibleis_gideons && $show_bibles ? 'dbp-vid' : null;
 
         $access_control = cacheRemember('access_control', [$this->key], now()->addHour(), function () {
             return $this->accessControl($this->key);
@@ -105,16 +109,17 @@ class LanguagesController extends APIController
             $access_control->string, 
             $limit, 
             $page,
-            $is_bibleis_gideons
+            $is_bibleis_gideons,
+            $asset_filter
         ];
 
         $order = $country ? 'country_population.population' : 'ifnull(current_translation.name, languages.name)';
         $order_dir = $country ? 'desc' : 'asc';
         $select_country_population = $country ? 'country_population.population' : 'null';
-        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $access_control, $order, $order_dir, $select_country_population, $limit, $page) {
+        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $access_control, $order, $order_dir, $select_country_population, $limit, $page, $asset_filter) {
             $languages = Language::includeCurrentTranslation()
                 ->includeAutonymTranslation()
-                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->hashes))
+                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->hashes), $asset_filter)
                 ->includeExtraLanguageTranslations($include_translations)
                 ->includeCountryPopulation($country)
                 ->filterableByCountry($country)

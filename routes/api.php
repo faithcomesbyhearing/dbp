@@ -86,22 +86,22 @@ Route::name('v4_internal_filesets.checkTypes')->post(
     'bibles/filesets/check/types',
     'Bible\BibleFileSetsController@checkTypes'
 );
+// DEPRECATED. not used by bible.is after 3.0.x. But needs to remain in the API for backward compatibility until 3.0.x and older are gone
 Route::name('v4_internal_bible_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
 
-// Deprecate this endpoint. Prefer instead v4_filesets.chapter. Reasons: It takes book and chapter as query parameters.
+// DEPRECATED. Prefer instead v4_filesets.chapter. Reasons: It takes book and chapter as query parameters. 
 Route::name('v4_internal_filesets.show')->get(
     'bibles/filesets/{fileset_id?}',
     'Bible\BibleFileSetsController@show'
 );
 
-// not used by bible.is after 3.0.x
-// needs to remain in the API for backward compatibility until 3.0.x and older are gone
+//  DEPRECATED. not used by bible.is after 3.0.x. But needs to remain in the API for backward compatibility until 3.0.x and older are gone
 Route::name('v4_filesets.books')->get(
     'bibles/filesets/{fileset_id}/books',
     'Bible\BooksController@show'
 );
 
-// the order of the routes matters, the most general have to go first
+// the order of these next two routes matters, the most general have to go first
 Route::name('v4_filesets.bulk')->get(
   'bibles/filesets/bulk/{fileset_id}/{book?}',
   'Bible\BibleFileSetsController@showBulk'
