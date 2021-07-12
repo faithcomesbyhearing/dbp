@@ -118,5 +118,8 @@ return [
   /*
    * Version to start bibleis/gid deprecation
    */
-  'bibleis_deprecate_from_version' => env('BIBLEIS_DEPRECATE_FROM_VERSION', '3.0.10'),
+  'deprecate_from_version' => [
+      'bibleis' => env('BIBLEIS_DEPRECATE_FROM_VERSION', '3.3.10'),
+      'gideons' => env('GIDEONS_DEPRECATE_FROM_VERSION', '2.1.3'),
+  ],
 ];
