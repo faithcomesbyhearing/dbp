@@ -66,9 +66,11 @@ class NotesController extends APIController
         $chapter_id = checkParam('chapter|chapter_id');
         $sort_by    = checkParam('sort_by');
         $sort_dir   = checkParam('sort_dir') ?? 'asc';
-        $limit      = (int) checkParam('limit') ?? 25;
-        $limit      = ($limit > 50) ? 50 : $limit;
         $query      = checkParam('query');
+        // used by chapter annotations to get the max possible annotations for one chapter (180)
+        $chapter_max_verses = 180;
+        $limit              = (int) (checkParam('limit') ?? $chapter_max_verses);
+        $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
 
         $notes = Note::with('tags')
             ->where('user_notes.user_id', $user_id)
