@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Cache;
+use Log;
 
 /**
  * Check query parameters for a given parameter name, and check the headers for the same parameter name;
@@ -124,7 +125,8 @@ function forceBibleisGideonsPagination($key, $limit_param)
     // remove pagination for bibleis and gideons (temporal fix)
     $limit = min($limit_param, 50);
     $is_bibleis_gideons = null;
-    if (isBibleisOrGideon($key)) {
+
+    if (shouldUseBibleisBackwardCompat($key)) {
         $limit = PHP_INT_MAX;
         $is_bibleis_gideons = 'bibleis-gideons';
     } 
@@ -164,6 +166,60 @@ function storagePath(
       $fileset->id .
       '/' .
       ($secondary_file_name ?? $fileset_chapter['file_name']);
+}
+
+function formatAppVersion($app_version)
+{
+    $formatted_version = preg_split("/( |\-)/", $app_version)[0];
+    $separated_versions = explode('.', $formatted_version);
+    return [
+        'major_version' => (int) $separated_versions[0] . $separated_versions[1],
+        'minor_version' => (int) $separated_versions[2]
+    ];
+}
+
+function shouldUseBibleisBackwardCompat($key)
+{
+    // endpoints/functions using this should already be deprecated for all other users
+    // different from bibleis
+    $should_use_backward_compat = false;
+    $app_name = '';
+    $app_version = '';
+    $deprecation_version = config('settings.deprecate_from_version.bibleis');
+
+    if (isBibleisOrGideon($key)) {
+        $deprecation_version = formatAppVersion($deprecation_version);
+        $user_ag = $_SERVER['HTTP_USER_AGENT'];
+        
+        if (strpos($user_ag, 'Bible.is/') !== false) {
+            $app_name = 'Bible.is';
+        } else if (strpos($user_ag, 'Gideons/') !== false) {
+            $app_name = 'Gideons';
+        }
+
+        if ($app_name) {
+            $app_version = explode($app_name . '/', $user_ag)[1];
+            $app_version = explode(" ", $app_version)[0];
+            $app_version = formatAppVersion($app_version);
+            if ($app_version['major_version'] <= $deprecation_version['major_version']) {
+                if ($app_version['minor_version'] < $deprecation_version['minor_version']) {
+                    $should_use_backward_compat = true;
+                }
+            }
+        }
+    }
+    // log data to be sure this deprecation method is working correctly
+    $log_data = [
+        "key" => $key,
+        "app_name" => $app_name,
+        "app_version" => $app_version,
+        "deprecation_version" => $deprecation_version,
+        "backward_compatibility_mode_active" => $should_use_backward_compat,
+    ];
+    $backward_compat_message = "shouldUseBibleisBackwardCompat: " . json_encode($log_data);
+    Log::error($backward_compat_message);
+
+    return $should_use_backward_compat;
 }
 
 if (!function_exists('csvToArray')) {

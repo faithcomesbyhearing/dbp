@@ -627,6 +627,11 @@ class BiblesController extends APIController
      */
     public function chapter(Request $request, $bible_id)
     {
+        // deprecate endpoint for bibleis/gideons newest versions (and for other users by deafult)
+        if (!shouldUseBibleisBackwardCompat($this->key)) {
+            return $this->setStatusCode(404)->replyWithError(trans('api.errors_404'));
+        }
+
         $bible = cacheRemember('v4_chapter_bible', [$bible_id], now()->addDay(), function () use ($bible_id) {
             $access_control = $this->accessControl($this->key);
             return Bible::with([
@@ -635,14 +640,13 @@ class BiblesController extends APIController
                 }
             ])->whereId($bible_id)->first();
         });
-
         if (!$bible) {
             return $this->setStatusCode(404)->replyWithError('Bible not found');
         }
 
         $user = $request->user();
         $show_annotations = !empty($user);
-
+        
         // Validate Project / User Connection
         if ($show_annotations && !$this->compareProjects($user->id, $this->key)) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
