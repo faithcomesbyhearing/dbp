@@ -182,11 +182,13 @@ function shouldUseBibleisBackwardCompat($key)
     // endpoints/functions using this should already be deprecated for all other users
     // different from bibleis
     $should_use_backward_compat = false;
+    $app_name = '';
+    $app_version = '';
+    $deprecation_version = config('settings.deprecate_from_version.bibleis');
+
     if (isBibleisOrGideon($key)) {
-        $deprecation_version = config('settings.deprecate_from_version.bibleis');
         $deprecation_version = formatAppVersion($deprecation_version);
         $user_ag = $_SERVER['HTTP_USER_AGENT'];
-        $app_name = '';
         
         if (strpos($user_ag, 'Bible.is/') !== false) {
             $app_name = 'Bible.is';
@@ -205,6 +207,17 @@ function shouldUseBibleisBackwardCompat($key)
             }
         }
     }
+    // log data to be sure this deprecation method is working correctly
+    $log_data = [
+        "key" => $key,
+        "app_name" => $app_name,
+        "app_version" => $app_version,
+        "deprecation_version" => $deprecation_version,
+        "backward_compatibility_mode_active" => $should_use_backward_compat,
+    ];
+    $backward_compat_message = "shouldUseBibleisBackwardCompat: " . json_encode($log_data);
+    Log::error($backward_compat_message);
+
     return $should_use_backward_compat;
 }
 
