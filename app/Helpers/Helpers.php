@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Cache;
+use Log;
 
 /**
  * Check query parameters for a given parameter name, and check the headers for the same parameter name;
