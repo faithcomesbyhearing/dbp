@@ -168,12 +168,15 @@ function storagePath(
 }
 
 function formatAppVersion($app_version)
-{
+{   
     $formatted_version = preg_split("/( |\-)/", $app_version)[0];
     $separated_versions = explode('.', $formatted_version);
+    $major_version = isset($separated_versions[0]) ? $separated_versions[0] : 0;
+    $minor_version = isset($separated_versions[1]) ? $separated_versions[1] : 0;
+    $patch_version = isset($separated_versions[2]) ? $separated_versions[2] : 0;
     return [
-        'major_version' => (int) $separated_versions[0] . $separated_versions[1],
-        'minor_version' => (int) $separated_versions[2]
+        'major_version' => (int) $major_version . $minor_version,
+        'minor_version' => (int) $patch_version
     ];
 }
 
