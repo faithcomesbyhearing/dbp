@@ -79,6 +79,33 @@ function cacheRemember($cache_key, $cache_args = [], $duration, $callback)
     return Cache::remember($cache_string, $duration, $callback);
 }
 
+// used for the non paginated enndpoints used by bibleis/gideons backward compatibility
+function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $callback)
+{
+    $cache_string = generateCacheString($cache_key, $cache_args);
+    $current_cache = Cache::get($cache_string);
+    $cache_state = Cache::get($cache_string . '_state');
+
+    if (!$current_cache && $cache_state !== 'PENDING') {
+        Cache::add($cache_string . '_state', 'PENDING', $duration);
+        Log::error('adding pending on ' . $cache_string);
+        $current_cache = Cache::remember($cache_string, $duration, $callback);
+        Log::error('This thread finished loading sql');
+        Cache::forget($cache_string . '_state');
+    }
+    
+    $cache_state = Cache::get($cache_string . '_state');
+    while ($cache_state === 'PENDING' && !$current_cache) {
+      sleep(1);
+      Log::error('waiting for the cache on the state:' . json_encode($cache_state));
+      $cache_state = Cache::get($cache_string . '_state');
+    }
+    $current_cache = Cache::get($cache_string);
+    Log::error('Done on cache remember for heave calls for:' . $cache_string);
+    return $current_cache;
+}
+
+
 function cacheRememberForever($cache_key, $callback)
 {
     return Cache::rememberForever($cache_key, $callback);
