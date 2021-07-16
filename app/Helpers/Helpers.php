@@ -138,12 +138,20 @@ function generateCacheString($key, $args = [])
 
 function isBibleisOrGideon($key)
 {
-    $compat_api_keys = config('auth.compat_users.api_keys');
-    $compat_api_keys = explode(',', $compat_api_keys);    
-    if (in_array($key, $compat_api_keys)) {
-        return true;
+    $bibleis_compat_keys = config('auth.compat_users.api_keys.bibleis');
+    $bibleis_compat_keys = explode(',', $bibleis_compat_keys);
+    $gid_compat_keys = config('auth.compat_users.api_keys.gideons');
+    $gid_compat_keys = explode(',', $gid_compat_keys);
+    $compat_keys_response = [
+      'isBibleis' => false,
+      'isGideons' => false,
+    ];
+    if (in_array($key, $bibleis_compat_keys)) {
+        $compat_keys_response['isBibleis'] = true;
+    } else if (in_array($key, $gid_compat_keys)) {
+        $compat_keys_response['isGideons'] = true;
     }
-    return false;
+    return $compat_keys_response;
 }
 
 function forceBibleisGideonsPagination($key, $limit_param)
@@ -155,18 +163,17 @@ function forceBibleisGideonsPagination($key, $limit_param)
     if (shouldUseBibleisBackwardCompat($key)) {
         $limit = PHP_INT_MAX;
         $is_bibleis_gideons = 'bibleis-gideons';
-    } 
+    }
     return [$limit, $is_bibleis_gideons];
 }
 
 function storagePath(
-  $bible, 
-  $fileset, 
-  $fileset_chapter, 
+  $bible,
+  $fileset,
+  $fileset_chapter,
   $secondary_file_name = null
-)
-{
-  switch ($fileset->set_type_code) {
+) {
+    switch ($fileset->set_type_code) {
       case 'audio_drama':
       case 'audio':
           $fileset_type = 'audio';
@@ -186,7 +193,7 @@ function storagePath(
           $fileset_type = 'text';
           break;
   }
-  return $fileset_type .
+    return $fileset_type .
       '/' .
       ($bible ? $bible . '/' : '') .
       $fileset->id .
@@ -198,10 +205,27 @@ function formatAppVersion($app_version)
 {
     $formatted_version = preg_split("/( |\-)/", $app_version)[0];
     $separated_versions = explode('.', $formatted_version);
+    $major_version = isset($separated_versions[0]) ? $separated_versions[0] : 0;
+    $minor_version = isset($separated_versions[1]) ? $separated_versions[1] : 0;
+    $patch_version = isset($separated_versions[2]) ? $separated_versions[2] : 0;
     return [
-        'major_version' => (int) $separated_versions[0] . $separated_versions[1],
-        'minor_version' => (int) $separated_versions[2]
+        'major_version' => (int) $major_version . $minor_version,
+        'minor_version' => (int) $patch_version
     ];
+}
+
+function logDeprecationInfo($key, $app_name, $should_use_backward_compat, $app_version = null, $deprecation_version = null)
+{
+    // log data to be sure this deprecation method is working correctly
+    $log_data = [
+        'key' => $key,
+        'app_name' => $app_name,
+        'app_version' => $app_version,
+        'deprecation_version' => $deprecation_version,
+        'backward_compatibility_mode_active' => $should_use_backward_compat,
+    ];
+    $backward_compat_message = 'shouldUseBibleisBackwardCompat: ' . json_encode($log_data);
+    Log::error($backward_compat_message);
 }
 
 function shouldUseBibleisBackwardCompat($key)
@@ -211,21 +235,41 @@ function shouldUseBibleisBackwardCompat($key)
     $should_use_backward_compat = false;
     $app_name = '';
     $app_version = '';
-    $deprecation_version = config('settings.deprecate_from_version.bibleis');
+    $app_compat_keys = isBibleisOrGideon($key);
+    $deprecation_version = null;
 
-    if (isBibleisOrGideon($key)) {
+    if ($app_compat_keys['isBibleis']) {
+        $app_name = 'Bible.is';
+        $deprecation_version = config('settings.deprecate_from_version.bibleis');
+    } elseif ($app_compat_keys['isGideons']) {
+        $app_name = 'Gideons';
+        $deprecation_version = config('settings.deprecate_from_version.gideons');
+    }
+    if ($deprecation_version) {
         $deprecation_version = formatAppVersion($deprecation_version);
         $user_ag = $_SERVER['HTTP_USER_AGENT'];
-        
-        if (strpos($user_ag, 'Bible.is/') !== false) {
+        $old_possible_user_agents = ['BibleIs', 'GBA', 'Android'];
+        $has_bibleis_new_user_agent = strpos($user_ag, 'Bible.is/') !== false;
+        $has_gideons_new_user_agent = strpos($user_ag, 'Gideons/') !== false;
+        $has_any_new_user_agent = $has_bibleis_new_user_agent || $has_gideons_new_user_agent;
+        // case for older apps with different user agent
+        if (!$has_any_new_user_agent) {
+            foreach ($old_possible_user_agents as $old_agent_string) {
+                if (strpos($user_ag, $old_agent_string) !== false) {
+                    logDeprecationInfo($key, $old_agent_string, true);
+                    return true;
+                }
+            }
+        }
+        // case for newer app veresions with updated user agent
+        if ($has_bibleis_new_user_agent) {
             $app_name = 'Bible.is';
-        } else if (strpos($user_ag, 'Gideons/') !== false) {
+        } elseif ($has_gideons_new_user_agent) {
             $app_name = 'Gideons';
         }
-
         if ($app_name) {
             $app_version = explode($app_name . '/', $user_ag)[1];
-            $app_version = explode(" ", $app_version)[0];
+            $app_version = explode(' ', $app_version)[0];
             $app_version = formatAppVersion($app_version);
             if ($app_version['major_version'] <= $deprecation_version['major_version']) {
                 if ($app_version['minor_version'] < $deprecation_version['minor_version']) {
@@ -234,17 +278,7 @@ function shouldUseBibleisBackwardCompat($key)
             }
         }
     }
-    // log data to be sure this deprecation method is working correctly
-    $log_data = [
-        "key" => $key,
-        "app_name" => $app_name,
-        "app_version" => $app_version,
-        "deprecation_version" => $deprecation_version,
-        "backward_compatibility_mode_active" => $should_use_backward_compat,
-    ];
-    $backward_compat_message = "shouldUseBibleisBackwardCompat: " . json_encode($log_data);
-    Log::error($backward_compat_message);
-
+    logDeprecationInfo($key, $app_name, $should_use_backward_compat, $app_version, $deprecation_version);
     return $should_use_backward_compat;
 }
 
@@ -330,13 +364,14 @@ if (!function_exists('unique_random')) {
 }
 
 if (!function_exists('convertCsvToArrayMap')) {
-    function convertCsvToArrayMap($syncFile) {
+    function convertCsvToArrayMap($syncFile)
+    {
         $file = fopen($syncFile, 'r');
         $mapped_csv = [];
     
         while (!feof($file)) {
             $line = fgetcsv($file);
-            if ($line && $line[0] && $line[1] && $line[0] !== " " && $line[1] !== " ") {
+            if ($line && $line[0] && $line[1] && $line[0] !== ' ' && $line[1] !== ' ') {
                 $mapped_csv[$line[0]] = $line[1];
             }
         }
@@ -354,7 +389,7 @@ if (!function_exists('getFilesetFromDamId')) {
             
             if (array_key_exists($dam_id, $transition_bibles)) {
                 $dam_id = $transition_bibles[$dam_id];
-            } else if (array_key_exists($dam_id, array_flip($transition_bibles))) {
+            } elseif (array_key_exists($dam_id, array_flip($transition_bibles))) {
                 $dam_id = array_flip($transition_bibles)[$dam_id];
             }
         }
@@ -378,7 +413,7 @@ if (!function_exists('getFilesetFromDamId')) {
 
 if (!function_exists('validateV2Annotation')) {
     function validateV2Annotation($annotation, $filesets, $books, $v4_users, $v4_annotations)
-    {   
+    {
         if (isset($v4_annotations[$annotation->id])) {
             // echo "\n Error!! Annotation already inserted: " . $annotation->id;
             return false;
@@ -416,25 +451,25 @@ if (!function_exists('validateV2Annotation')) {
 }
 
 if (!function_exists('validateLiveBibleIsAnnotation')) {
-  function validateLiveBibleIsAnnotation($annotation, $v4_users, $bibles, $annotation_exists)
-  {    
-      if ($annotation_exists) {
-          return false;
-      }
+    function validateLiveBibleIsAnnotation($annotation, $v4_users, $bibles, $annotation_exists)
+    {
+        if ($annotation_exists) {
+            return false;
+        }
 
-      if (!in_array($annotation['user_id'], $v4_users)) {
-          echo "\n Error!! Could not find USER_ID: " . $annotation['user_id'] . ' (wont insert this annotation)';
-          return false;
-      }
+        if (!in_array($annotation['user_id'], $v4_users)) {
+            echo "\n Error!! Could not find USER_ID: " . $annotation['user_id'] . ' (wont insert this annotation)';
+            return false;
+        }
 
 
-      if (!in_array($annotation['bible_id'], $bibles)) {
-          echo "\n Error!! Could not find BIBLE_ID". $annotation['bible_id'] . ' (wont insert this annotation)';
-          return false;
-      }
+        if (!in_array($annotation['bible_id'], $bibles)) {
+            echo "\n Error!! Could not find BIBLE_ID". $annotation['bible_id'] . ' (wont insert this annotation)';
+            return false;
+        }
 
-      return true;
-  }
+        return true;
+    }
 }
 
 if (!function_exists('arrayToCommaSeparatedValues')) {
@@ -445,7 +480,8 @@ if (!function_exists('arrayToCommaSeparatedValues')) {
 }
 
 if (!function_exists('formatFilesetMeta')) {
-    function formatFilesetMeta($fileset) {
+    function formatFilesetMeta($fileset)
+    {
         if (isset($fileset->meta)) {
             foreach ($fileset->meta as $metadata) {
                 if (isset($metadata['name'], $metadata['description'])) {
