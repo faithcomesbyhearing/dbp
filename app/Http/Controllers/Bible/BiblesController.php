@@ -95,7 +95,7 @@ class BiblesController extends APIController
         // created to support old bibleis versions
         $tag_exclude = null;
         $order_by = 'bibles.id';
-        if (isBibleisOrGideon($this->key)) {
+        if (shouldUseBibleisBackwardCompat($this->key)) {
             $tag_exclude = 'opus';
             $order_by = 'bibles.priority DESC';
         }
