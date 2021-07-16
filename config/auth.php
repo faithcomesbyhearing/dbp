@@ -80,8 +80,8 @@ return [
 
     'compat_users' => [
         'api_keys' => [
-            'bibleis' => env('BIBLEIS_COMPAT_KEYS'),
-            'gideons' => env('GIDEONS_COMPAT_KEYS'),
+            'bibleis' => env('BIBLEIS_KEYS'),
+            'gideons' => env('GIDEONS_KEYS'),
         ],
     ],
 
