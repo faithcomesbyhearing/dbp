@@ -119,7 +119,7 @@ class BiblesController extends APIController
             $is_bibleis_gideons
         ];
         
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page) {
+        $bibles = cacheRememberForHeavyCalls('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page) {
             $bibles = Bible::withRequiredFilesets([
                 'access_control' => $access_control,
                 'media'          => $media,
