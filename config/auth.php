@@ -79,7 +79,10 @@ return [
     ],
 
     'compat_users' => [
-        'api_keys' => env('BIBLEIS_GIDEON_KEYS')
+        'api_keys' => [
+            'bibleis' => env('BIBLEIS_COMPAT_KEYS'),
+            'gideons' => env('GIDEONS_COMPAT_KEYS'),
+        ],
     ],
 
     /*

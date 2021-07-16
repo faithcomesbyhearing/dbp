@@ -111,12 +111,20 @@ function generateCacheString($key, $args = [])
 
 function isBibleisOrGideon($key)
 {
-    $compat_api_keys = config('auth.compat_users.api_keys');
-    $compat_api_keys = explode(',', $compat_api_keys);
-    if (in_array($key, $compat_api_keys)) {
-        return true;
+    $bibleis_compat_keys = config('auth.compat_users.api_keys.bibleis');
+    $bibleis_compat_keys = explode(',', $bibleis_compat_keys);
+    $gid_compat_keys = config('auth.compat_users.api_keys.gideons');
+    $gid_compat_keys = explode(',', $gid_compat_keys);
+    $compat_keys_response = [
+      'isBibleis' => false,
+      'isGideons' => false,
+    ];
+    if (in_array($key, $bibleis_compat_keys)) {
+        $compat_keys_response['isBibleis'] = true;
+    } else if (in_array($key, $gid_compat_keys)) {
+        $compat_keys_response['isGideons'] = true;
     }
-    return false;
+    return $compat_keys_response;
 }
 
 function forceBibleisGideonsPagination($key, $limit_param)
@@ -200,9 +208,17 @@ function shouldUseBibleisBackwardCompat($key)
     $should_use_backward_compat = false;
     $app_name = '';
     $app_version = '';
-    $deprecation_version = config('settings.deprecate_from_version.bibleis');
+    $app_compat_keys = isBibleisOrGideon($key);
+    $deprecation_version = null;
 
-    if (isBibleisOrGideon($key)) {
+    if ($app_compat_keys['isBibleis']) {
+        $app_name = 'Bible.is';
+        $deprecation_version = config('settings.deprecate_from_version.bibleis');
+    } elseif ($app_compat_keys['isGideons']) {
+        $app_name = 'Gideons';
+        $deprecation_version = config('settings.deprecate_from_version.gideons');
+    }
+    if ($deprecation_version) {
         $deprecation_version = formatAppVersion($deprecation_version);
         $user_ag = $_SERVER['HTTP_USER_AGENT'];
         $old_possible_user_agents = ['BibleIs', 'GBA', 'Android'];
