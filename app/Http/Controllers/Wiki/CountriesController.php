@@ -60,7 +60,6 @@ class CountriesController extends APIController
         $cache_params = [$GLOBALS['i18n_iso'], $languages, $limit, $page, $is_bibleis_gideons];
 
         $countries = cacheRememberForHeavyCalls('countries', $cache_params, now()->addDay(), function () use ($languages, $limit, $page) {
-            sleep(5);
             $countries = Country::with('currentTranslation')
             ->whereHas('languages.bibles.filesets')
             ->paginate($limit);
