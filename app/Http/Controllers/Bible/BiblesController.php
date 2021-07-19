@@ -126,7 +126,8 @@ class BiblesController extends APIController
             $is_bibleis_gideons
         ];
         
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by) {
+        $bibles = cacheRememberForHeavyCalls('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by) {
+            sleep(5);
             $bibles = Bible::withRequiredFilesets([
                 'access_control' => $access_control,
                 'media'          => $media,
@@ -636,7 +637,7 @@ class BiblesController extends APIController
     {
         // deprecate endpoint for bibleis/gideons newest versions (and for other users by deafult)
         if (!shouldUseBibleisBackwardCompat($this->key)) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.errors_404'));
+            return $this->setStatusCode(410)->replyWithError(trans('api.errors_410'));
         }
 
         $bible = cacheRemember('v4_chapter_bible', [$bible_id], now()->addDay(), function () use ($bible_id) {
