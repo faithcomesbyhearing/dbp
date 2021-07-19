@@ -99,6 +99,7 @@ class BiblesController extends APIController
             $tag_exclude = 'opus';
             $order_by = 'bibles.priority DESC';
         }
+        $order_cache_key = str_replace(['.', ' '], '', $order_by);
 
         if ($media) {
             $media_types = BibleFilesetType::select('set_type_code')->get();
@@ -122,11 +123,11 @@ class BiblesController extends APIController
             $tag_exclude,
             $limit,
             $page,
-            $is_bibleis_gideons
+            $is_bibleis_gideons,
+            $order_cache_key
         ];
         
         $bibles = cacheRememberForHeavyCalls('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by) {
-            sleep(5);
             $bibles = Bible::withRequiredFilesets([
                 'access_control' => $access_control,
                 'media'          => $media,
