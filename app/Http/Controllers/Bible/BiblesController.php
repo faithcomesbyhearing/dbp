@@ -636,7 +636,7 @@ class BiblesController extends APIController
     {
         // deprecate endpoint for bibleis/gideons newest versions (and for other users by deafult)
         if (!shouldUseBibleisBackwardCompat($this->key)) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.errors_404'));
+            return $this->setStatusCode(410)->replyWithError(trans('api.errors_410'));
         }
 
         $bible = cacheRemember('v4_chapter_bible', [$bible_id], now()->addDay(), function () use ($bible_id) {
