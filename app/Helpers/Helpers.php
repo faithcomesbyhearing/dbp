@@ -245,7 +245,7 @@ function shouldUseBibleisBackwardCompat($key)
         $app_name = 'Gideons';
         $deprecation_version = config('settings.deprecate_from_version.gideons');
     }
-    if ($deprecation_version) {
+    if ($deprecation_version && isset($_SERVER['HTTP_USER_AGENT'])) {
         $deprecation_version = formatAppVersion($deprecation_version);
         $user_ag = $_SERVER['HTTP_USER_AGENT'];
         $has_new_user_agent = strpos($user_ag, $app_name . '/') !== false;
@@ -255,7 +255,7 @@ function shouldUseBibleisBackwardCompat($key)
             return true;
         }
         // case for newer app veresions with updated user agent
-        if ($app_name) {
+        if ($app_name && $has_new_user_agent) {
             $app_version = explode($app_name . '/', $user_ag)[1];
             $app_version = explode(' ', $app_version)[0];
             $app_version = formatAppVersion($app_version);
