@@ -122,7 +122,6 @@ class BiblesController extends APIController
             $tag_exclude,
             $limit,
             $page,
-            $order_by,
             $is_bibleis_gideons
         ];
         
