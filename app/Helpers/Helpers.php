@@ -248,25 +248,13 @@ function shouldUseBibleisBackwardCompat($key)
     if ($deprecation_version) {
         $deprecation_version = formatAppVersion($deprecation_version);
         $user_ag = $_SERVER['HTTP_USER_AGENT'];
-        $old_possible_user_agents = ['BibleIs', 'GBA', 'Android'];
-        $has_bibleis_new_user_agent = strpos($user_ag, 'Bible.is/') !== false;
-        $has_gideons_new_user_agent = strpos($user_ag, 'Gideons/') !== false;
-        $has_any_new_user_agent = $has_bibleis_new_user_agent || $has_gideons_new_user_agent;
-        // case for older apps with different user agent
-        if (!$has_any_new_user_agent) {
-            foreach ($old_possible_user_agents as $old_agent_string) {
-                if (strpos($user_ag, $old_agent_string) !== false) {
-                    logDeprecationInfo($key, $old_agent_string, true);
-                    return true;
-                }
-            }
+        $has_new_user_agent = strpos($user_ag, $app_name . '/') !== false;
+        // case for older bibleis/gideons apps with different user agent that we don't recognize
+        if (!$has_new_user_agent) {
+            logDeprecationInfo($key, $app_name, true);
+            return true;
         }
         // case for newer app veresions with updated user agent
-        if ($has_bibleis_new_user_agent) {
-            $app_name = 'Bible.is';
-        } elseif ($has_gideons_new_user_agent) {
-            $app_name = 'Gideons';
-        }
         if ($app_name) {
             $app_version = explode($app_name . '/', $user_ag)[1];
             $app_version = explode(' ', $app_version)[0];
