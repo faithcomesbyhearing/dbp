@@ -84,10 +84,14 @@ function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $ca
 {
     $cache_string = generateCacheString($cache_key, $cache_args);
     $current_cache = Cache::get($cache_string);
+    if ($current_cache) {
+      Log::error('Got cache at first and returned');
+      return $current_cache;
+    }
     $state_key = $cache_string . '_state';
     $cache_state = Cache::get($state_key);
 
-    if (!$current_cache && $cache_state !== 'PENDING') {
+    if ($cache_state !== 'PENDING') {
         Cache::add($state_key, 'PENDING', $duration);
         Log::error('adding pending on ' . $cache_string);
         $current_cache = Cache::remember($cache_string, $duration, $callback);
