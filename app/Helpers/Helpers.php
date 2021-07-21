@@ -92,10 +92,8 @@ function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $ca
     if ($current_cache !== 'PENDING') {
         Cache::put($cache_string, 'PENDING', $duration);
         Log::error('adding pending on ' . $cache_string);
-        $current_cache = $callback();
-        Cache::put($cache_string, $current_cache, $duration);
+        Cache::put($cache_string, $callback(), $duration);
         Log::error('This thread finished loading sql' . $cache_string);
-        return $current_cache;
     }
 
     while ($current_cache === 'PENDING') {
@@ -104,6 +102,7 @@ function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $ca
         $current_cache = Cache::get($cache_string);
     }
 
+    $current_cache = Cache::get($cache_string);
     Log::error('Done on cache remember for heave calls for:' . $cache_string);
     return $current_cache;
 }
