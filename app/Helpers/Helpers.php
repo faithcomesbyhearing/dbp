@@ -84,29 +84,26 @@ function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $ca
 {
     $cache_string = generateCacheString($cache_key, $cache_args);
     $current_cache = Cache::get($cache_string);
-    if ($current_cache) {
-      Log::error('Got cache at first and returned');
+    if ($current_cache && $current_cache !== 'PENDING') {
+      Log::error('Got cache at first and returned' . $cache_string);
       return $current_cache;
     }
-    $state_key = $cache_string . '_state';
-    $cache_state = Cache::get($state_key);
 
-    if ($cache_state !== 'PENDING') {
-        Cache::add($state_key, 'PENDING', $duration);
+    if ($current_cache !== 'PENDING') {
+        Cache::put($cache_string, 'PENDING', $duration);
         Log::error('adding pending on ' . $cache_string);
-        $current_cache = Cache::remember($cache_string, $duration, $callback);
-        Log::error('This thread finished loading sql');
-        Cache::forget($state_key);
+        $current_cache = $callback();
+        Cache::put($cache_string, $current_cache, $duration);
+        Log::error('This thread finished loading sql' . $cache_string);
         return $current_cache;
     }
-    
-    $cache_state = Cache::get($state_key);
-    while ($cache_state === 'PENDING') {
-      sleep(1);
-      Log::error('waiting for the cache on the state:' . json_encode($cache_state));
-      $cache_state = Cache::get($state_key);
+
+    while ($current_cache === 'PENDING') {
+        sleep(1);
+        Log::error('waiting for the cache on the state:' . json_encode($current_cache));
+        $current_cache = Cache::get($cache_string);
     }
-    $current_cache = Cache::get($cache_string);
+
     Log::error('Done on cache remember for heave calls for:' . $cache_string);
     return $current_cache;
 }
