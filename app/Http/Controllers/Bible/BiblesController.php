@@ -96,9 +96,12 @@ class BiblesController extends APIController
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
         // created to support old bibleis versions
         $tag_exclude = null;
+        $order_by = 'bibles.id';
         if (shouldUseBibleisBackwardCompat($this->key)) {
             $tag_exclude = 'opus';
+            $order_by = 'bibles.priority DESC';
         }
+        $order_cache_key = str_replace(['.', ' '], '', $order_by);
 
         if ($media) {
             $media_types = BibleFilesetType::select('set_type_code')->get();
@@ -122,10 +125,11 @@ class BiblesController extends APIController
             $tag_exclude,
             $limit,
             $page,
-            $is_bibleis_gideons
+            $is_bibleis_gideons,
+            $order_cache_key
         ];
         
-        $bibles = cacheRememberForHeavyCalls('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page) {
+        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by) {
             $bibles = Bible::withRequiredFilesets([
                 'access_control' => $access_control,
                 'media'          => $media,
@@ -183,8 +187,7 @@ class BiblesController extends APIController
                     MIN(bibles.priority) as priority,
                     MIN(bibles.id) as id'
                 )
-            )->orderByRaw('bibles.id')->groupBy('bibles.id');
-
+            )->orderByRaw($order_by)->groupBy('bibles.id');
 
             $bibles = $bibles->paginate($limit);
             $bibles_return = fractal(
