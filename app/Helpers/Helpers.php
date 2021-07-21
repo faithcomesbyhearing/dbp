@@ -102,7 +102,7 @@ function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $ca
         $current_cache = Cache::get($cache_string);
     }
 
-    Cache::get($cache_string);
+    $current_cache = Cache::get($cache_string);
     Log::error('Done on cache remember for heave calls for:' . $cache_string);
     return $current_cache;
 }
