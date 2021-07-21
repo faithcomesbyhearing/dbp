@@ -102,6 +102,7 @@ function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $ca
     }
     $current_cache = Cache::get($cache_string);
     Log::error('Done on cache remember for heave calls for:' . $cache_string);
+    Log::error('Size of the response body in Bytes:' . strlen(json_encode($current_cache)));
     return $current_cache;
 }
 
