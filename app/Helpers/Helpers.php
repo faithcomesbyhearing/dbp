@@ -84,21 +84,23 @@ function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $ca
 {
     $cache_string = generateCacheString($cache_key, $cache_args);
     $current_cache = Cache::get($cache_string);
-    $cache_state = Cache::get($cache_string . '_state');
+    $state_key = $cache_string . '_state';
+    $cache_state = Cache::get($state_key);
 
     if (!$current_cache && $cache_state !== 'PENDING') {
-        Cache::add($cache_string . '_state', 'PENDING', $duration);
+        Cache::add($state_key, 'PENDING', $duration);
         Log::error('adding pending on ' . $cache_string);
         $current_cache = Cache::remember($cache_string, $duration, $callback);
         Log::error('This thread finished loading sql');
-        Cache::forget($cache_string . '_state');
+        Cache::forget($state_key);
+        return $current_cache;
     }
     
-    $cache_state = Cache::get($cache_string . '_state');
-    while ($cache_state === 'PENDING' && !$current_cache) {
+    $cache_state = Cache::get($state_key);
+    while ($cache_state === 'PENDING') {
       sleep(1);
       Log::error('waiting for the cache on the state:' . json_encode($cache_state));
-      $cache_state = Cache::get($cache_string . '_state');
+      $cache_state = Cache::get($state_key);
     }
     $current_cache = Cache::get($cache_string);
     Log::error('Done on cache remember for heave calls for:' . $cache_string);
