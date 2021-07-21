@@ -188,13 +188,14 @@ class BiblesController extends APIController
             )->orderByRaw($order_by)->groupBy('bibles.id');
 
 
-            $bibles = $bibles->paginate($limit);
-            $bibles_return = fractal(
-                $bibles->getCollection(),
-                BibleTransformer::class,
-                new DataArraySerializer()
-            );
-            return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
+            // $bibles = $bibles->paginate($limit);
+            // $bibles_return = fractal(
+            //     $bibles->getCollection(),
+            //     BibleTransformer::class,
+            //     new DataArraySerializer()
+            // );
+            // return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
+            return $bibles->first();
         });
 
         return $this->reply($bibles);
