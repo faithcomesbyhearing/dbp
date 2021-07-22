@@ -79,16 +79,16 @@
         }
     },
     "scripts": {
-        "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
-        ],
+        // "post-root-package-install": [
+        //     "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        // ],
         "post-create-project-cmd": [
             "@php artisan key:generate"
         ],
-        "post-autoload-dump": [
-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover"
-        ],
+        // "post-autoload-dump": [
+        //     "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+        //     "@php artisan package:discover"
+        // ],
 	  	"cs": [
 		  	"php-cs-fixer fix --dry-run"
 	  	],
