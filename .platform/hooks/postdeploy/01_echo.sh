@@ -1,5 +1,5 @@
 #!/bin/sh
 
 
-echo "platform/hooks/predeploy/echo.sh"
+echo "cccccccccccplatform/hooks/predeploy/echo.sh"
 
