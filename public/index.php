@@ -1,5 +1,5 @@
 <?php
-phpinfo();
+
 /**
  * Laravel - A PHP Framework For Web Artisans.
  *
@@ -52,5 +52,5 @@ $response = $kernel->handle(
 );
 
 $response->send();
-
+phpinfo();
 $kernel->terminate($request, $response);
