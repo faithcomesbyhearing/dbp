@@ -54,6 +54,7 @@ class CountriesController extends APIController
     {
         $languages = checkBoolean('include_languages');
         $limit     = (int) (checkParam('limit') ?? 50);
+        $limit     = min($limit, 50);
         $page      = checkParam('page') ?? 1;
 
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
