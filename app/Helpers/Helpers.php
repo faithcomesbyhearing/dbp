@@ -161,7 +161,7 @@ function isBibleisOrGideon($key)
 function forceBibleisGideonsPagination($key, $limit_param)
 {
     // remove pagination for bibleis and gideons (temporal fix)
-    $limit = min($limit_param, 50);
+    $limit = $limit_param;
     $is_bibleis_gideons = null;
 
     if (shouldUseBibleisBackwardCompat($key)) {

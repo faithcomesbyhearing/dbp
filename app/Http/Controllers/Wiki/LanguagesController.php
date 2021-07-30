@@ -88,6 +88,7 @@ class LanguagesController extends APIController
         $name                  = checkParam('name|language_name');
         $show_bibles           = checkBoolean('show_bibles');
         $limit                 = (int) (checkParam('limit') ?? 50);
+        $limit                 = min($limit, 150);
         $page                  = checkParam('page') ?? 1;
 
         // note: this two commented changes can be removed when bibleis and gideons no longer require a non-paginated response
