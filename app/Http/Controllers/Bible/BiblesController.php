@@ -90,6 +90,7 @@ class BiblesController extends APIController
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
         $limit              = (int) (checkParam('limit') ?? 50);
+        $limit              = min($limit, 50);
         $page               = checkParam('page') ?? 1;
 
         // removes opus filesets from the request to avoid memory overflows
