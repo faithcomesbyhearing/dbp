@@ -6,6 +6,7 @@ use App\Models\User\AccessGroupKey;
 use App\Models\User\AccessGroupFileset;
 use App\Models\User\AccessType;
 use App\Models\User\Key;
+use DB;
 
 trait AccessControlAPI
 {
@@ -17,9 +18,9 @@ trait AccessControlAPI
      *
      * @return object
      */
-    public function accessControl($api_key)
+    public function accessControl($api_key, $control_table = 'filesets')
     {
-        return cacheRemember('access_control:', [$api_key], now()->addMinutes(40), function () use ($api_key) {
+        return cacheRemember('access_control:', [$api_key, $control_table], now()->addHour(), function () use ($api_key, $control_table) {
             $user_location = geoip(request()->ip());
             $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
             $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
@@ -33,29 +34,58 @@ trait AccessControlAPI
                     $query->where('continent_id', $continent);
                 })
                 ->first();
-
             if (!$access_type) {
                 return (object) ['hashes' => [], 'string' => ''];
             }
 
             $key = Key::select('id')->where('key', $api_key)->first();
-
             $accessGroups = AccessGroupKey::where('key_id', $key->id)
-                ->get()
-                ->pluck('access')
-                ->where('name', '!=', 'RESTRICTED')
-                ->map(function ($access) {
-                    return collect($access->toArray())
-                        ->only(['id', 'name'])
-                        ->all();
-                });
+            ->get()
+            ->pluck('access')
+            ->where('name', '!=', 'RESTRICTED')
+            ->map(function ($access) {
+                return collect($access->toArray())
+                    ->only(['id', 'name'])
+                    ->all();
+            });
+            $dbp_users = config('database.connections.dbp_users.database');
 
-            // Use Eloquent everywhere except for this giant request
-            $filesets = AccessGroupFileset::select('hash_id')
-                ->whereIn('access_group_id', $accessGroups->pluck('id'))->distinct()->get()->pluck('hash_id');
-
+            switch ($control_table) {
+                case 'languages':
+                    $identifiers = DB::select(
+                        DB::raw(
+                            'select distinct l.id identifier
+                            from ' . $dbp_users . '.user_keys uk
+                            join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                            join access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                            join bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                            join bibles b on bfc.bible_id = b.id
+                            join languages l on l.id = b.language_id
+                            where uk.id = ?'
+                        ), [$key->id]
+                    );
+                    break; 
+                case 'bibles':
+                    $identifiers = DB::select(
+                        DB::raw(
+                            'select distinct bfc.bible_id identifier
+                            from ' . $dbp_users . '.user_keys uk
+                            join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                            join access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                            join bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                            where uk.id = ?'
+                        ), [$key->id]
+                    );
+                    break;
+                default:
+                    // Use Eloquent everywhere except for this giant request
+                    $identifiers = AccessGroupFileset::select('hash_id as identifier')
+                        ->whereIn('access_group_id', $accessGroups->pluck('id'))->distinct()->get();
+                    break;
+            }
+            
             return (object) [
-                'hashes' => $filesets->toArray(),
+                'hashes' => collect($identifiers)->pluck('identifier'),
                 'string' => $accessGroups->pluck('name')->implode('-'),
             ];
         });
