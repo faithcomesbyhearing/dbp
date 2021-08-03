@@ -98,7 +98,7 @@ class LanguagesController extends APIController
         $asset_filter = $is_bibleis_gideons && $show_bibles ? 'dbp-vid' : null;
 
         $access_control = cacheRemember('access_control', [$this->key], now()->addHour(), function () {
-            return $this->accessControl($this->key);
+            return $this->accessControl($this->key, 'languages');
         });
         $cache_params = [
             $this->v,  
@@ -191,7 +191,7 @@ class LanguagesController extends APIController
     public function show($id)
     {
         $access_control = cacheRemember('access_control', [$this->key], now()->addHour(), function () {
-            return $this->accessControl($this->key);
+            return $this->accessControl($this->key, 'languages');
         });
         $cache_params = [$id, $access_control->string];
         $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $access_control) {
