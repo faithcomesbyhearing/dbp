@@ -26,9 +26,7 @@ class ReaderController extends APIController
     {
         $languages = cacheRemember('Bible_is_languages', [], now()->addDay(), function () {
             $project_key = optional(Key::where('name', 'bible.is')->first())->key;
-            $access_control = cacheRemember('access_control', [$project_key], now()->addDay(), function () use ($project_key) {
-                return $this->accessControl($project_key);
-            });
+            $access_control = $this->accessControl($project_key);
             return Language::select(['languages.id', 'languages.name', 'autonym.name as autonym'])
                 ->leftJoin('language_translations as autonym', function ($join) {
                     $join->on('autonym.language_source_id', 'languages.id');
@@ -36,7 +34,7 @@ class ReaderController extends APIController
                     $join->orderBy('autonym.priority', 'desc');
                 })
                 ->whereHas('filesets', function ($query) use ($access_control) {
-                    $query->whereIn('hash_id', $access_control->hashes);
+                    $query->whereIn('hash_id', $access_control->identifiers);
                     $query->whereHas('fileset', function ($query) {
                         $query->where('set_type_code', 'text_plain')->where('asset_id', 'dbp-prod');
                     });
@@ -54,9 +52,7 @@ class ReaderController extends APIController
     public function bibles($language_id)
     {
         $project_key = Key::where('name', 'bible.is')->first();
-        $access_control = cacheRemember('access_control', [$project_key->key], now()->addDay(), function () use ($project_key) {
-            return $this->accessControl($project_key->key);
-        });
+        $access_control = $this->accessControl($project_key->key);
 
         $filesets = BibleFileset::with('bible.translations')
             ->whereHas('bible', function ($query) use ($language_id) {

@@ -20,7 +20,7 @@ trait AccessControlAPI
      */
     public function accessControl($api_key, $control_table = 'filesets')
     {
-        return cacheRemember('access_control:', [$api_key, $control_table], now()->addHour(), function () use ($api_key, $control_table) {
+        return cacheRemember('access_control:', [$control_table, $api_key], now()->addDay(), function () use ($api_key, $control_table) {
             $user_location = geoip(request()->ip());
             $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
             $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
@@ -35,7 +35,7 @@ trait AccessControlAPI
                 })
                 ->first();
             if (!$access_type) {
-                return (object) ['hashes' => [], 'string' => ''];
+                return (object) ['identifiers' => [], 'string' => ''];
             }
 
             $key = Key::select('id')->where('key', $api_key)->first();
@@ -85,7 +85,7 @@ trait AccessControlAPI
             }
             
             return (object) [
-                'hashes' => collect($identifiers)->pluck('identifier'),
+                'identifiers' => collect($identifiers)->pluck('identifier')->toArray(),
                 'string' => $accessGroups->pluck('name')->implode('-'),
             ];
         });
@@ -110,7 +110,7 @@ trait AccessControlAPI
                 ->first();
 
             if (!$access_type) {
-                return (object) ['hashes' => [], 'string' => ''];
+                return (object) ['identifiers' => [], 'string' => ''];
             }
 
             $dbp_database = config('database.connections.dbp.database');
@@ -129,7 +129,7 @@ trait AccessControlAPI
     public function blockedByAccessControl($fileset)
     {
         $access_control = $this->accessControl($this->key);
-        if (!\in_array($fileset->hash_id, $access_control->hashes, true)) {
+        if (!\in_array($fileset->hash_id, $access_control->identifiers, true)) {
             return $this->setStatusCode(403)->replyWithError(trans('api.bible_fileset_errors_401'));
         }
         return false;
