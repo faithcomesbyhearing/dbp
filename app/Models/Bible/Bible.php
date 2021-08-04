@@ -302,11 +302,11 @@ class Bible extends Model
 
     public function scopeWithRequiredFilesets($query, $type_filters)
     {   
-        $permitted_filesets = $type_filters['access_control']->hashes;
+        $permitted_filesets = $type_filters['access_control']->identifiers;
 
         if ($type_filters['tag_exclude']) {
             $opus_filesets = BibleFilesetTag::select('hash_id')->where('description', $type_filters['tag_exclude'])->pluck('hash_id')->toArray();
-            $permitted_filesets = array_diff($type_filters['access_control']->hashes, $opus_filesets);
+            $permitted_filesets = array_diff($type_filters['access_control']->identifiers, $opus_filesets);
         }
 
         $queryIn = sprintf("bible_filesets.hash_id IN ('" . implode("', '", $permitted_filesets) . "')");
