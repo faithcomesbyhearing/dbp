@@ -27,7 +27,7 @@ class AccessControlTest extends ApiV4Test
         $user = $this->createUserAndAccessGroup(factory(AccessType::class)->make());
         $access_controls = $this->accessControl($user->keys->first());
 
-        $this->assertTrue(count($access_controls->hashes) > 0);
+        $this->assertTrue(count($access_controls->identifiers) > 0);
         $this->assertFalse(Str::contains($access_controls->string, 'RESTRICTED'));
         $this->assertTrue(Str::contains($access_controls->string, 'PUBLIC_DOMAIN'));
     }
@@ -41,7 +41,7 @@ class AccessControlTest extends ApiV4Test
     {
         $access_controls = $this->accessControl('this-is-not-a-real-api-key');
 
-        $this->assertFalse(count($access_controls->hashes) > 0);
+        $this->assertFalse(count($access_controls->identifiers) > 0);
         $this->assertFalse(Str::contains($access_controls->string, 'RESTRICTED'));
         $this->assertFalse(Str::contains($access_controls->string, 'PUBLIC_DOMAIN'));
     }
@@ -60,7 +60,7 @@ class AccessControlTest extends ApiV4Test
         $access_controls = $this->accessControl($user->keys->first());
 
         // Assert hashes attached to the group are returned
-        $this->assertTrue(count($access_controls->hashes) > 0);
+        $this->assertTrue(count($access_controls->identifiers) > 0);
         $this->assertFalse(Str::contains($access_controls->string, 'RESTRICTED'));
         $this->assertTrue(Str::contains($access_controls->string, 'PUBLIC_DOMAIN'));
     }
@@ -95,7 +95,7 @@ class AccessControlTest extends ApiV4Test
         $user = $this->createUserAndAccessGroup(factory(AccessType::class)->make(['country_id' => 'US']));
         $access_controls = $this->accessControl($user->keys->first());
 
-        $this->assertNotContains($user->keys->access->first()->filesets->hash_id, $access_controls->hashes);
+        $this->assertNotContains($user->keys->access->first()->filesets->hash_id, $access_controls->identifiers);
     }
 
     /**
@@ -112,7 +112,7 @@ class AccessControlTest extends ApiV4Test
         $allowed_fileset = AccessType::where('continent_id', 'NA')->first()->accessGroups()->first()->filesets()->inRandomOrder()->first();
         $access_controls = $this->accessControl(Key::inRandomOrder()->first());
 
-        $this->assertNotContains($allowed_fileset->hash_id, $access_controls->hashes);
+        $this->assertNotContains($allowed_fileset->hash_id, $access_controls->identifiers);
     }
 
 

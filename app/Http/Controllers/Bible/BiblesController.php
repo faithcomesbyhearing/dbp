@@ -239,7 +239,7 @@ class BiblesController extends APIController
             return Bible::with([
                 'translations', 'books.book', 'links', 'organizations.logo', 'organizations.logoIcon', 'organizations.translations', 'alphabet.primaryFont', 'equivalents',
                 'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
+                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
                 }
             ])->find($id);
         });
@@ -301,7 +301,7 @@ class BiblesController extends APIController
 
             return  Bible::with([
                 'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
+                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
                 }
             ])->find($bible_id);
         });
@@ -648,7 +648,7 @@ class BiblesController extends APIController
             $access_control = $this->accessControl($this->key);
             return Bible::with([
                 'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
+                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
                 }
             ])->whereId($bible_id)->first();
         });
