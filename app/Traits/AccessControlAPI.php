@@ -48,8 +48,14 @@ trait AccessControlAPI
                     ->only(['id', 'name'])
                     ->all();
             });
-            $dbp_users = config('database.connections.dbp_users.database');
 
+            // Access Control has historically been tied to fileset hashes.
+            // As the number of filesets grows, this has been affected query
+            // performance for endpoints such as Languages (and similarly for  Bibles),
+            // which return a list of Languages associated with any fileset
+            // content associated with the API key. For this case, the query has been optimized,
+            // and returns a list of language ids instead of a list of fileset hashes
+            $dbp_users = config('database.connections.dbp_users.database');
             switch ($control_table) {
                 case 'languages':
                     $identifiers = DB::select(
