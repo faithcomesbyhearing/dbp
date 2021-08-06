@@ -96,7 +96,7 @@ class LanguagesController extends APIController
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
         // this is a band aid to reduce the query with a forced asset_id if uses show_bibles
         $asset_filter = $is_bibleis_gideons && $show_bibles ? 'dbp-vid' : null;
-
+        // instead of returning hashes, accessControl will return language ids associated with the hashes
         $access_control =  $this->accessControl($this->key, 'languages');
         $cache_params = [
             $this->v,  
@@ -188,6 +188,7 @@ class LanguagesController extends APIController
      */
     public function show($id)
     {
+        // instead of returning hashes, accessControl will return language ids associated with the hashes
         $access_control = $this->accessControl($this->key, 'languages');
         $cache_params = [$id, $access_control->string];
         $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $access_control) {

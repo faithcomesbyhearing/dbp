@@ -256,7 +256,7 @@ function shouldUseBibleisBackwardCompat($key)
         $has_new_user_agent = strpos($user_ag, $app_name . '/') !== false;
         // case for older bibleis/gideons apps with different user agent that we don't recognize
         if (!$has_new_user_agent) {
-            logDeprecationInfo($key, $app_name, true);
+            // logDeprecationInfo($key, $app_name, true);
             return true;
         }
         // case for newer app veresions with updated user agent
@@ -273,7 +273,7 @@ function shouldUseBibleisBackwardCompat($key)
             }
         }
     }
-    logDeprecationInfo($key, $app_name, $should_use_backward_compat, $app_version, $deprecation_version);
+    // logDeprecationInfo($key, $app_name, $should_use_backward_compat, $app_version, $deprecation_version);
     return $should_use_backward_compat;
 }
 
