@@ -197,7 +197,7 @@ class BiblesController extends APIController
                 new DataArraySerializer()
             );
             $result =  $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
-            Log::error('Size of the response body in Bytes:' . strlen(json_encode($result)));
+            // Log::error('Size of the response body in Bytes:' . strlen(json_encode($result)));
             return $result;
         });
 
