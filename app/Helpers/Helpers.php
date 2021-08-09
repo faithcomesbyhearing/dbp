@@ -165,7 +165,7 @@ function forceBibleisGideonsPagination($key, $limit_param)
     $is_bibleis_gideons = null;
 
     if (shouldUseBibleisBackwardCompat($key)) {
-        $limit = PHP_INT_MAX;
+        $limit = PHP_INT_MAX - 10;
         $is_bibleis_gideons = 'bibleis-gideons';
     }
     return [$limit, $is_bibleis_gideons];
