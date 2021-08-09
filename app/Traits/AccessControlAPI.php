@@ -56,6 +56,7 @@ trait AccessControlAPI
             // content associated with the API key. For this case, the query has been optimized,
             // and returns a list of language ids instead of a list of fileset hashes
             $dbp_users = config('database.connections.dbp_users.database');
+            $dbp_prod = config('database.connections.dbp.database');
             switch ($control_table) {
                 case 'languages':
                     $identifiers = DB::select(
@@ -63,10 +64,10 @@ trait AccessControlAPI
                             'select distinct l.id identifier
                             from ' . $dbp_users . '.user_keys uk
                             join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                            join access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                            join bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                            join bibles b on bfc.bible_id = b.id
-                            join languages l on l.id = b.language_id
+                            join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                            join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                            join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
+                            join ' . $dbp_prod . '.languages l on l.id = b.language_id
                             where uk.id = ?'
                         ), [$key->id]
                     );
@@ -77,8 +78,8 @@ trait AccessControlAPI
                             'select distinct bfc.bible_id identifier
                             from ' . $dbp_users . '.user_keys uk
                             join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                            join access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                            join bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                            join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                            join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
                             where uk.id = ?'
                         ), [$key->id]
                     );
@@ -89,7 +90,7 @@ trait AccessControlAPI
                         ->whereIn('access_group_id', $accessGroups->pluck('id'))->distinct()->get();
                     break;
             }
-            
+
             return (object) [
                 'identifiers' => collect($identifiers)->pluck('identifier')->toArray(),
                 'string' => $accessGroups->pluck('name')->implode('-'),
