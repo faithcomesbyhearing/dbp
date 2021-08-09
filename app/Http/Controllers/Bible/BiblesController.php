@@ -30,6 +30,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use ZipArchive;
 
+use Illuminate\Support\Facades\Log;
+
 class BiblesController extends APIController
 {
     use AccessControlAPI;
@@ -88,6 +90,7 @@ class BiblesController extends APIController
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
         $limit              = (int) (checkParam('limit') ?? 50);
+        $limit              = min($limit, 50);
         $page               = checkParam('page') ?? 1;
 
         // removes opus filesets from the request to avoid memory overflows
@@ -95,10 +98,11 @@ class BiblesController extends APIController
         // created to support old bibleis versions
         $tag_exclude = null;
         $order_by = 'bibles.id';
-        if (isBibleisOrGideon($this->key)) {
+        if (shouldUseBibleisBackwardCompat($this->key)) {
             $tag_exclude = 'opus';
             $order_by = 'bibles.priority DESC';
         }
+        $order_cache_key = str_replace(['.', ' '], '', $order_by);
 
         if ($media) {
             $media_types = BibleFilesetType::select('set_type_code')->get();
@@ -122,8 +126,8 @@ class BiblesController extends APIController
             $tag_exclude,
             $limit,
             $page,
-            $order_by,
-            $is_bibleis_gideons
+            $is_bibleis_gideons,
+            $order_cache_key
         ];
         
         $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by) {
@@ -186,14 +190,15 @@ class BiblesController extends APIController
                 )
             )->orderByRaw($order_by)->groupBy('bibles.id');
 
-
             $bibles = $bibles->paginate($limit);
             $bibles_return = fractal(
                 $bibles->getCollection(),
                 BibleTransformer::class,
                 new DataArraySerializer()
             );
-            return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
+            $result =  $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
+            // Log::error('Size of the response body in Bytes:' . strlen(json_encode($result)));
+            return $result;
         });
 
         return $this->reply($bibles);
@@ -234,7 +239,7 @@ class BiblesController extends APIController
             return Bible::with([
                 'translations', 'books.book', 'links', 'organizations.logo', 'organizations.logoIcon', 'organizations.translations', 'alphabet.primaryFont', 'equivalents',
                 'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
+                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
                 }
             ])->find($id);
         });
@@ -296,7 +301,7 @@ class BiblesController extends APIController
 
             return  Bible::with([
                 'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
+                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
                 }
             ])->find($bible_id);
         });
@@ -634,22 +639,26 @@ class BiblesController extends APIController
      */
     public function chapter(Request $request, $bible_id)
     {
+        // deprecate endpoint for bibleis/gideons newest versions (and for other users by deafult)
+        if (!shouldUseBibleisBackwardCompat($this->key)) {
+            return $this->setStatusCode(410)->replyWithError(trans('api.errors_410'));
+        }
+
         $bible = cacheRemember('v4_chapter_bible', [$bible_id], now()->addDay(), function () use ($bible_id) {
             $access_control = $this->accessControl($this->key);
             return Bible::with([
                 'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
+                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
                 }
             ])->whereId($bible_id)->first();
         });
-
         if (!$bible) {
             return $this->setStatusCode(404)->replyWithError('Bible not found');
         }
 
         $user = $request->user();
         $show_annotations = !empty($user);
-
+        
         // Validate Project / User Connection
         if ($show_annotations && !$this->compareProjects($user->id, $this->key)) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
@@ -666,7 +675,7 @@ class BiblesController extends APIController
         if ($drama !== 'all') {
             $drama = checkBoolean('drama') ? 'drama' : 'non-drama';
         }
-
+        
         $book = cacheRemember('v4_chapter_book', [$book_id], now()->addDay(), function () use ($book_id) {
             return Book::whereId($book_id)->first();
         });

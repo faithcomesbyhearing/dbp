@@ -114,4 +114,12 @@ return [
    * Arclight forbiddenn iso list
    */
   'forbiddenArclightIso' => env('FORBIDDEN_ARCLIGHT_ISO', 'hun'),
+
+  /*
+   * Version to start bibleis/gid deprecation
+   */
+  'deprecate_from_version' => [
+      'bibleis' => env('BIBLEIS_DEPRECATE_FROM_VERSION', '3.3.10'),
+      'gideons' => env('GIDEONS_DEPRECATE_FROM_VERSION', '2.1.3'),
+  ],
 ];

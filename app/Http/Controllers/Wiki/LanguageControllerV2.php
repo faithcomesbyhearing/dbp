@@ -155,7 +155,7 @@ class LanguageControllerV2 extends APIController
                 }])
                     ->whereHas('language', function ($query) use ($access_control, $lang_code, $additional) {
                         $query->whereHas('filesets', function ($subquery) use ($access_control, $lang_code) {
-                            $subquery->whereIn('hash_id', $access_control->hashes);
+                            $subquery->whereIn('hash_id', $access_control->identifiers);
                             if ($lang_code) {
                                 $subquery->where('iso', $lang_code);
                             }
@@ -359,7 +359,7 @@ class LanguageControllerV2 extends APIController
         $organization_id = checkParam('organization_id');
 
         $access_control = $this->accessControl($this->key);
-        $hashes = BibleFileset::whereIn('hash_id', $access_control->hashes)
+        $hashes = BibleFileset::whereIn('hash_id', $access_control->identifiers)
             ->where('set_type_code', '!=', 'text_format')
             ->where('asset_id', 'dbp-prod')
             ->select('hash_id')->get()->pluck('hash_id');

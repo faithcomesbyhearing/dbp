@@ -36,7 +36,7 @@ class BibleTextTest extends ApiV4Test
     {
         $access_control = $this->accessControl($this->key);
 
-        $fileset = BibleFileset::with('files')->whereIn('hash_id', $access_control->hashes)->where('set_type_code', 'text_plain')->inRandomOrder()->first();
+        $fileset = BibleFileset::with('files')->whereIn('hash_id', $access_control->identifiers)->where('set_type_code', 'text_plain')->inRandomOrder()->first();
         $bible_verse = BibleVerse::where('hash_id', $fileset->hash_id)->inRandomOrder()->first();
 
         $this->params = array_merge([
@@ -69,7 +69,7 @@ class BibleTextTest extends ApiV4Test
     public function text_verse_allowed()
     {
         $access_control = $this->accessControl($this->params['key']);
-        $fileset = BibleFileset::with('files')->whereIn('hash_id', $access_control->hashes)->where('set_type_code', 'text_plain')->inRandomOrder()->first();
+        $fileset = BibleFileset::with('files')->whereIn('hash_id', $access_control->identifiers)->where('set_type_code', 'text_plain')->inRandomOrder()->first();
         $bible_verse = BibleVerse::where('hash_id', $fileset->hash_id)->inRandomOrder()->first();
 
         $this->params['dam_id']      = $fileset->id;

@@ -4,6 +4,7 @@ return [
 
 
     'errors_404'                             => '404 Not Found.',
+    'errors_410'                             => '410 Gone',
 
     // Utility Routes
     'auth_permission_denied'                 => 'you need to be logged in to see this page',

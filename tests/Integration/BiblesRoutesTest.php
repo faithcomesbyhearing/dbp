@@ -128,7 +128,7 @@ class BiblesRoutesTest extends ApiV4Test
     public function bibleFilesetsShow()
     {
         $access_control = $this->accessControl($this->key);
-        $file = BibleFile::with('fileset')->whereIn('hash_id', $access_control->hashes)->inRandomOrder()->first();
+        $file = BibleFile::with('fileset')->whereIn('hash_id', $access_control->identifiers)->inRandomOrder()->first();
 
         $path = route('v4_filesets.show', array_merge([
             'fileset_id' => $file->fileset->id,

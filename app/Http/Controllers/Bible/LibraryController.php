@@ -324,7 +324,7 @@ class LibraryController extends APIController
             }
 
             $access_control = $this->accessControl($this->key);
-            $queryIn = sprintf("bible_filesets.hash_id IN ('" . implode("', '", $access_control->hashes) . "')");
+            $queryIn = sprintf("bible_filesets.hash_id IN ('" . implode("', '", $access_control->identifiers) . "')");
             $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
                 ->whereRaw($queryIn)
