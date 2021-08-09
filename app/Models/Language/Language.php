@@ -370,16 +370,14 @@ class Language extends Model
         });
     }
 
-    public function scopeIncludeExtraLanguages($query, $access_control_hashes, $asset_id)
-    {
-        return $query->whereHas('filesets', function ($query) use ($access_control_hashes, $asset_id) {
-            $query->whereRaw('hash_id in (' . $access_control_hashes . ')');
-            if ($asset_id) {
+    public function scopeIncludeExtraLanguages($query, $access_control_identifiers, $asset_id)
+    {   
+        return $query->whereRaw('languages.id in (' . $access_control_identifiers . ')')
+            ->when($asset_id, function ($query) use ($asset_id) {
                 $query->whereHas('fileset', function ($query) use ($asset_id) {
                     $query->where('asset_id', $asset_id);
                 });
-            }
-        });
+            });
     }
 
     public function scopeIncludeCountryPopulation($query, $country)
