@@ -5,10 +5,13 @@ Route::name('v4_countries.all')->get(
     'countries',
     'Wiki\CountriesController@index'
 );
-
 Route::name('v4_countries.one')->get(
     'countries/{country_id}',
     'Wiki\CountriesController@show'
+);
+Route::name('v4_countries.search')->get(
+  'countries/search/{search_text}',
+  'Wiki\CountriesController@search'
 );
 
 // VERSION 4 | Languages
