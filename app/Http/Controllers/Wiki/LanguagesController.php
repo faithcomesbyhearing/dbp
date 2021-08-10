@@ -94,8 +94,6 @@ class LanguagesController extends APIController
         // note: this two commented changes can be removed when bibleis and gideons no longer require a non-paginated response
         // remove pagination for bibleis and gideons (temporal fix)
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
-        // this is a band aid to reduce the query with a forced asset_id if uses show_bibles
-        $asset_filter = $is_bibleis_gideons && $show_bibles ? 'dbp-vid' : null;
         // instead of returning hashes, accessControl will return language ids associated with the hashes
         $access_control =  $this->accessControl($this->key, 'languages');
         $cache_params = [
@@ -109,16 +107,15 @@ class LanguagesController extends APIController
             $limit, 
             $page,
             $is_bibleis_gideons,
-            $asset_filter
         ];
 
         $order = $country ? 'country_population.population' : 'ifnull(current_translation.name, languages.name)';
         $order_dir = $country ? 'desc' : 'asc';
         $select_country_population = $country ? 'country_population.population' : 'null';
-        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $access_control, $order, $order_dir, $select_country_population, $limit, $page, $asset_filter) {
+        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $access_control, $order, $order_dir, $select_country_population, $limit, $page) {
             $languages = Language::includeCurrentTranslation()
                 ->includeAutonymTranslation()
-                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers), $asset_filter)
+                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers))
                 ->includeExtraLanguageTranslations($include_translations)
                 ->includeCountryPopulation($country)
                 ->filterableByCountry($country)
@@ -193,7 +190,7 @@ class LanguagesController extends APIController
         $cache_params = [$id, $access_control->string];
         $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $access_control) {
             $language = Language::where('id', $id)->orWhere('iso', $id)
-                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers), false)
+                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers))
                 ->first();
             if (!$language) {
                 return $this->setStatusCode(404)->replyWithError("Language not found for ID: $id");

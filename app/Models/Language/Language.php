@@ -370,14 +370,9 @@ class Language extends Model
         });
     }
 
-    public function scopeIncludeExtraLanguages($query, $access_control_identifiers, $asset_id)
-    {   
-        return $query->whereRaw('languages.id in (' . $access_control_identifiers . ')')
-            ->when($asset_id, function ($query) use ($asset_id) {
-                $query->whereHas('fileset', function ($query) use ($asset_id) {
-                    $query->where('asset_id', $asset_id);
-                });
-            });
+    public function scopeIncludeExtraLanguages($query, $access_control_identifiers)
+    {  
+        return $query->whereRaw('languages.id in (' . $access_control_identifiers . ')');
     }
 
     public function scopeIncludeCountryPopulation($query, $country)
@@ -411,6 +406,14 @@ class Language extends Model
         $name_expression = $full_word ? $name : '%'.$name.'%';
         return $query->when($name, function ($query) use ($name, $name_expression) {
             $query->where('languages.name', 'like', $name_expression);
+        });
+    }
+
+    public function scopeFilterBySearch($query, $search_text)
+    {
+        $name_expression = $full_word ? $name : '%'.$name.'%';
+        return $query->when($name, function ($query) use ($name, $name_expression) {
+            $query->where('languages.name', 'like', $search_text)->orWhere();
         });
     }
 
