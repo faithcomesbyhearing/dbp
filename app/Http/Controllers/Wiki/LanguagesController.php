@@ -185,7 +185,7 @@ class LanguagesController extends APIController
     public function search($search_text)
     {
         $page  = checkParam('page') ?? 1;
-        $limit = (int) (checkParam('limit') ?? 25);
+        $limit = (int) (checkParam('limit') ?? 15);
         $limit = min($limit, 50);
         // instead of returning hashes, accessControl will return language ids associated with the hashes
         $access_control = $this->accessControl($this->key, 'languages');
