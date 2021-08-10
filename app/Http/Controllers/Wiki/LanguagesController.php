@@ -151,6 +151,78 @@ class LanguagesController extends APIController
     }
 
     /**
+     * @param $search_text
+     *
+     * @OA\Get(
+     *     path="/languages/search/{search_text}",
+     *     tags={"Languages"},
+     *     summary="Returns languages related to this search",
+     *     description="Returns paginated languages that have search text in its name or country",
+     *     operationId="v4_languages.one",
+     *     @OA\Parameter(
+     *          name="search_text",
+     *          in="path",
+     *          description="The language text to search by",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/search_text")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_languages.one"))
+     *     )
+     * )
+     *
+     * @OA\Schema(
+     *   schema="v4_languages.search",
+     *   type="object",
+     *   @OA\Property(property="data", type="object",
+     *      ref="#/components/schemas/Language"
+     *   )
+     * )
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
+     */
+    public function search($search_text)
+    {
+        $page  = checkParam('page') ?? 1;
+        $limit = (int) (checkParam('limit') ?? 25);
+        $limit = min($limit, 50);
+        // instead of returning hashes, accessControl will return language ids associated with the hashes
+        $access_control = $this->accessControl($this->key, 'languages');
+        $cache_params = [
+            $this->v,
+            $search_text,
+            $access_control->string,
+            $limit,
+            $page,
+        ];
+
+        $languages = cacheRemember('languages_search', $cache_params, now()->addDay(), function () use ($search_text, $access_control, $page, $limit) {
+            $languages = Language::includeCurrentTranslation()
+                ->includeAutonymTranslation()
+                ->leftJoin('countries', 'languages.country_id', 'countries.id')
+                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers), false)
+                ->filterableByNameOrAutonym($search_text)
+                ->select([
+                    'languages.id',
+                    'languages.glotto_id',
+                    'languages.iso',
+                    'languages.name as backup_name',
+                    'current_translation.name as name',
+                    'autonym.name as autonym',
+                ]);
+            $languages = $languages->paginate($limit);
+            $languages_return = fractal(
+                $languages->getCollection(),
+                LanguageTransformer::class,
+                $this->serializer
+            );
+            return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
+        });
+        return $this->reply($languages);
+    }
+
+    /**
      * @param $id
      *
      * @OA\Get(
