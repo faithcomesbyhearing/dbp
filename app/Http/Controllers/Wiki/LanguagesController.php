@@ -195,6 +195,7 @@ class LanguagesController extends APIController
             $access_control->string,
             $limit,
             $page,
+            $GLOBALS['i18n_id'],
         ];
 
         $languages = cacheRemember('languages_search', $cache_params, now()->addDay(), function () use ($search_text, $access_control, $page, $limit) {
