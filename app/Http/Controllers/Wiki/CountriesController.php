@@ -84,6 +84,63 @@ class CountriesController extends APIController
     }
 
     /**
+     * Returns Countries
+     *
+     * @version 4
+     * @category v4_countries.search
+     *
+     * @return mixed $countries string - A JSON string that contains the status code and error messages if applicable.
+     *
+     * @OA\Get(
+     *     path="/countries/search/{$search_text}",
+     *     tags={"Countries"},
+     *     summary="Returns Countries",
+     *     description="Returns the List of Countries filtered by names",
+     *     operationId="v4_countries.search",
+     *     @OA\Parameter(
+     *          name="l10n",
+     *          in="query",
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/search_text"),
+     *          description="Search countries by name"
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(
+     *            mediaType="application/json",
+     *            @OA\Schema(ref="#/components/schemas/v4_countries.search")
+     *         )
+     *     )
+     * )
+     *
+     *
+     */
+    public function search($search_text)
+    {
+        $limit     = (int) (checkParam('limit') ?? 15);
+        $limit     = min($limit, 50);
+        $page      = checkParam('page') ?? 1;
+        $formatted_search = str_replace(' ', '', $search_text);
+        $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search];
+
+        $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($limit, $page, $formatted_search) {
+            $countries = Country::with('currentTranslation') 
+            ->where('countries.name', 'like', $formatted_search.'%')
+            ->orWhere('countries.iso_a3', 'like', $formatted_search.'%')
+            ->whereHas('languages.bibles.filesets')
+            ->paginate($limit);
+
+            $countries_return = fractal(
+                $countries->getCollection(),
+                CountryTransformer::class,
+                $this->serializer
+            );
+            return $countries_return->paginateWith(new IlluminatePaginatorAdapter($countries));
+        });
+        return $this->reply($countries);
+    }
+
+    /**
      * Returns Joshua Project Country Information
      *
      * @version 4
