@@ -409,14 +409,15 @@ class Language extends Model
         });
     }
 
-    public function scopeFilterBySearch($query, $search_text)
-    {
-        $name_expression = $full_word ? $name : '%'.$name.'%';
-        return $query->when($name, function ($query) use ($name, $name_expression) {
-            $query->where('languages.name', 'like', $search_text)->orWhere();
+    public function scopeFilterableByNameOrAutonym($query, $name)
+    {   
+        $formatted_name = str_replace(' ', '', $name);
+        return $query->when($name, function ($query) use ($formatted_name) {
+            $query->where('languages.name', 'like', $formatted_name.'%')
+                ->orWhere('autonym.name', 'like', $formatted_name.'%');
         });
     }
-
+    
     public function population()
     {
         return CountryLanguage::where('language_id', $this->id)->select('language_id', 'population')->count();
