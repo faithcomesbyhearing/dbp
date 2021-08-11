@@ -23,6 +23,10 @@ Route::name('v4_languages.one')->get(
     'languages/{language_id}',
     'Wiki\LanguagesController@show'
 );
+Route::name('v4_languages.search')->get(
+  'languages/search/{search_text}',
+  'Wiki\LanguagesController@search'
+);
 
 // VERSION 4 | Alphabets and Numbers
 Route::name('v4_alphabets.all')->get(
