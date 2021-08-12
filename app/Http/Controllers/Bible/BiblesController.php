@@ -232,8 +232,8 @@ class BiblesController extends APIController
         $limit          = min($limit, 50);
         $page           = checkParam('page') ?? 1;
         $formatted_search = str_replace(' ', '', $search_text);
-        if ($formatted_search === '') {
-          return $this->setStatusCode(404)->replyWithError(trans('api.bibles_errors_404'));
+        if ($formatted_search === '' || !$formatted_search) {
+          return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
 
         // instead of returning hashes, accessControl will return bible ids associated with the hashes
