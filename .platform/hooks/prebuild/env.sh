@@ -1,5 +1,5 @@
 #!/bin/sh
 
-mv /tmp/.env /var/app/staging/.env
-mv /tmp/pub.pem /var/app/staging/pub.pem
-mv /tmp/priv.pem /var/app/staging/priv.pem
+cp /tmp/.env /var/app/staging/.env
+cp /tmp/pub.pem /var/app/staging/pub.pem
+cp /tmp/priv.pem /var/app/staging/priv.pem
