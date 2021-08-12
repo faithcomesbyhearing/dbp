@@ -121,8 +121,11 @@ class CountriesController extends APIController
         $limit     = min($limit, 50);
         $page      = checkParam('page') ?? 1;
         $formatted_search = str_replace(' ', '', $search_text);
-        $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search];
+        if ($formatted_search === '') {
+          return $this->setStatusCode(404)->replyWithError(trans('api.bibles_errors_404'));
+        }
 
+        $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search];
         $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($limit, $page, $formatted_search) {
             $countries = Country::with('currentTranslation') 
             ->where('countries.name', 'like', $formatted_search.'%')

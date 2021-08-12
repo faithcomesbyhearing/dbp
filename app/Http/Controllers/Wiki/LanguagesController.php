@@ -187,23 +187,26 @@ class LanguagesController extends APIController
         $page  = checkParam('page') ?? 1;
         $limit = (int) (checkParam('limit') ?? 15);
         $limit = min($limit, 50);
+        $formatted_search = str_replace(' ', '', $search_text);
+        if ($formatted_search === '') {
+          return $this->setStatusCode(404)->replyWithError(trans('api.bibles_errors_404'));
+        }
+
         // instead of returning hashes, accessControl will return language ids associated with the hashes
         $access_control = $this->accessControl($this->key, 'languages');
         $cache_params = [
             $this->v,
-            $search_text,
+            $formatted_search,
             $access_control->string,
             $limit,
             $page,
             $GLOBALS['i18n_id'],
         ];
-
-        $languages = cacheRemember('languages_search', $cache_params, now()->addDay(), function () use ($search_text, $access_control, $page, $limit) {
+        $languages = cacheRemember('languages_search', $cache_params, now()->addDay(), function () use ($formatted_search, $access_control, $page, $limit) {
             $languages = Language::includeCurrentTranslation()
                 ->includeAutonymTranslation()
-                ->leftJoin('countries', 'languages.country_id', 'countries.id')
                 ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers), false)
-                ->filterableByNameOrAutonym($search_text)
+                ->filterableByNameOrAutonym($formatted_search)
                 ->select([
                     'languages.id',
                     'languages.glotto_id',

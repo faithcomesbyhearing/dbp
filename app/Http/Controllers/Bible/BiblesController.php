@@ -231,14 +231,14 @@ class BiblesController extends APIController
         $limit          = (int) (checkParam('limit') ?? 15);
         $limit          = min($limit, 50);
         $page           = checkParam('page') ?? 1;
-        $access_control = $this->accessControl($this->key, 'bibles');
         $formatted_search = str_replace(' ', '', $search_text);
-        $cache_params = [$limit, $page, $formatted_search, $access_control->string];
-
         if ($formatted_search === '') {
           return $this->setStatusCode(404)->replyWithError(trans('api.bibles_errors_404'));
         }
-        
+
+        // instead of returning hashes, accessControl will return bible ids associated with the hashes
+        $access_control = $this->accessControl($this->key, 'bibles');
+        $cache_params = [$limit, $page, $formatted_search, $access_control->string];
         $bibles = cacheRemember('bibles_search', $cache_params, now()->addDay(), function () use ($access_control, $limit, $page, $formatted_search) {
             $bibles = Bible::whereRaw("bibles.id IN (' " . implode("','", $access_control->identifiers) . "')")
             ->leftJoin('bible_translations as ver_title', function ($join) {
@@ -255,8 +255,7 @@ class BiblesController extends APIController
             
             return $bibles_return;
         });
-
-        return $bibles;
+        return $this->reply($bibles);
     }
 
     /**
