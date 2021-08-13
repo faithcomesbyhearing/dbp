@@ -23,9 +23,9 @@
 #   03_create_conf:
 #     command: /bin/echo 'extension="memcached.so"' > /etc/php.d/41-memcached.ini
 
-    sudo yum install libmemcached-devel -y
+    sudo yum install libmemcached -y
     sudo pecl channel-update pecl.php.net
-    /usr/bin/yes 'no'| /usr/bin/pecl install memcached
+    /usr/bin/yes 'no'| /usr/bin/pecl install memcached | true
     #/bin/sed -i -e '/extension="memcached.so"/d' /etc/php.ini
     #/bin/sed -i 's/;memcached.serializer = "igbinary"/memcached.serializer = "igbinary"/g' /etc/php.d/50-memcached.ini    
     
