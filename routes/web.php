@@ -12,7 +12,8 @@
 Localization::localizedRoutesGroup(function () {
 
     // Primary documentation resides in WebFlow. Home page is now redirected to WebFlow
-    Route::get('/', 'WelcomeController@redirect')->name('welcome');
+    // Route::get('/', 'WelcomeController@redirect')->name('webflow');
+    Route::get('/', 'WelcomeController@welcome')->name('welcome');
     
 
     // Referenced by bible.is for password reset
