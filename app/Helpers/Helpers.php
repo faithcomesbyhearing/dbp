@@ -77,19 +77,19 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
 {
     $key = generateCacheString($cache_key, $cache_args);
     $value = Cache::get($key);
-
+    $sub_key = substr($key, 0, 80);
     if (!is_null($value)) {
         // got the cached value, return it
         $str_v = json_encode($value);
         $str_v = substr($str_v, 0, 80);
-        Log::error("Value returned before the lock logic ${str_v}");
+        Log::error("Value returned before the lock logic ${sub_key} response ${str_v}");
         return $value;
     }
 
     // cache not set. try to acquire lock to gain access to the callback
     $str_val = json_encode($value);
     $str_val = substr($str_val, 0, 80);
-    Log::error("before creating the lock ${str_val}");
+    Log::error("before creating the ${sub_key} lock ${str_val}");
     $lock = Cache::lock($key); 
     $string_lock = json_encode($lock);
     $string_lock = substr($string_lock, 0, 80);
