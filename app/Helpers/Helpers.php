@@ -73,6 +73,11 @@ function cacheGet($cache_key)
     return Cache::get($cache_key);
 }
 
+function createCacheLock($cache_key)
+{
+    return Cache::lock($cache_key . '_lock'); 
+}
+
 function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
 {
     $key = generateCacheString($cache_key, $cache_args);
@@ -90,7 +95,7 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
     $str_val = json_encode($value);
     $str_val = substr($str_val, 0, 80);
     Log::error("before creating the ${sub_key} lock ${str_val}");
-    $lock = Cache::lock($key); 
+    $lock = createCacheLock($key);
     $string_lock = json_encode($lock);
     $string_lock = substr($string_lock, 0, 80);
     $str_key = substr($key, 0, 80);
