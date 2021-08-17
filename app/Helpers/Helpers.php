@@ -82,44 +82,25 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
 {
     $key = generateCacheString($cache_key, $cache_args);
     $value = Cache::get($key);
-    $sub_key = substr($key, 0, 80);
+
     if (!is_null($value)) {
         // got the cached value, return it
-        $str_v = json_encode($value);
-        $str_v = substr($str_v, 0, 80);
-        Log::error("Value returned before the lock logic ${sub_key} response ${str_v}");
         return $value;
     }
 
     // cache not set. try to acquire lock to gain access to the callback
-    $str_val = json_encode($value);
-    $str_val = substr($str_val, 0, 80);
-    Log::error("before creating the ${sub_key} lock ${str_val}");
     $lock = createCacheLock($key);
-    $string_lock = json_encode($lock);
-    $string_lock = substr($string_lock, 0, 80);
-    $str_key = substr($key, 0, 80);
-    Log::error("lock created ${string_lock} for key ${str_key}");
-
     if ($lock->acquire()) {
-        Log::error("lock aquired in the first block ${str_key}");
         // lock acquired. access resource via callback
         Cache::put($key, $value = $callback(), $ttl);        
         $lock->release();
-        $json_value = json_encode($value);
-        $json_value = substr($json_value, 0, 80);
-        Log::error("lock released ${str_key} with value ${json_value}");
         return $value;
     } else {
         try {
-            Log::error("lock not aquired, waiting ${str_key}");
-            // couldn't get the lock, another is executing the callback. block for up to 15 seconds waiting for lock
+            // couldn't get the lock, another is executing the callback. block for up to 45 seconds waiting for lock
             $lock->block(45);
             // Lock acquired, which should mean the cache is set
             $value = Cache::get($key);
-            $string_value = json_encode($value);
-            $string_value = substr($string_value, 0, 80);
-            Log::error("value returned in the second block ${string_value}");
             if (is_null($value)) {
                 // !!! **** my assumption about when the cache value will be available is not valid
                 throw new Exception;
