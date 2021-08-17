@@ -199,7 +199,7 @@ function generateCacheString($key, $args = [])
         return $carry .= ':' . $item;
     }, $key));
 
-    if (strlen($cache_string) >= 250){
+    if (strlen($cache_string) > 250){
         throw new ErrorException("Memcache key length max out at 250 bytes");
     }
 
