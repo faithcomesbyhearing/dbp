@@ -80,6 +80,9 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
 
     if (!is_null($value)) {
         // got the cached value, return it
+        $str_v = json_encode($value);
+        $str_v = substr($str_v, 0, 80);
+        Log::error("Value returned before the lock logic ${str_v}");
         return $value;
     }
 
