@@ -162,7 +162,8 @@ function generateCacheString($key, $args = [])
         return $carry .= ':' . $item;
     }, $key));
     // cache key max out at 250 bytes, so we use md5 to avoid it from maxing out
-    if (strlen($cache_string) > 250){
+    // in lock we add 5 more characters so we max out at 245
+    if (strlen($cache_string) > 245){
         $cache_string = md5($cache_string);
     }
     return $cache_string;
