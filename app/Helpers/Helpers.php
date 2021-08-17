@@ -195,9 +195,15 @@ function apiLogs($request, $status_code, $s3_string = false, $ip_address = null)
 
 function generateCacheString($key, $args = [])
 {
-    return strtolower(array_reduce($args, function ($carry, $item) {
+    $cache_string =  strtolower(array_reduce($args, function ($carry, $item) {
         return $carry .= ':' . $item;
     }, $key));
+
+    if (strlen($cache_string) > 250){
+        throw new ErrorException("Memcache key length max out at 250 bytes");
+    }
+
+    return $cache_string;
 }
 
 function isBibleisOrGideon($key)
