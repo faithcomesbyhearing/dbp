@@ -110,8 +110,8 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
         return $value;
     } else {
         try {
-            // couldn't get the lock, another is executing the callback. block for up to 45 seconds waiting for lock
-            $lock->block(45);
+            // couldn't get the lock, another is executing the callback. block for up to 15 seconds waiting for lock
+            $lock->block(15);
             // Lock acquired, which should mean the cache is set
             $value = Cache::get($key);
             if (is_null($value)) {
@@ -125,11 +125,6 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
             optional($lock)->release();
         }        
     }
-
-
-
-
-
 
     //return Cache::remember($cache_string, $duration, $callback);
 }
