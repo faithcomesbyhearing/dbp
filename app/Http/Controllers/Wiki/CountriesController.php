@@ -115,14 +115,17 @@ class CountriesController extends APIController
      *
      *
      */
-    public function search($search_text)
+    public function search($search_text = '')
     {
         $limit     = (int) (checkParam('limit') ?? 15);
         $limit     = min($limit, 50);
         $page      = checkParam('page') ?? 1;
         $formatted_search = str_replace(' ', '', $search_text);
-        $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search];
+        if ($formatted_search === '' || !$formatted_search) {
+          return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
+        }
 
+        $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search];
         $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($limit, $page, $formatted_search) {
             $countries = Country::with('currentTranslation') 
             ->where('countries.name', 'like', $formatted_search.'%')

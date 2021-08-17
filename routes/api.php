@@ -66,6 +66,10 @@ Route::name('v4_bible.one')->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
 ); // see note in Postman. the content is suspect
+Route::name('v4_bible.search')->get(
+  'bibles/search/{search_text}',
+  'Bible\BiblesController@search'
+);
 Route::name('v4_bible.all')
     ->get('bibles', 'Bible\BiblesController@index'); // used
 Route::name('v4_bible.copyright')->get(

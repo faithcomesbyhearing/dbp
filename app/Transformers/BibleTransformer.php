@@ -190,6 +190,13 @@ class BibleTransformer extends BaseTransformer
 
                 return $output;
 
+            case 'v4_bible.search':
+              return [
+                  'abbr'              => $bible->bible_id,
+                  'name'              => $bible->name,
+                  'language_id'       => $bible->language_id,
+              ];
+
                 /**
                  * @OA\Schema (
                  *   type="array",
