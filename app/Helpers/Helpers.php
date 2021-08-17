@@ -72,42 +72,92 @@ function cacheGet($cache_key)
 {
     return Cache::get($cache_key);
 }
+/*
+reference: https://github.com/illuminate/cache/blob/e6acac59f94c6362809b580918f7f3f6142d5796/Repository.php#L372
+    public function remember($key, $ttl, Closure $callback)
+    {
+        $value = $this->get($key);
 
-function cacheRemember($cache_key, $cache_args = [], $duration, $callback)
+        // If the item exists in the cache we will just return this immediately and if
+        // not we will execute the given Closure and cache the result of that for a
+        // given number of seconds so it's available for all subsequent requests.
+        if (! is_null($value)) {
+            return $value;
+        }
+
+        $this->put($key, $value = $callback(), $ttl);
+
+        return $value;
+    }
+
+*/
+function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
 {
-    $cache_string = generateCacheString($cache_key, $cache_args);
-    return Cache::remember($cache_string, $duration, $callback);
+    $key = generateCacheString($cache_key, $cache_args);
+    $value = Cache::get($key);
+
+    if (! is_null($value)) {
+        // got the cached value, return it
+        return $value;
+    }
+
+    // cache not set. try to acquire lock to gain access to the callback
+    $lock = Cache::lock($key); 
+    if ($lock->acquire()) {
+        // lock acquired. access resource via callback
+        Cache::put($key, $value = $callback(), $ttl);        
+        $lock->release();
+        return $value;
+    } else {
+        try {
+            // couldn't get the lock, another is executing the callback. block for up to 15 seconds waiting for lock
+            $lock->block(45);
+            // Lock acquired, which should mean the cache is set
+            $value = Cache::get($key);
+            if (is_null($value)) {
+                // !!! **** my assumption about when the cache value will be available is not valid
+                throw new Exception;
+            }
+            return $value ;
+        } catch (LockTimeoutException $e) {
+            // Unable to acquire lock...
+        } finally {
+            optional($lock)->release();
+        }        
+    }
+
+    //return Cache::remember($cache_string, $duration, $callback);
 }
 
 // used for the non paginated enndpoints used by bibleis/gideons backward compatibility
-function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $callback)
-{
-    $cache_string = generateCacheString($cache_key, $cache_args);
-    $current_cache = Cache::get($cache_string);
-    if ($current_cache && $current_cache !== 'PENDING') {
-      Log::error('Got cache at first and returned' . $cache_string);
-      return $current_cache;
-    }
+// function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $callback)
+// {
+//     $cache_string = generateCacheString($cache_key, $cache_args);
+//     $current_cache = Cache::get($cache_string);
+//     if ($current_cache && $current_cache !== 'PENDING') {
+//       Log::error('Got cache at first and returned' . $cache_string);
+//       return $current_cache;
+//     }
 
-    if ($current_cache !== 'PENDING') {
-        Cache::put($cache_string, 'PENDING', $duration);
-        Log::error('adding pending on ' . $cache_string);
-        $current_cache = $callback();
-        Cache::put($cache_string, $current_cache, $duration);
-        Log::error('This thread finished loading sql' . $cache_string);
-        return $current_cache;
-    }
+//     if ($current_cache !== 'PENDING') {
+//         Cache::put($cache_string, 'PENDING', $duration);
+//         Log::error('adding pending on ' . $cache_string);
+//         $current_cache = $callback();
+//         Cache::put($cache_string, $current_cache, $duration);
+//         Log::error('This thread finished loading sql' . $cache_string);
+//         return $current_cache;
+//     }
 
-    while ($current_cache === 'PENDING') {
-        sleep(1);
-        Log::error('waiting for the cache on the state:' . json_encode($current_cache));
-        $current_cache = Cache::get($cache_string);
-    }
+//     while ($current_cache === 'PENDING') {
+//         sleep(1);
+//         Log::error('waiting for the cache on the state:' . json_encode($current_cache));
+//         $current_cache = Cache::get($cache_string);
+//     }
 
-    $current_cache = Cache::get($cache_string);
-    Log::error('Done on cache remember for heave calls for:' . $cache_string);
-    return $current_cache;
-}
+//     $current_cache = Cache::get($cache_string);
+//     Log::error('Done on cache remember for heave calls for:' . $cache_string);
+//     return $current_cache;
+// }
 
 
 function cacheRememberForever($cache_key, $callback)
