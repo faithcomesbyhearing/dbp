@@ -102,23 +102,28 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
     }
 
     // cache not set. try to acquire lock to gain access to the callback
+    Log::error("before creating the lock ${value}");
     $lock = Cache::lock($key); 
-    Log::error(`lock created ${lock} for key ${key}`);
+    $string_lock = json_encode($lock);
+    Log::error("lock created ${string_lock} for key ${key}");
 
     if ($lock->acquire()) {
-        Log::error(`lock aquired in the first block ${key}`);
+        Log::error("lock aquired in the first block ${key}");
         // lock acquired. access resource via callback
         Cache::put($key, $value = $callback(), $ttl);        
         $lock->release();
+        $json_value = json_encode($value);
+        Log::error("lock released ${key} with value ${json_value}");
         return $value;
     } else {
         try {
-            Log::error(`lock not aquired, waiting ${key}`);
+            Log::error("lock not aquired, waiting ${key}");
             // couldn't get the lock, another is executing the callback. block for up to 15 seconds waiting for lock
             $lock->block(45);
             // Lock acquired, which should mean the cache is set
             $value = Cache::get($key);
-            Log::error(`value returned in the second block ${value}`);
+            $string_value = json_encode($value);
+            Log::error("value returned in the second block ${string_value}");
             if (is_null($value)) {
                 // !!! **** my assumption about when the cache value will be available is not valid
                 throw new Exception;
