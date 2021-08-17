@@ -72,31 +72,13 @@ function cacheGet($cache_key)
 {
     return Cache::get($cache_key);
 }
-/*
-reference: https://github.com/illuminate/cache/blob/e6acac59f94c6362809b580918f7f3f6142d5796/Repository.php#L372
-    public function remember($key, $ttl, Closure $callback)
-    {
-        $value = $this->get($key);
 
-        // If the item exists in the cache we will just return this immediately and if
-        // not we will execute the given Closure and cache the result of that for a
-        // given number of seconds so it's available for all subsequent requests.
-        if (! is_null($value)) {
-            return $value;
-        }
-
-        $this->put($key, $value = $callback(), $ttl);
-
-        return $value;
-    }
-
-*/
 function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
 {
     $key = generateCacheString($cache_key, $cache_args);
     $value = Cache::get($key);
 
-    if (! is_null($value)) {
+    if (!is_null($value)) {
         // got the cached value, return it
         return $value;
     }
@@ -135,40 +117,7 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
             optional($lock)->release();
         }        
     }
-
-    //return Cache::remember($cache_string, $duration, $callback);
 }
-
-// used for the non paginated enndpoints used by bibleis/gideons backward compatibility
-// function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $callback)
-// {
-//     $cache_string = generateCacheString($cache_key, $cache_args);
-//     $current_cache = Cache::get($cache_string);
-//     if ($current_cache && $current_cache !== 'PENDING') {
-//       Log::error('Got cache at first and returned' . $cache_string);
-//       return $current_cache;
-//     }
-
-//     if ($current_cache !== 'PENDING') {
-//         Cache::put($cache_string, 'PENDING', $duration);
-//         Log::error('adding pending on ' . $cache_string);
-//         $current_cache = $callback();
-//         Cache::put($cache_string, $current_cache, $duration);
-//         Log::error('This thread finished loading sql' . $cache_string);
-//         return $current_cache;
-//     }
-
-//     while ($current_cache === 'PENDING') {
-//         sleep(1);
-//         Log::error('waiting for the cache on the state:' . json_encode($current_cache));
-//         $current_cache = Cache::get($cache_string);
-//     }
-
-//     $current_cache = Cache::get($cache_string);
-//     Log::error('Done on cache remember for heave calls for:' . $cache_string);
-//     return $current_cache;
-// }
-
 
 function cacheRememberForever($cache_key, $callback)
 {
@@ -198,11 +147,10 @@ function generateCacheString($key, $args = [])
     $cache_string =  strtolower(array_reduce($args, function ($carry, $item) {
         return $carry .= ':' . $item;
     }, $key));
-
+    // cache key max out at 250 bytes, so we use md5 to avoid it from maxing out
     if (strlen($cache_string) > 250){
-        throw new ErrorException("Memcache key length max out at 250 bytes");
+        $cache_string = md5($cache_string);
     }
-
     return $cache_string;
 }
 
