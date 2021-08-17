@@ -102,7 +102,7 @@ class BiblesController extends APIController
             $tag_exclude = 'opus';
             $order_by = 'bibles.priority DESC';
         }
-        $order_cache_key = str_replace(['.', ' '], '', $order_by);
+        $order_cache_key = str_replace(['bibles.', ' '], '', $order_by);
 
         if ($media) {
             $media_types = BibleFilesetType::select('set_type_code')->get();
