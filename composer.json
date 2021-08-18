@@ -24,7 +24,7 @@
         "laravel/tinker": "^1.0",
         "league/flysystem-aws-s3-v3": "~1.0",
         "maennchen/zipstream-php": "^0.5.1",
-        "sentry/sentry-laravel": "^1.3",
+        "sentry/sentry-laravel": "^2.0",
         "soapbox/laravel-formatter": "^2.0",
         "socialiteproviders/generators": "^4.4",
         "socialiteproviders/google": "^4.0.0",
@@ -42,7 +42,7 @@
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.2",
-        "barryvdh/laravel-ide-helper": "^2.5",
+        "barryvdh/laravel-ide-helper": "2.6.5",
         "codedungeon/phpunit-result-printer": "^0.23.3",
         "filp/whoops": "^2.0",
         "friendsofphp/php-cs-fixer": "^2.13",
