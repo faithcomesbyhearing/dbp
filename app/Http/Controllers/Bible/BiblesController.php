@@ -30,6 +30,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use ZipArchive;
 
+use Illuminate\Support\Facades\Log;
+
 class BiblesController extends APIController
 {
     use AccessControlAPI;
@@ -88,11 +90,19 @@ class BiblesController extends APIController
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
         $limit              = (int) (checkParam('limit') ?? 50);
+        $limit              = min($limit, 50);
         $page               = checkParam('page') ?? 1;
 
         // removes opus filesets from the request to avoid memory overflows
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
-        $tag_exclude = isBibleisOrGideon($this->key) ? 'opus' : null;
+        // created to support old bibleis versions
+        $tag_exclude = null;
+        $order_by = 'bibles.id';
+        if (shouldUseBibleisBackwardCompat($this->key)) {
+            $tag_exclude = 'opus';
+            $order_by = 'bibles.priority DESC';
+        }
+        $order_cache_key = str_replace(['bibles.', ' '], '', $order_by);
 
         if ($media) {
             $media_types = BibleFilesetType::select('set_type_code')->get();
@@ -105,21 +115,22 @@ class BiblesController extends APIController
         $access_control = $this->accessControl($this->key);
         $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
         $cache_params = [
-            $language_code, 
-            $organization, 
-            $country, 
-            $access_control->string, 
-            $media, 
-            $media_exclude, 
-            $size, 
-            $size_exclude, 
-            $tag_exclude, 
-            $limit, 
+            $language_code,
+            $organization,
+            $country,
+            $access_control->string,
+            $media,
+            $media_exclude,
+            $size,
+            $size_exclude,
+            $tag_exclude,
+            $limit,
             $page,
-            $is_bibleis_gideons
+            $is_bibleis_gideons,
+            $order_cache_key
         ];
         
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page) {
+        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by) {
             $bibles = Bible::withRequiredFilesets([
                 'access_control' => $access_control,
                 'media'          => $media,
@@ -177,18 +188,73 @@ class BiblesController extends APIController
                     MIN(bibles.priority) as priority,
                     MIN(bibles.id) as id'
                 )
-            )->orderBy('bibles.id')->groupBy('bibles.id');
-
+            )->orderByRaw($order_by)->groupBy('bibles.id');
 
             $bibles = $bibles->paginate($limit);
             $bibles_return = fractal(
-              $bibles->getCollection(),
-              BibleTransformer::class,
-              new DataArraySerializer()
-          );
-          return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
+                $bibles->getCollection(),
+                BibleTransformer::class,
+                new DataArraySerializer()
+            );
+            $result =  $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
+            // Log::error('Size of the response body in Bytes:' . strlen(json_encode($result)));
+            return $result;
         });
 
+        return $this->reply($bibles);
+    }
+
+    /**
+     * Description:
+     * Display the bible meta data for the specified ID.
+     *
+     * @OA\Get(
+     *     path="/bibles/search/{search_text}",
+     *     tags={"Bibles"},
+     *     summary="Returns metadata for all bibles meeting the search_text in it's name",
+     *     description="metadata for all bibles meeting the search_text in it's name,
+     *     operationId="v4_bible.search",
+     *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/search_text")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.search"))
+     *     )
+     * )
+     *
+     * @param  string $search_text
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function search($search_text)
+    {
+        $limit          = (int) (checkParam('limit') ?? 15);
+        $limit          = min($limit, 50);
+        $page           = checkParam('page') ?? 1;
+        $formatted_search = str_replace(' ', '', $search_text);
+        if ($formatted_search === '' || !$formatted_search) {
+          return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
+        }
+
+        // instead of returning hashes, accessControl will return bible ids associated with the hashes
+        $access_control = $this->accessControl($this->key, 'bibles');
+        $cache_params = [$limit, $page, $formatted_search, $access_control->string];
+        $bibles = cacheRemember('bibles_search', $cache_params, now()->addDay(), function () use ($access_control, $limit, $page, $formatted_search) {
+            $bibles = Bible::whereRaw("bibles.id IN (' " . implode("','", $access_control->identifiers) . "')")
+            ->leftJoin('bible_translations as ver_title', function ($join) {
+                $join->on('ver_title.bible_id', 'bibles.id')->where('ver_title.vernacular', 1);
+            })
+            ->where('ver_title.name', 'LIKE' , '%'.$formatted_search.'%')
+            ->paginate($limit);
+
+            $bibles_return = fractal(
+                $bibles->getCollection(),
+                BibleTransformer::class,
+                new DataArraySerializer()
+            )->paginateWith(new IlluminatePaginatorAdapter($bibles));
+            
+            return $bibles_return;
+        });
         return $this->reply($bibles);
     }
 
@@ -227,7 +293,7 @@ class BiblesController extends APIController
             return Bible::with([
                 'translations', 'books.book', 'links', 'organizations.logo', 'organizations.logoIcon', 'organizations.translations', 'alphabet.primaryFont', 'equivalents',
                 'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
+                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
                 }
             ])->find($id);
         });
@@ -289,7 +355,7 @@ class BiblesController extends APIController
 
             return  Bible::with([
                 'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
+                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
                 }
             ])->find($bible_id);
         });
@@ -629,14 +695,14 @@ class BiblesController extends APIController
     {
         // deprecate endpoint for bibleis/gideons newest versions (and for other users by deafult)
         if (!shouldUseBibleisBackwardCompat($this->key)) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.errors_404'));
+            return $this->setStatusCode(410)->replyWithError(trans('api.errors_410'));
         }
 
         $bible = cacheRemember('v4_chapter_bible', [$bible_id], now()->addDay(), function () use ($bible_id) {
             $access_control = $this->accessControl($this->key);
             return Bible::with([
                 'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->hashes);
+                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
                 }
             ])->whereId($bible_id)->first();
         });
@@ -663,7 +729,7 @@ class BiblesController extends APIController
         if ($drama !== 'all') {
             $drama = checkBoolean('drama') ? 'drama' : 'non-drama';
         }
-
+        
         $book = cacheRemember('v4_chapter_book', [$book_id], now()->addDay(), function () use ($book_id) {
             return Book::whereId($book_id)->first();
         });

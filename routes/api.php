@@ -5,10 +5,13 @@ Route::name('v4_countries.all')->get(
     'countries',
     'Wiki\CountriesController@index'
 );
-
 Route::name('v4_countries.one')->get(
     'countries/{country_id}',
     'Wiki\CountriesController@show'
+);
+Route::name('v4_countries.search')->get(
+  'countries/search/{search_text}',
+  'Wiki\CountriesController@search'
 );
 
 // VERSION 4 | Languages
@@ -19,6 +22,10 @@ Route::name('v4_languages.all')->get(
 Route::name('v4_languages.one')->get(
     'languages/{language_id}',
     'Wiki\LanguagesController@show'
+);
+Route::name('v4_languages.search')->get(
+  'languages/search/{search_text}',
+  'Wiki\LanguagesController@search'
 );
 
 // VERSION 4 | Alphabets and Numbers
@@ -59,6 +66,10 @@ Route::name('v4_bible.one')->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
 ); // see note in Postman. the content is suspect
+Route::name('v4_bible.search')->get(
+  'bibles/search/{search_text}',
+  'Bible\BiblesController@search'
+);
 Route::name('v4_bible.all')
     ->get('bibles', 'Bible\BiblesController@index'); // used
 Route::name('v4_bible.copyright')->get(
