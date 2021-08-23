@@ -1,0 +1,39 @@
+version: '3.7'
+services:
+  db:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+      - MYSQL_DATABASE=${DB_CONNECTION}
+    ports:
+      - '${DBP_PORT}:3306'
+    volumes:
+      - 'mysql_data:/var/lib/mysql'
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: on-failure
+    volumes:
+      - './:/opt/app'
+      - ./docker/php/phpSettings.conf:/usr/local/etc/php-fpm.d/zzz-phpSettings.conf
+    depends_on:
+      - db
+  server:
+    image: nginx:stable-alpine
+    volumes:
+      - './public/:/opt/app'
+      - './docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro'
+    ports:
+      - '${APP_PORT}:80'
+    depends_on:
+      - php
+
+  memcached:
+    image: memcached:1.6-alpine
+    ports:
+      - '${MEMCACHED_PORT}:11211'
+
+volumes:
+  mysql_data:
+  app_vendor:
