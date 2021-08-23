@@ -12,6 +12,7 @@ use ReflectionClass;
 use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\Debug\ExceptionHandler as SymfonyExceptionHandler;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class Handler extends ExceptionHandler
 {
@@ -34,12 +35,12 @@ class Handler extends ExceptionHandler
      *
      * This is a great spot to send exceptions to Sentry, Bugsnag, etc.
      *
-     * @param \Exception $exception
+     * @param \Throwable $exception
      *
      * @return void
      * @throws Exception
      */
-    public function report(Exception $exception)
+    public function report(Throwable $exception)
     {
         $enableEmailExceptions = config('exceptions.emailExceptionEnabled');
 
@@ -54,8 +55,7 @@ class Handler extends ExceptionHandler
         }
         $sentry_dsn = config('sentry.dsn');
 
-        if (
-            $sentry_dsn &&
+        if ($sentry_dsn &&
             config('app.env') == 'production' &&
             $this->shouldReport($exception) &&
             app()->bound('sentry')
@@ -70,11 +70,11 @@ class Handler extends ExceptionHandler
      * Render an exception into an HTTP response.
      *
      * @param \Illuminate\Http\Request $request
-     * @param \Exception               $exception
+     * @param \Throwable               $exception
      *
      * @return \Illuminate\Http\Response
      */
-    public function render($request, Exception $exception)
+    public function render($request, Throwable $exception)
     {
         if (config('app.env') == 'local') {
             return parent::render($request, $exception);
@@ -83,14 +83,11 @@ class Handler extends ExceptionHandler
         return $this->handleApiException($request, $exception);
     }
 
-    private function handleApiException($request, Exception $exception)
+    private function handleApiException($request, Throwable $exception)
     {
         $exception = $this->prepareException($exception);
 
-        if (
-            $exception instanceof
-            \Illuminate\Http\Exception\HttpResponseException
-        ) {
+        if ($exception instanceof \Illuminate\Http\Exception\HttpResponseException) {
             $exception = $exception->getResponse();
         }
 
@@ -164,8 +161,7 @@ class Handler extends ExceptionHandler
         $request,
         AuthenticationException $exception
     ) {
-        if (
-            $request->expectsJson() ||
+        if ($request->expectsJson() ||
             (isset($exception->api_response) && $exception->api_response)
         ) {
             $response = [];

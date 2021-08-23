@@ -42,7 +42,10 @@ function checkParam(string $paramName, $required = false, $inPathValue = null)
 
     if ($required) {
         Log::channel('errorlog')->error(["Missing Param '$paramName", 422]);
-        abort(422, "You need to provide the missing parameter '$paramName'. Please append it to the url or the request Header.");
+        abort(
+            422,
+            "You need to provide the missing parameter '$paramName'. Please append it to the url or the request Header."
+        );
     }
 }
 
@@ -75,10 +78,10 @@ function cacheGet($cache_key)
 
 function createCacheLock($cache_key)
 {
-    return Cache::lock($cache_key . '_lock'); 
+    return Cache::lock($cache_key . '_lock');
 }
 
-function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
+function cacheRemember($cache_key, $cache_args, $ttl, $callback)
 {
     $key = generateCacheString($cache_key, $cache_args);
     $value = Cache::get($key);
@@ -91,10 +94,16 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
     // cache not set. try to acquire lock to gain access to the callback
     $lock = createCacheLock($key);
     if ($lock->acquire()) {
-        // lock acquired. access resource via callback
-        Cache::put($key, $value = $callback(), $ttl);        
-        $lock->release();
-        return $value;
+        try {
+            // lock acquired. access resource via callback
+            Cache::put($key, $value = $callback(), $ttl);
+            $lock->release();
+            return $value;
+        } catch (Exception $exception) {
+            $lock->release();
+            Log::error($exception);
+            throw $exception;
+        }
     } else {
         try {
             // couldn't get the lock, another is executing the callback. block for up to 45 seconds waiting for lock
@@ -110,7 +119,7 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
             // Unable to acquire lock...
         } finally {
             optional($lock)->release();
-        }        
+        }
     }
 }
 
@@ -144,7 +153,7 @@ function generateCacheString($key, $args = [])
     }, $key));
     // cache key max out at 250 bytes, so we use md5 to avoid it from maxing out
     // in lock we add 5 more characters so we max out at 245
-    if (strlen($cache_string) > 245){
+    if (strlen($cache_string) > 245) {
         $cache_string = md5($cache_string);
     }
     return $cache_string;
@@ -162,7 +171,7 @@ function isBibleisOrGideon($key)
     ];
     if (in_array($key, $bibleis_compat_keys)) {
         $compat_keys_response['isBibleis'] = true;
-    } else if (in_array($key, $gid_compat_keys)) {
+    } elseif (in_array($key, $gid_compat_keys)) {
         $compat_keys_response['isGideons'] = true;
     }
     return $compat_keys_response;
@@ -182,31 +191,31 @@ function forceBibleisGideonsPagination($key, $limit_param)
 }
 
 function storagePath(
-  $bible,
-  $fileset,
-  $fileset_chapter,
-  $secondary_file_name = null
+    $bible,
+    $fileset,
+    $fileset_chapter,
+    $secondary_file_name = null
 ) {
     switch ($fileset->set_type_code) {
-      case 'audio_drama':
-      case 'audio':
-          $fileset_type = 'audio';
-          break;
-      case 'text_plain':
-      case 'text_format':
-          $fileset_type = 'text';
-          break;
-      case 'video_stream':
-      case 'video':
-          $fileset_type = 'video';
-          break;
-      case 'app':
-          $fileset_type = 'app';
-          break;
-      default:
-          $fileset_type = 'text';
-          break;
-  }
+        case 'audio_drama':
+        case 'audio':
+            $fileset_type = 'audio';
+            break;
+        case 'text_plain':
+        case 'text_format':
+            $fileset_type = 'text';
+            break;
+        case 'video_stream':
+        case 'video':
+            $fileset_type = 'video';
+            break;
+        case 'app':
+            $fileset_type = 'app';
+            break;
+        default:
+            $fileset_type = 'text';
+            break;
+    }
     return $fileset_type .
       '/' .
       ($bible ? $bible . '/' : '') .
@@ -228,8 +237,13 @@ function formatAppVersion($app_version)
     ];
 }
 
-function logDeprecationInfo($key, $app_name, $should_use_backward_compat, $app_version = null, $deprecation_version = null)
-{
+function logDeprecationInfo(
+    $key,
+    $app_name,
+    $should_use_backward_compat,
+    $app_version = null,
+    $deprecation_version = null
+) {
     // log data to be sure this deprecation method is working correctly
     $log_data = [
         'key' => $key,
@@ -276,7 +290,7 @@ function shouldUseBibleisBackwardCompat($key)
             $app_version = formatAppVersion($app_version);
             if ($app_version['major_version'] < $deprecation_version['major_version']) {
                 $should_use_backward_compat = true;
-            } else if ($app_version['major_version'] === $deprecation_version['major_version']) {
+            } elseif ($app_version['major_version'] === $deprecation_version['major_version']) {
                 if ($app_version['minor_version'] < $deprecation_version['minor_version']) {
                     $should_use_backward_compat = true;
                 }
