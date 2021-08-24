@@ -19,7 +19,7 @@ use \Illuminate\View\Middleware\ShareErrorsFromSession;
 use \Illuminate\Routing\Middleware\SubstituteBindings;
 use \App\Http\Middleware\VerifyCsrfToken;
 use \Lunaweb\Localization\Middleware\LocalizationHandler;
-use \App\Http\Middleware\ApiVersion;
+use \App\Http\Middleware\APIVersion;
 
 class Kernel extends HttpKernel
 {

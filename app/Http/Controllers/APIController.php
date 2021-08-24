@@ -6,7 +6,7 @@ use App\Models\Language\Language;
 use App\Models\User\Key;
 
 use Illuminate\Http\JsonResponse;
-use SoapBox\Formatter\Formatter;
+use Illuminate\Support\Arr;
 use League\Fractal\Serializer\DataArraySerializer;
 
 use Spatie\Fractalistic\ArraySerializer;
@@ -168,7 +168,10 @@ class APIController extends Controller
             $this->user = $keyExists->user ?? null;
 
             if (!$this->user) {
-                abort(401, 'You need to provide a valid API key. To request an api key please email support@digitalbibleplatform.com');
+                abort(
+                    401,
+                    'You need to provide a valid API key. To request an api key please email support@digitalbibleplatform.com'
+                );
             }
 
             // i18n
@@ -185,7 +188,9 @@ class APIController extends Controller
             $GLOBALS['i18n_iso'] = $current_language['i18n_iso'];
             $GLOBALS['i18n_id']  = $current_language['i18n_id'];
 
-            $this->serializer = (($this->v === 1) || ($this->v === 2) || ($this->v === 3)) ? new ArraySerializer() : new DataArraySerializer();
+            $this->serializer = (($this->v === 1) || ($this->v === 2) || ($this->v === 3))
+                ? new ArraySerializer()
+                : new DataArraySerializer();
         }
     }
 
@@ -300,8 +305,8 @@ class APIController extends Controller
                 return response()->make($formatter, $this->statusCode)
                     ->header('Content-Type', 'text/yaml; charset=utf-8');
             case 'csv':
-                $formatter = Formatter::make($object, Formatter::ARR);
-                return response()->make($formatter->toCsv(), $this->statusCode)
+                $responseToCsv = $this->transformResponseToCsv($object);
+                return response()->make($responseToCsv, $this->statusCode)
                     ->header('Content-Type', 'text/csv; charset=utf-8');
             default:
                 if (isset($_GET['pretty'])) {
@@ -311,5 +316,56 @@ class APIController extends Controller
                 return response()->json($object, $this->statusCode, [], JSON_UNESCAPED_UNICODE)
                     ->header('Content-Type', 'application/json; charset=utf-8')->setCallback($input);
         }
+    }
+
+    private function transformResponseToCsv(
+        $object,
+        $newline = "\n",
+        $delimiter = ",",
+        $enclosure = '"',
+        $escape = "\\"
+    ) {
+        $data = $object;
+
+        if (is_string($data)) {
+            $data = unserialize($data);
+        }
+
+        if (is_array($data) || is_object($data)) {
+            $data = (array) $data;
+        } else {
+            throw new \InvalidArgumentException(
+                'Only accepts (optionally serialized) [object, array] for $data.'
+            );
+        }
+
+        if (array_keys($data) !== range(0, count($data) - 1) || !is_array($data[0])) {
+            $data = [$data];
+        }
+
+        $escaper = function ($items) use ($enclosure, $escape) {
+            return array_map(function ($item) use ($enclosure, $escape) {
+                return str_replace($enclosure, $escape . $enclosure, $item);
+            }, $items);
+        };
+
+        $headings = array_keys(Arr::dot($data[0]));
+        $result   = [];
+
+        foreach ($data as $row) {
+            $result[] = array_values(Arr::dot($row));
+        }
+
+        $data = $result;
+
+        $newRowHeader = implode($enclosure . $delimiter . $enclosure, $escaper($headings));
+        $output = $enclosure . $newRowHeader . $enclosure . $newline;
+
+        foreach ($data as $row) {
+            $newRow = implode($enclosure . $delimiter . $enclosure, $escaper((array) $row));
+            $output .= $enclosure . $newRow . $enclosure . $newline;
+        }
+
+        return rtrim($output, $newline);
     }
 }
