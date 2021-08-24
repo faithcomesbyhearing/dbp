@@ -370,16 +370,9 @@ class Language extends Model
         });
     }
 
-    public function scopeIncludeExtraLanguages($query, $access_control_hashes, $asset_id)
-    {
-        return $query->whereHas('filesets', function ($query) use ($access_control_hashes, $asset_id) {
-            $query->whereRaw('hash_id in (' . $access_control_hashes . ')');
-            if ($asset_id) {
-                $query->whereHas('fileset', function ($query) use ($asset_id) {
-                    $query->where('asset_id', $asset_id);
-                });
-            }
-        });
+    public function scopeIncludeExtraLanguages($query, $access_control_identifiers)
+    {  
+        return $query->whereRaw('languages.id in (' . $access_control_identifiers . ')');
     }
 
     public function scopeIncludeCountryPopulation($query, $country)
@@ -416,6 +409,15 @@ class Language extends Model
         });
     }
 
+    public function scopeFilterableByNameOrAutonym($query, $name)
+    {   
+        $formatted_name = str_replace(' ', '', $name);
+        return $query->when($name, function ($query) use ($formatted_name) {
+            $query->where('languages.name', 'like', $formatted_name.'%')
+                ->orWhere('autonym.name', 'like', $formatted_name.'%');
+        });
+    }
+    
     public function population()
     {
         return CountryLanguage::where('language_id', $this->id)->select('language_id', 'population')->count();

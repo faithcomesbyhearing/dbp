@@ -5,7 +5,6 @@ namespace App\Console\Commands\BibleEquivalents;
 use App\Models\Bible\BibleLink;
 use App\Models\Organization\OrganizationTranslation;
 use Illuminate\Console\Command;
-use TomLingham\Searchy\Facades\Searchy;
 
 class UpdateBibleLinkOrganizations extends Command
 {
@@ -55,14 +54,23 @@ class UpdateBibleLinkOrganizations extends Command
             }
 
             // Otherwise Fuzzy Search for Provider Name
-            $organizations = Searchy::search('dbp.organization_translations')->fields('name')->query($bible_link->provider)->getQuery()->limit(5)->get();
-            if ($organizations->count() == 0) {
+            $organizatios = OrganizationTranslation::whereFuzzy('name', $bible_link->provider)
+                ->getQuery()
+                ->limit(5)
+                ->get();
+
+            if (empty($organizations) || $organizations->count() == 0) {
                 continue;
             }
 
             // Present Data to User
             $this->comment("\n\n==========$bible_link->provider==========");
-            $this->info(json_encode($organizations->pluck('name', 'organization_id'), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            $this->info(
+                json_encode(
+                    $organizations->pluck('name', 'organization_id'),
+                    JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+                )
+            );
 
             // Get User Input
             $confirmed = false;

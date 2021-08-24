@@ -88,17 +88,14 @@ class LanguagesController extends APIController
         $name                  = checkParam('name|language_name');
         $show_bibles           = checkBoolean('show_bibles');
         $limit                 = (int) (checkParam('limit') ?? 50);
+        $limit                 = min($limit, 150);
         $page                  = checkParam('page') ?? 1;
 
         // note: this two commented changes can be removed when bibleis and gideons no longer require a non-paginated response
         // remove pagination for bibleis and gideons (temporal fix)
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
-        // this is a band aid to reduce the query with a forced asset_id if uses show_bibles
-        $asset_filter = $is_bibleis_gideons && $show_bibles ? 'dbp-vid' : null;
-
-        $access_control = cacheRemember('access_control', [$this->key], now()->addHour(), function () {
-            return $this->accessControl($this->key);
-        });
+        // instead of returning hashes, accessControl will return language ids associated with the hashes
+        $access_control =  $this->accessControl($this->key, 'languages');
         $cache_params = [
             $this->v,  
             $country, 
@@ -110,16 +107,15 @@ class LanguagesController extends APIController
             $limit, 
             $page,
             $is_bibleis_gideons,
-            $asset_filter
         ];
 
         $order = $country ? 'country_population.population' : 'ifnull(current_translation.name, languages.name)';
         $order_dir = $country ? 'desc' : 'asc';
         $select_country_population = $country ? 'country_population.population' : 'null';
-        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $access_control, $order, $order_dir, $select_country_population, $limit, $page, $asset_filter) {
+        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $access_control, $order, $order_dir, $select_country_population, $limit, $page) {
             $languages = Language::includeCurrentTranslation()
                 ->includeAutonymTranslation()
-                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->hashes), $asset_filter)
+                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers))
                 ->includeExtraLanguageTranslations($include_translations)
                 ->includeCountryPopulation($country)
                 ->filterableByCountry($country)
@@ -151,6 +147,82 @@ class LanguagesController extends APIController
             return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
         });
 
+        return $this->reply($languages);
+    }
+
+    /**
+     * @param $search_text
+     *
+     * @OA\Get(
+     *     path="/languages/search/{search_text}",
+     *     tags={"Languages"},
+     *     summary="Returns languages related to this search",
+     *     description="Returns paginated languages that have search text in its name or country",
+     *     operationId="v4_languages.one",
+     *     @OA\Parameter(
+     *          name="search_text",
+     *          in="path",
+     *          description="The language text to search by",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/search_text")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_languages.one"))
+     *     )
+     * )
+     *
+     * @OA\Schema(
+     *   schema="v4_languages.search",
+     *   type="object",
+     *   @OA\Property(property="data", type="object",
+     *      ref="#/components/schemas/Language"
+     *   )
+     * )
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
+     */
+    public function search($search_text)
+    {
+        $page  = checkParam('page') ?? 1;
+        $limit = (int) (checkParam('limit') ?? 15);
+        $limit = min($limit, 50);
+        $formatted_search = str_replace(' ', '', $search_text);
+        if ($formatted_search === '' || !$formatted_search) {
+            return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
+        }
+
+        // instead of returning hashes, accessControl will return language ids associated with the hashes
+        $access_control = $this->accessControl($this->key, 'languages');
+        $cache_params = [
+            $this->v,
+            $formatted_search,
+            $access_control->string,
+            $limit,
+            $page,
+            $GLOBALS['i18n_id'],
+        ];
+        $languages = cacheRemember('languages_search', $cache_params, now()->addDay(), function () use ($formatted_search, $access_control, $page, $limit) {
+            $languages = Language::includeCurrentTranslation()
+                ->includeAutonymTranslation()
+                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers), false)
+                ->filterableByNameOrAutonym($formatted_search)
+                ->select([
+                    'languages.id',
+                    'languages.glotto_id',
+                    'languages.iso',
+                    'languages.name as backup_name',
+                    'current_translation.name as name',
+                    'autonym.name as autonym',
+                ]);
+            $languages = $languages->paginate($limit);
+            $languages_return = fractal(
+                $languages->getCollection(),
+                LanguageTransformer::class,
+                $this->serializer
+            );
+            return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
+        });
         return $this->reply($languages);
     }
 
@@ -189,13 +261,12 @@ class LanguagesController extends APIController
      */
     public function show($id)
     {
-        $access_control = cacheRemember('access_control', [$this->key], now()->addHour(), function () {
-            return $this->accessControl($this->key);
-        });
+        // instead of returning hashes, accessControl will return language ids associated with the hashes
+        $access_control = $this->accessControl($this->key, 'languages');
         $cache_params = [$id, $access_control->string];
         $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $access_control) {
             $language = Language::where('id', $id)->orWhere('iso', $id)
-                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->hashes), false)
+                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers))
                 ->first();
             if (!$language) {
                 return $this->setStatusCode(404)->replyWithError("Language not found for ID: $id");

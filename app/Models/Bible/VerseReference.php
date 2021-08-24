@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Bible;
+namespace App\Models\Bible;
 
 use App\Models\Bible\Book;
 use Illuminate\Database\Eloquent\Model;
