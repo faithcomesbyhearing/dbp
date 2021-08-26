@@ -1,6 +1,8 @@
 #!/bin/sh
-pwd
+echo "pwd=" `pwd`
+whoami
 
+ls -la 
 rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
 yum install newrelic-php5
 source .env
