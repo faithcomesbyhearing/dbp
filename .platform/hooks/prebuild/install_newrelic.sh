@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/sh -x
 echo "pwd=" `pwd`
 whoami
 
