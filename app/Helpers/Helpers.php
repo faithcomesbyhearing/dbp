@@ -73,14 +73,16 @@ function cacheGet($cache_key)
     return Cache::get($cache_key);
 }
 
-function createCacheLock($cache_key)
+function createCacheLock($cache_key, $lock_timeout = 10)
 {
-    return Cache::lock($cache_key . '_lock'); 
+    return Cache::lock($cache_key . '_lock', $lock_timeout); 
 }
 
 function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
 {
     $key = generateCacheString($cache_key, $cache_args);
+    // if something fails on the callback, release the lock 
+    $lock_timeout = 44;
     $value = Cache::get($key);
 
     if (!is_null($value)) {
@@ -97,8 +99,9 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
         return $value;
     } else {
         try {
-            // couldn't get the lock, another is executing the callback. block for up to 45 seconds waiting for lock
-            $lock->block(45);
+            // couldn't get the lock, another is executing the callback. block for up to 45 seconds waiting for lock 
+            // or until the lock is released by the lock timeout
+            $lock->block($lock_timeout + 1);
             // Lock acquired, which should mean the cache is set
             $value = Cache::get($key);
             if (is_null($value)) {
