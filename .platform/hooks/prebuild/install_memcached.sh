@@ -1,7 +1,8 @@
 #!/bin/sh
-
+set -x
 cp .platform/files/etc-phpd/40-igbinary.ini /etc/php.d
-#cp .platform/files/etc-phpd/40-memcache.ini /etc/php.d
+cp .platform/files/etc-phpd/40-memcache.ini /etc/php.d
+cp .platform/files/etc-phpd/50-memcached.ini /etc/php.d
 
 
 
