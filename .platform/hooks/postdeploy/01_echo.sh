@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-echo "cccccccccccplatform/hooks/predeploy/echo.sh"
+echo "cccccccccccplatform/hooks/postdeploy/echo.sh"
 ls -la /var/app/staging/.env | true
 ls -la /var/app/current/.env |true
 
