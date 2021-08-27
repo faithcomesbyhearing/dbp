@@ -82,7 +82,9 @@ function cacheRemember($cache_key, $cache_args = [], $ttl, $callback)
 {
     $key = generateCacheString($cache_key, $cache_args);
     // if something fails on the callback, release the lock 
-    $lock_timeout = 44;
+    // 45 seconds was selected to allow for the longest query to complete. 
+    // This is not based on any empirical evidence.
+    $lock_timeout = 45;
     $value = Cache::get($key);
 
     if (!is_null($value)) {
