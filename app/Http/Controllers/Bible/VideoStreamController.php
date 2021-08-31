@@ -4,11 +4,75 @@ namespace App\Http\Controllers\Bible;
 
 use App\Http\Controllers\APIController;
 use App\Traits\ArclightConnection;
+use App\Models\Bible\Book;
 use Exception;
 
 class VideoStreamController extends APIController
 {
     use ArclightConnection;
+
+    // this endpoints retrieve jesus film by bible chapter i.e (book=MAT, chapter=1), not by the arclight chapter_id
+    public function jesusFilmGetChapter(
+        $iso = null,
+        $book_id = null,
+        $chapter = null
+    ) {
+        $forbidden_isos = explode(',', config('settings.forbiddenArclightIso'));
+        $iso = in_array($iso, $forbidden_isos) ? 'eng' : $iso;
+
+        $book = Book::where('id', $book_id)->select('id_osis')->first();
+        if (!$book) {
+            return $this->setStatusCode(404)->replyWithError('Book not found');
+        }
+
+        $languages = cacheRemember('arclight_languages', [$iso], now()->addDay(), function () use ($iso) {
+            $languages = collect(optional($this->fetchArclight('media-languages', false, false, 'iso3=' . $iso))->mediaLanguages);
+            $languages = $languages->where('counts.speakerCount.value', $languages->max('counts.speakerCount.value'))->keyBy('iso3')->map(function ($item) {
+                return $item->languageId;
+            });
+            return $languages;
+        });
+        $has_language = $languages->contains(function ($value, $key) use ($iso) {
+            return $key === $iso;
+        });
+        if (!$has_language) {
+            return $this->setStatusCode(404)->replyWithError('No language could be found for the iso code specified');
+        }
+
+        $arclight_id = $languages[$iso];
+        $media_languages = cacheRemember('arclight_chapters_language_tag', [$arclight_id], now()->addDay(), function () use ($arclight_id) {
+            $media_languages = $this->fetchArclight('media-languages/' . $arclight_id);
+            return $media_languages;
+        });
+        $metadataLanguageTag = isset($media_languages->bcp47) ? $media_languages->bcp47 : '';
+              
+        // We don't cache this portion because streaming url session can expire
+        $films = [];
+        $verses = $this->getIdReferences();
+        foreach ($verses as $verse_key => $verse) {
+            if ($verse && isset($verse[$book->id_osis][$chapter])) {
+                // the media component has the descriptions and images for the initial content
+                $media_component = $this->fetchArclight('media-components/' . $verse_key , $arclight_id, false, 'metadataLanguageTags=' . $metadataLanguageTag . ',en');
+                // streaming component returns the video and http urls
+                $streaming_component = $this->fetchArclight('media-components/' . $verse_key . '/languages/' . $arclight_id, $arclight_id, false);
+                $films[] = 
+                    (object) [
+                      'component_id' => $verse_key, 
+                      'verses' => $verse[$book->id_osis][$chapter],
+                      'meta' => [
+                          'thumbnail' => $media_component->imageUrls->thumbnail,
+                          'thumbnail_high' => $media_component->imageUrls->mobileCinematicHigh,
+                          'title' => $media_component->title,
+                          'shortDescription' => $media_component->shortDescription,
+                          'longDescription' => $media_component->longDescription,
+                          'file_name' => $streaming_component->streamingUrls->m3u8[0]->url,
+                      ],
+                    ];
+            }
+        }
+
+        return $this->reply($films);
+    }
 
     public function jesusFilmsLanguages()
     {
@@ -82,7 +146,7 @@ class VideoStreamController extends APIController
 
             $metadataLanguageTag = isset($media_languages->bcp47) ? $media_languages->bcp47 : '';
             $cache_params =  [$arclight_id, $metadataLanguageTag];
-
+            
             $media_components = $this->fetchArclight('media-components', $arclight_id, true, 'metadataLanguageTags=' . $metadataLanguageTag . ',en');
             $metadata = collect($media_components->mediaComponents)
                 ->map(function ($component) use ($arclight_id) {
@@ -105,7 +169,7 @@ class VideoStreamController extends APIController
                 })->pluck('meta', 'mediaComponentId');
 
             return $this->reply([
-                'verses'                   => $this->getIdReferences($component->mediaComponentId),
+                'verses'                   => $this->getIdReferences(),
                 'meta'                     => $metadata,
                 'duration_in_milliseconds' => $component->lengthInMilliseconds,
                 'file_name' => route('v4_video_jesus_film_file', [
