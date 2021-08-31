@@ -177,20 +177,16 @@ Route::name('v4_video_jesus_film_file')->get(
     'arclight/jesus-film',
     'Bible\VideoStreamController@jesusFilmFile'
 );// used by bible.is
-
-
+Route::name('v4_video_jesus_film_chapter')->get(
+  'jesus-film/{language_iso}/{book}/{chapter}',
+  'Bible\VideoStreamController@jesusFilmGetChapter'
+);// used by bible.is
 
 
 Route::name('v4_internal_api.refreshDevCache')->get(
     '/refresh-dev-cache',
     'ApiMetadataController@refreshDevCache'
 );
-
-
-
-
-
-
 
 
 // ................. bible.is private .....................
