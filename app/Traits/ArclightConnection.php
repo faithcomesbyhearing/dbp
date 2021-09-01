@@ -26,7 +26,7 @@ trait ArclightConnection
 
         try {
             $ctx = stream_context_create(array('http'=>
-                array('timeout' => 5)
+                array('timeout' =>  (int) config('services.arclight.service_timeout'))
             ));       
             $results = json_decode(file_get_contents($path, false, $ctx));
         } catch (Exception $e) {

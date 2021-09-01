@@ -218,7 +218,7 @@ class VideoStreamController extends APIController
                 $arclight_error = $media_components->original['error'];
                 return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
             }
-
+            
             $stream_file = file_get_contents($media_components->streamingUrls->m3u8[0]->url);
         } catch (Exception $e) {
             $stream_file = '';
