@@ -71,7 +71,9 @@ return [
 
     'arclight' => [
         'key' => env('ARCLIGHT_API'),
-        'url' => env('ARCLIGHT_API_URL', 'https://api.arclight.org/v2/')
+        'url' => env('ARCLIGHT_API_URL', 'https://api.arclight.org/v2/'),
+        // arclight service timeout in seconds
+        'service_timeout' => env('ARCLIGHT_SERVICE_TIMEOUT', 5) 
     ],
 
     // Testing

@@ -17,6 +17,7 @@ class VideoStreamController extends APIController
         $book_id = null,
         $chapter = null
     ) {
+
         $forbidden_isos = explode(',', config('settings.forbiddenArclightIso'));
         $iso = in_array($iso, $forbidden_isos) ? 'eng' : $iso;
 
@@ -53,21 +54,29 @@ class VideoStreamController extends APIController
             if ($verse && isset($verse[$book->id_osis][$chapter])) {
                 // the media component has the descriptions and images for the initial content
                 $media_component = $this->fetchArclight('media-components/' . $verse_key , $arclight_id, false, 'metadataLanguageTags=' . $metadataLanguageTag . ',en');
+                if (isset($media_component->original['error'])) {
+                  $arclight_error = $media_component->original['error'];
+                  return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
+                } 
                 // streaming component returns the video and http urls
                 $streaming_component = $this->fetchArclight('media-components/' . $verse_key . '/languages/' . $arclight_id, $arclight_id, false);
-                $films[] = 
-                    (object) [
-                      'component_id' => $verse_key, 
-                      'verses' => $verse[$book->id_osis][$chapter],
-                      'meta' => [
-                          'thumbnail' => $media_component->imageUrls->thumbnail,
-                          'thumbnail_high' => $media_component->imageUrls->mobileCinematicHigh,
-                          'title' => $media_component->title,
-                          'shortDescription' => $media_component->shortDescription,
-                          'longDescription' => $media_component->longDescription,
-                          'file_name' => $streaming_component->streamingUrls->m3u8[0]->url,
-                      ],
-                    ];
+                if (isset($streaming_component->original['error'])) {
+                  $arclight_error = $streaming_component->original['error'];
+                  return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
+                }
+                
+                $films[] = (object) [
+                    'component_id' => $verse_key, 
+                    'verses' => $verse[$book->id_osis][$chapter],
+                    'meta' => [
+                        'thumbnail' => $media_component->imageUrls->thumbnail,
+                        'thumbnail_high' => $media_component->imageUrls->mobileCinematicHigh,
+                        'title' => $media_component->title,
+                        'shortDescription' => $media_component->shortDescription,
+                        'longDescription' => $media_component->longDescription,
+                        'file_name' => $streaming_component->streamingUrls->m3u8[0]->url,
+                    ],
+                ];
             }
         }
 
@@ -86,6 +95,10 @@ class VideoStreamController extends APIController
             $cache_params = [$metadata_tag];
             $languages = cacheRemember('arclight_languages_detail', $cache_params, now()->addDay(), function () use ($metadata_tag) {
                 $languages = collect($this->fetchArclight('media-languages', false, false, 'contentTypes=video&metadataLanguageTags=' . $metadata_tag . ',en')->mediaLanguages);
+                if (isset($languages->original['error'])) {
+                  $arclight_error = $languages->original['error'];
+                  return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
+                }
                 return $languages->where('counts.speakerCount.value', '>', 0)->map(function ($language) {
                     return [
                         'jesus_film_id' => $language->languageId,
@@ -148,6 +161,11 @@ class VideoStreamController extends APIController
             $cache_params =  [$arclight_id, $metadataLanguageTag];
             
             $media_components = $this->fetchArclight('media-components', $arclight_id, true, 'metadataLanguageTags=' . $metadataLanguageTag . ',en');
+            if (isset($media_components->original['error'])) {
+                $arclight_error = $media_components->original['error'];
+                return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
+            }
+            
             $metadata = collect($media_components->mediaComponents)
                 ->map(function ($component) use ($arclight_id) {
                     return [
@@ -196,6 +214,11 @@ class VideoStreamController extends APIController
             $chapter_id   = checkParam('chapter_id') ?? '1_jf-0-0';
 
             $media_components = $this->fetchArclight('media-components/' . $chapter_id . '/languages/' . $language_id, $language_id, false);
+            if (isset($media_components->original['error'])) {
+                $arclight_error = $media_components->original['error'];
+                return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
+            }
+            
             $stream_file = file_get_contents($media_components->streamingUrls->m3u8[0]->url);
         } catch (Exception $e) {
             $stream_file = '';
