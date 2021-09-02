@@ -115,8 +115,12 @@ class LibraryVolumeTransformer extends BaseTransformer
                     $delivery_types = ['mobile', 'web', 'local_bundled', 'subsplash'];
                 }
 
+                $combinedName = '';
                 if ($fileset->autonym_name && $fileset->english_name) {
-                    $fileset->languageCombinedName = $fileset->autonym_name. ' ('. $fileset->english_name . ')';
+                    $combinedName = 
+                        strtolower($fileset->autonym_name) === strtolower($fileset->english_name) ? 
+                        $fileset->autonym_name : 
+                        $fileset->autonym_name . ' (' . $fileset->english_name . ')';
                 } elseif ($fileset->autonym_name) {
                     $fileset->languageCombinedName = $fileset->autonym_name;
                 } elseif ($fileset->english_name) {
@@ -126,7 +130,7 @@ class LibraryVolumeTransformer extends BaseTransformer
                 return [
                     'dam_id'                    => $fileset->generated_id,
                     'fcbh_id'                   => $fileset->generated_id,
-                    'volume_name'               => (string) $fileset->languageCombinedName,
+                    'volume_name'               => (string) $combinedName,
                     'status'                    => 'live',// for the moment these default to Live
                     'dbp_agreement'             => 'true',// for the moment these default to True
                     'expiration'                => '0000-00-00',
