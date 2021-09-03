@@ -156,7 +156,7 @@ Route::name('v4_media_stream_ts')->get(
 );
 ## this is no good. StreamController::index does not process book_id/chapter/verse_start/verse_end
 Route::name('v4_media_stream')->get(
-    'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start}-{verse_end}/playlist.m3u8',
+    'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start?}-{verse_end?}/playlist.m3u8',
     'Bible\StreamController@index'
 );
 Route::name('v4_media_stream_ts')->get(

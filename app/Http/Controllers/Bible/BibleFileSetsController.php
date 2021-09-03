@@ -801,13 +801,19 @@ class BibleFileSetsController extends APIController
 
         if ($is_stream) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
-                $fileset_chapters[$key]->file_name = route('v4_media_stream', [
+                $routeParameters = [
                     'fileset_id' => $fileset->id,
                     'book_id' => $fileset_chapter->book_id,
                     'chapter' => $fileset_chapter->chapter_start,
                     'verse_start' => $fileset_chapter->verse_start,
                     'verse_end' => $fileset_chapter->verse_end
-                ]);
+                ];
+                $fileset_chapters[$key]->file_name = route('v4_media_stream', array_filter(
+                    $routeParameters,
+                    function ($filesetProperty) {
+                        return !is_null($filesetProperty) && $filesetProperty !== '';
+                    }
+                ));
             }
         } else {
             // Multiple files per chapter
@@ -819,8 +825,6 @@ class BibleFileSetsController extends APIController
                         'fileset_id' => $fileset->id,
                         'book_id' => $fileset_chapters[0]->book_id,
                         'chapter' => $fileset_chapters[0]->chapter_start,
-                        'verse_start' => null,
-                        'verse_end' => null,
                     ]
                 );
                 $collection = collect($fileset_chapters);
