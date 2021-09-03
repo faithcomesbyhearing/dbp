@@ -11,7 +11,7 @@ use Mail;
 use ReflectionClass;
 use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\Debug\ExceptionHandler as SymfonyExceptionHandler;
-use Symfony\Component\HttpFoundation\Response;
+use App\Exceptions\ResponseException as Response;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -122,13 +122,7 @@ class Handler extends ExceptionHandler
 
         $response = [];
         $response['error'] = Response::$statusTexts[$statusCode];
-
-        $class = new ReflectionClass(new Response());
-        $constants = array_flip($class->getConstants());
-
-        $response['type'] =
-            $constants[$statusCode] ??
-            $constants[Response::HTTP_INTERNAL_SERVER_ERROR];
+        $response['type'] = $this->getTypeErrorResponseFromCode($statusCode);
 
         if ($statusCode === Response::HTTP_UNPROCESSABLE_ENTITY) {
             $message = $exception->getMessage();
@@ -199,5 +193,19 @@ class Handler extends ExceptionHandler
         } catch (Exception $exception) {
             Log::error($exception);
         }
+    }
+
+    /**
+     * Get name of the Response static property that remains to the given status code response.
+     *
+     * @param int $statusCode
+     *
+     * @return string
+     */
+    private function getTypeErrorResponseFromCode(int $statusCode): string
+    {
+        $listHttpConstantNames = Response::getListHttpConstantStatusNames();
+
+        return $listHttpConstantNames[$statusCode] ?? $listHttpConstantNames[Response::HTTP_INTERNAL_SERVER_ERROR];
     }
 }

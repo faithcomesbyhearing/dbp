@@ -4,9 +4,12 @@ namespace App\Models\Plan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Traits\ModelBase;
 
 class PlanDayComplete extends Model
 {
+    use ModelBase;
+
     protected $connection = 'dbp_users';
     public $table         = 'plan_days_completed';
     protected $primaryKey = ['user_id', 'plan_day_id'];
@@ -20,7 +23,7 @@ class PlanDayComplete extends Model
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function setKeysForSaveQuery(Builder $query)
+    protected function setKeysForSaveQuery($query)
     {
         $keys = $this->getKeyName();
         if (!is_array($keys)) {
