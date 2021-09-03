@@ -378,18 +378,19 @@ class LibraryController extends APIController
                     return $item->english_name;
                 });
             foreach ($filesets as $key => $fileset) {
-                $filesets[$key]->secondary_file_path = $this->signedUrl(
-                    storagePath(
-                        $fileset->bible_id, 
-                        $fileset, 
-                        null, 
-                        $fileset->secondary_file_name
-                    ), 
-                    $fileset->asset_id,
-                    random_int(0, 10000000)
-                );
+                if ($fileset && $fileset->secondary_file_name) {
+                      $filesets[$key]->secondary_file_path = $this->signedUrl(
+                        storagePath(
+                            $fileset->bible_id, 
+                            $fileset, 
+                            null, 
+                            $fileset->secondary_file_name
+                        ), 
+                        $fileset->asset_id,
+                        random_int(0, 10000000)
+                    );
+                }
             }
-
             return $this->generateV2StyleId($filesets);
         });
 
