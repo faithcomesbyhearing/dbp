@@ -116,7 +116,10 @@ class LibraryVolumeTransformer extends BaseTransformer
                 }
 
                 if ($fileset->autonym_name && $fileset->english_name) {
-                    $fileset->languageCombinedName = $fileset->autonym_name. ' ('. $fileset->english_name . ')';
+                    $fileset->languageCombinedName = 
+                        strtolower($fileset->autonym_name) === strtolower($fileset->english_name) ? 
+                        $fileset->autonym_name : 
+                        $fileset->autonym_name . ' (' . $fileset->english_name . ')';
                 } elseif ($fileset->autonym_name) {
                     $fileset->languageCombinedName = $fileset->autonym_name;
                 } elseif ($fileset->english_name) {
