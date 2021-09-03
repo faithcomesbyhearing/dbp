@@ -689,6 +689,7 @@ class BibleFileSetsController extends APIController
                         ->flatten();
                     $video_filesets_hashes = $filesets
                         ->where('set_type_code', 'video_stream')
+                        ->pluck('hash_id')
                         ->flatten();
                     return [
                         'audio' => $audio_filesets_hashes,
