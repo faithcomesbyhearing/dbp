@@ -70,7 +70,7 @@ class TextController extends APIController
         $book_id     = checkParam('book_id', false, $book_url_param);
         $chapter     = checkParam('chapter_id', false, $chapter_url_param);
         $verse_start = checkParam('verse_start') ?? 1;
-        $verse_end   = checkParam('verse_end');
+        $verse_end   = checkParam('verse_end') ?? $verse_start;
 
         $book = Book::where('id', $book_id)->orWhere('id_osis', $book_id)->first();
 
