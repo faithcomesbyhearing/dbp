@@ -61,7 +61,6 @@ class OrgDigitalBibleLibraryCompare extends Command
     {
         $translationMatchExists    = OrganizationTranslation::where('name', $dbl_org->full_name)->first();
         $relationshipAlreadyExists = OrganizationRelationship::where('organization_parent_id', $this->dbl_id)
-                                                            //  ->where('relationship_id', $dbl_org->id)->first();
                                                              ->first();
         if ($relationshipAlreadyExists || $this->dbl_id === $dbl_org->id) {
             return true;
@@ -71,8 +70,7 @@ class OrgDigitalBibleLibraryCompare extends Command
             OrganizationRelationship::firstOrCreate([
                 'type'                   => 'Member',
                 'organization_child_id'  => $translationMatchExists->organization->id,
-                'organization_parent_id' => $this->dbl_id
-                // 'relationship_id'        => $dbl_org->id
+                'organization_parent_id' => $this->dbl_id,
             ]);
             return true;
         }
@@ -83,8 +81,7 @@ class OrgDigitalBibleLibraryCompare extends Command
     private function fuzzySearchOrgs($dbl_org)
     {
         // Otherwise Fuzzy Search for Provider Name
-        // $organizations = Searchy::driver('ufuzzy')->search(config('database.connections.dbp.database').'.organization_translations')->fields('name')->query($dbl_org->full_name)->getQuery()->limit(5)->get();
-        $organizatios = OrganizationTranslation::whereFuzzy('name', $dbl_org->full_name)
+        $organizations = OrganizationTranslation::whereFuzzy('name', $dbl_org->full_name)
             ->getQuery()
             ->limit(5)
             ->get();
@@ -113,8 +110,7 @@ class OrgDigitalBibleLibraryCompare extends Command
         OrganizationRelationship::firstOrCreate([
             'type'                   => 'Member',
             'organization_child_id'  => $organization_id,
-            'organization_parent_id' => $this->dbl_id
-            // 'relationship_id'        => $dbl_org->id
+            'organization_parent_id' => $this->dbl_id,
         ]);
     }
 

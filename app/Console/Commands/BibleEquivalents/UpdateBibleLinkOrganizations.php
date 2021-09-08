@@ -54,7 +54,7 @@ class UpdateBibleLinkOrganizations extends Command
             }
 
             // Otherwise Fuzzy Search for Provider Name
-            $organizatios = OrganizationTranslation::whereFuzzy('name', $bible_link->provider)
+            $organizations = OrganizationTranslation::whereFuzzy('name', $bible_link->provider)
                 ->getQuery()
                 ->limit(5)
                 ->get();
