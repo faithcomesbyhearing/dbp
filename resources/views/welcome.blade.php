@@ -1,1 +1,1 @@
-Welcome page
+<script>window.location.href = "https://www.faithcomesbyhearing.com/bible-brain";</script>
