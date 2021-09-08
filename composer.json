@@ -31,6 +31,7 @@
         "league/flysystem-aws-s3-v3": "~1.0",
         "maennchen/zipstream-php": "^0.5.1",
         "mattkingshott/quest": "^1.1",
+        "ratehub/laravel-newrelic": "^0.7.0",
         "sentry/sentry-laravel": "^2.8",
         "socialiteproviders/generators": "dev-php-8",
         "socialiteproviders/google": "^4.1",
