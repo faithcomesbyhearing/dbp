@@ -961,8 +961,12 @@ class BiblesController extends APIController
         return isset($fileset->set_type_code) && isset($fileset->set_size_code);
     }
 
-    private function getAudioFilesetData($results, $bible, $book, $chapter, $type, $name, $download = false, $secondary_type, $secondary_name, $get_secondary = false)
+    private function getAudioFilesetData($results, $bible, $book, $chapter, $type, $name, $download, $secondary_type, $secondary_name, $get_secondary = false)
     {
+        if (!$download) {
+            $download = false;
+        }
+
         $fileset_controller = new BibleFileSetsController();
         $fileset = $this->getStreamNonStreamFileset($download, $bible, $type, $book);
 
