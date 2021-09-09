@@ -364,7 +364,7 @@ class BibleFileSetsController extends APIController
         $is_text_fileset = in_array($fileset_type, ['text_plain', 'text_format', 'text_html', 'text_usx']);
         if ($is_text_fileset && $param_type === '') {
             $fileset_type = 'text_plain';
-        } else if ($is_text_fileset) {
+        } elseif ($is_text_fileset) {
             $fileset_type = $param_type;
         }
 
@@ -441,7 +441,7 @@ class BibleFileSetsController extends APIController
         $fileset,
         $asset_id,
         $type,
-        $book =  null,
+        $book = null,
         $chapter_id = null
     ) {
         $query = BibleFile::where('bible_files.hash_id', $fileset->hash_id)
@@ -522,14 +522,14 @@ class BibleFileSetsController extends APIController
             $this->serializer
         );
         if (isset($fileset_chapters->metadata)) {
-          $fileset_return->addMeta($fileset_chapters->metadata);
+            $fileset_return->addMeta($fileset_chapters->metadata);
         }
 
         return (
           $limit !== null ?
           $fileset_return->paginateWith($filesets_pagination) :
           $fileset_return
-      );
+        );
     }
 
     /**
@@ -576,16 +576,21 @@ class BibleFileSetsController extends APIController
         $iso = checkParam('iso') ?? 'eng';
 
         $cache_params = [$id, $iso];
-        $fileset = cacheRemember('bible_fileset_copyright', $cache_params, now()->addDay(), function () use ($iso, $id) {
-            $language_id = optional(Language::where('iso', $iso)->select('id')->first())->id;
-            return BibleFileset::where('id', $id)->with([
-                'copyright.organizations.logos',
-                'copyright.organizations.translations' => function ($q) use ($language_id) {
-                    $q->where('language_id', $language_id);
-                }
-            ])
-                ->select(['hash_id', 'id', 'asset_id', 'set_type_code as type', 'set_size_code as size'])->first();
-        });
+        $fileset = cacheRemember(
+            'bible_fileset_copyright',
+            $cache_params,
+            now()->addDay(),
+            function () use ($iso, $id) {
+                $language_id = optional(Language::where('iso', $iso)->select('id')->first())->id;
+                return BibleFileset::where('id', $id)->with([
+                    'copyright.organizations.logos',
+                    'copyright.organizations.translations' => function ($q) use ($language_id) {
+                        $q->where('language_id', $language_id);
+                    }
+                ])
+                    ->select(['hash_id', 'id', 'asset_id', 'set_type_code as type', 'set_size_code as size'])->first();
+            }
+        );
 
         return $this->reply($fileset);
     }
@@ -684,6 +689,7 @@ class BibleFileSetsController extends APIController
                         ->flatten();
                     $video_filesets_hashes = $filesets
                         ->where('set_type_code', 'video_stream')
+                        ->pluck('hash_id')
                         ->flatten();
                     return [
                         'audio' => $audio_filesets_hashes,
@@ -741,7 +747,7 @@ class BibleFileSetsController extends APIController
         $asset_id
     ) {
         $secondary_files = BibleFileSecondary::where(
-            'hash_id', 
+            'hash_id',
             $fileset->hash_id
         )
         // this MIN is used to only pick one file name for each type
@@ -758,7 +764,7 @@ class BibleFileSetsController extends APIController
             );
             if ($secondary_file->file_type === 'art') {
                 $secondary_file_paths['thumbnail'] = $secondary_file_url;
-            } else if ($secondary_file->file_type === 'zip') {
+            } elseif ($secondary_file->file_type === 'zip') {
                 $secondary_file_paths['zip_file'] = $secondary_file_url;
             }
         }
@@ -795,13 +801,19 @@ class BibleFileSetsController extends APIController
 
         if ($is_stream) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
-                $fileset_chapters[$key]->file_name = route('v4_media_stream', [
+                $routeParameters = [
                     'fileset_id' => $fileset->id,
                     'book_id' => $fileset_chapter->book_id,
                     'chapter' => $fileset_chapter->chapter_start,
                     'verse_start' => $fileset_chapter->verse_start,
                     'verse_end' => $fileset_chapter->verse_end
-                ]);
+                ];
+                $fileset_chapters[$key]->file_name = route('v4_media_stream', array_filter(
+                    $routeParameters,
+                    function ($filesetProperty) {
+                        return !is_null($filesetProperty) && $filesetProperty !== '';
+                    }
+                ));
             }
         } else {
             // Multiple files per chapter
@@ -813,8 +825,6 @@ class BibleFileSetsController extends APIController
                         'fileset_id' => $fileset->id,
                         'book_id' => $fileset_chapters[0]->book_id,
                         'chapter' => $fileset_chapters[0]->chapter_start,
-                        'verse_start' => null,
-                        'verse_end' => null,
                     ]
                 );
                 $collection = collect($fileset_chapters);
@@ -826,11 +836,11 @@ class BibleFileSetsController extends APIController
                 foreach ($fileset_chapters as $key => $fileset_chapter) {
                     $fileset_chapters[$key]->file_name = $this->signedUrl(
                         storagePath(
-                            $bible->id, 
-                            $fileset, 
+                            $bible->id,
+                            $fileset,
                             $fileset_chapter
-                        ), 
-                        $asset_id, 
+                        ),
+                        $asset_id,
                         random_int(0, 10000000)
                     );
                 }
@@ -872,11 +882,11 @@ class BibleFileSetsController extends APIController
     private function validateBibleFileset($request)
     {
         $validator = Validator::make((array) $request, [
-            'book_id'           => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.books,id',
-            'fileset_id'        => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.bible_filesets,id',
-            'chapter_start'     => ((request()->method() === 'POST') ? 'required|' : '') . 'max:150|min:1|integer',
-            'chapter_end'     => ((request()->method() === 'POST') ? 'required|' : '') . 'max:150|min:1|integer',
-            'verse_end'         => ((request()->method() === 'POST') ? 'required|' : '') . 'max:177|min:1|integer',
+            'book_id'       => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.books,id',
+            'fileset_id'    => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.bible_filesets,id',
+            'chapter_start' => ((request()->method() === 'POST') ? 'required|' : '') . 'max:150|min:1|integer',
+            'chapter_end'   => ((request()->method() === 'POST') ? 'required|' : '') . 'max:150|min:1|integer',
+            'verse_end'     => ((request()->method() === 'POST') ? 'required|' : '') . 'max:177|min:1|integer',
         ]);
         if ($validator->fails()) {
             return ['errors' => $validator->errors()];

@@ -3,7 +3,7 @@
 namespace App\Models\Bible\Study;
 
 use App\Models\Bible\Bible;
-use App\Bible\VerseReference;
+use App\Models\Bible\VerseReference;
 use Illuminate\Database\Eloquent\Model;
 
 /**
