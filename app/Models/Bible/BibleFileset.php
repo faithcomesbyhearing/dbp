@@ -7,6 +7,7 @@ use App\Models\Organization\Organization;
 use App\Models\User\AccessGroupFileset;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * App\Models\Bible\BibleFileset
@@ -221,7 +222,7 @@ class BibleFileset extends Model
         $fileset = $this->toArray();
         $url = '';
 
-        if (starts_with($fileset['set_type_code'], 'audio')) {
+        if (Str::startsWith($fileset['set_type_code'], 'audio')) {
             $bible_id = optional(BibleFileset::find($fileset['id'])->bible()->first())->id;
             if ($bible_id) {
                 $command = $client->getCommand('GetObject', [

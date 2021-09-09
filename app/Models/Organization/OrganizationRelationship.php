@@ -22,7 +22,7 @@ class OrganizationRelationship extends Model
 {
     protected $connection = 'dbp';
     protected $primaryKey = 'organization_parent_id';
-    protected $fillable = ['type','organization_child_id','organization_parent_id','relationship_id'];
+    protected $fillable = ['type','organization_child_id','organization_parent_id'];
     public $hidden = ['created_at','updated_at'];
     public $incrementing = false;
 
@@ -68,19 +68,6 @@ class OrganizationRelationship extends Model
      */
     protected $type;
 
-    /**
-     *
-     * @OA\Property(
-     *     title="relationship_id",
-     *     description="The Organization's relationship_id",
-     *     type="string",
-     *     maxLength=191
-     * )
-     *
-     * @method static OrganizationRelationship whereRelationshipId($value)
-     * @property string $relationship_id
-     */
-    protected $relationship_id;
     /**
      *
      * @method static OrganizationRelationship whereCreatedAt($value)

@@ -24,8 +24,8 @@ Route::name('v4_languages.one')->get(
     'Wiki\LanguagesController@show'
 );
 Route::name('v4_languages.search')->get(
-  'languages/search/{search_text}',
-  'Wiki\LanguagesController@search'
+    'languages/search/{search_text}',
+    'Wiki\LanguagesController@search'
 );
 
 // VERSION 4 | Alphabets and Numbers
@@ -50,8 +50,6 @@ Route::name('v4_numbers.one')->get(
 // VERSION 4 | Search
 // Even though TextController fields the search, it returns content from text, audio and video. Rename to SearchController?
 Route::name('v4_text_search')->get('search', 'Bible\TextController@search');
-
-
 
 // VERSION 4 | Bibles
 Route::name('v4_bible.defaults')->get(
@@ -156,7 +154,7 @@ Route::name('v4_media_stream_ts')->get(
 );
 ## this is no good. StreamController::index does not process book_id/chapter/verse_start/verse_end
 Route::name('v4_media_stream')->get(
-    'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start}-{verse_end}/playlist.m3u8',
+    'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start?}-{verse_end?}/playlist.m3u8',
     'Bible\StreamController@index'
 );
 Route::name('v4_media_stream_ts')->get(

@@ -4,6 +4,7 @@ namespace App\Models\Plan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Traits\ModelBase;
 
 /**
  * @OA\Schema (
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class UserPlan extends Model
 {
+    use ModelBase;
+
     protected $connection = 'dbp_users';
     protected $primaryKey = ['user_id', 'plan_id'];
     public $incrementing = false;
@@ -50,7 +53,7 @@ class UserPlan extends Model
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function setKeysForSaveQuery(Builder $query)
+    protected function setKeysForSaveQuery($query)
     {
         $keys = $this->getKeyName();
         if (!is_array($keys)) {
