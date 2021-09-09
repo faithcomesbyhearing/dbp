@@ -47,8 +47,8 @@ class TextController extends APIController
      *     path="/text/verse",
      *     tags={"Library Text"},
      *     summary="Returns Signed URLs or Text",
-     *     description="V2's base fileset route",
-     *     operationId="v2_text_verse",
+     *     description="V4's base fileset route",
+     *     operationId="v4_bible.verseinfo",
      *     @OA\Parameter(name="fileset_id", in="query", description="The Bible fileset ID", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
      *     @OA\Parameter(name="book", in="query", description="The Book ID. For a complete list see the `book_id` field in the `/bibles/books` route.", required=true, @OA\Schema(ref="#/components/schemas/Book/properties/id")),
      *     @OA\Parameter(name="chapter", in="query", description="The chapter number", required=true, @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
@@ -70,7 +70,7 @@ class TextController extends APIController
         $book_id     = checkParam('book_id', false, $book_url_param);
         $chapter     = checkParam('chapter_id', false, $chapter_url_param);
         $verse_start = checkParam('verse_start') ?? 1;
-        $verse_end   = checkParam('verse_end') ?? $verse_start;
+        $verse_end   = checkParam('verse_end');
 
         $book = Book::where('id', $book_id)->orWhere('id_osis', $book_id)->first();
 
