@@ -1,5 +1,28 @@
 {
   "extends": [
     "config:base"
+  ],
+  "ignorePaths": [
+    "docker-compose.yml",
+    "package.json"
+  ],
+  "docker": {
+    "enabled": false
+  },
+  "docker-compose": {
+    "enabled": false
+  },
+  "packageRules": [
+    {
+      "matchPackagePatterns": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    }
   ]
 }
