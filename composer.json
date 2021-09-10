@@ -15,7 +15,7 @@
         "algolia/algoliasearch-client-php": "^3.0",
         "appstract/laravel-opcache": "^4.0",
         "aws/aws-sdk-php-laravel": "^3.6",
-        "bugsnag/bugsnag-laravel": "^2.0",
+        "bugsnag/bugsnag-laravel": "2.22.2",
         "curl/curl": "^1.9",
         "doctrine/dbal": "^3.1",
         "fideloper/proxy": "^4.0",
