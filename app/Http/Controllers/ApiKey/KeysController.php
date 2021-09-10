@@ -16,6 +16,8 @@ class KeysController extends APIController
         }
         $rules = [
           'name' => 'required|string',
+          'application_name' => 'required|string',
+          'application_url' => 'required|string',
           'email' => 'required|email',
           'description' => 'required|string',
           'question' => 'string',
@@ -25,9 +27,9 @@ class KeysController extends APIController
         $validator = Validator::make(request()->all(), $rules);
         if ($validator->fails()) {
             return redirect()
-        ->back()
-        ->withErrors($validator)
-        ->withInput();
+                ->back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
         $key_request = UserKeyRequest::make(request()->all());
