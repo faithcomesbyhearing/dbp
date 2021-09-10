@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e5039989328fe5f373b05f4ec2f8526c",
+    "content-hash": "bd36b361057480adf03f3ca678727219",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -482,16 +482,16 @@
         },
         {
             "name": "bugsnag/bugsnag-laravel",
-            "version": "v2.22.1",
+            "version": "v2.22.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bugsnag/bugsnag-laravel.git",
-                "reference": "22f57f3bda2a93b68fe56a380cfd88a18e0003a4"
+                "reference": "cc5ec4ea3ea3704d384f1c684fa19704289390c0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bugsnag/bugsnag-laravel/zipball/22f57f3bda2a93b68fe56a380cfd88a18e0003a4",
-                "reference": "22f57f3bda2a93b68fe56a380cfd88a18e0003a4",
+                "url": "https://api.github.com/repos/bugsnag/bugsnag-laravel/zipball/cc5ec4ea3ea3704d384f1c684fa19704289390c0",
+                "reference": "cc5ec4ea3ea3704d384f1c684fa19704289390c0",
                 "shasum": ""
             },
             "require": {
@@ -541,9 +541,9 @@
             ],
             "support": {
                 "issues": "https://github.com/bugsnag/bugsnag-laravel/issues",
-                "source": "https://github.com/bugsnag/bugsnag-laravel/tree/v2.22.1"
+                "source": "https://github.com/bugsnag/bugsnag-laravel/tree/v2.22.2"
             },
-            "time": "2021-04-29T08:21:36+00:00"
+            "time": "2021-09-06T09:15:32+00:00"
         },
         {
             "name": "bugsnag/bugsnag-psr-logger",
