@@ -30,8 +30,8 @@
         "vue-select": "2.6.4"
     },
     "dependencies": {
-        "babel-preset-es2015": "^6.24.1",
-        "babel-preset-stage-2": "^6.24.1",
+        "babel-preset-es2015": "6.24.1",
+        "babel-preset-stage-2": "6.24.1",
         "buefy": "^0.6.6",
         "chart.js": "2.9.4",
         "dropzone": "5.9.2",
