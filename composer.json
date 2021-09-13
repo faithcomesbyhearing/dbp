@@ -29,7 +29,7 @@
         "laravel/socialite": "5.2.5",
         "laravel/tinker": "2.6.1",
         "league/flysystem-aws-s3-v3": "1.0.29",
-        "maennchen/zipstream-php": "0.5.2",
+        "maennchen/zipstream-php": "2.1.0",
         "mattkingshott/quest": "1.1.1",
         "ratehub/laravel-newrelic": "0.7",
         "sentry/sentry-laravel": "2.8.0",
