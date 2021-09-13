@@ -16,7 +16,7 @@
         "appstract/laravel-opcache": "4.0.2",
         "aws/aws-sdk-php-laravel": "3.6.0",
         "bugsnag/bugsnag-laravel": "2.22.2",
-        "curl/curl": "1.9.3",
+        "curl/curl": "2.3.2",
         "doctrine/dbal": "3.1.1",
         "fideloper/proxy": "4.4.1",
         "geoip2/geoip2": "2.11.0",
