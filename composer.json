@@ -21,7 +21,7 @@
         "fideloper/proxy": "4.4.1",
         "geoip2/geoip2": "2.11.0",
         "google/recaptcha": "1.2.4",
-        "guzzlehttp/guzzle": "6.5.5",
+        "guzzlehttp/guzzle": "7.3.0",
         "intervention/image": "2.6.1",
         "josiasmontag/laravel-localization": "0.8.2",
         "laravel/framework": "8.60.0",
