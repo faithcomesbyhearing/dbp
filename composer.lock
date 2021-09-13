@@ -4,9 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-
-    "content-hash": "063b037df19a60ec39c000baee0f755c",
-
+    "content-hash": "0c58599796cea6982717b91defc9c183",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -5760,25 +5758,25 @@
         },
         {
             "name": "spatie/array-to-xml",
-            "version": "2.16.0",
+            "version": "3.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/array-to-xml.git",
-                "reference": "db39308c5236b69b89cadc3f44f191704814eae2"
+                "reference": "3090918cb441ad707660dd8bccc6dc46beb34380"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/array-to-xml/zipball/db39308c5236b69b89cadc3f44f191704814eae2",
-                "reference": "db39308c5236b69b89cadc3f44f191704814eae2",
+                "url": "https://api.github.com/repos/spatie/array-to-xml/zipball/3090918cb441ad707660dd8bccc6dc46beb34380",
+                "reference": "3090918cb441ad707660dd8bccc6dc46beb34380",
                 "shasum": ""
             },
             "require": {
                 "ext-dom": "*",
-                "php": "^7.4|^8.0"
+                "php": "^8.0"
             },
             "require-dev": {
                 "mockery/mockery": "^1.2",
-                "phpunit/phpunit": "^9.0",
+                "phpunit/phpunit": "^9.5",
                 "spatie/phpunit-snapshot-assertions": "^4.2"
             },
             "type": "library",
@@ -5808,7 +5806,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/array-to-xml/issues",
-                "source": "https://github.com/spatie/array-to-xml/tree/2.16.0"
+                "source": "https://github.com/spatie/array-to-xml/tree/3.1.0"
             },
             "funding": [
                 {
@@ -5820,7 +5818,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2020-11-18T22:03:17+00:00"
+            "time": "2021-09-12T17:08:24+00:00"
         },
         {
             "name": "spatie/eloquent-sortable",
