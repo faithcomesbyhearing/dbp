@@ -186,14 +186,15 @@ class DashboardController extends APIController
                 ['name'  => $user_name]
             );
 
+            $use_key_description = trim($description . ' ' . $key_request->application_url);
             $created_key = Key::firstOrCreate(
                 [
                     'user_id'     => $user->id,
                     'key'         => $key
                 ],
                 [
-                    'name'        => $user_name,
-                    'description' => $description
+                    'name'        => $key_request->application_name,
+                    'description' => $use_key_description
                 ]
             );
 

@@ -4,7 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a95ac6fafe59c824cc825bdbea7e24ca",
+
+    "content-hash": "063b037df19a60ec39c000baee0f755c",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -824,25 +825,24 @@
         },
         {
             "name": "curl/curl",
-            "version": "1.9.3",
+            "version": "2.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-mod/curl.git",
-                "reference": "43436a604b18c2a985cbc3f983be817fbe500e99"
+                "reference": "8a3e3f1cb6061180c53cb18e2ad823f68ff91ac0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-mod/curl/zipball/43436a604b18c2a985cbc3f983be817fbe500e99",
-                "reference": "43436a604b18c2a985cbc3f983be817fbe500e99",
+                "url": "https://api.github.com/repos/php-mod/curl/zipball/8a3e3f1cb6061180c53cb18e2ad823f68ff91ac0",
+                "reference": "8a3e3f1cb6061180c53cb18e2ad823f68ff91ac0",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
-                "php": ">=5.3.0"
+                "php": "^5.6 | ^7.0 | ^8.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "3.7.*",
-                "squizlabs/php_codesniffer": "~2.1"
+                "yoast/phpunit-polyfills": "^0.2.0"
             },
             "type": "library",
             "autoload": {
@@ -856,13 +856,13 @@
             ],
             "authors": [
                 {
+                    "name": "php-curl-class",
+                    "homepage": "https://github.com/php-curl-class"
+                },
+                {
                     "name": "Hassan Amouhzi",
                     "email": "hassan@anezi.net",
                     "homepage": "http://hassan.amouhzi.com"
-                },
-                {
-                    "name": "php-curl-class",
-                    "homepage": "https://github.com/php-curl-class"
                 },
                 {
                     "name": "user52",
@@ -877,9 +877,9 @@
             ],
             "support": {
                 "issues": "https://github.com/php-mod/curl/issues",
-                "source": "https://github.com/php-mod/curl/tree/master"
+                "source": "https://github.com/php-mod/curl/tree/2.3.2"
             },
-            "time": "2018-09-05T17:16:47+00:00"
+            "time": "2021-04-11T19:00:09+00:00"
         },
         {
             "name": "dflydev/dot-access-data",

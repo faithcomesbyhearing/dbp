@@ -166,6 +166,8 @@
               $("#detail_modal").hide();
               $('#detail_email').displayEmail(e, key.id);
             });
+            $('#detail_application_name').text(`${key.application_name}`);
+            $('#detail_application_url').text(`${key.application_url}`);
             $('#detail_description').text(`${key.description}`);
             $('#detail_questions').text(`${key.questions}`);
             $('#detail_key').text(`${key.temporary_key}`);
@@ -383,7 +385,7 @@
         
         <table class="key-table">
             <tr>
-              <th>Name</th>
+              <th scope="col">Name</th>
               <td id="detail_name"></td>
             </tr>
             <tr>
@@ -393,6 +395,14 @@
             <tr>
                 <th scope="col">Description</th>
                 <td id="detail_description"></td>
+            </tr>
+            <tr>
+                <th scope="col">Application Name</th>
+                <td id="detail_application_name"></td>
+            </tr>
+            <tr>
+                <th scope="col">Application URL</th>
+                <td id="detail_application_url"></td>
             </tr>
             <tr>
                 <th scope="col">Question</th>
