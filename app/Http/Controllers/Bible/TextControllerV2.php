@@ -60,8 +60,12 @@ class TextControllerV2 extends APIController
         $fileset_id  = checkParam('dam_id|fileset_id', true, $bible_url_param);
         $book_id     = checkParam('book_id', false, $book_url_param);
         $chapter     = checkParam('chapter_id', false, $chapter_url_param);
-        $verse_start = checkParam('verse_start') ?? 1;
-        $verse_end   = checkParam('verse_end') ?? $verse_start;
+        $verse_start = checkParam('verse_start');
+        $verse_end   = checkParam('verse_end');
+
+        if (!empty($verse_start) && empty($verse_end)) {
+            $verse_end = $verse_start;
+        }
 
         $book = Book::where('id', $book_id)->orWhere('id_osis', $book_id)->first();
 
