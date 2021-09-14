@@ -35,7 +35,7 @@
 						<template slot-scope="{ result }">
 
 							<div class="column is-6">
-								<a v-bind:href=" '/wiki/bibles/' + result.id">
+								<a v-bind:href=" '/wiki/bibles/' + result.abbr">
 								<div class="box hit">
 
 										<p class="title is-5"><ais-highlight :result="result" attribute-name="name"/></p>

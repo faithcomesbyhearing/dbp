@@ -137,6 +137,7 @@ Route::group(['middleware' => ['web']], function () {
     Route::get('/about/contact', 'User\ContactController@create')->name(
         'contact.create'
     );
+
     Route::get(
         '/organizations',
         'Organization\OrganizationsController@index'
