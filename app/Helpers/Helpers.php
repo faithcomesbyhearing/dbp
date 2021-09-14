@@ -42,7 +42,10 @@ function checkParam(string $paramName, $required = false, $inPathValue = null)
 
     if ($required) {
         Log::channel('errorlog')->error(["Missing Param '$paramName", 422]);
-        abort(422, "You need to provide the missing parameter '$paramName'. Please append it to the url or the request Header.");
+        abort(
+            422,
+            "You need to provide the missing parameter '$paramName'. Please append it to the url or the request Header."
+        );
     }
 }
 
@@ -73,42 +76,57 @@ function cacheGet($cache_key)
     return Cache::get($cache_key);
 }
 
-function cacheRemember($cache_key, $cache_args = [], $duration, $callback)
+function createCacheLock($cache_key, $lock_timeout = 10)
 {
-    $cache_string = generateCacheString($cache_key, $cache_args);
-    return Cache::remember($cache_string, $duration, $callback);
+    return Cache::lock($cache_key . '_lock', $lock_timeout); 
 }
 
-// used for the non paginated enndpoints used by bibleis/gideons backward compatibility
-function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $callback)
+function cacheRemember($cache_key, $cache_args, $ttl, $callback)
 {
-    $cache_string = generateCacheString($cache_key, $cache_args);
-    $current_cache = Cache::get($cache_string);
-    if ($current_cache && $current_cache !== 'PENDING') {
-      Log::error('Got cache at first and returned' . $cache_string);
-      return $current_cache;
+    $key = generateCacheString($cache_key, $cache_args);
+    // if something fails on the callback, release the lock 
+    // 45 seconds was selected to allow for the longest query to complete. 
+    // This is not based on any empirical evidence.
+    $lock_timeout = 45;
+    $value = Cache::get($key);
+
+    if (!is_null($value)) {
+        // got the cached value, return it
+        return $value;
     }
 
-    if ($current_cache !== 'PENDING') {
-        Cache::put($cache_string, 'PENDING', $duration);
-        Log::error('adding pending on ' . $cache_string);
-        $current_cache = $callback();
-        Cache::put($cache_string, $current_cache, $duration);
-        Log::error('This thread finished loading sql' . $cache_string);
-        return $current_cache;
+    // cache not set. try to acquire lock to gain access to the callback
+    $lock = createCacheLock($key);
+    if ($lock->acquire()) {
+        try {
+            // lock acquired. access resource via callback
+            Cache::put($key, $value = $callback(), $ttl);
+            $lock->release();
+            return $value;
+        } catch (Exception $exception) {
+            $lock->release();
+            Log::error($exception);
+            throw $exception;
+        }
+    } else {
+        try {
+            // couldn't get the lock, another is executing the callback. block for up to 45 seconds waiting for lock 
+            // or until the lock is released by the lock timeout
+            $lock->block($lock_timeout + 1);
+            // Lock acquired, which should mean the cache is set
+            $value = Cache::get($key);
+            if (is_null($value)) {
+                // !!! **** my assumption about when the cache value will be available is not valid
+                throw new Exception;
+            }
+            return $value ;
+        } catch (LockTimeoutException $e) {
+            // Unable to acquire lock...
+        } finally {
+            optional($lock)->release();
+        }
     }
-
-    while ($current_cache === 'PENDING') {
-        sleep(1);
-        Log::error('waiting for the cache on the state:' . json_encode($current_cache));
-        $current_cache = Cache::get($cache_string);
-    }
-
-    $current_cache = Cache::get($cache_string);
-    Log::error('Done on cache remember for heave calls for:' . $cache_string);
-    return $current_cache;
 }
-
 
 function cacheRememberForever($cache_key, $callback)
 {
@@ -135,9 +153,15 @@ function apiLogs($request, $status_code, $s3_string = false, $ip_address = null)
 
 function generateCacheString($key, $args = [])
 {
-    return strtolower(array_reduce($args, function ($carry, $item) {
+    $cache_string =  strtolower(array_reduce($args, function ($carry, $item) {
         return $carry .= ':' . $item;
     }, $key));
+    // cache key max out at 250 bytes, so we use md5 to avoid it from maxing out
+    // in lock we add 5 more characters so we max out at 245
+    if (strlen($cache_string) > 245) {
+        $cache_string = md5($cache_string);
+    }
+    return $cache_string;
 }
 
 function isBibleisOrGideon($key)
@@ -152,7 +176,7 @@ function isBibleisOrGideon($key)
     ];
     if (in_array($key, $bibleis_compat_keys)) {
         $compat_keys_response['isBibleis'] = true;
-    } else if (in_array($key, $gid_compat_keys)) {
+    } elseif (in_array($key, $gid_compat_keys)) {
         $compat_keys_response['isGideons'] = true;
     }
     return $compat_keys_response;
@@ -166,37 +190,37 @@ function forceBibleisGideonsPagination($key, $limit_param)
 
     if (shouldUseBibleisBackwardCompat($key)) {
         $limit = PHP_INT_MAX - 10;
-        $is_bibleis_gideons = 'bibleis-gideons';
+        $is_bibleis_gideons = 'b-g';
     }
     return [$limit, $is_bibleis_gideons];
 }
 
 function storagePath(
-  $bible,
-  $fileset,
-  $fileset_chapter,
-  $secondary_file_name = null
+    $bible,
+    $fileset,
+    $fileset_chapter,
+    $secondary_file_name = null
 ) {
     switch ($fileset->set_type_code) {
-      case 'audio_drama':
-      case 'audio':
-          $fileset_type = 'audio';
-          break;
-      case 'text_plain':
-      case 'text_format':
-          $fileset_type = 'text';
-          break;
-      case 'video_stream':
-      case 'video':
-          $fileset_type = 'video';
-          break;
-      case 'app':
-          $fileset_type = 'app';
-          break;
-      default:
-          $fileset_type = 'text';
-          break;
-  }
+        case 'audio_drama':
+        case 'audio':
+            $fileset_type = 'audio';
+            break;
+        case 'text_plain':
+        case 'text_format':
+            $fileset_type = 'text';
+            break;
+        case 'video_stream':
+        case 'video':
+            $fileset_type = 'video';
+            break;
+        case 'app':
+            $fileset_type = 'app';
+            break;
+        default:
+            $fileset_type = 'text';
+            break;
+    }
     return $fileset_type .
       '/' .
       ($bible ? $bible . '/' : '') .
@@ -218,8 +242,13 @@ function formatAppVersion($app_version)
     ];
 }
 
-function logDeprecationInfo($key, $app_name, $should_use_backward_compat, $app_version = null, $deprecation_version = null)
-{
+function logDeprecationInfo(
+    $key,
+    $app_name,
+    $should_use_backward_compat,
+    $app_version = null,
+    $deprecation_version = null
+) {
     // log data to be sure this deprecation method is working correctly
     $log_data = [
         'key' => $key,
@@ -266,7 +295,7 @@ function shouldUseBibleisBackwardCompat($key)
             $app_version = formatAppVersion($app_version);
             if ($app_version['major_version'] < $deprecation_version['major_version']) {
                 $should_use_backward_compat = true;
-            } else if ($app_version['major_version'] === $deprecation_version['major_version']) {
+            } elseif ($app_version['major_version'] === $deprecation_version['major_version']) {
                 if ($app_version['minor_version'] < $deprecation_version['minor_version']) {
                     $should_use_backward_compat = true;
                 }

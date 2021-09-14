@@ -113,6 +113,15 @@ class LanguageTransformer extends BaseTransformer
                  *   )
                  * )
                  */
+            case 'v4_languages.search':
+                return [
+                    'id'         => $language->id,
+                    'glotto_id'  => $language->glotto_id,
+                    'iso'        => $language->iso,
+                    'name'       => $language->name ?? $language->backup_name,
+                    'autonym'    => $language->autonym,
+                    'bibles'     => $language->bibles->count(),
+                ];
             default:
             case 'v4_languages.all':
                 $show_bibles = checkBoolean('show_bibles');
