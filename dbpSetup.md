@@ -4,6 +4,7 @@
 * PHP 7.4.+
 * Composer
 * Mysql@5.7
+* Memcached
 * Valet (or your preferred service manager/server)
 
 ## Installing the basic requirements (Mac)
@@ -14,6 +15,12 @@
 * `brew link php@7.4 --force`
 * `php -v` --> should give you 7.4 now on terminal if not, close session of term and open a new one (Restart)
 * Install Mysql `brew install mysql@5.7`
+* Install memcached:
+* - `brew install libmemcached`
+* - `pecl install memcached`
+* - Pecl will ask you the path of the library, type `yes`
+* - Check if the php module has been added: `php -m | grep memcached`
+* - Start the service: `/usr/local/opt/memcached/bin/memcached &`
 * Start mysql service: `brew services start mysql@5.7`
 * Finally, install composer: `brew install composer`
 * Install valet: `composer global require laravel/valet`

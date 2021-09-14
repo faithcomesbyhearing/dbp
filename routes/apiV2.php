@@ -22,7 +22,7 @@ Route::name('v2_country_lang')->get('country/countrylang',                      
 Route::name('v2_library_version')->get('library/version',                          'Bible\LibraryController@version');
 Route::name('v2_library_metadata')->get('library/metadata',                        'Bible\LibraryController@metadata');
 Route::name('v2_library_volume')->get('library/volume',                            'Bible\LibraryController@volume');
-Route::name('v2_library_verse')->get('library/verse',                              'Bible\TextController@index');
+Route::name('v2_library_verse')->get('library/verse',                              'Bible\TextControllerV2@index');
 Route::name('v2_library_verseInfo')->get('library/verseinfo',                      'Bible\TextController@info');
 Route::name('v2_library_numbers')->get('library/numbers',                          'Wiki\NumbersController@customRange');
 Route::name('v2_library_organization')->get('library/organization',                'Organization\OrganizationsController@index');
@@ -31,7 +31,7 @@ Route::name('v2_volume_organization_list')->get('library/volumeorganization',   
 
 // VERSION 2 | Text
 Route::name('v2_text_font')->get('text/font',                                      'Bible\TextController@fonts');
-Route::name('v2_text_verse')->get('text/verse',                                    'Bible\TextController@index');
+Route::name('v2_text_verse')->get('text/verse',                                    'Bible\TextControllerV2@index');
 Route::name('v2_verseInfo')->get('text/verseinfo',                                 'Bible\TextController@info'); // I cannot see a difference between library/verseinfo and text/verseinfo
 Route::name('v2_text_search')->get('text/search',                                  'Bible\TextController@search');
 Route::name('v2_text_search_group')->get('text/searchgroup',                       'Bible\TextController@searchGroup');

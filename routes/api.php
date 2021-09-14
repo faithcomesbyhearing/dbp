@@ -5,10 +5,13 @@ Route::name('v4_countries.all')->get(
     'countries',
     'Wiki\CountriesController@index'
 );
-
 Route::name('v4_countries.one')->get(
     'countries/{country_id}',
     'Wiki\CountriesController@show'
+);
+Route::name('v4_countries.search')->get(
+  'countries/search/{search_text}',
+  'Wiki\CountriesController@search'
 );
 
 // VERSION 4 | Languages
@@ -19,6 +22,10 @@ Route::name('v4_languages.all')->get(
 Route::name('v4_languages.one')->get(
     'languages/{language_id}',
     'Wiki\LanguagesController@show'
+);
+Route::name('v4_languages.search')->get(
+    'languages/search/{search_text}',
+    'Wiki\LanguagesController@search'
 );
 
 // VERSION 4 | Alphabets and Numbers
@@ -44,8 +51,6 @@ Route::name('v4_numbers.one')->get(
 // Even though TextController fields the search, it returns content from text, audio and video. Rename to SearchController?
 Route::name('v4_text_search')->get('search', 'Bible\TextController@search');
 
-
-
 // VERSION 4 | Bibles
 Route::name('v4_bible.defaults')->get(
     'bibles/defaults/types',
@@ -59,6 +64,10 @@ Route::name('v4_bible.one')->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
 ); // see note in Postman. the content is suspect
+Route::name('v4_bible.search')->get(
+  'bibles/search/{search_text}',
+  'Bible\BiblesController@search'
+);
 Route::name('v4_bible.all')
     ->get('bibles', 'Bible\BiblesController@index'); // used
 Route::name('v4_bible.copyright')->get(
@@ -145,7 +154,7 @@ Route::name('v4_media_stream_ts')->get(
 );
 ## this is no good. StreamController::index does not process book_id/chapter/verse_start/verse_end
 Route::name('v4_media_stream')->get(
-    'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start}-{verse_end}/playlist.m3u8',
+    'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start?}-{verse_end?}/playlist.m3u8',
     'Bible\StreamController@index'
 );
 Route::name('v4_media_stream_ts')->get(
@@ -166,20 +175,16 @@ Route::name('v4_video_jesus_film_file')->get(
     'arclight/jesus-film',
     'Bible\VideoStreamController@jesusFilmFile'
 );// used by bible.is
-
-
+Route::name('v4_video_jesus_film_chapter')->get(
+  'jesus-film/{language_iso}/{book}/{chapter}',
+  'Bible\VideoStreamController@jesusFilmGetChapter'
+);// used by bible.is
 
 
 Route::name('v4_internal_api.refreshDevCache')->get(
     '/refresh-dev-cache',
     'ApiMetadataController@refreshDevCache'
 );
-
-
-
-
-
-
 
 
 // ................. bible.is private .....................
