@@ -305,7 +305,7 @@
     <div class="key-filter">
         <form method="GET" action="{{ route('api_key.dashboard') }}">
             <div class="row">
-                <label for="state_filter">Filter By State</label>
+                <label for="state_filter" class="search-state-filter">Filter By State</label>
                 <select name="state" id="state_filter" onchange="this.form.submit()">
                     @foreach($options as $option)
                     <option value="{{$option['value']}}" {{$option['selected'] ? 'selected':''  }}>{{$option['name']}}</option>

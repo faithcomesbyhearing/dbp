@@ -58,13 +58,22 @@
         <div class="columns">
             <form class="column is-6" action="{{ route('dashboard.keys.store') }}" method="POST">
                 {{ csrf_field() }}
-                <label class="label">{{ trans('fields.name') }}
-                    <input class="input" type="text" name="name">
-                </label>
-                <label class="label">{{ trans('fields.description') }}
-                    <textarea class="textarea" name="description"></textarea>
-                </label>
-                <input class="button is-primary" type="submit" value="{{ trans('fields.submit_key') }}" />
+                <div class="field">
+                    <label for="name" class="label">{{ trans('fields.name') }}</label>
+                    <div class="control">
+                        <input class="input" type="text" name="name" id="name">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="description">{{ trans('fields.description') }}
+                    </label>
+                    <div class="control">
+                        <textarea class="textarea" name="description" id="description"></textarea>
+                    </div>
+                </div>
+                <div class="control">
+                    <input class="button is-primary" type="submit" value="{{ trans('fields.submit_key') }}" />
+                </div>
             </form>
             <div class="column is-6">
                 @foreach(Auth::user()->keys as $key)
