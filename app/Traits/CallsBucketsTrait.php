@@ -52,7 +52,19 @@ trait CallsBucketsTrait
                 'private_key' => storage_path('app/' . config('filesystems.disks.cloudfront.secret')),
                 'expires'     => Carbon::now()->addDay()->timestamp,
             ];
-            return $client->getSignedUrl($request_array);
+
+            $signed_url = $client->getSignedUrl($request_array);
+            $query_parameters_string = parse_url($signed_url, PHP_URL_QUERY);
+            $query_parameters = [];
+            parse_str($query_parameters_string, $query_parameters);
+            $key = $this->getKey();
+
+            if (!empty($key)) {
+                $signature = isset($query_parameters['Signature']) ? $query_parameters['Signature'] : $signedUrl;
+                \Log::channel('cloudfront_api_key')->notice($key . ' ' . $signature);
+            }
+
+            return $signed_url;
         }
 
         // Or return S3 Urls
@@ -134,4 +146,10 @@ trait CallsBucketsTrait
 
         return $signature;
     }
+
+    /**
+     * abstract method to get the API key
+     *
+     */
+    abstract protected function getKey();
 }
