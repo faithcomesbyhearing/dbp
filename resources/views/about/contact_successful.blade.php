@@ -2,6 +2,8 @@
 
 @section('content')
 
-    <h1>Contact Successful</h1>
+    @include('layouts.partials.banner', [
+        'title' => __('Contact Successful')
+    ])
 
 @endsection

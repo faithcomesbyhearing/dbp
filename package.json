@@ -2,61 +2,36 @@
     "private": true,
     "scripts": {
         "dev": "npm run development",
-        "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
-        "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
-        "watch-poll": "npm run watch -- --watch-poll",
-        "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --hot --config=node_modules/laravel-mix/setup/webpack.config.js",
+        "development": "mix",
+        "watch": "mix watch",
+        "watch-poll": "mix watch -- --watch-options-poll=1000",
+        "hot": "mix watch --hot",
         "prod": "npm run production",
-        "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --no-progress --hide-modules --config=node_modules/laravel-mix/setup/webpack.config.js",
+        "production": "mix --production",
         "prettier": "prettier",
         "lint": "composer cs",
         "lint-fix": "composer cs-fix"
     },
     "devDependencies": {
-        "@prettier/plugin-php": "0.11.2",
-        "axios": "^0.18",
-        "browser-sync": "2.27.5",
-        "browser-sync-webpack-plugin": "2.3.0",
-        "bulma": "0.7.5",
+        "@prettier/plugin-php": "^0.17.5",
+        "browser-sync": "^2.27.5",
+        "browser-sync-webpack-plugin": "^2.3.0",
         "cross-env": "5.2.1",
-        "husky": "3.1.0",
-        "laravel-mix": "2.1.14",
+        "laravel-mix": "^6.0.31",
         "lodash": "^4.17.11",
-        "popper.js": "1.16.1",
-        "prettier": "1.19.1",
+        "prettier": "^1.19.1",
+        "resolve-url-loader": "^4.0.0",
+        "sass": "^1.40.0",
+        "sass-loader": "^12.1.0",
         "vue": "^2.5.7",
-        "vue-bulma-collapse": "1.0.3",
-        "vue-resource": "1.5.3",
-        "vue-select": "2.6.4"
+        "vue-loader": "^15.9.8",
+        "vue-template-compiler": "^2.6.14"
     },
     "dependencies": {
         "babel-preset-es2015": "^6.24.1",
         "babel-preset-stage-2": "^6.24.1",
-        "buefy": "^0.6.6",
-        "chart.js": "2.9.4",
-        "dropzone": "5.9.2",
-        "fs": "0.0.1-security",
-        "hideshowpassword": "2.2.0",
-        "json-formatter-js": "2.3.4",
-        "json-schema-deref-local": "0.2.1",
-        "json-schema-ref-parser": "5.1.3",
-        "json-schema-view-js": "2.0.1",
-        "json-stringify-pretty-compact": "1.2.0",
-        "laravel-echo": "1.11.2",
-        "marked": "^0.5.0",
-        "moment": "2.29.1",
-        "password-strength-meter": "1.2.2",
+        "bulma": "^0.9.3",
         "request": "2.88.2",
-        "speccy": "0.9.0",
-        "v-hotkey": "0.2.3",
-        "vue-bulma-modal": "2.0.0-alpha.2",
-        "vue-bulma-tabs": "1.1.3",
-        "vue-instantsearch": "1.7.0",
-        "vue-material": "0.8.1"
-    },
-    "husky": {
-        "hooks": {
-           "pre-commit": ""
-        }
+        "vue-instantsearch": "^1.7.0"
     }
 }
