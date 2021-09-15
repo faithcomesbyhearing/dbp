@@ -118,4 +118,9 @@ class S3LogBackup extends Command
             $this->log_string = implode(':::', array_merge($log_array, $geo_array));
         }
     }
+
+    protected function getKey()
+    {
+        return false;
+    }
 }

@@ -82,6 +82,12 @@ return [
             'driver' => 'errorlog',
             'level'  => 'debug',
         ],
+
+        'cloudfront_api_key' => [
+            'driver' => 'single',
+            'tap'    => [App\Logs\CloudfrontApiKeyFormatter::class],
+            'path'   => storage_path('logs/cloudfront_api_key.log'),
+        ],
     ],
 
 ];
