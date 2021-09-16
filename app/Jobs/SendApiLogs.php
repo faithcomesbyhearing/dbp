@@ -115,4 +115,9 @@ class SendApiLogs implements ShouldQueue
             \Log::error('unable to push logs to s3');
         }
     }
+
+    protected function getKey()
+    {
+        return false;
+    }
 }
