@@ -12,6 +12,7 @@
 namespace App\Logs;
 
 use Monolog\Formatter\NormalizerFormatter;
+use Throwable;
 
 /**
  * Formats incoming records into a one-line string
@@ -86,7 +87,7 @@ class EmptyLineFormatter extends NormalizerFormatter
         return $this->replaceNewlines($this->convertToString($value));
     }
 
-    protected function normalizeException($e)
+    protected function normalizeException(Throwable $e, int $depth = 0)
     {
         if (!$e instanceof \Exception && !$e instanceof \Throwable) {
             throw new \InvalidArgumentException('Exception/Throwable expected, got '.gettype($e).' / '.get_class($e));

@@ -104,7 +104,12 @@ class AudioControllerV2 extends APIController
         // Transaction id to be passed to signedUrl
         $transaction_id = random_int(0, 10000000);
         foreach ($audioChapters as $key => $audio_chapter) {
-            $audioChapters[$key]->file_name = $this->signedUrl('audio/' . $audio_chapter->bible->first()->id . '/' . $fileset_id . '/' . $audio_chapter->file_name, 'dbp-prod', $transaction_id);
+            $audioChapters[$key]->file_name = $this->signedUrl(
+                'audio/' . $audio_chapter->bible->first()->id . '/' . $fileset_id . '/' . $audio_chapter->file_name,
+                'dbp-prod',
+                $transaction_id,
+                $key
+            );
         }
 
         return $this->reply(fractal($audioChapters, new AudioTransformer(), $this->serializer), [], $transaction_id);

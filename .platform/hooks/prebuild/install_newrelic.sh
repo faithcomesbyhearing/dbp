@@ -8,4 +8,5 @@ export NR_INSTALL_SILENT=true;export NR_INSTALL_KEY; newrelic-install install
 echo newrelic.enabled=true  >> /etc/php.d/newrelic.ini
 echo newrelic.loglevel=debug  >> /etc/php.d/newrelic.ini
 
+sed -i 's/newrelic.appname/;newrelic.appname/g' /etc/php.d/newrelic.ini
 echo newrelic.appname=\"$NEW_RELIC_APP_NAME\" >> /etc/php.d/newrelic.ini
