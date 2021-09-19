@@ -368,4 +368,14 @@ class APIController extends Controller
 
         return rtrim($output, $newline);
     }
+
+    /**
+     * Get the key value
+     *
+     * @return string $key
+     */
+    protected function getKey()
+    {
+        return $this->key;
+    }
 }

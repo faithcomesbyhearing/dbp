@@ -1,7 +1,7 @@
 #!/bin/sh
 set -x
-cp .platform/files/etc-phpd/40-igbinary.ini /etc/php.d
-cp .platform/files/etc-phpd/50-memcached.ini /etc/php.d
+cp .platform/files/etc/php.d/40-igbinary.ini /etc/php.d
+cp .platform/files/etc/php.d/50-memcached.ini /etc/php.d
 
 sudo yum install libmemcached-devel -y
 sudo pecl channel-update pecl.php.net
