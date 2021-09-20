@@ -114,11 +114,7 @@ class StreamController extends APIController
                 return $this->setStatusCode(404)->replyWithError(trans('api.file_errors_404_size'));
             }
             $transaction_id = random_int(0, 10000000);
-            try {
-                apiLogs(request(), $response->getStatusCode(), $transaction_id);
-            } catch (\Exception $e) {
-                Log::error($e);
-            }
+
             $currentBandwidth->transportStream = sizeof($currentBandwidth->transportStreamBytes) ? $currentBandwidth->transportStreamBytes : $currentBandwidth->transportStreamTS;
 
             $current_file = "#EXTM3U\n";
