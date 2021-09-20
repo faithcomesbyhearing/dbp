@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # custom logs to map API key to Cloudwatch Signature
-mkdir -p /var/log/cloudfront-api-key/rotated
+#mkdir -p /var/log/cloudfront-api-key/rotated
 #cron
 cp .platform/files/etc/cron.hourly/cron.logrotate.elasticbeanstalk.cloudfront-api-key.conf /etc/cron.hourly
 #logrotate
