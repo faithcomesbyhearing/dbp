@@ -300,47 +300,50 @@ class Bible extends Model
         return $this->hasMany(Video::class)->orderBy('order', 'asc');
     }
 
+    private function setConditionFilesets($query, $type_filters)
+    {
+        if ($type_filters['media']) {
+            $query->where('bible_filesets.set_type_code', $type_filters['media']);
+        }
+        if ($type_filters['media_exclude']) {
+            $query->where('bible_filesets.set_type_code', '!=', $type_filters['media_exclude']);
+        }
+        if ($type_filters['size']) {
+            $query->where('bible_filesets.set_size_code', '=', $type_filters['size']);
+        }
+        if ($type_filters['size_exclude']) {
+            $query->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
+        }
+    }
+
     public function scopeWithRequiredFilesets($query, $type_filters)
-    {   
+    {
         $permitted_filesets = $type_filters['access_control']->identifiers;
 
         if ($type_filters['tag_exclude']) {
-            $opus_filesets = BibleFilesetTag::select('hash_id')->where('description', $type_filters['tag_exclude'])->pluck('hash_id')->toArray();
+            $opus_filesets = BibleFilesetTag::select('hash_id')
+                ->where('description', $type_filters['tag_exclude'])
+                ->pluck('hash_id')
+                ->toArray();
             $permitted_filesets = array_diff($type_filters['access_control']->identifiers, $opus_filesets);
         }
 
         $queryIn = sprintf("bible_filesets.hash_id IN ('" . implode("', '", $permitted_filesets) . "')");
+
         return $query->whereHas('filesets', function ($q) use ($type_filters, $queryIn) {
             $q->whereRaw($queryIn);
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
-            if ($type_filters['media_exclude']) {
-                $q->where('bible_filesets.set_type_code', '!=', $type_filters['media_exclude']);
-            }
-            if ($type_filters['size']) {
-                $q->where('bible_filesets.set_size_code', '=', $type_filters['size']);
-            }
-            if ($type_filters['size_exclude']) {
-                $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
-            }
+            $this->setConditionFilesets($q, $type_filters);
         })->with(['filesets' => function ($q) use ($type_filters, $queryIn) {
             $q->with(['meta' => function ($subQuery) {
-              $subQuery->where('admin_only', 0);
+                $subQuery->where('admin_only', 0);
             }]);
-            $q->whereRaw($queryIn);
-            if ($type_filters['media']) {
-                $q->where('bible_filesets.set_type_code', $type_filters['media']);
-            }
-            if ($type_filters['media_exclude']) {
-                $q->where('bible_filesets.set_type_code', '!=', $type_filters['media_exclude']);
-            }
-            if ($type_filters['size']) {
-                $q->where('bible_filesets.set_size_code', '=', $type_filters['size']);
-            }
-            if ($type_filters['size_exclude']) {
-                $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
-            }
+            $q->whereRaw(
+                'EXISTS (SELECT 1 FROM bible_filesets bf_tmp WHERE bf_tmp.id = bible_filesets.id and ' . $queryIn . ')'
+            );
+            $this->setConditionFilesets($q, $type_filters);
         }]);
     }
 
