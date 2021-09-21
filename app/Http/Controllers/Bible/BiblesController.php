@@ -108,12 +108,18 @@ class BiblesController extends APIController
             $media_types = BibleFilesetType::select('set_type_code')->get();
             $media_type_exists = $media_types->where('set_type_code', $media);
             if ($media_type_exists->isEmpty()) {
-                return $this->setStatusCode(404)->replyWithError('media type not found. must be one of ' . $media_types->pluck('set_type_code')->implode(','));
+                return $this
+                    ->setStatusCode(404)
+                    ->replyWithError(
+                        'media type not found. must be one of ' . $media_types->pluck('set_type_code')->implode(',')
+                    );
             }
         }
 
         $access_control = $this->accessControl($this->key);
-        $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
+        $organization = $organization_id
+            ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first()
+            : null;
         $cache_params = [
             $language_code,
             $organization,
@@ -196,9 +202,7 @@ class BiblesController extends APIController
                 BibleTransformer::class,
                 new DataArraySerializer()
             );
-            $result =  $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
-            // Log::error('Size of the response body in Bytes:' . strlen(json_encode($result)));
-            return $result;
+            return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
         });
 
         return $this->reply($bibles);
