@@ -35,7 +35,15 @@ class APIVersion
             return $next($request);
         }
         
-        if ($routeV != $requestV) {     
+        // for the version 2, it will strip everything after the first digit,
+        // so that a request submitted with v=2.12.1 will be processed as v=2
+        $request_v_array = explode('.', $requestV);
+
+        if (\sizeof($request_v_array) > 1 && (int) $request_v_array[0] === 2) {
+            $requestV = $request_v_array[0];
+        }
+
+        if ($routeV != $requestV) {
             $route_name = $requestV === '3' && $routeV === '2' ? $route : null;
 
             if (!\Route::has($route_name)) {
