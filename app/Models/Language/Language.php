@@ -410,11 +410,11 @@ class Language extends Model
     }
 
     public function scopeFilterableByNameOrAutonym($query, $name)
-    {   
+    {
         $formatted_name = str_replace(' ', '', $name);
         return $query->when($name, function ($query) use ($formatted_name) {
-            $query->where('languages.name', 'like', $formatted_name.'%')
-                ->orWhere('autonym.name', 'like', $formatted_name.'%');
+            $query->whereRaw('match (languages.name) against (? IN BOOLEAN MODE)', ['*'.$formatted_name.'*']);
+            $query->orWhereRaw('match (autonym.name) against (? IN BOOLEAN MODE)', ['*'.$formatted_name.'*']);
         });
     }
     

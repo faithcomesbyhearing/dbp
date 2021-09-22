@@ -237,7 +237,7 @@ class BiblesController extends APIController
         $page           = checkParam('page') ?? 1;
         $formatted_search = str_replace(' ', '', $search_text);
         if ($formatted_search === '' || !$formatted_search) {
-          return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
+            return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
 
         // instead of returning hashes, accessControl will return bible ids associated with the hashes
@@ -248,7 +248,10 @@ class BiblesController extends APIController
             ->leftJoin('bible_translations as ver_title', function ($join) {
                 $join->on('ver_title.bible_id', 'bibles.id')->where('ver_title.vernacular', 1);
             })
-            ->where('ver_title.name', 'LIKE' , '%'.$formatted_search.'%')
+            ->whereRaw(
+                'match (ver_title.name) against (? IN BOOLEAN MODE)',
+                ['*'.$formatted_search.'*']
+            )
             ->paginate($limit);
 
             $bibles_return = fractal(
