@@ -369,17 +369,11 @@ class LanguageControllerV2 extends APIController
             $languages = Language::with('bibles')->with('dialects')
                 ->includeAutonymTranslation()
                 ->includeCurrentTranslation()
-                ->whereHas('filesets', function ($query) use ($hashes, $organization_id, $media) {
-                    $query->whereIn('hash_id', $hashes);
-                    if ($organization_id) {
-                        $query->whereHas('copyright', function ($query) use ($organization_id) {
-                            $query->where('organization_id', $organization_id);
-                        });
-                    }
-                    if ($media) {
-                        $query->where('set_type_code', 'LIKE', $media . '%');
-                    }
-                })
+                ->withRequiredFilesets([
+                    'hashes'          => $hashes,
+                    'media'           => $media,
+                    'organization_id' => $organization_id
+                ])
                 ->with(['dialects.childLanguage' => function ($query) {
                     $query->select(['id', 'iso']);
                 }])
