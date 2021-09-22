@@ -122,14 +122,16 @@ class CountriesController extends APIController
         $page      = checkParam('page') ?? 1;
         $formatted_search = str_replace(' ', '', $search_text);
         if ($formatted_search === '' || !$formatted_search) {
-          return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
+            return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
 
         $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search];
         $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($limit, $page, $formatted_search) {
-            $countries = Country::with('currentTranslation') 
-            ->where('countries.name', 'like', $formatted_search.'%')
-            ->orWhere('countries.iso_a3', 'like', $formatted_search.'%')
+            $countries = Country::with('currentTranslation')
+            ->whereRaw(
+                'match (countries.name, countries.iso_a3) against (? IN BOOLEAN MODE)',
+                ['*'.$formatted_search.'*']
+            )
             ->whereHas('languages.bibles.filesets')
             ->paginate($limit);
 
