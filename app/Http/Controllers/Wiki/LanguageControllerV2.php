@@ -141,8 +141,16 @@ class LanguageControllerV2 extends APIController
         $additional         = checkParam('additional');
 
         $access_control = $this->accessControl($this->key);
-        $cache_params = [$sort_by, $lang_code, $country_code, $img_size, $img_type, $additional, $access_control->string];
+        $cache_params = [
+            $sort_by, $lang_code,
+            $country_code, $img_size,
+            $img_type, $additional,
+            $access_control->string
+        ];
 
+        if ($sort_by === 'lang_code') {
+            $sort_by = 'languages.iso';
+        }
         $countryLang = cacheRemember(
             'v2_country_lang',
             $cache_params,
@@ -153,12 +161,15 @@ class LanguageControllerV2 extends APIController
                         $subquery->with('countries');
                     });
                 }])
-                    ->whereHas('language', function ($query) use ($access_control, $lang_code, $additional) {
-                        $query->whereHas('filesets', function ($subquery) use ($access_control, $lang_code) {
+                    ->join('languages', function ($join) use ($lang_code) {
+                        $join->on('languages.id', '=', 'country_language.language_id');
+                        if ($lang_code) {
+                            $join->where('iso', $lang_code);
+                        }
+                    })
+                    ->whereHas('language', function ($query) use ($access_control) {
+                        $query->whereHas('filesets', function ($subquery) use ($access_control) {
                             $subquery->whereIn('hash_id', $access_control->identifiers);
-                            if ($lang_code) {
-                                $subquery->where('iso', $lang_code);
-                            }
                         });
                     })
                     ->whereHas('country', function ($query) use ($country_code) {
