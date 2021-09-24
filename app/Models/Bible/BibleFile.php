@@ -2,6 +2,7 @@
 
 namespace App\Models\Bible;
 
+use DB;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Language\Language;
 
@@ -222,5 +223,21 @@ class BibleFile extends Model
     public function streamBandwidth()
     {
         return $this->hasMany(StreamBandwidth::class);
+    }
+
+    public function scopeJoinBibleFileTimestamps($query)
+    {
+        return $query->join(
+            DB::raw(
+                '(  SELECT distint_timestamps.bible_file_id
+                    FROM (  SELECT DISTINCT bible_file_timestamps.bible_file_id
+                            FROM bible_file_timestamps ) AS distint_timestamps
+                    GROUP BY distint_timestamps.bible_file_id
+                ) AS timestamps_counts'
+            ),
+            function ($join) {
+                $join->on('timestamps_counts.bible_file_id', '=', 'bible_files.id');
+            }
+        );
     }
 }

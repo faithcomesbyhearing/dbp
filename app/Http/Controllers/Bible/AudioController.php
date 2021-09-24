@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Bible;
 
 use App\Http\Controllers\APIController;
-
 use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Bible\BibleFile;
@@ -52,9 +51,15 @@ class AudioController extends APIController
     public function availableTimestamps()
     {
         $filesets = cacheRemember('audio_timestamp_filesets', [], now()->addMinutes(80), function () {
-            $hashes = BibleFile::has('timestamps')->select('hash_id')->distinct()->get()->values('hash_id');
-            $filesets_id = BibleFileset::whereIn('hash_id', $hashes)->select('id as fileset_id')->get();
-            return $filesets_id;
+            $hashes = BibleFile::query()
+                ->select('bible_files.hash_id')
+                ->joinBibleFileTimestamps()
+                ->groupBy('bible_files.hash_id')
+                ->get()
+                ->values('hash_id');
+            return BibleFileset::whereIn('hash_id', $hashes)
+                ->select('id as fileset_id')
+                ->get();
         });
         if ($filesets->count() === 0) {
             return $this->setStatusCode(204)->replyWithError('No timestamps are available at this time');
