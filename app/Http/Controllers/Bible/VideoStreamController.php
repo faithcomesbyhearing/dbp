@@ -93,12 +93,14 @@ class VideoStreamController extends APIController
             }
 
             $cache_params = [$metadata_tag];
-            $languages = cacheRemember('arclight_languages_detail', $cache_params, now()->addDay(), function () use ($metadata_tag) {
+            $languages = cacheRemember('arclight_languages_detail_remove', $cache_params, now()->addHours(0), function () use ($metadata_tag) {
                 $languages = collect($this->fetchArclight('media-languages', false, false, 'contentTypes=video&metadataLanguageTags=' . $metadata_tag . ',en')->mediaLanguages);
-                if (isset($languages->original['error'])) {
+                
+                if (isset($languages->original, $languages->original['error'])) {
                   $arclight_error = $languages->original['error'];
                   return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
                 }
+                
                 return $languages->where('counts.speakerCount.value', '>', 0)->map(function ($language) {
                     return [
                         'jesus_film_id' => $language->languageId,
@@ -161,7 +163,7 @@ class VideoStreamController extends APIController
             $cache_params =  [$arclight_id, $metadataLanguageTag];
             
             $media_components = $this->fetchArclight('media-components', $arclight_id, true, 'metadataLanguageTags=' . $metadataLanguageTag . ',en');
-            if (isset($media_components->original['error'])) {
+            if (isset($media_components->original, $media_components->original['error'])) {
                 $arclight_error = $media_components->original['error'];
                 return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
             }
@@ -214,7 +216,7 @@ class VideoStreamController extends APIController
             $chapter_id   = checkParam('chapter_id') ?? '1_jf-0-0';
 
             $media_components = $this->fetchArclight('media-components/' . $chapter_id . '/languages/' . $language_id, $language_id, false);
-            if (isset($media_components->original['error'])) {
+            if (isset($media_components->original, $media_components->original['error'])) {
                 $arclight_error = $media_components->original['error'];
                 return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
             }
