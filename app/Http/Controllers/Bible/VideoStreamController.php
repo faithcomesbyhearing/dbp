@@ -93,7 +93,7 @@ class VideoStreamController extends APIController
             }
 
             $cache_params = [$metadata_tag];
-            $languages = cacheRemember('arclight_languages_detail_remove', $cache_params, now()->addHours(0), function () use ($metadata_tag) {
+            $languages = cacheRemember('arclight_languages_detail', $cache_params, now()->addDay(), function () use ($metadata_tag) {
                 $languages = collect($this->fetchArclight('media-languages', false, false, 'contentTypes=video&metadataLanguageTags=' . $metadata_tag . ',en')->mediaLanguages);
                 
                 if (isset($languages->original, $languages->original['error'])) {
