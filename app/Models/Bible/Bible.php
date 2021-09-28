@@ -317,34 +317,29 @@ class Bible extends Model
         }
     }
 
+    private function setConditionTagExclude($quey, $type_filters)
+    {
+        $quey->whereDoesntHave('meta', function ($query_meta) use ($type_filters) {
+            $query_meta->where('bible_fileset_tags.description', $type_filters['tag_exclude']);
+        });
+    }
+
     public function scopeWithRequiredFilesets($query, $type_filters)
     {
-        $permitted_filesets = $type_filters['access_control']->identifiers;
-
-        if ($type_filters['tag_exclude']) {
-            $opus_filesets = BibleFilesetTag::select('hash_id')
-                ->where('description', $type_filters['tag_exclude'])
-                ->pluck('hash_id')
-                ->toArray();
-            $permitted_filesets = array_diff($type_filters['access_control']->identifiers, $opus_filesets);
-        }
-
-        $queryIn = sprintf("bible_filesets.hash_id IN ('" . implode("', '", $permitted_filesets) . "')");
-
-        return $query->whereHas('filesets', function ($q) use ($type_filters, $queryIn) {
-            $q->whereRaw($queryIn);
+        return $query->whereHas('filesets', function ($q) use ($type_filters) {
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
+            $q->isContentAvailable($type_filters['key']);
             $this->setConditionFilesets($q, $type_filters);
-        })->with(['filesets' => function ($q) use ($type_filters, $queryIn) {
+            $this->setConditionTagExclude($q, $type_filters);
+        })->with(['filesets' => function ($q) use ($type_filters) {
             $q->with(['meta' => function ($subQuery) {
                 $subQuery->where('admin_only', 0);
             }]);
-            $q->whereRaw(
-                'EXISTS (SELECT 1 FROM bible_filesets bf_tmp WHERE bf_tmp.id = bible_filesets.id and ' . $queryIn . ')'
-            );
+            $q->isContentAvailable($type_filters['key']);
             $this->setConditionFilesets($q, $type_filters);
+            $this->setConditionTagExclude($q, $type_filters);
         }]);
     }
 
@@ -385,5 +380,22 @@ class Bible extends Model
                 'match (ver_title.name) against (? IN BOOLEAN MODE) DESC',
                 [$formatted_search]
             );
+    }
+
+    public function scopeIsContentAvailable($query, $key)
+    {
+        $dbp_users = config('database.connections.dbp_users.database');
+        $dbp_prod = config('database.connections.dbp.database');
+
+        return $query->whereRaw(
+            'EXISTS (select 1
+                    from ' . $dbp_users . '.user_keys uk
+                    join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                    join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                    join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                    where uk.key = ? and bibles.id = bfc.bible_id
+            )',
+            [$key]
+        );
     }
 }
