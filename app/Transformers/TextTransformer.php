@@ -164,7 +164,8 @@ class TextTransformer extends BaseTransformer
             'verse_start_alt' => (string) $text->verse_start_vernacular,
             'verse_end' => (int) $text->verse_end,
             'verse_end_alt' => (string) $text->verse_end_vernacular,
-            'verse_text' => (string) $text->verse_text
+            'verse_text' => (string) $text->verse_text,
+            'timestamp' => $text->timestamp ?? ''
         ];
     }
 }
