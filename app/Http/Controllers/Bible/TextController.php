@@ -190,6 +190,8 @@ class TextController extends APIController
      *     ),
      *     @OA\Parameter(name="limit",  in="query", description="The number of search results to return",
      *          @OA\Schema(type="integer",default=15)),
+     *     @OA\Parameter(name="include_audio_timings", in="query", description="The value of timing offset for the verse when is true and audio timings exist for the audio filesets.",
+     *          @OA\Schema(type="boolean",default=false)),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(name="books",  in="query", description="The usfm book ids to search through separated by a comma",
      *          @OA\Schema(type="string",example="GEN,EXO,MAT")),
@@ -222,6 +224,7 @@ class TextController extends APIController
         $book_id    = checkParam('book|book_id|books');
         $limit      = checkParam('limit') ?? 15;
         $page       = checkParam('page');
+        $include_audio_timings = checkParam('include_audio_timings') ?? false;
 
         $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, 'text_plain')->first();
         if (!$fileset) {
@@ -233,26 +236,47 @@ class TextController extends APIController
         })->flatten()->toArray();
 
         $search_text  = '%' . $query . '%';
-        $verses = BibleVerse::where('hash_id', $fileset->hash_id)
+        $select_columns = [
+            'bible_verses.book_id as book_id',
+            'bible_books.bible_id as bible_id',
+            'books.name as book_name',
+            'bible_books.name as book_vernacular_name',
+            'bible_verses.chapter',
+            'bible_verses.verse_start',
+            'bible_verses.verse_end',
+            'bible_verses.verse_text',
+            'glyph_chapter.glyph as chapter_vernacular',
+            'glyph_start.glyph as verse_start_vernacular',
+            'glyph_end.glyph as verse_end_vernacular',
+        ];
+
+        $audio_fileset_hash_ids = null;
+
+        if ($include_audio_timings) {
+            $select_columns[] = 'bible_file_timestamps.timestamp as timestamp';
+            $audio_fileset_hash_ids = [];
+            $audio_fileset = $audio_filesets[0];
+
+            if ($audio_fileset['meta']) {
+                foreach ($audio_fileset['meta'] as $meta_fileset) {
+                    if ($meta_fileset['hash_id']) {
+                        $audio_fileset_hash_ids[$meta_fileset['hash_id']] = true;
+                    }
+                }
+            }
+
+            $audio_fileset_hash_ids = array_keys($audio_fileset_hash_ids);
+        }
+
+        $verses = BibleVerse::where('bible_verses.hash_id', $fileset->hash_id)
             ->withVernacularMetaData($bible)
+            ->withBibleFileTimestamps($audio_fileset_hash_ids)
             ->when($book_id, function ($query) use ($book_id) {
                 $books = explode(',', $book_id);
                 $query->whereIn('bible_verses.book_id', $books);
             })
             ->where('bible_verses.verse_text', 'like', $search_text)
-            ->select([
-                'bible_verses.book_id as book_id',
-                'bible_books.bible_id as bible_id',
-                'books.name as book_name',
-                'bible_books.name as book_vernacular_name',
-                'bible_verses.chapter',
-                'bible_verses.verse_start',
-                'bible_verses.verse_end',
-                'bible_verses.verse_text',
-                'glyph_chapter.glyph as chapter_vernacular',
-                'glyph_start.glyph as verse_start_vernacular',
-                'glyph_end.glyph as verse_end_vernacular',
-            ]);
+            ->select($select_columns);
         
 
         if ($this->v === 2 || $this->v === 3) {
@@ -263,10 +287,20 @@ class TextController extends APIController
         } else {
             if ($page) {
                 $verses  = $verses->paginate($limit);
-                return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses->getCollection(), TextTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($verses))]);
+                return $this->reply([
+                    'audio_filesets' => $audio_filesets,
+                    'verses' => fractal(
+                        $verses->getCollection(),
+                        TextTransformer::class
+                    )->paginateWith(new IlluminatePaginatorAdapter($verses))
+                ]);
             }
+
             $verses  = $verses->limit($limit)->get();
-            return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses, new TextTransformer(), $this->serializer)]);
+            return $this->reply([
+                'audio_filesets' => $audio_filesets,
+                'verses' => fractal($verses, new TextTransformer(), $this->serializer)
+            ]);
         }
     }
     /**
