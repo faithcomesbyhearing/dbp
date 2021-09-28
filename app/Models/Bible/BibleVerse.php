@@ -92,4 +92,19 @@ class BibleVerse extends Model
             $join->on('bible_verses.book_id', 'bible_books.book_id')->where('bible_books.bible_id', $bible->id);
         });
     }
+
+    public function scopeWithBibleFileTimestamps($query, $audio_fileset_hash_ids)
+    {
+        return $query->when($audio_fileset_hash_ids, function ($query) use ($audio_fileset_hash_ids) {
+            $query->leftJoin('bible_files', function ($join) use ($audio_fileset_hash_ids) {
+                $join->on('bible_files.book_id', 'bible_verses.book_id')
+                    ->whereRaw('bible_files.chapter_start = bible_verses.chapter')
+                    ->whereIn('bible_files.hash_id', $audio_fileset_hash_ids);
+            });
+            $query->leftJoin('bible_file_timestamps', function ($join) {
+                $join->on('bible_file_timestamps.bible_file_id', 'bible_files.id')
+                    ->whereRaw('bible_verses.verse_start = bible_file_timestamps.verse_start');
+            });
+        });
+    }
 }
