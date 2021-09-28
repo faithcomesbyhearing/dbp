@@ -121,13 +121,13 @@ class Handler extends ExceptionHandler
         }
 
         $response = [];
-        $response['error'] = Response::$statusTexts[$statusCode];
+        $response['error'] = Response::getStatusTextByCode($statusCode);
         $response['type'] = $this->getTypeErrorResponseFromCode($statusCode);
 
         if ($statusCode === Response::HTTP_UNPROCESSABLE_ENTITY) {
             $message = $exception->getMessage();
             if ($message === '') {
-                $message = Response::$statusTexts[$statusCode];
+                $message = Response::getStatusTextByCode($statusCode);
             }
             if (\is_object($message)) {
                 $message = $message->toArray();

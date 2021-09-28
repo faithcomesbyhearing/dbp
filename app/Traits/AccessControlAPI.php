@@ -69,9 +69,10 @@ trait AccessControlAPI
                             join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
                             join ' . $dbp_prod . '.languages l on l.id = b.language_id
                             where uk.id = ?'
-                        ), [$key->id]
+                        ),
+                        [$key->id]
                     );
-                    break; 
+                    break;
                 case 'bibles':
                     $identifiers = DB::select(
                         DB::raw(
@@ -81,7 +82,8 @@ trait AccessControlAPI
                             join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
                             join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
                             where uk.id = ?'
-                        ), [$key->id]
+                        ),
+                        [$key->id]
                     );
                     break;
                 default:
