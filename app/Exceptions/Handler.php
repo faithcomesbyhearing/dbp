@@ -122,7 +122,7 @@ class Handler extends ExceptionHandler
 
     private function customApiResponse($exception)
     {
-        $responseCode = null;
+        $responseCode = Response::HTTP_INTERNAL_SERVER_ERROR;
 
         if (method_exists($exception, 'getStatusCode')) {
             $statusCode = $exception->getStatusCode();
