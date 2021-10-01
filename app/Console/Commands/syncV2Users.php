@@ -52,9 +52,8 @@ class syncV2Users extends Command
                 $v2_emails = array_change_key_case($v2_emails, CASE_LOWER);
 
                 $users = $users->filter(function ($user) use ($v2_emails, $v2_ids) {
-                    $user_exists = !isset($v2_emails[Str::lower($user->email)]) &&
+                    return !isset($v2_emails[Str::lower($user->email)]) &&
                         !isset($v2_ids[$user->id]);
-                    return $user_exists;
                 });
 
 
@@ -92,12 +91,21 @@ class syncV2Users extends Command
             DB::connection('dbp_users')
                 ->statement(
                     'INSERT INTO project_members (project_id, user_id, role_id, created_at)
-                    SELECT 
-                    ' . $default_project_id . ' AS project_id,
-                    id AS user_id,
-                    ' . $user_role->id . ' AS role_id,
-                    u.created_at
-                    FROM users AS u LEFT JOIN project_members AS pm ON pm.user_id = u.id where u.v2_id > 0 AND pm.project_id IS NULL'
+                    SELECT :default_project_id AS project_id,
+                        id AS user_id,
+                        :user_role_id AS role_id,
+                        u.created_at
+                    FROM users AS u
+                    WHERE u.created_at >= :created_at
+                    AND u.v2_id > 0
+                    AND u.id NOT IN (
+                        SELECT `project_members`.`user_id` FROM `dbp_users`.`project_members`
+                    )',
+                    [
+                        'default_project_id' => $default_project_id,
+                        'user_role_id' => $user_role->id,
+                        'created_at' => $from_date,
+                    ]
                 );
 
             echo "\n" . Carbon::now() . ": Assign v2 users to default project finalized.\n";
