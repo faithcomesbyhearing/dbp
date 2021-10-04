@@ -371,7 +371,7 @@ class Language extends Model
     }
 
     public function scopeIncludeExtraLanguages($query, $access_control_identifiers)
-    {  
+    {
         return $query->whereRaw('languages.id in (' . $access_control_identifiers . ')');
     }
 
@@ -410,11 +410,31 @@ class Language extends Model
     }
 
     public function scopeFilterableByNameOrAutonym($query, $name)
-    {   
+    {
         $formatted_name = str_replace(' ', '', $name);
         return $query->when($name, function ($query) use ($formatted_name) {
-            $query->where('languages.name', 'like', $formatted_name.'%')
-                ->orWhere('autonym.name', 'like', $formatted_name.'%');
+            $query->whereRaw('match (languages.name) against (? IN BOOLEAN MODE)', ['*'.$formatted_name.'*']);
+            $query->orWhereRaw('match (autonym.name) against (? IN BOOLEAN MODE)', ['*'.$formatted_name.'*']);
+        });
+    }
+
+    public function scopeWithRequiredFilesets($query, $type_filters)
+    {
+        $hashes = $type_filters['hashes'];
+        $organization_id = $type_filters['organization_id'];
+        $media = $type_filters['media'];
+
+        return $query->whereHas('filesets', function ($query) use ($hashes, $organization_id, $media) {
+            if ($organization_id) {
+                $query->whereHas('copyright', function ($query) use ($organization_id) {
+                    $query->where('organization_id', $organization_id);
+                });
+            }
+            if ($media) {
+                $query->join('bible_filesets', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id');
+                $query->where('bible_filesets.set_type_code', 'LIKE', $media . '%');
+            }
+            $query->whereIn('bible_fileset_connections.hash_id', $hashes);
         });
     }
     

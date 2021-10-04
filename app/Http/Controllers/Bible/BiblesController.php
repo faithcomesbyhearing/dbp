@@ -108,12 +108,18 @@ class BiblesController extends APIController
             $media_types = BibleFilesetType::select('set_type_code')->get();
             $media_type_exists = $media_types->where('set_type_code', $media);
             if ($media_type_exists->isEmpty()) {
-                return $this->setStatusCode(404)->replyWithError('media type not found. must be one of ' . $media_types->pluck('set_type_code')->implode(','));
+                return $this
+                    ->setStatusCode(404)
+                    ->replyWithError(
+                        'media type not found. must be one of ' . $media_types->pluck('set_type_code')->implode(',')
+                    );
             }
         }
 
         $access_control = $this->accessControl($this->key);
-        $organization = $organization_id ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first() : null;
+        $organization = $organization_id
+            ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first()
+            : null;
         $cache_params = [
             $language_code,
             $organization,
@@ -196,9 +202,7 @@ class BiblesController extends APIController
                 BibleTransformer::class,
                 new DataArraySerializer()
             );
-            $result =  $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
-            // Log::error('Size of the response body in Bytes:' . strlen(json_encode($result)));
-            return $result;
+            return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
         });
 
         return $this->reply($bibles);
@@ -233,7 +237,7 @@ class BiblesController extends APIController
         $page           = checkParam('page') ?? 1;
         $formatted_search = str_replace(' ', '', $search_text);
         if ($formatted_search === '' || !$formatted_search) {
-          return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
+            return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
 
         // instead of returning hashes, accessControl will return bible ids associated with the hashes
@@ -244,7 +248,10 @@ class BiblesController extends APIController
             ->leftJoin('bible_translations as ver_title', function ($join) {
                 $join->on('ver_title.bible_id', 'bibles.id')->where('ver_title.vernacular', 1);
             })
-            ->where('ver_title.name', 'LIKE' , '%'.$formatted_search.'%')
+            ->whereRaw(
+                'match (ver_title.name) against (? IN BOOLEAN MODE)',
+                ['*'.$formatted_search.'*']
+            )
             ->paginate($limit);
 
             $bibles_return = fractal(
