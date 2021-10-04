@@ -206,6 +206,7 @@ class LanguagesController extends APIController
             $languages = Language::includeCurrentTranslation()
                 ->includeAutonymTranslation()
                 ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers), false)
+                ->includeExtraLanguageTranslations(true)
                 ->filterableByNameOrAutonym($formatted_search)
                 ->select([
                     'languages.id',

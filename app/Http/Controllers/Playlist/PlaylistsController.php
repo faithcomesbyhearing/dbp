@@ -1189,11 +1189,7 @@ class PlaylistsController extends APIController
     {
         $signed_files = [];
         $transaction_id = random_int(0, 10000000);
-        try {
-            apiLogs(request(), $response->getStatusCode(), $transaction_id);
-        } catch (\Exception $e) {
-            Log::error($e);
-        }
+
         $durations = [];
         $hls_items = [];
 

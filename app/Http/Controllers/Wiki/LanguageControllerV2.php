@@ -133,7 +133,7 @@ class LanguageControllerV2 extends APIController
      */
     public function countryLang()
     {
-        $sort_by            = checkParam('sort_by') ?? 'country_id';
+        $sort_by            = checkParam('sort_by') ?? 'country_language.country_id';
         $lang_code          = checkParam('lang_code');
         $country_code       = checkParam('country_code');
         $img_size           = checkParam('img_size');
@@ -141,7 +141,20 @@ class LanguageControllerV2 extends APIController
         $additional         = checkParam('additional');
 
         $access_control = $this->accessControl($this->key);
-        $cache_params = [$sort_by, $lang_code, $country_code, $img_size, $img_type, $additional, $access_control->string];
+        $cache_params = [
+            $sort_by, $lang_code,
+            $country_code, $img_size,
+            $img_type, $additional,
+            $access_control->string
+        ];
+
+        if ($sort_by === 'lang_code') {
+            $sort_by = 'languages.iso';
+        }
+
+        if ($sort_by === 'country_id') {
+            $sort_by = 'country_language.country_id';
+        }
 
         $countryLang = cacheRemember(
             'v2_country_lang',
@@ -153,17 +166,20 @@ class LanguageControllerV2 extends APIController
                         $subquery->with('countries');
                     });
                 }])
-                    ->whereHas('language', function ($query) use ($access_control, $lang_code, $additional) {
-                        $query->whereHas('filesets', function ($subquery) use ($access_control, $lang_code) {
-                            $subquery->whereIn('hash_id', $access_control->identifiers);
-                            if ($lang_code) {
-                                $subquery->where('iso', $lang_code);
-                            }
+                    ->join('languages', function ($join) use ($lang_code) {
+                        $join->on('languages.id', '=', 'country_language.language_id');
+                        if ($lang_code) {
+                            $join->where('languages.iso', $lang_code);
+                        }
+                    })
+                    ->whereHas('language', function ($query) use ($access_control) {
+                        $query->whereHas('filesets', function ($subquery) use ($access_control) {
+                            $subquery->whereIn('bible_fileset_connections.hash_id', $access_control->identifiers);
                         });
                     })
                     ->whereHas('country', function ($query) use ($country_code) {
                         $query->when($country_code, function ($subquery) use ($country_code) {
-                            $subquery->where('country_id', $country_code);
+                            $subquery->where('country.country_id', $country_code);
                         });
                     })
                     ->orderBy($sort_by, 'desc')->get()->each(function ($item, $key) use ($img_size, $img_type) {
@@ -369,17 +385,11 @@ class LanguageControllerV2 extends APIController
             $languages = Language::with('bibles')->with('dialects')
                 ->includeAutonymTranslation()
                 ->includeCurrentTranslation()
-                ->whereHas('filesets', function ($query) use ($hashes, $organization_id, $media) {
-                    $query->whereIn('hash_id', $hashes);
-                    if ($organization_id) {
-                        $query->whereHas('copyright', function ($query) use ($organization_id) {
-                            $query->where('organization_id', $organization_id);
-                        });
-                    }
-                    if ($media) {
-                        $query->where('set_type_code', 'LIKE', $media . '%');
-                    }
-                })
+                ->withRequiredFilesets([
+                    'hashes'          => $hashes,
+                    'media'           => $media,
+                    'organization_id' => $organization_id
+                ])
                 ->with(['dialects.childLanguage' => function ($query) {
                     $query->select(['id', 'iso']);
                 }])

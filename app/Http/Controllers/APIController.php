@@ -231,13 +231,6 @@ class APIController extends Controller
             return $object;
         }
 
-        // Status Code, Headers, Params, Body, Time
-        try {
-            apiLogs(request(), $this->statusCode, $s3_transaction_id, request()->ip());
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
-        }
-
         return $this->replyFormatter($object, $meta, $format, $input);
     }
 
@@ -251,12 +244,6 @@ class APIController extends Controller
     {
         if (!$this->api) {
             return view('layouts.errors.broken')->with(['message' => $message]);
-        }
-
-        try {
-            apiLogs(request(), $this->statusCode);
-        } catch (\Exception $e) {
-            Log::error($e);
         }
 
         if ((int) $this->v === 2) {
