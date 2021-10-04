@@ -229,10 +229,10 @@ class BibleFile extends Model
     {
         return $query->join(
             DB::raw(
-                '(  SELECT distint_timestamps.bible_file_id
+                '(  SELECT distinct_timestamps.bible_file_id
                     FROM (  SELECT DISTINCT bible_file_timestamps.bible_file_id
-                            FROM bible_file_timestamps ) AS distint_timestamps
-                    GROUP BY distint_timestamps.bible_file_id
+                            FROM bible_file_timestamps ) AS distinct_timestamps
+                    GROUP BY distinct_timestamps.bible_file_id
                 ) AS timestamps_counts'
             ),
             function ($join) {
