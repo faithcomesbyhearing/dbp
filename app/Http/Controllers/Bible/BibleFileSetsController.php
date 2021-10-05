@@ -361,7 +361,7 @@ class BibleFileSetsController extends APIController
 
     private function getCorrectFilesetType($fileset_type, $param_type)
     {
-        $is_text_fileset = in_array($fileset_type, ['text_plain', 'text_format', 'text_html', 'text_usx']);
+        $is_text_fileset = in_array($fileset_type, ['text_plain', 'text_format', 'text_html']);
         if ($is_text_fileset && $param_type === '') {
             $fileset_type = 'text_plain';
         } elseif ($is_text_fileset) {
