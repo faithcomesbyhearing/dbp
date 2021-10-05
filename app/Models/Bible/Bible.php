@@ -2,6 +2,7 @@
 
 namespace App\Models\Bible;
 
+use DB;
 use App\Models\Country\Country;
 use App\Models\Language\Alphabet;
 use App\Models\Language\NumeralSystem;
@@ -354,5 +355,35 @@ class Bible extends Model
             $languages = Language::whereIn('iso', $language_codes)->orWhereIn('id', $language_codes)->get();
             $q->whereIn('bibles.language_id', $languages->pluck('id'));
         });
+    }
+
+    public function scopeMatchByFulltextSearch($query, $search_text)
+    {
+        // If the search_text is a single word the pattern will be e.g. +contain*
+        // and it will find rows that contain words such as 'contain', 'contains',
+        // 'containskey' etc.
+
+        // If the search_text contains two words the pattern will be e.g. +next contain*
+        // and it will find rows that contain both words but the first word should exact
+        // and the other just contains the word such as 'next contain', 'next contains',
+        // 'next containskey'
+        $formatted_search = "+$search_text*";
+
+        return $query->join(
+            DB::raw(
+                '(  SELECT DISTINCT bible_translations.bible_id,
+                                    bible_translations.name,
+                                    bible_translations.language_id,
+                                    match (bible_translations.name) against (? IN BOOLEAN MODE) as score
+                    FROM bible_translations
+                    WHERE match (bible_translations.name) against (? IN BOOLEAN MODE)
+                ) AS ver_title'
+            ),
+            function ($join) {
+                $join->on('ver_title.bible_id', '=', 'bibles.id');
+            }
+        )->setBindings([$formatted_search, $formatted_search])
+        ->whereNotNull('ver_title.name')
+        ->orderBy('ver_title.score', 'DESC');
     }
 }

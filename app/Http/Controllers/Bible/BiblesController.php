@@ -235,32 +235,26 @@ class BiblesController extends APIController
         $limit          = (int) (checkParam('limit') ?? 15);
         $limit          = min($limit, 50);
         $page           = checkParam('page') ?? 1;
-        $formatted_search = str_replace(' ', '', $search_text);
-        if ($formatted_search === '' || !$formatted_search) {
+        $formatted_search_cache = str_replace(' ', '', $search_text);
+        if ($formatted_search_cache === '' || !$formatted_search_cache) {
             return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
 
+        $formatted_search = $this->transformQuerySearchText($search_text);
+
         // instead of returning hashes, accessControl will return bible ids associated with the hashes
         $access_control = $this->accessControl($this->key, 'bibles');
-        $cache_params = [$limit, $page, $formatted_search, $access_control->string];
-        $bibles = cacheRemember('bibles_search', $cache_params, now()->addDay(), function () use ($access_control, $limit, $page, $formatted_search) {
+        $cache_params = [$limit, $page, $formatted_search_cache, $access_control->string];
+        $bibles = cacheRemember('bibles_search', $cache_params, now()->addDay(), function () use ($access_control, $limit, $formatted_search) {
             $bibles = Bible::whereRaw("bibles.id IN (' " . implode("','", $access_control->identifiers) . "')")
-            ->leftJoin('bible_translations as ver_title', function ($join) {
-                $join->on('ver_title.bible_id', 'bibles.id')->where('ver_title.vernacular', 1);
-            })
-            ->whereRaw(
-                'match (ver_title.name) against (? IN BOOLEAN MODE)',
-                ['*'.$formatted_search.'*']
-            )
+            ->matchByFulltextSearch($formatted_search)
             ->paginate($limit);
 
-            $bibles_return = fractal(
+            return fractal(
                 $bibles->getCollection(),
                 BibleTransformer::class,
                 new DataArraySerializer()
             )->paginateWith(new IlluminatePaginatorAdapter($bibles));
-            
-            return $bibles_return;
         });
         return $this->reply($bibles);
     }
