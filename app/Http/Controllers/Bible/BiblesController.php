@@ -1037,9 +1037,13 @@ class BiblesController extends APIController
             $zip->addFromString('contents.json', json_encode($result));
 
             foreach ($result->filesets->downloads as $download) {
-                $client = new Client();
-                $mp3 = $client->get($download->path);
-                $zip->addFromString($download->file_name, $mp3->getBody());
+                try {
+                    $client = new Client();
+                    $mp3 = $client->get($download->path);
+                    $zip->addFromString($download->file_name, $mp3->getBody());
+                } catch (\Throwable $th) {
+                    \Log::channel('errorlog')->error($th->getMessage());
+                }
             }
             unset($result->filesets->downloads);
             $zip->close();
