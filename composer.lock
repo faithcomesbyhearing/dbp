@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cfe9ffc11f38da73abcb8958b29092e2",
+    "content-hash": "1fe6edb73375f854b1443bca4c0670e1",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -2064,16 +2064,16 @@
         },
         {
             "name": "guzzlehttp/psr7",
-            "version": "1.8.2",
+            "version": "1.8.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/psr7.git",
-                "reference": "dc960a912984efb74d0a90222870c72c87f10c91"
+                "reference": "1afdd860a2566ed3c2b0b4a3de6e23434a79ec85"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/psr7/zipball/dc960a912984efb74d0a90222870c72c87f10c91",
-                "reference": "dc960a912984efb74d0a90222870c72c87f10c91",
+                "url": "https://api.github.com/repos/guzzle/psr7/zipball/1afdd860a2566ed3c2b0b4a3de6e23434a79ec85",
+                "reference": "1afdd860a2566ed3c2b0b4a3de6e23434a79ec85",
                 "shasum": ""
             },
             "require": {
@@ -2111,12 +2111,33 @@
             ],
             "authors": [
                 {
+                    "name": "Graham Campbell",
+                    "email": "hello@gjcampbell.co.uk",
+                    "homepage": "https://github.com/GrahamCampbell"
+                },
+                {
                     "name": "Michael Dowling",
                     "email": "mtdowling@gmail.com",
                     "homepage": "https://github.com/mtdowling"
                 },
                 {
+                    "name": "George Mponos",
+                    "email": "gmponos@gmail.com",
+                    "homepage": "https://github.com/gmponos"
+                },
+                {
+                    "name": "Tobias Nyholm",
+                    "email": "tobias.nyholm@gmail.com",
+                    "homepage": "https://github.com/Nyholm"
+                },
+                {
+                    "name": "Márk Sági-Kazár",
+                    "email": "mark.sagikazar@gmail.com",
+                    "homepage": "https://github.com/sagikazarmark"
+                },
+                {
                     "name": "Tobias Schultze",
+                    "email": "webmaster@tubo-world.de",
                     "homepage": "https://github.com/Tobion"
                 }
             ],
@@ -2133,9 +2154,23 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/psr7/issues",
-                "source": "https://github.com/guzzle/psr7/tree/1.8.2"
+                "source": "https://github.com/guzzle/psr7/tree/1.8.3"
             },
-            "time": "2021-04-26T09:17:50+00:00"
+            "funding": [
+                {
+                    "url": "https://github.com/GrahamCampbell",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/Nyholm",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/guzzlehttp/psr7",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2021-10-05T13:56:00+00:00"
         },
         {
             "name": "hamcrest/hamcrest-php",
@@ -4465,16 +4500,16 @@
         },
         {
             "name": "php-http/discovery",
-            "version": "1.14.0",
+            "version": "1.14.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-http/discovery.git",
-                "reference": "778f722e29250c1fac0bbdef2c122fa5d038c9eb"
+                "reference": "de90ab2b41d7d61609f504e031339776bc8c7223"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-http/discovery/zipball/778f722e29250c1fac0bbdef2c122fa5d038c9eb",
-                "reference": "778f722e29250c1fac0bbdef2c122fa5d038c9eb",
+                "url": "https://api.github.com/repos/php-http/discovery/zipball/de90ab2b41d7d61609f504e031339776bc8c7223",
+                "reference": "de90ab2b41d7d61609f504e031339776bc8c7223",
                 "shasum": ""
             },
             "require": {
@@ -4527,9 +4562,9 @@
             ],
             "support": {
                 "issues": "https://github.com/php-http/discovery/issues",
-                "source": "https://github.com/php-http/discovery/tree/1.14.0"
+                "source": "https://github.com/php-http/discovery/tree/1.14.1"
             },
-            "time": "2021-06-01T14:30:21+00:00"
+            "time": "2021-09-18T07:57:46+00:00"
         },
         {
             "name": "php-http/httplug",
@@ -5670,16 +5705,16 @@
         },
         {
             "name": "sentry/sentry",
-            "version": "3.3.2",
+            "version": "3.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/sentry-php.git",
-                "reference": "3d733139a3ba2d1d3a8011580e3acf0ba1d0dc9b"
+                "reference": "9a7b6d84ac8fa370397336028e760c71accac1dc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/3d733139a3ba2d1d3a8011580e3acf0ba1d0dc9b",
-                "reference": "3d733139a3ba2d1d3a8011580e3acf0ba1d0dc9b",
+                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/9a7b6d84ac8fa370397336028e760c71accac1dc",
+                "reference": "9a7b6d84ac8fa370397336028e760c71accac1dc",
                 "shasum": ""
             },
             "require": {
@@ -5758,7 +5793,7 @@
             ],
             "support": {
                 "issues": "https://github.com/getsentry/sentry-php/issues",
-                "source": "https://github.com/getsentry/sentry-php/tree/3.3.2"
+                "source": "https://github.com/getsentry/sentry-php/tree/3.3.3"
             },
             "funding": [
                 {
@@ -5770,20 +5805,20 @@
                     "type": "custom"
                 }
             ],
-            "time": "2021-07-19T08:09:34+00:00"
+            "time": "2021-10-04T11:20:34+00:00"
         },
         {
             "name": "sentry/sentry-laravel",
-            "version": "2.8.0",
+            "version": "2.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/sentry-laravel.git",
-                "reference": "21dd07bdd2956e182ffde32d22872ce1a4b3eca9"
+                "reference": "3acb930f1abeb67046097c3912c7b4b9b4303f08"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/sentry-laravel/zipball/21dd07bdd2956e182ffde32d22872ce1a4b3eca9",
-                "reference": "21dd07bdd2956e182ffde32d22872ce1a4b3eca9",
+                "url": "https://api.github.com/repos/getsentry/sentry-laravel/zipball/3acb930f1abeb67046097c3912c7b4b9b4303f08",
+                "reference": "3acb930f1abeb67046097c3912c7b4b9b4303f08",
                 "shasum": ""
             },
             "require": {
@@ -5849,7 +5884,7 @@
             ],
             "support": {
                 "issues": "https://github.com/getsentry/sentry-laravel/issues",
-                "source": "https://github.com/getsentry/sentry-laravel/tree/2.8.0"
+                "source": "https://github.com/getsentry/sentry-laravel/tree/2.9.0"
             },
             "funding": [
                 {
@@ -5861,7 +5896,7 @@
                     "type": "custom"
                 }
             ],
-            "time": "2021-08-08T09:03:08+00:00"
+            "time": "2021-10-06T13:08:08+00:00"
         },
         {
             "name": "socialiteproviders/generators",
@@ -6947,16 +6982,16 @@
         },
         {
             "name": "symfony/http-client",
-            "version": "v5.3.7",
+            "version": "v5.3.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-client.git",
-                "reference": "da8638ffecefc4e8ba2bc848d7b61a408119b333"
+                "reference": "c6370fe2c0a445aedc08f592a6a3149da1fea4c7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-client/zipball/da8638ffecefc4e8ba2bc848d7b61a408119b333",
-                "reference": "da8638ffecefc4e8ba2bc848d7b61a408119b333",
+                "url": "https://api.github.com/repos/symfony/http-client/zipball/c6370fe2c0a445aedc08f592a6a3149da1fea4c7",
+                "reference": "c6370fe2c0a445aedc08f592a6a3149da1fea4c7",
                 "shasum": ""
             },
             "require": {
@@ -7014,7 +7049,7 @@
             "description": "Provides powerful methods to fetch HTTP resources synchronously or asynchronously",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/http-client/tree/v5.3.7"
+                "source": "https://github.com/symfony/http-client/tree/v5.3.8"
             },
             "funding": [
                 {
@@ -7030,7 +7065,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2021-08-28T16:24:37+00:00"
+            "time": "2021-09-07T10:45:28+00:00"
         },
         {
             "name": "symfony/http-client-contracts",
