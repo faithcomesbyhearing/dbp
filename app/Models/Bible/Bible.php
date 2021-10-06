@@ -369,21 +369,21 @@ class Bible extends Model
         // 'next containskey'
         $formatted_search = "+$search_text*";
 
-        return $query->join(
-            DB::raw(
-                '(  SELECT DISTINCT bible_translations.bible_id,
-                                    bible_translations.name,
-                                    bible_translations.language_id,
-                                    match (bible_translations.name) against (? IN BOOLEAN MODE) as score
-                    FROM bible_translations
-                    WHERE match (bible_translations.name) against (? IN BOOLEAN MODE)
-                ) AS ver_title'
-            ),
-            function ($join) {
-                $join->on('ver_title.bible_id', '=', 'bibles.id');
-            }
-        )->setBindings([$formatted_search, $formatted_search])
-        ->whereNotNull('ver_title.name')
-        ->orderBy('ver_title.score', 'DESC');
+        return $query
+            ->select(['ver_title.bible_id', 'ver_title.name', 'ver_title.language_id'])
+            ->join(
+                'bible_translations as ver_title',
+                function ($join) use ($formatted_search) {
+                    $join->on('ver_title.bible_id', '=', 'bibles.id')
+                    ->where('ver_title.vernacular', 1)
+                    ->whereRaw(
+                        'match (ver_title.name) against (? IN BOOLEAN MODE)',
+                        [$formatted_search]
+                    );
+                }
+            )->orderByRaw(
+                'match (ver_title.name) against (? IN BOOLEAN MODE) DESC',
+                [$formatted_search]
+            );
     }
 }
