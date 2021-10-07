@@ -165,9 +165,11 @@ class Note extends Model
         try {
             return Crypt::decrypt($note);
         } catch (DecryptException $e) {
+            \Log::channel('errorlog')->error($e->getMessage());
             return '';
         }
     }
+
 
     /**
      *
