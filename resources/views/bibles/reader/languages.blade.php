@@ -19,8 +19,8 @@
             <tbody>
             @foreach($languages as $language)
                 <tr>
-                    <td><a href="{{ route('reader.bibles',['id' => $language->id]) }}">{{ $language->name }}</a></td>
-                    <td><a href="{{ route('reader.bibles',['id' => $language->id]) }}">{{ $language->autonym }}</a></td>
+                    <td><a href="{{ route('reader.bibles',['language_id' => $language->id]) }}">{{ $language->name }}</a></td>
+                    <td><a href="{{ route('reader.bibles',['language_id' => $language->id]) }}">{{ $language->autonym }}</a></td>
                     <td>{{ $language->bibles_count }}</td>
                 </tr>
             @endforeach

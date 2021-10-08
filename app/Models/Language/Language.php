@@ -420,21 +420,24 @@ class Language extends Model
 
     public function scopeWithRequiredFilesets($query, $type_filters)
     {
-        $hashes = $type_filters['hashes'];
         $organization_id = $type_filters['organization_id'];
         $media = $type_filters['media'];
+        $key = $type_filters['key'];
 
-        return $query->whereHas('filesets', function ($query) use ($hashes, $organization_id, $media) {
+        return $query->whereHas('filesets', function ($query_filesets) use ($key, $organization_id, $media) {
             if ($organization_id) {
-                $query->whereHas('copyright', function ($query) use ($organization_id) {
-                    $query->where('organization_id', $organization_id);
+                $query_filesets->whereHas('copyright', function ($query_filesets) use ($organization_id) {
+                    $query_filesets->where('organization_id', $organization_id);
                 });
             }
             if ($media) {
-                $query->join('bible_filesets', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id');
-                $query->where('bible_filesets.set_type_code', 'LIKE', $media . '%');
+                $query_filesets->join('bible_filesets', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id');
+                $query_filesets->where('bible_filesets.set_type_code', 'LIKE', $media . '%');
             }
-            $query->whereIn('bible_fileset_connections.hash_id', $hashes);
+
+            $query_filesets->where('set_type_code', '!=', 'text_format');
+            $query_filesets->where('asset_id', 'dbp-prod');
+            $query_filesets->isContentAvailable($key);
         });
     }
     
@@ -546,5 +549,23 @@ class Language extends Model
     public function parent()
     {
         return $this->hasOne(LanguageDialect::class, 'dialect_id', 'id');
+    }
+
+    public function scopeIsContentAvailable($query, $key)
+    {
+        $dbp_users = config('database.connections.dbp_users.database');
+        $dbp_prod = config('database.connections.dbp.database');
+
+        return $query->whereRaw(
+            'EXISTS (select 1
+                from ' . $dbp_users . '.user_keys uk
+                join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
+                where uk.key = ? and languages.id = b.language_id
+            )',
+            [$key]
+        );
     }
 }
