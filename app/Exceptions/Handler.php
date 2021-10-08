@@ -13,6 +13,8 @@ use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\Debug\ExceptionHandler as SymfonyExceptionHandler;
 use App\Exceptions\ResponseException as Response;
 use Throwable;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Session\TokenMismatchException;
 
 class Handler extends ExceptionHandler
 {
@@ -76,7 +78,17 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
-        if (config('app.env') == 'local') {
+        $middelware_array = $request->route()->middleware();
+        
+        if (config('app.env') == 'local' || (!empty($middelware_array) && in_array('web', $middelware_array))) {
+            if ($exception instanceof TokenMismatchException) {
+                return redirect()
+                    ->back()
+                    ->withErrors(
+                        ['auth.sessionExpired' => trans('auth.sessionExpired')]
+                    );
+            }
+
             return parent::render($request, $exception);
         }
 
