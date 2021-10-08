@@ -116,15 +116,14 @@ class BiblesController extends APIController
             }
         }
 
-        $access_control = $this->accessControl($this->key);
         $organization = $organization_id
             ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first()
             : null;
+        $key = $this->key;
         $cache_params = [
             $language_code,
             $organization,
             $country,
-            $access_control->string,
             $media,
             $media_exclude,
             $size,
@@ -133,12 +132,13 @@ class BiblesController extends APIController
             $limit,
             $page,
             $is_bibleis_gideons,
-            $order_cache_key
+            $order_cache_key,
+            $key
         ];
         
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $access_control, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by) {
+        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $key, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by) {
             $bibles = Bible::withRequiredFilesets([
-                'access_control' => $access_control,
+                'key'            => $key,
                 'media'          => $media,
                 'media_exclude'  => $media_exclude,
                 'size'           => $size,
@@ -194,7 +194,8 @@ class BiblesController extends APIController
                     MIN(bibles.priority) as priority,
                     MIN(bibles.id) as id'
                 )
-            )->orderByRaw($order_by)->groupBy('bibles.id');
+            )
+            ->orderByRaw($order_by)->groupBy('bibles.id');
 
             $bibles = $bibles->paginate($limit);
             $bibles_return = fractal(
@@ -242,11 +243,10 @@ class BiblesController extends APIController
 
         $formatted_search = $this->transformQuerySearchText($search_text);
 
-        // instead of returning hashes, accessControl will return bible ids associated with the hashes
-        $access_control = $this->accessControl($this->key, 'bibles');
-        $cache_params = [$limit, $page, $formatted_search_cache, $access_control->string];
-        $bibles = cacheRemember('bibles_search', $cache_params, now()->addDay(), function () use ($access_control, $limit, $formatted_search) {
-            $bibles = Bible::whereRaw("bibles.id IN (' " . implode("','", $access_control->identifiers) . "')")
+        $key = $this->key;
+        $cache_params = [$limit, $page, $formatted_search_cache, $key];
+        $bibles = cacheRemember('bibles_search', $cache_params, now()->addDay(), function () use ($key, $limit, $formatted_search) {
+            $bibles = Bible::isContentAvailable($key)
             ->matchByFulltextSearch($formatted_search)
             ->paginate($limit);
 
@@ -284,17 +284,16 @@ class BiblesController extends APIController
     public function show($id = null)
     {
         $id   = checkParam('dam_id', false, $id);
-        $access_control = $this->accessControl($this->key);
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
         }
-
-        $cache_params = [$id, $access_control->string];
-        $bible = cacheRemember('bibles_show', $cache_params, now()->addDay(), function () use ($access_control, $id) {
+        $key = $this->key;
+        $cache_params = [$id, $key];
+        $bible = cacheRemember('bibles_show', $cache_params, now()->addDay(), function () use ($key, $id) {
             return Bible::with([
                 'translations', 'books.book', 'links', 'organizations.logo', 'organizations.logoIcon', 'organizations.translations', 'alphabet.primaryFont', 'equivalents',
-                'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
+                'filesets' => function ($query) use ($key) {
+                    $query->isContentAvailable($key);
                 }
             ])->find($id);
         });
@@ -347,16 +346,16 @@ class BiblesController extends APIController
         $verify_content = checkBoolean('verify_content');
         $verse_count = checkBoolean('verse_count');
 
-        $access_control = $this->accessControl($this->key);
-        $cache_params = [$bible_id, $access_control->string, $verify_content];
-        $bible = cacheRemember('bible_books_bible', $cache_params, now()->addDay(), function () use ($access_control, $bible_id, $verify_content) {
+        $key = $this->key;
+        $cache_params = [$bible_id, $key, $verify_content];
+        $bible = cacheRemember('bible_books_bible', $cache_params, now()->addDay(), function () use ($bible_id, $verify_content, $key) {
             if (!$verify_content) {
                 return Bible::find($bible_id);
             }
 
-            return  Bible::with([
-                'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
+            return Bible::with([
+                'filesets' => function ($query) use ($key) {
+                    $query->isContentAvailable($key);
                 }
             ])->find($bible_id);
         });
@@ -368,7 +367,7 @@ class BiblesController extends APIController
 
         $cache_params = [$bible_id, $book_id];
         $books = cacheRemember('bible_books_books', $cache_params, now()->addDay(), function () use ($bible_id, $book_id, $bible) {
-            $books = BibleBook::where('bible_id', $bible_id)
+            return BibleBook::where('bible_id', $bible_id)
                 ->when($book_id, function ($query) use ($book_id) {
                     $query->where('book_id', $book_id);
                 })
@@ -376,16 +375,17 @@ class BiblesController extends APIController
                 ->filter(function ($item) {
                     return $item->book;
                 })->flatten();
-            return $books;
         });
 
         if ($verify_content) {
-            $cache_params = [$bible_id, $access_control->string, $verify_content, $book_id];
+            $cache_params = [$bible_id, $key, $verify_content, $book_id];
             $books = cacheRemember('bible_books_books_verified', $cache_params, now()->addDay(), function () use ($books, $bible) {
                 $book_controller = new BooksController();
                 $active_books = [];
                 foreach ($bible->filesets as $fileset) {
-                    $books_fileset = $book_controller->getActiveBooksFromFileset($fileset->id, $fileset->set_type_code)->pluck('id');
+                    $books_fileset = $book_controller
+                        ->getActiveBooksFromFileset($fileset->id, $fileset->set_type_code)
+                        ->pluck('id');
                     $active_books = $this->processActiveBooks($books_fileset, $active_books, $fileset->set_type_code);
                 }
 
@@ -400,7 +400,7 @@ class BiblesController extends APIController
             });
 
             if ($verse_count) {
-                $cache_params = [$bible_id, $access_control->string, $book_id];
+                $cache_params = [$bible_id, $key, $book_id];
                 $books = cacheRemember('bible_books_verse_count', $cache_params, now()->addDay(), function () use ($books, $bible) {
                     $text_fileset = $bible->filesets->where('set_type_code', 'text_plain')->first();
                     if (!$text_fileset) {
@@ -700,10 +700,10 @@ class BiblesController extends APIController
         }
 
         $bible = cacheRemember('v4_chapter_bible', [$bible_id], now()->addDay(), function () use ($bible_id) {
-            $access_control = $this->accessControl($this->key);
+            $key = $this->key;
             return Bible::with([
-                'filesets' => function ($query) use ($access_control) {
-                    $query->whereIn('bible_filesets.hash_id', $access_control->identifiers);
+                'filesets' => function ($query) use ($key) {
+                    $query->isContentAvailable($key);
                 }
             ])->whereId($bible_id)->first();
         });
@@ -1015,7 +1015,7 @@ class BiblesController extends APIController
     private function getStreamNonStreamFileset($download, $bible, $type, $book)
     {
         $stream = $download ? false : $this->getFileset($bible->filesets, $type . '_stream', $book->book_testament);
-        $non_stream = $this->getFileset($bible->filesets,  $type, $book->book_testament);
+        $non_stream = $this->getFileset($bible->filesets, $type, $book->book_testament);
         return $stream ? $stream :  $non_stream;
     }
 

@@ -140,12 +140,12 @@ class LanguageControllerV2 extends APIController
         $img_type           = checkParam('img_type') ?? 'png';
         $additional         = checkParam('additional');
 
-        $access_control = $this->accessControl($this->key);
+        $key = $this->key;
         $cache_params = [
             $sort_by, $lang_code,
             $country_code, $img_size,
             $img_type, $additional,
-            $access_control->string
+            $key
         ];
 
         if ($sort_by === 'lang_code') {
@@ -160,7 +160,7 @@ class LanguageControllerV2 extends APIController
             'v2_country_lang',
             $cache_params,
             now()->addDay(),
-            function () use ($sort_by, $lang_code, $country_code, $additional, $img_size, $img_type, $access_control) {
+            function () use ($sort_by, $lang_code, $country_code, $additional, $img_size, $img_type, $key) {
                 $country_langs = CountryLanguage::with(['country', 'language' => function ($query) use ($additional) {
                     $query->when($additional, function ($subquery) {
                         $subquery->with('countries');
@@ -172,10 +172,8 @@ class LanguageControllerV2 extends APIController
                             $join->where('languages.iso', $lang_code);
                         }
                     })
-                    ->whereHas('language', function ($query) use ($access_control) {
-                        $query->whereHas('filesets', function ($subquery) use ($access_control) {
-                            $subquery->whereIn('bible_fileset_connections.hash_id', $access_control->identifiers);
-                        });
+                    ->whereHas('language', function ($query) use ($key) {
+                        $query->isContentAvailable($key);
                     })
                     ->whereHas('country', function ($query) use ($country_code) {
                         $query->when($country_code, function ($subquery) use ($country_code) {
@@ -374,19 +372,13 @@ class LanguageControllerV2 extends APIController
         $media           = checkParam('media');
         $organization_id = checkParam('organization_id');
 
-        $access_control = $this->accessControl($this->key);
-        $hashes = BibleFileset::whereIn('hash_id', $access_control->identifiers)
-            ->where('set_type_code', '!=', 'text_format')
-            ->where('asset_id', 'dbp-prod')
-            ->select('hash_id')->get()->pluck('hash_id');
-
         $cache_params = [$root, $iso, $media, $organization_id];
-        $languages = cacheRemember('volumeLanguageFamily', $cache_params, now()->addDay(), function () use ($root, $iso, $hashes, $media, $organization_id) {
+        $languages = cacheRemember('volumeLanguageFamily', $cache_params, now()->addDay(), function () use ($root, $iso, $media, $organization_id) {
             $languages = Language::with('bibles')->with('dialects')
                 ->includeAutonymTranslation()
                 ->includeCurrentTranslation()
                 ->withRequiredFilesets([
-                    'hashes'          => $hashes,
+                    'key'             => $this->key,
                     'media'           => $media,
                     'organization_id' => $organization_id
                 ])

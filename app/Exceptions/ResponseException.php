@@ -6,6 +6,20 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ResponseException extends Response
 {
+    public const HTTP_AUTHENTICATION_TIMEOUT = 419; // not in RFC 2616
+
+    public static $customStatusTexts = [
+        419 => 'Authentication Timeout'
+    ];
+
+    public static function getStatusTextByCode(int $code): string
+    {
+        $statusTexts = parent::$statusTexts;
+        $statusTexts[self::HTTP_AUTHENTICATION_TIMEOUT] = self::$customStatusTexts[self::HTTP_AUTHENTICATION_TIMEOUT];
+
+        return $statusTexts[$code] ?? 'Unknow Status';
+    }
+
     /**
      * Get list of HTTP constant names indexed by HTTP code
      *
@@ -76,7 +90,8 @@ class ResponseException extends Response
             parent::HTTP_INSUFFICIENT_STORAGE => 'HTTP_INSUFFICIENT_STORAGE',
             parent::HTTP_LOOP_DETECTED => 'HTTP_LOOP_DETECTED',
             parent::HTTP_NOT_EXTENDED => 'HTTP_NOT_EXTENDED',
-            parent::HTTP_NETWORK_AUTHENTICATION_REQUIRED => 'HTTP_NETWORK_AUTHENTICATION_REQUIRED'
+            parent::HTTP_NETWORK_AUTHENTICATION_REQUIRED => 'HTTP_NETWORK_AUTHENTICATION_REQUIRED',
+            self::HTTP_AUTHENTICATION_TIMEOUT => 'HTTP_AUTHENTICATION_TIMEOUT'
         ];
     }
 }
