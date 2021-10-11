@@ -246,10 +246,13 @@ class BibleFileset extends Model
             'EXISTS (select 1
                     from ' . $dbp_users . '.user_keys uk
                     join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                    join ' . $dbp_prod . '.access_groups acg on agak.access_group_id = acg.id
                     join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                    where uk.key = ? and agf.hash_id = bible_filesets.hash_id
+                    WHERE uk.key = ?
+                    AND acg.name != ?
+                    AND agf.hash_id = bible_filesets.hash_id
             )',
-            [$key]
+            [$key, 'RESTRICTED']
         );
     }
 }

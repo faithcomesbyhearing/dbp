@@ -551,10 +551,27 @@ class Language extends Model
         return $this->hasOne(LanguageDialect::class, 'dialect_id', 'id');
     }
 
-    public function scopeIsContentAvailable($query, $key)
+    public function scopeIsContentAvailable($query, $key, $excludedRestrictedAccessGroup = false)
     {
         $dbp_users = config('database.connections.dbp_users.database');
         $dbp_prod = config('database.connections.dbp.database');
+
+        if ($excludedRestrictedAccessGroup) {
+            return $query->whereRaw(
+                'EXISTS (select 1
+                    from ' . $dbp_users . '.user_keys uk
+                    join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                    join ' . $dbp_prod . '.access_groups acg on agak.access_group_id = acg.id
+                    join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                    join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                    join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
+                    WHERE uk.key = ?
+                    AND acg.name != ?
+                    AND languages.id = b.language_id
+                )',
+                [$key, 'RESTRICTED']
+            );
+        }
 
         return $query->whereRaw(
             'EXISTS (select 1
@@ -563,7 +580,8 @@ class Language extends Model
                 join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
                 join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
                 join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
-                where uk.key = ? and languages.id = b.language_id
+                WHERE uk.key = ?
+                AND languages.id = b.language_id
             )',
             [$key]
         );

@@ -173,7 +173,7 @@ class LanguageControllerV2 extends APIController
                         }
                     })
                     ->whereHas('language', function ($query) use ($key) {
-                        $query->isContentAvailable($key);
+                        $query->isContentAvailable($key, true);
                     })
                     ->whereHas('country', function ($query) use ($country_code) {
                         $query->when($country_code, function ($subquery) use ($country_code) {
