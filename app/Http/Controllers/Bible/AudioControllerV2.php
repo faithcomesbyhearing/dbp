@@ -101,18 +101,11 @@ class AudioControllerV2 extends APIController
             return $response->get();
         });
 
-        // Transaction id to be passed to signedUrl
-        $transaction_id = random_int(0, 10000000);
         foreach ($audioChapters as $key => $audio_chapter) {
-            $audioChapters[$key]->file_name = $this->signedUrl(
-                'audio/' . $audio_chapter->bible->first()->id . '/' . $fileset_id . '/' . $audio_chapter->file_name,
-                'dbp-prod',
-                $transaction_id,
-                $key
-            );
+            $audioChapters[$key]->file_name = $fileset_id . '/' . $audio_chapter->file_name;
         }
 
-        return $this->reply(fractal($audioChapters, new AudioTransformer(), $this->serializer), [], $transaction_id);
+        return $this->reply(fractal($audioChapters, new AudioTransformer(), $this->serializer), []);
     }
 
     /**
@@ -236,11 +229,11 @@ class AudioControllerV2 extends APIController
     {
         return $this->reply([
             [
-                'server'    => config('services.cdn.server'),
-                'root_path' => '/audio',
-                'protocol'  => 'https',
+                'server'    => config('services.cdn.server_v2'),
+                'root_path' => '/mp3audiobibles2',
+                'protocol'  => 'http',
                 'CDN'       => '1',
-                'priority'  => '5',
+                'priority'  => '1',
             ],
         ]);
     }
