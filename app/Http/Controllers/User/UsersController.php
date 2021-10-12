@@ -911,7 +911,6 @@ class UsersController extends APIController
                 return redirect()->to(route('api_key.dashboard'));
             }
             return view('api_key.login');
-            //return view('auth.login');
         }
 
         $email = checkParam('email');
