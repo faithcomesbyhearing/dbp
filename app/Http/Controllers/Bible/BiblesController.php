@@ -409,17 +409,19 @@ class BiblesController extends APIController
 
                     return $books->map(function ($book) use ($text_fileset) {
                         $verses_count = [];
-                        foreach (array_map('\intval', explode(',', $book->chapters)) as $chapter) {
-                            $verse_count = BibleVerse::where('hash_id', $text_fileset->hash_id)
-                                ->where(
-                                    [
-                                        ['book_id', $book->book_id],
-                                        ['chapter', '=', $chapter]
-                                    ]
-                                )
-                                ->count();
-                            if ($verse_count) {
-                                $verses_count[] = ['chapter' => $chapter, 'verses' => $verse_count];
+
+                        $verses_by_book = BibleVerse::where('hash_id', $text_fileset->hash_id)
+                            ->where('book_id', $book->book_id)
+                            ->whereIn('chapter', array_map('\intval', explode(',', $book->chapters)))
+                            ->select('chapter', \DB::raw('COUNT(id) as verse_count'))
+                            ->groupBy('chapter')
+                            ->get();
+
+                        foreach ($verses_by_book as $verse) {
+                            if ($verse['verse_count']) {
+                                $verses_count[] = [
+                                    'chapter' => $verse['chapter'], 'verses' => $verse['verse_count']
+                                ];
                             }
                         }
                         $book->verses_count = $verses_count;
