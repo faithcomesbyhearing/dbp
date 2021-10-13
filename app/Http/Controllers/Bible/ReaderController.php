@@ -25,19 +25,18 @@ class ReaderController extends APIController
     public function languages()
     {
         $languages = cacheRemember('Bible_is_languages', [], now()->addDay(), function () {
-            $project_key = optional(Key::where('name', 'bible.is')->first())->key;
-            $access_control = $this->accessControl($project_key);
+            $project_key = optional(Key::where('name', 'new bible.is mobile app')->first())->key;
             return Language::select(['languages.id', 'languages.name', 'autonym.name as autonym'])
                 ->leftJoin('language_translations as autonym', function ($join) {
                     $join->on('autonym.language_source_id', 'languages.id');
                     $join->on('autonym.language_translation_id', 'languages.id');
                     $join->orderBy('autonym.priority', 'desc');
                 })
-                ->whereHas('filesets', function ($query) use ($access_control) {
-                    $query->whereIn('hash_id', $access_control->identifiers);
+                ->whereHas('filesets', function ($query) use ($project_key) {
                     $query->whereHas('fileset', function ($query) {
                         $query->where('set_type_code', 'text_plain')->where('asset_id', 'dbp-prod');
                     });
+                    $query->isContentAvailable($project_key);
                 })->withCount('bibles')->get();
         });
 
@@ -51,9 +50,6 @@ class ReaderController extends APIController
      */
     public function bibles($language_id)
     {
-        $project_key = Key::where('name', 'bible.is')->first();
-        $access_control = $this->accessControl($project_key->key);
-
         $filesets = BibleFileset::with('bible.translations')
             ->whereHas('bible', function ($query) use ($language_id) {
                 $query->where('language_id', $language_id);

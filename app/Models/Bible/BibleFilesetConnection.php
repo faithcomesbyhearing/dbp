@@ -72,4 +72,20 @@ class BibleFilesetConnection extends Model
     {
         return $this->belongsTo(BibleFilesetType::class);
     }
+
+    public function scopeIsContentAvailable($query, $key)
+    {
+        $dbp_users = config('database.connections.dbp_users.database');
+        $dbp_prod = config('database.connections.dbp.database');
+
+        return $query->whereRaw(
+            'EXISTS (select 1
+                    from ' . $dbp_users . '.user_keys uk
+                    join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                    join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                    where uk.key = ? and agf.hash_id = bible_fileset_connections.hash_id
+            )',
+            [$key]
+        );
+    }
 }
