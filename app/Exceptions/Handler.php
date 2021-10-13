@@ -78,21 +78,32 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
-        $middelware_array = $request->route()->middleware();
-        
-        if (config('app.env') == 'local' || (!empty($middelware_array) && in_array('web', $middelware_array))) {
-            if ($exception instanceof TokenMismatchException) {
-                return redirect()
-                    ->back()
-                    ->withErrors(
-                        ['auth.sessionExpired' => trans('auth.sessionExpired')]
-                    );
-            }
-
+        if (config('app.env') == 'local') {
             return parent::render($request, $exception);
         }
 
+        if ($request->route() instanceof \Illuminate\Routing\Route) {
+            $middelware_array = $request->route()->middleware();
+
+            if (!empty($middelware_array) && in_array('web', $middelware_array)) {
+                return $this->handleWebException($request, $exception);
+            }
+        }
+
         return $this->handleApiException($request, $exception);
+    }
+
+    private function handleWebException($request, Throwable $exception)
+    {
+        if ($exception instanceof TokenMismatchException) {
+            return redirect()
+                ->back()
+                ->withErrors(
+                    ['auth.sessionExpired' => trans('auth.sessionExpired')]
+                );
+        }
+
+        return parent::render($request, $exception);
     }
 
     private function handleApiException($request, Throwable $exception)
