@@ -370,7 +370,6 @@ class Bible extends Model
                 'bible_translations as ver_title',
                 function ($join) use ($formatted_search) {
                     $join->on('ver_title.bible_id', '=', 'bibles.id')
-                    ->where('ver_title.vernacular', 1)
                     ->whereRaw(
                         'match (ver_title.name) against (? IN BOOLEAN MODE)',
                         [$formatted_search]
