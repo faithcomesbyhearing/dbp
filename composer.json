@@ -49,10 +49,11 @@
     "require-dev": {
         "barryvdh/laravel-debugbar": "3.6.2",
         "barryvdh/laravel-ide-helper": "2.10.0",
+        "fakerphp/faker": "^1.16",
         "filp/whoops": "2.14.4",
         "friendsofphp/php-cs-fixer": "3.2.1",
-        "fzaninotto/faker": "1.5.0",
         "itsgoingd/clockwork": "5.1.0",
+        "laravel/legacy-factories": "^1.1",
         "mockery/mockery": "1.4.4",
         "nunomaduro/collision": "5.10.0",
         "phpunit/phpunit": "9.5.10",
