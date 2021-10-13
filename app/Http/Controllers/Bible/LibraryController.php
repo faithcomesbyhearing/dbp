@@ -323,11 +323,8 @@ class LibraryController extends APIController
                 return [];
             }
 
-            $access_control = $this->accessControl($this->key);
-            $queryIn = sprintf("bible_filesets.hash_id IN ('" . implode("', '", $access_control->identifiers) . "')");
             $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
-                ->whereRaw($queryIn)
                 ->uniqueFileset($dam_id, $media, true)
                 ->withBible($language_name, $language_id, $organization)
                 ->when($language_id, function ($query) use ($language_id) {
@@ -374,18 +371,21 @@ class LibraryController extends APIController
                 })
                 ->when($organization, function ($query) use ($organization) {
                     $query->where('bible_organizations.organization_id', $organization);
-                })->get()->filter(function ($item) {
+                })
+                ->isContentAvailable($this->key)
+                ->get()
+                ->filter(function ($item) {
                     return $item->english_name;
                 });
             foreach ($filesets as $key => $fileset) {
                 if ($fileset && $fileset->secondary_file_name) {
-                      $filesets[$key]->secondary_file_path = $this->signedUrl(
+                    $filesets[$key]->secondary_file_path = $this->signedUrl(
                         storagePath(
-                            $fileset->bible_id, 
-                            $fileset, 
-                            null, 
+                            $fileset->bible_id,
+                            $fileset,
+                            null,
                             $fileset->secondary_file_name
-                        ), 
+                        ),
                         $fileset->asset_id,
                         random_int(0, 10000000)
                     );

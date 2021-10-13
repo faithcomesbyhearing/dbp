@@ -13,7 +13,7 @@
     <div class="container box">
 
         @foreach($filesets as $fileset)
-            <a href="{{ route('reader.books',['fileset_id' => $fileset->id]) }}">
+            <a href="{{ route('reader.books',['id' => $fileset->id]) }}">
                 @if($fileset->bible->first())
                     @foreach($fileset->bible->first()->translations as $translation)
                         {{ $translation->name }}

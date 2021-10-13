@@ -130,6 +130,7 @@ class BooksController extends APIController
                 'books.book_group',
                 'bible_books.chapters',
                 'bible_books.name',
+                'bible_books.name_short',
                 'books.protestant_order',
                 $book_order_column . ' as book_order_column'
             ])->get();

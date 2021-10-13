@@ -63,19 +63,20 @@ class UsersController extends APIController
         $limit = checkParam('limit') ?? 100;
         $project_id = checkParam('project_id');
 
-        $users = \DB::table('dbp_users.users')
-            ->join('dbp_users.project_members', function ($join) use (
-                $project_id
-            ) {
-                $join
-                    ->on('users.id', 'project_members.user_id')
-                    ->where('project_members.project_id', $project_id);
-            })
-            ->select(['id', 'name', 'email'])
+        $users_by_project = \DB::table('dbp_users.project_members')
+            ->select(['user_id'])
+            ->where('dbp_users.project_members.project_id', $project_id)
+            ->distinct()
             ->paginate($limit);
 
-        $userCollection = $users->getCollection();
-        $userPagination = new IlluminatePaginatorAdapter($users);
+        $users_by_project_ids = $users_by_project->pluck('user_id')->toArray();
+
+        $userCollection = \DB::table('dbp_users.users')
+            ->whereIn('id', $users_by_project_ids)
+            ->select(['id', 'name', 'email'])
+            ->get();
+
+        $userPagination = new IlluminatePaginatorAdapter($users_by_project);
         return $this->reply(
             fractal(
                 $userCollection,
@@ -911,7 +912,6 @@ class UsersController extends APIController
                 return redirect()->to(route('api_key.dashboard'));
             }
             return view('api_key.login');
-            //return view('auth.login');
         }
 
         $email = checkParam('email');

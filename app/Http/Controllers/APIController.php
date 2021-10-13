@@ -365,4 +365,19 @@ class APIController extends Controller
     {
         return $this->key;
     }
+
+    /**
+     * Remove special characters and all spaces. If the phrase has two or more words,
+     * it will leave a space between each word.
+     *
+     * @param string $search_text
+     *
+     * @return string
+     */
+    public function transformQuerySearchText(string $search_text): string
+    {
+        $formatted_search = trim($search_text);
+        $formatted_search = preg_replace('/[+\-><\(\)~*\"@]+/', ' ', $formatted_search);
+        return preg_replace('!\s+!', ' ', $formatted_search);
+    }
 }

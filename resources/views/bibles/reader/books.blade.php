@@ -6,7 +6,7 @@
     'title' => 'Books',
     'breadcrumbs' => [
         route('reader.languages') => 'Reader',
-        route('reader.bibles', ['id' => $language_id]) => 'Bibles',
+        route('reader.bibles', ['language_id' => $language_id]) => 'Bibles',
         '#' => 'Books'
     ]
 ])
@@ -24,7 +24,7 @@
                 <td>{{ $book->name }}</td>
                 <td>
                     @foreach(explode(',',$book->existing_chapters) as $chapter)
-                        <a href="{{ route('reader.chapter',['bible_id' => $bible_id,'book_id'=>$book->id,'chapter'=>$chapter]) }}">{{ $chapter }}</a>
+                        <a href="{{ route('reader.chapter',['id' => $bible_id,'book'=>$book->id,'chapter'=>$chapter]) }}">{{ $chapter }}</a>
                     @endforeach
                 </td>
             </tr>
