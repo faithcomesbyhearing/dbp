@@ -24,7 +24,7 @@
         "guzzlehttp/guzzle": "7.3.0",
         "intervention/image": "2.7.0",
         "josiasmontag/laravel-localization": "0.8.2",
-        "laravel/framework": "8.63.0",
+        "laravel/framework": "8.64.0",
         "laravel/slack-notification-channel": "2.3.1",
         "laravel/socialite": "5.2.5",
         "laravel/tinker": "2.6.2",
@@ -58,7 +58,7 @@
         "nunomaduro/collision": "5.10.0",
         "phpunit/phpunit": "9.5.10",
         "spatie/laravel-tail": "4.3.3",
-        "squizlabs/php_codesniffer": "3.6.0"
+        "squizlabs/php_codesniffer": "3.6.1"
     },
     "autoload": {
         "classmap": [
