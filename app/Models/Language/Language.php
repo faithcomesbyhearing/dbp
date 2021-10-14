@@ -430,13 +430,14 @@ class Language extends Model
                     $query_filesets->where('organization_id', $organization_id);
                 });
             }
+            $query_filesets->join('bible_filesets', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id');
+            $query_filesets->where('bible_filesets.asset_id', 'dbp-prod');
             if ($media) {
-                $query_filesets->join('bible_filesets', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id');
                 $query_filesets->where('bible_filesets.set_type_code', 'LIKE', $media . '%');
+            } else {
+                $query_filesets->where('bible_filesets.set_type_code', '!=', 'text_format');
             }
 
-            $query_filesets->where('set_type_code', '!=', 'text_format');
-            $query_filesets->where('asset_id', 'dbp-prod');
             $query_filesets->isContentAvailable($key);
         });
     }
