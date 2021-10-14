@@ -165,6 +165,7 @@ class LanguageControllerV2 extends APIController
                     $query->when($additional, function ($subquery) {
                         $subquery->with('countries');
                     });
+                    $query->with('autonym');
                 }])
                     ->join('languages', function ($join) use ($lang_code) {
                         $join->on('languages.id', '=', 'country_language.language_id');
