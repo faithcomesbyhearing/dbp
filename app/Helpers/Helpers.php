@@ -495,7 +495,6 @@ if (!function_exists('formatFilesetMeta')) {
                     $fileset[$metadata['name']] = $metadata['description'];
                 }
             }
-            unset($fileset->meta);
         }
         return $fileset;
     }
