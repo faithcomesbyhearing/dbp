@@ -110,18 +110,19 @@ class PlaylistsController extends APIController
         $featured = checkBoolean('featured') || empty($user);
         $limit    = (int) (checkParam('limit') ?? 25);
 
-
-
         $show_details = checkBoolean('show_details');
         $show_text = checkBoolean('show_text');
         if ($show_text) {
             $show_details = $show_text;
         }
-
-        $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
-            return optional(Language::where('iso', $iso)->select('id')->first())->id;
-        });
-
+        
+        $language_id = null;
+        if ($iso !== null) {
+          $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
+              return optional(Language::where('iso', $iso)->select('id')->first())->id;
+          });
+        }
+        
         if ($featured) {
             $cache_params = [$show_details, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id];
             $playlists = cacheRemember('v4_playlist_index', $cache_params, now()->addDay(), function () use ($show_details, $user, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id) {
