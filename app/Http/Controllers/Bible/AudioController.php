@@ -112,12 +112,19 @@ class AudioController extends APIController
             })->get();
 
         // Fetch Timestamps
-        $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))->orderBy('verse_start')->get();
+        $audioTimestamps = BibleFileTimestamp::whereIn(
+            'bible_file_id',
+            $bible_files->pluck('id')
+        )->orderBy('verse_start')->get();
 
 
-        if ($audioTimestamps->isEmpty() && ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream')) {
+        if ($audioTimestamps->isEmpty() &&
+            ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream')
+        ) {
             $audioTimestamps = [];
-            $bible_files = BibleFile::with('streamBandwidth.transportStreamBytes')->where([
+            $bible_files = BibleFile::with(['streamBandwidth.transportStreamBytes' => function ($query) {
+                $query->with('timestamp');
+            }])->where([
                 'hash_id' => $fileset->hash_id,
                 'book_id' => $book,
             ])

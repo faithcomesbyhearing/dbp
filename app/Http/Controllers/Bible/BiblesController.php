@@ -849,6 +849,7 @@ class BiblesController extends APIController
                 $gospel_films = $fileset_controller->show($video_stream->id, $video_stream->set_type_code, 'v4_chapter_filesets_show')->original['data'] ?? [];
                 $chapter_filesets->video->gospel_films = array_map(function ($gospel_film) use ($video_stream) {
                     unset($video_stream->laravel_through_key);
+                    unset($video_stream->meta);
                     $gospel_film['fileset'] = $video_stream;
                     return $gospel_film;
                 }, $gospel_films);
@@ -979,13 +980,14 @@ class BiblesController extends APIController
         }
 
         if ($fileset) {
-            $fileset = BibleFileset::where([
+            $fileset = BibleFileset::with('meta')
+            ->where([
                 'id' => $fileset->id,
                 'set_type_code' => $fileset->set_type_code,
                 'set_size_code' => $fileset->set_size_code,
             ])->first();
             $fileset = formatFilesetMeta($fileset);
-
+            unset($fileset->meta);
             // Get fileset
             $fileset_result = $fileset_controller->show($fileset->id, $fileset->set_type_code, 'v4_chapter_filesets_show')->original['data'] ?? [];
             if (!empty($fileset_result)) {
