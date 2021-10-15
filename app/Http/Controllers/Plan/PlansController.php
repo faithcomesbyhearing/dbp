@@ -100,9 +100,12 @@ class PlansController extends APIController
         $sort_dir   = checkParam('sort_dir') ?? 'asc';
         $iso = checkParam('iso');
 
-        $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
-            return optional(Language::where('iso', $iso)->select('id')->first())->id;
-        });
+        $language_id = null;
+        if ($iso !== null) {
+          $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
+              return optional(Language::where('iso', $iso)->select('id')->first())->id;
+          });
+        }
 
         return $this->reply($this->getPlans($featured, $limit, $sort_by, $sort_dir, $user, $language_id));
     }
