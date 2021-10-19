@@ -53,7 +53,7 @@
         "filp/whoops": "2.14.4",
         "friendsofphp/php-cs-fixer": "3.2.1",
         "itsgoingd/clockwork": "5.1.0",
-        "laravel/legacy-factories": "1.1.0",
+        "laravel/legacy-factories": "1.1.1",
         "mockery/mockery": "1.4.4",
         "nunomaduro/collision": "5.10.0",
         "phpunit/phpunit": "9.5.10",
