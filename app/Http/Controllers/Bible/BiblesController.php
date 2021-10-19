@@ -100,8 +100,12 @@ class BiblesController extends APIController
         $order_by = 'bibles.id';
         if (shouldUseBibleisBackwardCompat($this->key)) {
             $tag_exclude = 'opus';
+        }
+
+        if (isBibleisOrGideon($this->key)) {
             $order_by = 'bibles.priority DESC';
         }
+
         $order_cache_key = str_replace(['bibles.', ' '], '', $order_by);
 
         if ($media) {
