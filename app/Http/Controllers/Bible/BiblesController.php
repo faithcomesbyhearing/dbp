@@ -989,7 +989,11 @@ class BiblesController extends APIController
             $fileset = formatFilesetMeta($fileset);
             unset($fileset->meta);
             // Get fileset
-            $fileset_result = $fileset_controller->show($fileset->id, $fileset->set_type_code, 'v4_chapter_filesets_show')->original['data'] ?? [];
+            $fileset_result = !empty($fileset->id)
+                ? $fileset_controller
+                    ->show($fileset->id, $fileset->set_type_code, 'v4_chapter_filesets_show')
+                    ->original['data'] ?? []
+                : [];
             if (!empty($fileset_result)) {
                 $results->audio->$name = $fileset_result[0];
                 $results->audio->$name['fileset'] = $fileset;
@@ -1009,7 +1013,11 @@ class BiblesController extends APIController
 
             // Get timestamps
             $audio_controller = new AudioController();
-            $audioTimestamps = $audio_controller->timestampsByReference($fileset->id, $book->id,  $chapter)->original['data'] ?? [];
+            $audioTimestamps = !empty($fileset->id)
+                ? $audio_controller
+                    ->timestampsByReference($fileset->id, $book->id, $chapter)
+                    ->original['data'] ?? []
+                : [];
             $results->timestamps->$name = $audioTimestamps;
         }
 
