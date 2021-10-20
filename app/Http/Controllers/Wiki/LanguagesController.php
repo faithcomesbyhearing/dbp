@@ -186,16 +186,18 @@ class LanguagesController extends APIController
         $page  = checkParam('page') ?? 1;
         $limit = (int) (checkParam('limit') ?? 15);
         $limit = min($limit, 50);
-        $formatted_search = str_replace(' ', '', $search_text);
-        if ($formatted_search === '' || !$formatted_search) {
+        $formatted_search_cache = str_replace(' ', '', $search_text);
+        if ($formatted_search_cache === '' || !$formatted_search_cache) {
             return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
+
+        $formatted_search = $this->transformQuerySearchText($search_text);
 
         $key = $this->key;
 
         $cache_params = [
             $this->v,
-            $formatted_search,
+            $formatted_search_cache,
             $limit,
             $page,
             $GLOBALS['i18n_id'],
