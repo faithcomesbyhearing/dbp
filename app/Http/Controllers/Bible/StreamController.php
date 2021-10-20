@@ -84,11 +84,17 @@ class StreamController extends APIController
      */
     public function transportStream(Response $response, $fileset_id = null, $file_id_location = null, $file_name = null)
     {
-        $cache_params = [$fileset_id, $file_id_location, $file_name];
+        $cache_params = $this->removeSpaceFromCacheParameters(
+            [$fileset_id, $file_id_location, $file_name]
+        );
 
         $current_file = cacheRemember('stream_bandwidth', $cache_params, now()->addHours(12), function () use ($response, $fileset_id, $file_id_location, $file_name) {
-            $video_fileset = BibleFileset::uniqueFileset($fileset_id, 'video_stream')->select('hash_id', 'id', 'asset_id')->first();
-            $audio_fileset = BibleFileset::uniqueFileset($fileset_id, 'audio', true)->select('hash_id', 'id', 'asset_id')->first();
+            $video_fileset = BibleFileset::uniqueFileset($fileset_id, 'video_stream')
+                ->select('hash_id', 'id', 'asset_id')
+                ->first();
+            $audio_fileset = BibleFileset::uniqueFileset($fileset_id, 'audio', true)
+                ->select('hash_id', 'id', 'asset_id')
+                ->first();
             if (!$video_fileset && !$audio_fileset) {
                 return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
             }
@@ -115,7 +121,9 @@ class StreamController extends APIController
             }
             $transaction_id = random_int(0, 10000000);
 
-            $currentBandwidth->transportStream = sizeof($currentBandwidth->transportStreamBytes) ? $currentBandwidth->transportStreamBytes : $currentBandwidth->transportStreamTS;
+            $currentBandwidth->transportStream = sizeof($currentBandwidth->transportStreamBytes)
+                ? $currentBandwidth->transportStreamBytes
+                : $currentBandwidth->transportStreamTS;
 
             $current_file = "#EXTM3U\n";
             $current_file .= '#EXT-X-TARGETDURATION:' . ceil($currentBandwidth->transportStream->sum('runtime')) . "\n";
