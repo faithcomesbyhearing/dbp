@@ -204,8 +204,8 @@ class LanguagesController extends APIController
             $key
         ];
         $languages = cacheRemember('languages_search', $cache_params, now()->addDay(), function () use ($formatted_search, $limit, $key) {
-            $languages = Language::includeCurrentTranslation()
-                ->includeAutonymTranslation()
+            $languages = Language::includeAutonymTranslation()
+                ->includeCurrentTranslation()
                 ->filterableByNameOrAutonym($formatted_search)
                 ->isContentAvailable($key)
                 ->select([
