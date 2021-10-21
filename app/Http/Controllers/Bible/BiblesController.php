@@ -292,6 +292,12 @@ class BiblesController extends APIController
             $id = substr($id, 0, 6);
         }
         $key = $this->key;
+
+        $bible = Bible::whereId($id)->isContentAvailable($key)->count();
+        if (!$bible) {
+            return $this->setStatusCode(404)->replyWithError(trans('api.bibles_errors_404', ['bible_id' => $id]));
+        }
+
         $cache_params = [$id, $key];
         $bible = cacheRemember('bibles_show', $cache_params, now()->addDay(), function () use ($key, $id) {
             return Bible::with([
