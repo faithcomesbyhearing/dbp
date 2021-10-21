@@ -47,7 +47,7 @@
         "zircote/swagger-php": "3.2.3"
     },
     "require-dev": {
-        "barryvdh/laravel-debugbar": "3.6.3",
+        "barryvdh/laravel-debugbar": "3.6.4",
         "barryvdh/laravel-ide-helper": "2.10.0",
         "fakerphp/faker": "1.16.0",
         "filp/whoops": "2.14.4",
