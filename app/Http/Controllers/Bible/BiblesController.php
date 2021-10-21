@@ -291,11 +291,12 @@ class BiblesController extends APIController
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
         }
+        $key_error_404 = 'api.bibles_errors_404';
         $key = $this->key;
-
         $bible = Bible::whereId($id)->isContentAvailable($key)->count();
+
         if (!$bible) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.bibles_errors_404', ['bible_id' => $id]));
+            return $this->setStatusCode(404)->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
         $cache_params = [$id, $key];
@@ -309,7 +310,7 @@ class BiblesController extends APIController
         });
 
         if (!$bible || !sizeof($bible->filesets)) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.bibles_errors_404', ['bible_id' => $id]));
+            return $this->setStatusCode(404)->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
         return $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
