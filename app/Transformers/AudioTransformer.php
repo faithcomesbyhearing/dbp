@@ -62,7 +62,7 @@ class AudioTransformer extends BaseTransformer
                  */
             case 'v2_audio_path':
                 return [
-                    'book_id'    => $audio->book ? ucfirst(strtolower($audio->book->id_osis)) : $audio->book_id,
+                    'book_id'    => $audio->book ? $audio->book->id_osis : $audio->book_id,
                     'chapter_id' => (string) $audio->chapter_start,
                     'path'       => preg_replace("/https:\/\/.*?\/.*?\//", '', $audio->file_name)
                 ];
