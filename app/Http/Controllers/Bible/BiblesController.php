@@ -102,7 +102,7 @@ class BiblesController extends APIController
             $tag_exclude = 'opus';
         }
 
-        if (isBibleisOrGideon($this->key)) {
+        if (isBackwardCompatible($this->key)) {
             $order_by = 'bibles.priority DESC';
         }
 
@@ -139,7 +139,7 @@ class BiblesController extends APIController
             $order_cache_key,
             $key
         ];
-        
+
         $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $key, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by) {
             $bibles = Bible::withRequiredFilesets([
                 'key'            => $key,
