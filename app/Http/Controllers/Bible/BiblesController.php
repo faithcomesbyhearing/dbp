@@ -102,7 +102,7 @@ class BiblesController extends APIController
             $tag_exclude = 'opus';
         }
 
-        if (isKeyBelongBibleisOrGideon($this->key)) {
+        if (isBackwardCompatible($this->key)) {
             $order_by = 'bibles.priority DESC';
         }
 
