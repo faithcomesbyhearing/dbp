@@ -39,9 +39,11 @@ trait CallsBucketsTrait
         }
     }
 
-    public function signedUrl(string $file_path, $asset_id, int $transaction)
+    public function signedUrl(string $file_path, $asset_id, int $transaction, $asset = null)
     {
-        $asset = Asset::where('id', $asset_id)->first();
+        if (is_null($asset)) {
+            $asset = Asset::where('id', $asset_id)->first();
+        }
         $client = $this->authorizeAWS($asset->asset_type);
 
         // Return Either CloudFront Signed Urls
