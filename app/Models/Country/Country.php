@@ -244,4 +244,15 @@ class Country extends Model
     {
         return $this->hasOne(CountryTransportation::class);
     }
+    public function scopeFilterableByNameOrIso($query, $search_text)
+    {
+        $formatted_name_iso = "+$search_text*";
+
+        return $query->when($search_text, function ($query) use ($formatted_name_iso) {
+            $query->whereRaw(
+                'match (countries.name, countries.iso_a3) against (? IN BOOLEAN MODE)',
+                [$formatted_name_iso]
+            );
+        });
+    }
 }

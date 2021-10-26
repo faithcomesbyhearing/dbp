@@ -120,20 +120,20 @@ class CountriesController extends APIController
         $limit     = (int) (checkParam('limit') ?? 15);
         $limit     = min($limit, 50);
         $page      = checkParam('page') ?? 1;
-        $formatted_search = str_replace(' ', '', $search_text);
-        if ($formatted_search === '' || !$formatted_search) {
+        $formatted_search_cache = str_replace(' ', '', $search_text);
+
+        if ($formatted_search_cache === '' || !$formatted_search_cache) {
             return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
 
-        $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search];
+        $formatted_search = $this->transformQuerySearchText($search_text);
+
+        $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search_cache];
         $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($limit, $page, $formatted_search) {
             $countries = Country::with('currentTranslation')
-            ->whereRaw(
-                'match (countries.name, countries.iso_a3) against (? IN BOOLEAN MODE)',
-                ['*'.$formatted_search.'*']
-            )
-            ->whereHas('languages.bibles.filesets')
-            ->paginate($limit);
+                ->filterableByNameOrIso($formatted_search)
+                ->whereHas('languages.bibles.filesets')
+                ->paginate($limit);
 
             $countries_return = fractal(
                 $countries->getCollection(),
