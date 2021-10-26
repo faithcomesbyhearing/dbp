@@ -147,7 +147,7 @@ function generateCacheString($key, $args = [])
     return $cache_string;
 }
 
-function isBibleisOrGideon($key)
+function getBackwardCompatibilityInfo($key)
 {
     $bibleis_compat_keys = config('auth.compat_users.api_keys.bibleis');
     $bibleis_compat_keys = explode(',', $bibleis_compat_keys);
@@ -163,6 +163,12 @@ function isBibleisOrGideon($key)
         $compat_keys_response['isGideons'] = true;
     }
     return $compat_keys_response;
+}
+
+function isBackwardCompatible($key)
+{
+    $app_compat_keys = getBackwardCompatibilityInfo($key);
+    return $app_compat_keys['isBibleis'] === true || $app_compat_keys['isGideons'] === true;
 }
 
 function forceBibleisGideonsPagination($key, $limit_param)
@@ -251,7 +257,7 @@ function shouldUseBibleisBackwardCompat($key)
     $should_use_backward_compat = false;
     $app_name = '';
     $app_version = '';
-    $app_compat_keys = isBibleisOrGideon($key);
+    $app_compat_keys = getBackwardCompatibilityInfo($key);
     $deprecation_version = null;
 
     if ($app_compat_keys['isBibleis']) {

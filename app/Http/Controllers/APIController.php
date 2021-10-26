@@ -376,8 +376,25 @@ class APIController extends Controller
      */
     public function transformQuerySearchText(string $search_text): string
     {
-        $formatted_search = trim($search_text);
-        $formatted_search = preg_replace('/[+\-><\(\)~*\"@]+/', ' ', $formatted_search);
-        return preg_replace('!\s+!', ' ', $formatted_search);
+        $formatted_search = preg_replace('/[+\-><\(\)~*\"@]+/', ' ', $search_text);
+        $formatted_search = preg_replace('!\s+!', ' ', $formatted_search);
+        return trim($formatted_search);
+    }
+
+    /**
+     * Remove space for each value that belongs to cache params array
+     *
+     * @param array $cache_params
+     *
+     * @return array
+     */
+    public function removeSpaceFromCacheParameters(array $cache_params): array
+    {
+        return array_map(
+            function ($param) {
+                return is_string($param) ? str_replace(' ', '', $param) : $param;
+            },
+            $cache_params
+        );
     }
 }

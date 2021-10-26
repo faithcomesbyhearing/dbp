@@ -46,29 +46,155 @@ class LibraryController extends APIController
      */
     public function metadata()
     {
-        $fileset_id = checkParam('dam_id');
+        $fileset_id = checkParam('dam_id') ?? false;
         $asset_id  = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
-        // avoids using filesets with more than 7 characters
-        $fileset_id = str_split($fileset_id, 7)[0];
-        if (strlen($fileset_id) < 6) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $fileset_id]));
+
+        if ($fileset_id) {
+            // avoids using filesets with more than 7 characters
+            $fileset_id = str_split($fileset_id, 7)[0];
+            if (strlen($fileset_id) < 6) {
+                return $this
+                    ->setStatusCode(404)
+                    ->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $fileset_id]));
+            }
         }
 
-        $cache_params = [$fileset_id];
+        $fileset_id_cache = $fileset_id ? $fileset_id : 'allmetadata';
+        $cache_params = [
+            $fileset_id_cache,
+            $asset_id,
+        ];
+
         $metadata = cacheRemember('v2_library_metadata', $cache_params, now()->addDay(), function () use ($fileset_id, $asset_id) {
             $metadata = BibleFileset::where('asset_id', $asset_id)
+                ->select(
+                    'bible_filesets.id',
+                    'bible_filesets.hash_id',
+                    'bible_fileset_copyrights.copyright',
+                    'bible_fileset_copyrights.copyright_description',
+                    'organizations.id as organization_id',
+                    'organization_translations.name',
+                    'organizations.slug',
+                    'organizations.url_website',
+                    'organizations.url_donate',
+                    'organizations.address',
+                    'organizations.address2',
+                    'organizations.city',
+                    'organizations.state',
+                    'organizations.country',
+                    'organizations.zip',
+                    'organizations.phone',
+                    'organization_translations.language_id',
+                    'organization_translations.vernacular',
+                    'bible_fileset_copyright_roles.name as role_name',
+                )
                 ->when($fileset_id, function ($q) use ($fileset_id) {
-                    $q->where('id', 'LIKE', "$fileset_id%")->orWhere('id', substr($fileset_id, 0, -4))->orWhere('id', substr($fileset_id, 0, -2));
-                })->with('copyright.organizations.translations', 'copyright.role.roleTitle')->has('copyright')->get();
+                    $q->where('bible_filesets.id', 'LIKE', "$fileset_id%")
+                        ->orWhere('bible_filesets.id', substr($fileset_id, 0, -4))
+                        ->orWhere('bible_filesets.id', substr($fileset_id, 0, -2));
+                })
+                ->join('bible_fileset_copyrights', 'bible_fileset_copyrights.hash_id', 'bible_filesets.hash_id')
+                ->join(
+                    'bible_fileset_copyright_organizations',
+                    'bible_fileset_copyright_organizations.hash_id',
+                    'bible_filesets.hash_id'
+                )
+                ->join(
+                    'bible_fileset_copyright_roles',
+                    'bible_fileset_copyright_roles.id',
+                    'bible_fileset_copyright_organizations.organization_role'
+                )
+                ->join('organizations', 'organizations.id', 'bible_fileset_copyright_organizations.organization_id')
+                ->leftJoin('organization_translations', function ($query) {
+                    $query->on('organizations.id', 'organization_translations.organization_id')
+                    ->whereRaw(
+                        '(organization_translations.vernacular = ? OR organization_translations.language_id = ?)',
+                        [1, $GLOBALS['i18n_id']]
+                    )
+                    ;
+                })
+                ->has('copyright')
+                ->get();
+
+            $metadata_processed = $this->processMetadata($metadata);
 
             if (!$metadata) {
-                return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $fileset_id]));
+                return $this
+                    ->setStatusCode(404)
+                    ->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $fileset_id]));
             }
 
-            return fractal($metadata, new LibraryMetadataTransformer())->serializeWith($this->serializer);
+            return fractal($metadata_processed, new LibraryMetadataTransformer())->serializeWith($this->serializer);
         });
 
         return $this->reply($metadata);
+    }
+
+    /**
+     * Process the metadata to keep an only fileset record. It will use the hash_id to
+     * identy the fileset record.
+     *
+     * @return array
+     */
+    private function processMetadata($metadata) : array
+    {
+        $metadata_processed = [];
+
+        foreach ($metadata as $fileset_fetched) {
+            if (!isset($metadata_processed[$fileset_fetched->hash_id])) {
+                $metadata_temp = new \stdClass;
+            } else {
+                $metadata_temp = $metadata_processed[$fileset_fetched->hash_id];
+            }
+
+            $metadata_temp->id = $fileset_fetched->id;
+            $metadata_temp->copyright = $fileset_fetched->copyright;
+            $metadata_temp->copyright_description = $fileset_fetched->copyright_description;
+
+            if (!isset($metadata_temp->organization) || $metadata_temp->organization === false) {
+                $metadata_temp->organization = $this->setOrganizationMetadata($fileset_fetched);
+            }
+
+            $metadata_processed[$fileset_fetched->hash_id] = $metadata_temp;
+        }
+
+        return $metadata_processed;
+    }
+
+    /**
+     * Get the organization detail for each fileset fetched
+     *
+     * @return object
+     */
+    private function setOrganizationMetadata($fileset_fetched)
+    {
+        if (!isset($fileset_fetched->organization_id)) {
+            return false;
+        }
+
+        $organization = new \stdClass;
+        $organization->id = $fileset_fetched->organization_id ?? null;
+        $organization->name = $fileset_fetched->name && (int) $fileset_fetched->vernacular === 1
+            ? $fileset_fetched->name
+            : '';
+
+        $organization->slug =
+            $fileset_fetched->name && $fileset_fetched->language_id === $GLOBALS['i18n_id']
+                ? $fileset_fetched->name
+                : $fileset_fetched->slug;
+
+        $organization->role_name = $fileset_fetched->role_name ?? '';
+        $organization->url_website = $fileset_fetched->url_website ?? '';
+        $organization->url_donate = $fileset_fetched->url_donate ?? '';
+        $organization->address = $fileset_fetched->address ?? '';
+        $organization->address2 = $fileset_fetched->address2 ?? '';
+        $organization->city = $fileset_fetched->city ?? '';
+        $organization->state = $fileset_fetched->state ?? '';
+        $organization->country = $fileset_fetched->country ?? '';
+        $organization->zip = $fileset_fetched->zip ?? '';
+        $organization->phone = $fileset_fetched->phone ?? '';
+
+        return $organization;
     }
 
     /**
