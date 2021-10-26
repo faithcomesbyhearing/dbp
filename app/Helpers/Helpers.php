@@ -165,6 +165,13 @@ function isBibleisOrGideon($key)
     return $compat_keys_response;
 }
 
+function isKeyBelongBibleisOrGideon($key)
+{
+    $app_compat_keys = isBibleisOrGideon($key);
+
+    return $app_compat_keys['isBibleis'] === true || $app_compat_keys['isGideons'] === true;
+}
+
 function forceBibleisGideonsPagination($key, $limit_param)
 {
     // remove pagination for bibleis and gideons (temporal fix)
