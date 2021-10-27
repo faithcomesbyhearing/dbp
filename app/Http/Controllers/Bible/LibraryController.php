@@ -528,21 +528,8 @@ class LibraryController extends APIController
                 $assets_by_id[$asset->id] = $asset;
             }
 
-            foreach ($filesets as $key => $fileset) {
-                if ($fileset && $fileset->secondary_file_name) {
-                    $filesets[$key]->secondary_file_path = $this->signedUrl(
-                        storagePath(
-                            $fileset->bible_id,
-                            $fileset,
-                            null,
-                            $fileset->secondary_file_name
-                        ),
-                        $fileset->asset_id,
-                        random_int(0, 10000000),
-                        isset($assets_by_id[$fileset->asset_id]) ? $assets_by_id[$fileset->asset_id] : null
-                    );
-                }
-            }
+            $this->setSecondaryFilePathForEachFileset($filesets);
+
             return $this->generateV2StyleId($filesets);
         });
 
@@ -558,6 +545,22 @@ class LibraryController extends APIController
         }
 
         return $this->reply($filesets);
+    }
+
+    private function setSecondaryFilePathForEachFileset(&$filesets)
+    {
+        foreach ($filesets as $key => $fileset) {
+            if ($fileset && $fileset->secondary_file_name) {
+                $file_path = storagePath(
+                    $fileset->bible_id,
+                    $fileset,
+                    null,
+                    $fileset->secondary_file_name
+                );
+                $filesets[$key]->secondary_file_path =
+                    'https://content.cdn.' . $fileset->asset_id . '.dbp4.org/' . $file_path . '?x-amz-transaction=' . random_int(0, 10000000);
+            }
+        }
     }
 
     private function getBiblesByFilesetId($filesets)
