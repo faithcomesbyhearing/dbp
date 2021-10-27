@@ -520,33 +520,7 @@ class LibraryController extends APIController
                     return $item->english_name;
                 });
 
-            $asset_ids_array = [];
-            foreach ($filesets as $fileset) {
-                $asset_ids_array[$fileset->asset_id] = true;
-            }
-
-            $assets = Asset::whereIn('id', array_keys($asset_ids_array))->get();
-            $assets_by_id = [];
-
-            foreach ($assets as $asset) {
-                $assets_by_id[$asset->id] = $asset;
-            }
-
-            foreach ($filesets as $key => $fileset) {
-                if ($fileset && $fileset->secondary_file_name) {
-                    $filesets[$key]->secondary_file_path = $this->signedUrl(
-                        storagePath(
-                            $fileset->bible_id,
-                            $fileset,
-                            null,
-                            $fileset->secondary_file_name
-                        ),
-                        $fileset->asset_id,
-                        random_int(0, 10000000),
-                        isset($assets_by_id[$fileset->asset_id]) ? $assets_by_id[$fileset->asset_id] : null
-                    );
-                }
-            }
+            $this->setSecondaryFilePathForEachFileset($filesets);
 
             return $this->generateV2StyleId($filesets);
         });
@@ -563,6 +537,25 @@ class LibraryController extends APIController
         }
 
         return $this->reply($filesets);
+    }
+
+    private function setSecondaryFilePathForEachFileset(&$filesets)
+    {
+        $cdn_server_url = config('services.cdn.server');
+
+        foreach ($filesets as $key => $fileset) {
+            if ($fileset && $fileset->secondary_file_name) {
+                $transaction = random_int(0, 10000000);
+                $file_path = storagePath(
+                    $fileset->bible_id,
+                    $fileset,
+                    null,
+                    $fileset->secondary_file_name
+                );
+                $filesets[$key]->secondary_file_path =
+                    'https://'. $cdn_server_url . '/' . $file_path . '?x-amz-transaction=' . $transaction;
+            }
+        }
     }
 
     private function getBiblesByFilesetId($filesets)

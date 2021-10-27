@@ -239,13 +239,15 @@ class BibleFileset extends Model
         return $url;
     }
 
-    public function getArtworkUrlFromBibleId($bible_id)
+    public function getArtworkUrlFromBibleId($bible_id, $isSigned = false)
     {
         $url = '';
         $fileset_id = $this->id ?: $this->generated_id;
 
         if ($bible_id && $fileset_id) {
-            $url = $this->getUriFromStorage($bible_id, $fileset_id);
+            $url = $isSigned === true
+                ? $this->getUriFromStorage($bible_id, $fileset_id)
+                : "audio/{$bible_id}/{$fileset_id}/Art/300x300/{$fileset_id}.jpg";
         }
 
         return $url;
