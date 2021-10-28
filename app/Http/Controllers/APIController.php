@@ -392,7 +392,9 @@ class APIController extends Controller
     {
         return array_map(
             function ($param) {
-                return is_string($param) ? str_replace(' ', '', $param) : $param;
+                return is_string($param)
+                    ? preg_replace('/[[:cntrl:]]/', '', str_replace(' ', '', $param))
+                    : $param;
             },
             $cache_params
         );
