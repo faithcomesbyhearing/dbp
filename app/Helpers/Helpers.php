@@ -100,7 +100,12 @@ function cacheRemember($cache_key, $cache_args, $ttl, $callback)
     if ($lock->acquire()) {
         try {
             // lock acquired. access resource via callback
-            Cache::put($key, $value = $callback(), $ttl);
+            $value = $callback();
+            if (!is_null($value)) {
+                Cache::put($key, $value, $ttl);
+            } else {
+                Log::error("CacheRemember. callback returned null for key: " . $key);
+            }        
             $lock->release();
             return $value;
         } catch (Exception $exception) {
