@@ -44,9 +44,11 @@ trait AccessControlAPI
             ->pluck('access')
             ->where('name', '!=', 'RESTRICTED')
             ->map(function ($access) {
-                return collect($access->toArray())
-                    ->only(['id', 'name'])
-                    ->all();
+                return !is_null($access)
+                    ? collect($access->toArray())
+                        ->only(['id', 'name'])
+                        ->all()
+                    : collect([]);
             });
 
             // Access Control has historically been tied to fileset hashes.
