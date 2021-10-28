@@ -172,15 +172,17 @@ class BibleFileSetsController extends APIController
         $verse_end    = checkParam('verse_end');
         $type         = checkParam('type') ?? '';
 
-        $cache_params = [
-            $this->v,
-            $fileset_id,
-            $book_id,
-            $chapter_id,
-            $verse_start,
-            $verse_end,
-            $type
-        ];
+        $cache_params = $this->removeSpaceFromCacheParameters(
+            [
+                $this->v,
+                $fileset_id,
+                $book_id,
+                $chapter_id,
+                $verse_start,
+                $verse_end,
+                $type
+            ]
+        );
 
         $fileset_chapters = cacheRemember(
             $cache_key,
