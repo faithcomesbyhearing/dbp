@@ -445,7 +445,7 @@ class LibraryController extends APIController
         $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code];
         $filesets = cacheRemember('v2_library_volume', $cache_params, now()->addDay(), function () use ($dam_id, $media, $language_name, $iso, $updated, $organization, $version_code) {
             $language_id = $iso ? optional(Language::where('iso', $iso)->first())->id : null;
-            if (!$language_id) {
+            if (!$language_id && !$dam_id) {
                 return [];
             }
 
@@ -503,20 +503,7 @@ class LibraryController extends APIController
                 ->filter(function ($item) {
                     return $item->english_name;
                 });
-            foreach ($filesets as $key => $fileset) {
-                if ($fileset && $fileset->secondary_file_name) {
-                    $filesets[$key]->secondary_file_path = $this->signedUrl(
-                        storagePath(
-                            $fileset->bible_id,
-                            $fileset,
-                            null,
-                            $fileset->secondary_file_name
-                        ),
-                        $fileset->asset_id,
-                        random_int(0, 10000000)
-                    );
-                }
-            }
+
             return $this->generateV2StyleId($filesets);
         });
 
