@@ -382,7 +382,7 @@ class APIController extends Controller
     }
 
     /**
-     * Remove space and control characters for each value that belongs to cache params array
+     * Remove space for each value that belongs to cache params array
      *
      * @param array $cache_params
      *
@@ -392,9 +392,7 @@ class APIController extends Controller
     {
         return array_map(
             function ($param) {
-                return is_string($param)
-                    ? preg_replace('/[\x00-\x1F\x7F]/', '', str_replace(' ', '', $param))
-                    : $param;
+                return is_string($param) ? str_replace(' ', '', $param) : $param;
             },
             $cache_params
         );
