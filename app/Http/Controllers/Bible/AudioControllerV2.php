@@ -231,10 +231,17 @@ class AudioControllerV2 extends APIController
             [
                 'server'    => config('services.cdn.server_v2'),
                 'root_path' => '/mp3audiobibles2',
-                'protocol'  => 'http',
+                'protocol'  => 'https',
                 'CDN'       => '1',
                 'priority'  => '1',
             ],
+            [
+                'server'    => config('services.cdn.server_v2'),
+                'root_path' => '/mp3audiobibles2',
+                'protocol'  => 'http',
+                'CDN'       => '1',
+                'priority'  => '5',
+            ],            
         ]);
     }
 }
