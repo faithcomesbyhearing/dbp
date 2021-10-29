@@ -60,7 +60,7 @@ trait CallsBucketsTrait
             $key = $this->getKey();
 
             if (!empty($key)) {
-                $signature = isset($query_parameters['Signature']) ? $query_parameters['Signature'] : $signedUrl;
+                $signature = isset($query_parameters['Signature']) ? $query_parameters['Signature'] : $signed_url;
                 \Log::channel('cloudfront_api_key')->notice($key . ' ' . $signature);
             }
 
