@@ -505,7 +505,9 @@ class LibraryController extends APIController
                 });
 
             foreach ($filesets as &$fileset) {
-                $fileset->secondary_file_path = $fileset->id . '/' . $fileset->secondary_file_name;
+                if ($fileset->secondary_file_type === 'zip') {
+                    $fileset->audio_zip_path = $fileset->id . '/' . $fileset->secondary_file_name;
+                }
             }
 
             return $this->generateV2StyleId($filesets);
