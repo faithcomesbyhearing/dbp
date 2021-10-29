@@ -160,7 +160,7 @@ class LibraryVolumeTransformer extends BaseTransformer
                     'num_art'                   => '0',
                     'num_sample_audio'          => '0',
                     'sku'                       => $fileset->meta->where('name', 'sku')->first()->description ?? '',
-                    'audio_zip_path'            => $fileset->secondary_file_type === 'zip' ? $fileset->secondary_file_path : null,
+                    'audio_zip_path'            => $fileset->audio_zip_path,
                     // 'artwork_url'               => $fileset->artwork_url,
                     'font'                      => null,
                     'arclight_language_id'      => '', // (int) $fileset->arclight_code,
