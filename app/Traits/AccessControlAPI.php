@@ -40,16 +40,22 @@ trait AccessControlAPI
 
             $key = Key::select('id')->where('key', $api_key)->first();
             $accessGroups = AccessGroupKey::where('key_id', $key->id)
-            ->get()
-            ->pluck('access')
-            ->where('name', '!=', 'RESTRICTED')
-            ->map(function ($access) {
-                return !is_null($access)
-                    ? collect($access->toArray())
-                        ->only(['id', 'name'])
-                        ->all()
-                    : collect([]);
-            });
+                ->with([
+                    'access' => function ($query) {
+                        $query->where('name', '!=', 'RESTRICTED');
+                    }
+                ])
+                ->get()
+                ->pluck('access')
+                ->map(function ($access) {
+                    return !is_null($access)
+                        ? collect($access->toArray())
+                            ->only(['id', 'name'])
+                            ->all()
+                        : collect([]);
+                })->filter(function ($access) {
+                    return !empty($access) && isset($access['id']);
+                });
 
             // Access Control has historically been tied to fileset hashes.
             // As the number of filesets grows, this has been affected query

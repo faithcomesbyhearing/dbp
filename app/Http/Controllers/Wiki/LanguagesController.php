@@ -116,6 +116,7 @@ class LanguagesController extends APIController
                 ->includeAutonymTranslation()
                 ->includeExtraLanguageTranslations($include_translations)
                 ->includeCountryPopulation($country)
+                ->isContentAvailable($key)
                 ->filterableByCountry($country)
                 ->filterableByIsoCode($code)
                 ->filterableByName($name)
@@ -133,8 +134,7 @@ class LanguagesController extends APIController
                 }])
                 ->withCount([
                     'filesets'
-                ])
-                ->isContentAvailable($key);
+                ]);
 
             $languages = $languages->paginate($limit);
             $languages_return = fractal(
@@ -203,27 +203,32 @@ class LanguagesController extends APIController
             $GLOBALS['i18n_id'],
             $key
         ];
-        $languages = cacheRemember('languages_search', $cache_params, now()->addDay(), function () use ($formatted_search, $limit, $key) {
-            $languages = Language::includeAutonymTranslation()
-                ->includeCurrentTranslation()
-                ->filterableByNameOrAutonym($formatted_search)
-                ->isContentAvailable($key)
-                ->select([
-                    'languages.id',
-                    'languages.glotto_id',
-                    'languages.iso',
-                    'languages.name as backup_name',
-                    'current_translation.name as name',
-                    'autonym.name as autonym',
-                ]);
-            $languages = $languages->paginate($limit);
-            $languages_return = fractal(
-                $languages->getCollection(),
-                LanguageTransformer::class,
-                $this->serializer
-            );
-            return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
-        });
+        $languages = cacheRemember(
+            'languages_search',
+            $cache_params,
+            now()->addDay(),
+            function () use ($formatted_search, $limit, $key) {
+                $languages = Language::includeAutonymTranslation()
+                    ->includeCurrentTranslation()
+                    ->filterableByNameAndKey($formatted_search, $key)
+                    ->select([
+                        'languages.id',
+                        'languages.glotto_id',
+                        'languages.iso',
+                        'languages.name as backup_name',
+                        'current_translation.name as name',
+                        'autonym.name as autonym',
+                    ])
+                    ->with('bibles');
+                $languages = $languages->paginate($limit);
+                $languages_return = fractal(
+                    $languages->getCollection(),
+                    LanguageTransformer::class,
+                    $this->serializer
+                );
+                return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
+            }
+        );
         return $this->reply($languages);
     }
 
