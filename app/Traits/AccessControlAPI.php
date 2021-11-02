@@ -125,15 +125,17 @@ trait AccessControlAPI
             }
 
             $dbp_database = config('database.connections.dbp.database');
-            $key = Key::select('id')->where('key', $api_key)->first();
-            $allowed_fileset =
-                AccessGroupKey::join($dbp_database . '.access_group_filesets as acc_filesets', function ($join) use ($key, $fileset_hash) {
+
+            return AccessGroupKey::join(
+                $dbp_database . '.access_group_filesets as acc_filesets',
+                function ($join) use ($fileset_hash) {
                     $join->on('access_group_api_keys.access_group_id', '=', 'acc_filesets.access_group_id')
-                        ->where('key_id', $key->id)
                         ->where('hash_id', $fileset_hash);
-                })->get();
-            
-            return $allowed_fileset;
+                }
+            )->join('user_keys', function ($join) use ($api_key) {
+                    $join->on('user_keys.id', '=', 'access_group_api_keys.key_id')
+                        ->where('user_keys.key', $api_key);
+            })->get();
         });
     }
 
