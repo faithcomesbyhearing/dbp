@@ -41,7 +41,9 @@ trait CallsBucketsTrait
 
     public function signedUrl(string $file_path, $asset_id, int $transaction)
     {
-        $asset = Asset::where('id', $asset_id)->first();
+        $asset = cacheRemember('asset_signed_url', [$asset_id], now()->addMinute(), function () use ($asset_id) {
+            return Asset::where('id', $asset_id)->first();
+        });
         $client = $this->authorizeAWS($asset->asset_type);
 
         // Return Either CloudFront Signed Urls
