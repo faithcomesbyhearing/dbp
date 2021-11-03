@@ -87,6 +87,27 @@ class TextController extends APIController
         $asset_id = $fileset->asset_id;
         $cache_params = [$asset_id, $fileset_id, $book_id, $chapter, $verse_start, $verse_end];
         $verses = cacheRemember('bible_text', $cache_params, now()->addDay(), function () use ($fileset, $bible, $book, $chapter, $verse_start, $verse_end) {
+            $select_columns = [
+                'bible_verses.book_id as book_id',
+                'books.name as book_name',
+                'books.protestant_order as book_order',
+                'bible_books.name as book_vernacular_name',
+                'bible_verses.chapter',
+                'bible_verses.verse_start',
+                'bible_verses.verse_end',
+                'bible_verses.verse_text',
+            ];
+
+            if ($bible && $bible->numeral_system_id) {
+                $select_columns = array_merge(
+                    $select_columns,
+                    [
+                        'glyph_chapter.glyph as chapter_vernacular',
+                        'glyph_start.glyph as verse_start_vernacular',
+                        'glyph_end.glyph as verse_end_vernacular'
+                    ]
+                );
+            }
             return BibleVerse::withVernacularMetaData($bible)
                 ->where('hash_id', $fileset->hash_id)
                 ->when($book, function ($query) use ($book) {
@@ -102,19 +123,7 @@ class TextController extends APIController
                     return $query->where('verse_end', '<=', $verse_end);
                 })
                 ->orderBy('verse_start')
-                ->select([
-                    'bible_verses.book_id as book_id',
-                    'books.name as book_name',
-                    'books.protestant_order as book_order',
-                    'bible_books.name as book_vernacular_name',
-                    'bible_verses.chapter',
-                    'bible_verses.verse_start',
-                    'bible_verses.verse_end',
-                    'bible_verses.verse_text',
-                    'glyph_chapter.glyph as chapter_vernacular',
-                    'glyph_start.glyph as verse_start_vernacular',
-                    'glyph_end.glyph as verse_end_vernacular',
-                ])->get();
+                ->select($select_columns)->get();
         });
 
         return $this->reply(fractal($verses, new TextTransformer(), $this->serializer));
