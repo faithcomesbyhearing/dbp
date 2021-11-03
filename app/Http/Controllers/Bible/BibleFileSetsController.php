@@ -311,12 +311,7 @@ class BibleFileSetsController extends APIController
                         trans('api.bible_fileset_errors_404')
                     );
                 }
-                $book = $book_id
-                    ? Book::where('id', $book_id)
-                        ->orWhere('id_osis', $book_id)
-                        ->orWhere('id_usfx', $book_id)
-                        ->first()
-                    : null;
+
                 $fileset_type = $fileset_from_id['set_type_code'];
                 // fixes data issue where text filesets use the same filesetID
                 $fileset_type = $this->getCorrectFilesetType($fileset_type, $type);
@@ -337,7 +332,14 @@ class BibleFileSetsController extends APIController
 
                 $asset_id = $fileset->asset_id;
                 $bible = optional($fileset->bible)->first();
-                
+
+                $book = $book_id
+                    ? Book::where('id', $book_id)
+                        ->orWhere('id_osis', $book_id)
+                        ->orWhere('id_usfx', $book_id)
+                        ->first()
+                    : null;
+
                 if ($fileset_type === 'text_plain') {
                     return $this->showTextFilesetChapter(
                         $limit,
