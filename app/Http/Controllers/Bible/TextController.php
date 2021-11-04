@@ -26,12 +26,14 @@ use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Transformers\UserNotesTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Http\Controllers\Bible\Traits\TextControllerTrait;
 
 class TextController extends APIController
 {
     use CallsBucketsTrait;
     use AccessControlAPI;
     use CheckProjectMembership;
+    use TextControllerTrait;
 
     /**
      * Display a listing of the Verses
@@ -86,36 +88,7 @@ class TextController extends APIController
         }
         $asset_id = $fileset->asset_id;
         $cache_params = [$asset_id, $fileset_id, $book_id, $chapter, $verse_start, $verse_end];
-        $verses = cacheRemember('bible_text', $cache_params, now()->addDay(), function () use ($fileset, $bible, $book, $chapter, $verse_start, $verse_end) {
-            return BibleVerse::withVernacularMetaData($bible)
-                ->where('hash_id', $fileset->hash_id)
-                ->when($book, function ($query) use ($book) {
-                    return $query->where('bible_verses.book_id', $book->id);
-                })
-                ->when($verse_start, function ($query) use ($verse_start) {
-                    return $query->where('verse_end', '>=', $verse_start);
-                })
-                ->when($chapter, function ($query) use ($chapter) {
-                    return $query->where('chapter', $chapter);
-                })
-                ->when($verse_end, function ($query) use ($verse_end) {
-                    return $query->where('verse_end', '<=', $verse_end);
-                })
-                ->orderBy('verse_start')
-                ->select([
-                    'bible_verses.book_id as book_id',
-                    'books.name as book_name',
-                    'books.protestant_order as book_order',
-                    'bible_books.name as book_vernacular_name',
-                    'bible_verses.chapter',
-                    'bible_verses.verse_start',
-                    'bible_verses.verse_end',
-                    'bible_verses.verse_text',
-                    'glyph_chapter.glyph as chapter_vernacular',
-                    'glyph_start.glyph as verse_start_vernacular',
-                    'glyph_end.glyph as verse_end_vernacular',
-                ])->get();
-        });
+        $verses = $this->getVerses($cache_params, $fileset, $bible, $book, $chapter, $verse_start, $verse_end);
 
         return $this->reply(fractal($verses, new TextTransformer(), $this->serializer));
     }
