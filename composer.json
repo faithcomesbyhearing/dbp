@@ -40,7 +40,7 @@
         "spatie/laravel-fractal": "5.8.1",
         "sunra/php-simple-html-dom-parser": "1.5.2",
         "symfony/process": "5.3.7",
-        "symfony/psr-http-message-bridge": "2.1.1",
+        "symfony/psr-http-message-bridge": "2.1.2",
         "symfony/yaml": "5.3.6",
         "torann/geoip": "3.0.2",
         "yosymfony/toml": "1.0.4",
