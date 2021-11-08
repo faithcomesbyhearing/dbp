@@ -417,6 +417,60 @@ class Language extends Model
         });
     }
 
+    public function scopeFilterableByNameAndKey($query, $name, $key)
+    {
+        $dbp_users = config('database.connections.dbp_users.database');
+        $dbp_prod = config('database.connections.dbp.database');
+
+        $formatted_name = "+$name*";
+
+        $lang = \DB::table('languages as lang')
+            ->select('lang.id', 'lang.name')
+            ->whereRaw('MATCH (lang.name) against (? IN BOOLEAN MODE)')
+            ->whereRaw(
+                'EXISTS (select 1
+                    from ' . $dbp_users . '.user_keys uk
+                    join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                    join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                    join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                    join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
+                    where uk.key = ? and lang.id = b.language_id
+                )',
+            );
+
+        $lang_trans = \DB::table('language_translations as lang_trans')
+            ->select('lang_trans.language_source_id as id', 'lang_trans.name')
+            ->whereRaw('lang_trans.language_source_id = lang_trans.language_translation_id')
+            ->whereRaw('MATCH (lang_trans.name) against (? IN BOOLEAN MODE)')
+            ->whereRaw(
+                'EXISTS (select 1
+                    from ' . $dbp_users . '.user_keys uk
+                    join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                    join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                    join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                    join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
+                    WHERE uk.key = ? and lang_trans.language_source_id = b.language_id
+                )',
+            );
+
+        $lang_trans_sql = $lang_trans->toSql();
+        $lang_sql = $lang->toSql();
+        
+        return $query->join(
+            \DB::raw("(SELECT lang_and_trans_group.id FROM (
+                $lang_sql
+                UNION ALL
+                $lang_trans_sql
+            ) as lang_and_trans_group GROUP by lang_and_trans_group.id) as languages_and_translations"),
+            'languages_and_translations.id',
+            '=',
+            'languages.id'
+        )->addBinding($formatted_name)
+        ->addBinding($key)
+        ->addBinding($formatted_name)
+        ->addBinding($key);
+    }
+
     public function scopeWithRequiredFilesets($query, $type_filters)
     {
         $organization_id = $type_filters['organization_id'];
