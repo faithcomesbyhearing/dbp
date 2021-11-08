@@ -194,15 +194,16 @@ class LanguagesController extends APIController
         $formatted_search = $this->transformQuerySearchText($search_text);
 
         $key = $this->key;
-
-        $cache_params = [
-            $this->v,
-            $formatted_search_cache,
-            $limit,
-            $page,
-            $GLOBALS['i18n_id'],
-            $key
-        ];
+        $cache_params = $this->removeSpaceFromCacheParameters(
+            [
+                $this->v,
+                $formatted_search_cache,
+                $limit,
+                $page,
+                $GLOBALS['i18n_id'],
+                $key
+            ]
+        );
         $languages = cacheRemember(
             'languages_search',
             $cache_params,
