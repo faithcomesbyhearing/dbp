@@ -128,7 +128,9 @@ class CountriesController extends APIController
 
         $formatted_search = $this->transformQuerySearchText($search_text);
 
-        $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search_cache];
+        $cache_params = $this->removeSpaceFromCacheParameters(
+            [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search_cache]
+        );
         $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($limit, $page, $formatted_search) {
             $countries = Country::with('currentTranslation')
                 ->filterableByNameOrIso($formatted_search)
