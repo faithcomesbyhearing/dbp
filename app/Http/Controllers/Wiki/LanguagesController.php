@@ -209,9 +209,7 @@ class LanguagesController extends APIController
             $cache_params,
             now()->addDay(),
             function () use ($formatted_search, $limit, $key) {
-                $languages = Language::includeAutonymTranslation()
-                    ->includeCurrentTranslation()
-                    ->filterableByNameAndKey($formatted_search, $key)
+                $languages = Language::filterableByNameAndKey($formatted_search, $key)
                     ->select([
                         'languages.id',
                         'languages.glotto_id',
