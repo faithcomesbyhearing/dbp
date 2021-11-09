@@ -425,7 +425,7 @@ class Language extends Model
         $formatted_name = "+$name*";
 
         $lang = \DB::table('languages as lang')
-            ->select('lang.id', 'lang.name')
+            ->select('lang.id as id')
             ->whereRaw('MATCH (lang.name) against (? IN BOOLEAN MODE)')
             ->whereRaw(
                 'EXISTS (select 1
@@ -438,8 +438,16 @@ class Language extends Model
                 )',
             );
 
+        $priority_union = \DB::raw(
+            '(SELECT max(`priority`)
+            FROM language_translations as lang_trans_prior
+            WHERE lang_trans_prior.language_source_id = lang_trans.language_source_id
+            AND lang_trans_prior.language_source_id = lang_trans_prior.language_translation_id
+            LIMIT 1)'
+        );
+
         $lang_trans = \DB::table('language_translations as lang_trans')
-            ->select('lang_trans.language_source_id as id', 'lang_trans.name')
+            ->select('lang_trans.language_source_id as id')
             ->whereRaw('lang_trans.language_source_id = lang_trans.language_translation_id')
             ->whereRaw('MATCH (lang_trans.name) against (? IN BOOLEAN MODE)')
             ->whereRaw(
@@ -451,7 +459,7 @@ class Language extends Model
                     join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
                     WHERE uk.key = ? and lang_trans.language_source_id = b.language_id
                 )',
-            );
+            )->where('lang_trans.priority', '=', $priority_union);
 
         $lang_trans_sql = $lang_trans->toSql();
         $lang_sql = $lang->toSql();
@@ -465,10 +473,39 @@ class Language extends Model
             'languages_and_translations.id',
             '=',
             'languages.id'
-        )->addBinding($formatted_name)
+        )->leftJoin('language_translations as autonym', function ($join) {
+            $join->on('autonym.language_source_id', '=', 'languages.id')
+                ->on('autonym.language_translation_id', '=', 'languages.id')
+                ->where(
+                    'autonym.priority',
+                    '=',
+                    \DB::raw(
+                        '(SELECT max(`priority`)
+                        FROM language_translations
+                        WHERE language_translation_id = languages.id
+                        AND language_source_id = languages.id
+                        LIMIT 1)'
+                    )
+                );
+        })->leftJoin('language_translations as current_translation', function ($join) {
+            $join->on('current_translation.language_source_id', 'languages.id')
+                ->whereRaw('current_translation.language_translation_id = ?')
+                ->where(
+                    'current_translation.priority',
+                    '=',
+                    \DB::raw(
+                        '(SELECT max(`priority`)
+                        FROM language_translations
+                        WHERE language_source_id = languages.id
+                        LIMIT 1)'
+                    )
+                );
+        })
+        ->addBinding($formatted_name)
         ->addBinding($key)
         ->addBinding($formatted_name)
-        ->addBinding($key);
+        ->addBinding($key)
+        ->addBinding($GLOBALS['i18n_id']);
     }
 
     public function scopeWithRequiredFilesets($query, $type_filters)
