@@ -131,11 +131,7 @@ class TextController extends APIController
         $id   = checkParam('id');
         $name = checkParam('name');
 
-        $fonts = AlphabetFont::when($name, function ($q) use ($name) {
-            $q->where('name', $name);
-        })->when($name, function ($q) use ($id) {
-            $q->where('id', $id);
-        })->get();
+        $fonts = AlphabetFont::filterById($id)->filterByFileName($name)->get();
 
         return $this->reply(fractal($fonts, new FontsTransformer(), $this->serializer));
     }

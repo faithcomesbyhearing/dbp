@@ -12,7 +12,6 @@ use App\Models\Language\AlphabetFont;
 use App\Traits\AccessControlAPI;
 use App\Traits\CheckProjectMembership;
 use App\Traits\CallsBucketsTrait;
-use App\Transformers\FontsTransformer;
 use App\Transformers\TextTransformer;
 use App\Http\Controllers\APIController;
 use App\Http\Controllers\Bible\Traits\TextControllerTrait;
