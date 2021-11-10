@@ -169,6 +169,7 @@ class TextControllerV2 extends APIController
             'bible_verses.verse_start',
             'bible_verses.verse_end',
             'bible_verses.verse_text',
+            \DB::raw("'$fileset_id' as dam_id_request"),
         ];
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)
             ->withVernacularMetaData($bible)
