@@ -198,7 +198,7 @@ class BibleFileset extends Model
             });
         })
         ->when($testament_filter, function ($query) use ($testament_filter) {
-            if (is_array($testament_filter)) {
+            if (is_array($testament_filter) && !empty($testament_filter)) {
                 $query->whereIn('bible_filesets.set_size_code', $testament_filter);
             }
         })
