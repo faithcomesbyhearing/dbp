@@ -202,27 +202,37 @@ class TextController extends APIController
         })->flatten()->toArray();
 
         $search_text  = '%' . $query . '%';
+        $select_columns = [
+            'bible_verses.book_id as book_id',
+            'bible_books.bible_id as bible_id',
+            'books.name as book_name',
+            'bible_books.name as book_vernacular_name',
+            'bible_verses.chapter',
+            'bible_verses.verse_start',
+            'bible_verses.verse_end',
+            'bible_verses.verse_text',
+        ];
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)
             ->withVernacularMetaData($bible)
             ->when($book_id, function ($query) use ($book_id) {
                 $books = explode(',', $book_id);
                 $query->whereIn('bible_verses.book_id', $books);
             })
-            ->where('bible_verses.verse_text', 'like', $search_text)
-            ->select([
-                'bible_verses.book_id as book_id',
-                'bible_books.bible_id as bible_id',
-                'books.name as book_name',
-                'bible_books.name as book_vernacular_name',
-                'bible_verses.chapter',
-                'bible_verses.verse_start',
-                'bible_verses.verse_end',
-                'bible_verses.verse_text',
-                'glyph_chapter.glyph as chapter_vernacular',
-                'glyph_start.glyph as verse_start_vernacular',
-                'glyph_end.glyph as verse_end_vernacular',
-            ]);
+            ->where('bible_verses.verse_text', 'like', $search_text);
         
+        if ($bible && $bible->numeral_system_id) {
+            $select_columns_extra = array_merge(
+                $select_columns,
+                [
+                    'glyph_chapter.glyph as chapter_vernacular',
+                    'glyph_start.glyph as verse_start_vernacular',
+                    'glyph_end.glyph as verse_end_vernacular',
+                ]
+            );
+            $verses->select($select_columns_extra);
+        } else {
+            $verses->select($select_columns);
+        }
 
         if ($this->v === 2 || $this->v === 3) {
             return $this->reply([
