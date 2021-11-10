@@ -38,6 +38,43 @@ trait CallsBucketsTrait
             return $security_token;
         }
     }
+    /**
+     * Method to sign a URL but the CloudFrontClient object should be passed by parameter
+     * to do an only one call to AWS
+     *
+     * @param CloudFrontClient $client
+     * @param string $file_path
+     * @param int $transaction
+     *
+     * @return string signed url
+     */
+    public function signedUrlUsingClient(CloudFrontClient $client, string $file_path, int $transaction): string
+    {
+        if (!$client) {
+            return null;
+        }
+
+        $cdn_server_url = config('services.cdn.server');
+        $request_array = [
+            'url'         => 'https://'. $cdn_server_url . '/' . $file_path . '?x-amz-transaction=' . $transaction,
+            'key_pair_id' => config('filesystems.disks.cloudfront.key'),
+            'private_key' => storage_path('app/' . config('filesystems.disks.cloudfront.secret')),
+            'expires'     => Carbon::now()->addDay()->timestamp,
+        ];
+
+        $signed_url = $client->getSignedUrl($request_array);
+        $query_parameters_string = parse_url($signed_url, PHP_URL_QUERY);
+        $query_parameters = [];
+        parse_str($query_parameters_string, $query_parameters);
+        $key = $this->getKey();
+
+        if (!empty($key)) {
+            $signature = isset($query_parameters['Signature']) ? $query_parameters['Signature'] : $signed_url;
+            \Log::channel('cloudfront_api_key')->notice($key . ' ' . $signature);
+        }
+
+        return $signed_url;
+    }
 
     public function signedUrl(string $file_path, $asset_id, int $transaction)
     {
@@ -46,42 +83,7 @@ trait CallsBucketsTrait
         });
         $client = $this->authorizeAWS($asset->asset_type);
 
-        // Return Either CloudFront Signed Urls
-        if ($asset->asset_type === 'cloudfront') {
-            $request_array = [
-                'url'         => 'https://content.cdn.' . $asset_id . '.dbp4.org/' . $file_path . '?x-amz-transaction=' . $transaction,
-                'key_pair_id' => config('filesystems.disks.cloudfront.key'),
-                'private_key' => storage_path('app/' . config('filesystems.disks.cloudfront.secret')),
-                'expires'     => Carbon::now()->addDay()->timestamp,
-            ];
-
-            $signed_url = $client->getSignedUrl($request_array);
-            $query_parameters_string = parse_url($signed_url, PHP_URL_QUERY);
-            $query_parameters = [];
-            parse_str($query_parameters_string, $query_parameters);
-            $key = $this->getKey();
-
-            if (!empty($key)) {
-                $signature = isset($query_parameters['Signature']) ? $query_parameters['Signature'] : $signed_url;
-                \Log::channel('cloudfront_api_key')->notice($key . ' ' . $signature);
-            }
-
-            return $signed_url;
-        }
-
-        // Or return S3 Urls
-        if ($asset->asset_type === 's3') {
-            $temp_session_token = $client->AssumeRoleResult->Credentials->SessionToken;
-            $temp_secret_key    = $client->AssumeRoleResult->Credentials->SecretAccessKey;
-            $temp_access_key    = $client->AssumeRoleResult->Credentials->AccessKeyId;
-
-            $bucket = $asset->id;
-
-            $timestamp = Carbon::now()->addDay()->timestamp;
-            $data = "GET\n\n\n$timestamp\nx-amz-security-token:$temp_session_token\nx-amz-transaction:$transaction\n/$bucket" . '/' . $file_path;
-            $signature = base64_encode(hash_hmac('sha1', $data, $temp_secret_key, true));
-            return "https://$bucket.s3.amazonaws.com/$file_path?AWSAccessKeyId=$temp_access_key&Signature=" . urlencode($signature) . '&x-amz-security-token=' . urlencode($temp_session_token) . "&x-amz-transaction=$transaction&Expires=$timestamp";
-        }
+        return $this->signedUrlUsingClient($client, $file_path, $transaction);
     }
 
     private function assumeRole()
