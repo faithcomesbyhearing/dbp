@@ -510,3 +510,30 @@ if (!function_exists('formatFilesetMeta')) {
         return $fileset;
     }
 }
+if (!function_exists('getTestamentString')) {
+    function getTestamentString($id)
+    {
+        $testament_pivot_word = 6;
+
+        $substring = '';
+        if (strlen($id) > $testament_pivot_word) {
+            $substring = $id[$testament_pivot_word];
+        }
+        switch ($substring) {
+            case 'O':
+                $testament = ['OT', 'C'];
+                break;
+
+            case 'N':
+                $testament = ['NT', 'C'];
+                break;
+
+            case 'P':
+                $testament = ['NTOTP', 'NTP', 'NTPOTP', 'OTNTP', 'OTP', 'P'];
+                break;
+            default:
+                $testament = [];
+        }
+        return $testament;
+    }
+}
