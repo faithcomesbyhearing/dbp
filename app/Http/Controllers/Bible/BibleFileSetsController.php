@@ -15,6 +15,8 @@ use App\Models\Bible\BibleVerse;
 use App\Models\Bible\BibleFilesetType;
 use App\Models\Bible\Book;
 use App\Models\Language\Language;
+use App\Models\Organization\Asset;
+
 
 use App\Transformers\FileSetTransformer;
 use App\Transformers\TextTransformer;
@@ -522,18 +524,24 @@ class BibleFileSetsController extends APIController
             );
         }
 
+        $asset = Asset::where('id', $asset_id)->first();
+        $client = null;
+        if ($asset) {
+            $client = $this->authorizeAWS($asset->asset_type);
+        }
+
         $fileset_chapters = $this->generateSecondaryFiles(
             $fileset,
             $fileset_chapters,
             $bible,
-            $asset_id
+            $client
         );
         $fileset_return = fractal(
             $this->generateFilesetChapters(
                 $fileset,
                 $fileset_chapters,
                 $bible,
-                $asset_id
+                $client
             ),
             new FileSetTransformer(),
             $this->serializer
@@ -761,7 +769,7 @@ class BibleFileSetsController extends APIController
         $fileset,
         $fileset_chapters,
         $bible,
-        $asset_id
+        $client
     ) {
         $secondary_files = BibleFileSecondary::where(
             'hash_id',
@@ -774,9 +782,9 @@ class BibleFileSetsController extends APIController
 
         $secondary_file_paths = ['thumbnail' => null, 'zip_file' => null,];
         foreach ($secondary_files as $secondary_file) {
-            $secondary_file_url = $this->signedUrl(
+            $secondary_file_url = $this->signedUrlUsingClient(
+                $client,
                 storagePath($bible->id, $fileset, null, $secondary_file->file_name),
-                $asset_id,
                 random_int(0, 10000000)
             );
             if ($secondary_file->file_type === 'art') {
@@ -808,7 +816,7 @@ class BibleFileSetsController extends APIController
         $fileset,
         $fileset_chapters,
         $bible,
-        $asset_id
+        $client
     ) {
         $is_stream =
             $fileset->set_type_code === 'video_stream' ||
@@ -851,13 +859,13 @@ class BibleFileSetsController extends APIController
                 $fileset_chapters = [$fileset_chapters[0]];
             } else {
                 foreach ($fileset_chapters as $key => $fileset_chapter) {
-                    $fileset_chapters[$key]->file_name = $this->signedUrl(
+                    $fileset_chapters[$key]->file_name = $this->signedUrlUsingClient(
+                        $client,
                         storagePath(
                             $bible->id,
                             $fileset,
                             $fileset_chapter
                         ),
-                        $asset_id,
                         random_int(0, 10000000)
                     );
                 }
@@ -866,7 +874,8 @@ class BibleFileSetsController extends APIController
 
         if ($is_video) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
-                $fileset_chapters[$key]->thumbnail = $this->signedUrl(
+                $fileset_chapters[$key]->thumbnail = $this->signedUrlUsingClient(
+                    $client,
                     'video/thumbnails/' .
                         $fileset_chapters[$key]->book_id .
                         '_' .
@@ -877,7 +886,6 @@ class BibleFileSetsController extends APIController
                             STR_PAD_LEFT
                         ) .
                         '.jpg',
-                    $asset_id,
                     random_int(0, 10000000)
                 );
             }
