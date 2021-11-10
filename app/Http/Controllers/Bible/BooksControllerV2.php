@@ -411,26 +411,6 @@ class BooksControllerV2 extends APIController
 
     private function getTestamentString($id)
     {
-        $testament = [];
-
-        $len = strlen($id);
-        $substring = '';
-        if ($len === 10) {
-            $substring = $id[$len - 4];
-        }
-        switch ($substring) {
-            case 'O':
-                $testament = ['OT', 'C'];
-                break;
-
-            case 'N':
-                $testament = ['NT', 'C'];
-                break;
-
-            case 'P':
-                $testament = ['NTOTP', 'NTP', 'NTPOTP', 'OTNTP', 'OTP', 'P'];
-                break;
-        }
-        return $testament;
+        return getTestamentString($id);
     }
 }
