@@ -41,6 +41,8 @@ class TextTransformer extends BaseTransformer
              */
             case 'v2_text_search':
                 return [
+                    // It must return a damid longer than six characters, then it is using the request DAMID
+                    // to accomplish this goal
                     'dam_id' => (string) $text->dam_id_request ?? $text->bible_id,
                     'book_name' => (string) $text->book_name,
                     'book_id' => (string) $text->book_id,
