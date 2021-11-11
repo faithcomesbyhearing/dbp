@@ -234,19 +234,12 @@ class TextController extends APIController
             $verses->select($select_columns);
         }
 
-        if ($this->v === 2 || $this->v === 3) {
-            return $this->reply([
-                [['total_results' => strval($verses->count())]],
-                fractal($verses->get(), new TextTransformer(), $this->serializer)
-            ]);
-        } else {
-            if ($page) {
-                $verses  = $verses->paginate($limit);
-                return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses->getCollection(), TextTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($verses))]);
-            }
-            $verses  = $verses->limit($limit)->get();
-            return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses, new TextTransformer(), $this->serializer)]);
+        if ($page) {
+            $verses  = $verses->paginate($limit);
+            return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses->getCollection(), TextTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($verses))]);
         }
+        $verses  = $verses->limit($limit)->get();
+        return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses, new TextTransformer(), $this->serializer)]);
     }
     /**
      *
