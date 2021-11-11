@@ -181,22 +181,24 @@ class BibleFileset extends Model
                 if ($version  <= 2) {
                     $query->where('bible_filesets.id', $id)
                         ->orWhere('bible_filesets.id', substr($id, 0, -4))
-                        ->orWhere('bible_filesets.id', 'like',  substr($id, 0, 6))
+                        ->orWhere('bible_filesets.id', 'like', substr($id, 0, 6))
                         ->orWhere('bible_filesets.id', 'like', substr($id, 0, -2) . '%');
                 } else {
-                    $connections = DB::table(config('database.connections.dbp.database') . '.bible_fileset_connections')
-                        ->select('hash_id')
-                        ->where('bible_id', 'LIKE', $id . '%')->get()->pluck('hash_id');
-
+                    $dbp_database = config('database.connections.dbp.database');
                     $query->where('bible_filesets.id', $id)
-                        ->when($connections, function ($q) use ($connections) {
-                            $q->orWhereIn('bible_filesets.hash_id', $connections);
+                        ->orWhere(function ($query) use ($dbp_database, $id) {
+                            $query->whereIn('bible_filesets.hash_id', function ($sub_query) use ($dbp_database, $id) {
+                                $sub_query
+                                    ->select('hash_id')
+                                    ->from($dbp_database . '.bible_fileset_connections')
+                                    ->where('bible_id', 'LIKE', $id . '%');
+                            });
                         });
                 }
             });
         })
         ->when($testament_filter, function ($query) use ($testament_filter) {
-            if (is_array($testament_filter)) {
+            if (is_array($testament_filter) && !empty($testament_filter)) {
                 $query->whereIn('bible_filesets.set_size_code', $testament_filter);
             }
         })

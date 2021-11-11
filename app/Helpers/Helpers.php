@@ -78,14 +78,14 @@ function cacheGet($cache_key)
 
 function createCacheLock($cache_key, $lock_timeout = 10)
 {
-    return Cache::lock($cache_key . '_lock', $lock_timeout); 
+    return Cache::lock($cache_key . '_lock', $lock_timeout);
 }
 
 function cacheRemember($cache_key, $cache_args, $ttl, $callback)
 {
     $key = generateCacheString($cache_key, $cache_args);
-    // if something fails on the callback, release the lock 
-    // 45 seconds was selected to allow for the longest query to complete. 
+    // if something fails on the callback, release the lock
+    // 45 seconds was selected to allow for the longest query to complete.
     // This is not based on any empirical evidence.
     $lock_timeout = 45;
     $value = Cache::get($key);
@@ -105,7 +105,7 @@ function cacheRemember($cache_key, $cache_args, $ttl, $callback)
                 Cache::put($key, $value, $ttl);
             } else {
                 Log::error("CacheRemember. callback returned null for key: " . $key);
-            }        
+            }
             $lock->release();
             return $value;
         } catch (Exception $exception) {
@@ -115,7 +115,7 @@ function cacheRemember($cache_key, $cache_args, $ttl, $callback)
         }
     } else {
         try {
-            // couldn't get the lock, another is executing the callback. block for up to 45 seconds waiting for lock 
+            // couldn't get the lock, another is executing the callback. block for up to 45 seconds waiting for lock
             // or until the lock is released by the lock timeout
             $lock->block($lock_timeout + 1);
             // Lock acquired, which should mean the cache is set
@@ -508,5 +508,32 @@ if (!function_exists('formatFilesetMeta')) {
             }
         }
         return $fileset;
+    }
+}
+if (!function_exists('getTestamentString')) {
+    function getTestamentString($id)
+    {
+        $testament_pivot_word = 6;
+
+        $substring = '';
+        if (strlen($id) > $testament_pivot_word) {
+            $substring = $id[$testament_pivot_word];
+        }
+        switch ($substring) {
+            case 'O':
+                $testament = ['OT', 'C'];
+                break;
+
+            case 'N':
+                $testament = ['NT', 'C'];
+                break;
+
+            case 'P':
+                $testament = ['NTOTP', 'NTP', 'NTPOTP', 'OTNTP', 'OTP', 'P'];
+                break;
+            default:
+                $testament = [];
+        }
+        return $testament;
     }
 }

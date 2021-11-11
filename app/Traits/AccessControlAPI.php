@@ -40,16 +40,22 @@ trait AccessControlAPI
 
             $key = Key::select('id')->where('key', $api_key)->first();
             $accessGroups = AccessGroupKey::where('key_id', $key->id)
-            ->get()
-            ->pluck('access')
-            ->where('name', '!=', 'RESTRICTED')
-            ->map(function ($access) {
-                return !is_null($access)
-                    ? collect($access->toArray())
-                        ->only(['id', 'name'])
-                        ->all()
-                    : collect([]);
-            });
+                ->with([
+                    'access' => function ($query) {
+                        $query->where('name', '!=', 'RESTRICTED');
+                    }
+                ])
+                ->get()
+                ->pluck('access')
+                ->map(function ($access) {
+                    return !is_null($access)
+                        ? collect($access->toArray())
+                            ->only(['id', 'name'])
+                            ->all()
+                        : collect([]);
+                })->filter(function ($access) {
+                    return !empty($access) && isset($access['id']);
+                });
 
             // Access Control has historically been tied to fileset hashes.
             // As the number of filesets grows, this has been affected query
@@ -125,15 +131,17 @@ trait AccessControlAPI
             }
 
             $dbp_database = config('database.connections.dbp.database');
-            $key = Key::select('id')->where('key', $api_key)->first();
-            $allowed_fileset =
-                AccessGroupKey::join($dbp_database . '.access_group_filesets as acc_filesets', function ($join) use ($key, $fileset_hash) {
+
+            return AccessGroupKey::join(
+                $dbp_database . '.access_group_filesets as acc_filesets',
+                function ($join) use ($fileset_hash) {
                     $join->on('access_group_api_keys.access_group_id', '=', 'acc_filesets.access_group_id')
-                        ->where('key_id', $key->id)
                         ->where('hash_id', $fileset_hash);
-                })->get();
-            
-            return $allowed_fileset;
+                }
+            )->join('user_keys', function ($join) use ($api_key) {
+                    $join->on('user_keys.id', '=', 'access_group_api_keys.key_id')
+                        ->where('user_keys.key', $api_key);
+            })->get();
         });
     }
 

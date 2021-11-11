@@ -181,8 +181,9 @@ class LanguageControllerV2 extends APIController
                             $subquery->where('country.country_id', $country_code);
                         });
                     })
-                    ->orderBy($sort_by, 'desc')->get()->each(function ($item, $key) use ($img_size, $img_type) {
-                        $path  = 'https://dbp-mcdn.s3.us-west-2.amazonaws.com/flags/full';
+                    ->orderBy($sort_by, 'desc')->get()->each(function ($item) use ($img_size, $img_type) {
+                        $country_image_server = config('services.cdn.country_image_server');
+                        $path  = "https://$country_image_server/flags/full";
                         $path .= (($img_type === 'svg') ? '/svg/' : "/$img_size/");
                         $path .= strtoupper($item->country_id) . '.' . $img_type;
 

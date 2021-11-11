@@ -15,6 +15,8 @@ use App\Models\Bible\BibleVerse;
 use App\Models\Bible\BibleFilesetType;
 use App\Models\Bible\Book;
 use App\Models\Language\Language;
+use App\Models\Organization\Asset;
+
 
 use App\Transformers\FileSetTransformer;
 use App\Transformers\TextTransformer;
@@ -305,18 +307,13 @@ class BibleFileSetsController extends APIController
             $cache_params,
             now()->addHours(12),
             function () use ($fileset_id, $book_id, $limit, $type) {
-                $book = $book_id
-                    ? Book::where('id', $book_id)
-                        ->orWhere('id_osis', $book_id)
-                        ->orWhere('id_usfx', $book_id)
-                        ->first()
-                    : null;
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 if (!$fileset_from_id) {
                     return $this->setStatusCode(404)->replyWithError(
                         trans('api.bible_fileset_errors_404')
                     );
                 }
+
                 $fileset_type = $fileset_from_id['set_type_code'];
                 // fixes data issue where text filesets use the same filesetID
                 $fileset_type = $this->getCorrectFilesetType($fileset_type, $type);
@@ -337,7 +334,14 @@ class BibleFileSetsController extends APIController
 
                 $asset_id = $fileset->asset_id;
                 $bible = optional($fileset->bible)->first();
-                
+
+                $book = $book_id
+                    ? Book::where('id', $book_id)
+                        ->orWhere('id_osis', $book_id)
+                        ->orWhere('id_usfx', $book_id)
+                        ->first()
+                    : null;
+
                 if ($fileset_type === 'text_plain') {
                     return $this->showTextFilesetChapter(
                         $limit,
@@ -382,6 +386,16 @@ class BibleFileSetsController extends APIController
         $verse_start = null,
         $verse_end = null
     ) {
+        $select_columns = [
+            'bible_verses.book_id as book_id',
+            'books.name as book_name',
+            'books.protestant_order as book_order',
+            'bible_books.name as book_vernacular_name',
+            'bible_verses.chapter',
+            'bible_verses.verse_start',
+            'bible_verses.verse_end',
+            'bible_verses.verse_text',
+        ];
         $text_query = BibleVerse::withVernacularMetaData($bible)
         ->where('hash_id', $fileset->hash_id)
         ->when($book, function ($query) use ($book) {
@@ -397,19 +411,22 @@ class BibleFileSetsController extends APIController
             return $query->where('verse_end', '<=', $verse_end);
         })
         ->orderBy('verse_start')
-        ->select([
-            'bible_verses.book_id as book_id',
-            'books.name as book_name',
-            'books.protestant_order as book_order',
-            'bible_books.name as book_vernacular_name',
-            'bible_verses.chapter',
-            'bible_verses.verse_start',
-            'bible_verses.verse_end',
-            'bible_verses.verse_text',
-            'glyph_chapter.glyph as chapter_vernacular',
-            'glyph_start.glyph as verse_start_vernacular',
-            'glyph_end.glyph as verse_end_vernacular',
-        ])->orderBy('books.name', 'ASC');
+        ->orderBy('books.name', 'ASC')
+        ->orderBy('bible_verses.chapter');
+
+        if ($bible && $bible->numeral_system_id) {
+            $select_columns_extra = array_merge(
+                $select_columns,
+                [
+                    'glyph_chapter.glyph as chapter_vernacular',
+                    'glyph_start.glyph as verse_start_vernacular',
+                    'glyph_end.glyph as verse_end_vernacular',
+                ]
+            );
+            $text_query->select($select_columns_extra);
+        } else {
+            $text_query->select($select_columns);
+        }
 
         if ($limit !== null) {
             $fileset_chapters = $text_query->paginate($limit);
@@ -447,7 +464,7 @@ class BibleFileSetsController extends APIController
         $chapter_id = null
     ) {
         $query = BibleFile::where('bible_files.hash_id', $fileset->hash_id)
-        ->leftJoin(
+        ->join(
             config('database.connections.dbp.database') .
                 '.bible_books',
             function ($q) use ($bible) {
@@ -459,7 +476,7 @@ class BibleFileSetsController extends APIController
                     ->where('bible_books.bible_id', $bible->id);
             }
         )
-        ->leftJoin(
+        ->join(
             config('database.connections.dbp.database') . '.books',
             'books.id',
             'bible_files.book_id'
@@ -507,18 +524,24 @@ class BibleFileSetsController extends APIController
             );
         }
 
+        $asset = Asset::where('id', $asset_id)->first();
+        $client = null;
+        if ($asset) {
+            $client = $this->authorizeAWS($asset->asset_type);
+        }
+
         $fileset_chapters = $this->generateSecondaryFiles(
             $fileset,
             $fileset_chapters,
             $bible,
-            $asset_id
+            $client
         );
         $fileset_return = fractal(
             $this->generateFilesetChapters(
                 $fileset,
                 $fileset_chapters,
                 $bible,
-                $asset_id
+                $client
             ),
             new FileSetTransformer(),
             $this->serializer
@@ -746,7 +769,7 @@ class BibleFileSetsController extends APIController
         $fileset,
         $fileset_chapters,
         $bible,
-        $asset_id
+        $client
     ) {
         $secondary_files = BibleFileSecondary::where(
             'hash_id',
@@ -759,9 +782,9 @@ class BibleFileSetsController extends APIController
 
         $secondary_file_paths = ['thumbnail' => null, 'zip_file' => null,];
         foreach ($secondary_files as $secondary_file) {
-            $secondary_file_url = $this->signedUrl(
+            $secondary_file_url = $this->signedUrlUsingClient(
+                $client,
                 storagePath($bible->id, $fileset, null, $secondary_file->file_name),
-                $asset_id,
                 random_int(0, 10000000)
             );
             if ($secondary_file->file_type === 'art') {
@@ -793,7 +816,7 @@ class BibleFileSetsController extends APIController
         $fileset,
         $fileset_chapters,
         $bible,
-        $asset_id
+        $client
     ) {
         $is_stream =
             $fileset->set_type_code === 'video_stream' ||
@@ -836,13 +859,13 @@ class BibleFileSetsController extends APIController
                 $fileset_chapters = [$fileset_chapters[0]];
             } else {
                 foreach ($fileset_chapters as $key => $fileset_chapter) {
-                    $fileset_chapters[$key]->file_name = $this->signedUrl(
+                    $fileset_chapters[$key]->file_name = $this->signedUrlUsingClient(
+                        $client,
                         storagePath(
                             $bible->id,
                             $fileset,
                             $fileset_chapter
                         ),
-                        $asset_id,
                         random_int(0, 10000000)
                     );
                 }
@@ -851,7 +874,8 @@ class BibleFileSetsController extends APIController
 
         if ($is_video) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
-                $fileset_chapters[$key]->thumbnail = $this->signedUrl(
+                $fileset_chapters[$key]->thumbnail = $this->signedUrlUsingClient(
+                    $client,
                     'video/thumbnails/' .
                         $fileset_chapters[$key]->book_id .
                         '_' .
@@ -862,7 +886,6 @@ class BibleFileSetsController extends APIController
                             STR_PAD_LEFT
                         ) .
                         '.jpg',
-                    $asset_id,
                     random_int(0, 10000000)
                 );
             }

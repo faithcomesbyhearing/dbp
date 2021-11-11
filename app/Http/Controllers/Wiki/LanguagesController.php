@@ -116,6 +116,7 @@ class LanguagesController extends APIController
                 ->includeAutonymTranslation()
                 ->includeExtraLanguageTranslations($include_translations)
                 ->includeCountryPopulation($country)
+                ->isContentAvailable($key)
                 ->filterableByCountry($country)
                 ->filterableByIsoCode($code)
                 ->filterableByName($name)
@@ -133,8 +134,7 @@ class LanguagesController extends APIController
                 }])
                 ->withCount([
                     'filesets'
-                ])
-                ->isContentAvailable($key);
+                ]);
 
             $languages = $languages->paginate($limit);
             $languages_return = fractal(
@@ -194,36 +194,40 @@ class LanguagesController extends APIController
         $formatted_search = $this->transformQuerySearchText($search_text);
 
         $key = $this->key;
-
-        $cache_params = [
-            $this->v,
-            $formatted_search_cache,
-            $limit,
-            $page,
-            $GLOBALS['i18n_id'],
-            $key
-        ];
-        $languages = cacheRemember('languages_search', $cache_params, now()->addDay(), function () use ($formatted_search, $limit, $key) {
-            $languages = Language::includeAutonymTranslation()
-                ->includeCurrentTranslation()
-                ->filterableByNameOrAutonym($formatted_search)
-                ->isContentAvailable($key)
-                ->select([
-                    'languages.id',
-                    'languages.glotto_id',
-                    'languages.iso',
-                    'languages.name as backup_name',
-                    'current_translation.name as name',
-                    'autonym.name as autonym',
-                ]);
-            $languages = $languages->paginate($limit);
-            $languages_return = fractal(
-                $languages->getCollection(),
-                LanguageTransformer::class,
-                $this->serializer
-            );
-            return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
-        });
+        $cache_params = $this->removeSpaceFromCacheParameters(
+            [
+                $this->v,
+                $formatted_search_cache,
+                $limit,
+                $page,
+                $GLOBALS['i18n_id'],
+                $key
+            ]
+        );
+        $languages = cacheRemember(
+            'languages_search',
+            $cache_params,
+            now()->addDay(),
+            function () use ($formatted_search, $limit, $key) {
+                $languages = Language::filterableByNameAndKey($formatted_search, $key)
+                    ->select([
+                        'languages.id',
+                        'languages.glotto_id',
+                        'languages.iso',
+                        'languages.name as backup_name',
+                        'current_translation.name as name',
+                        'autonym.name as autonym',
+                    ])
+                    ->with('bibles');
+                $languages = $languages->paginate($limit);
+                $languages_return = fractal(
+                    $languages->getCollection(),
+                    LanguageTransformer::class,
+                    $this->serializer
+                );
+                return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
+            }
+        );
         return $this->reply($languages);
     }
 
