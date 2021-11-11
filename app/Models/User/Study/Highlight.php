@@ -200,6 +200,7 @@ class Highlight extends Model
         })->toArray();
 
         $verses = '';
+        $verse_text = '';
         if ($text_fileset) {
             $verses = BibleVerse::withVernacularMetaData($bible)
                 ->where('hash_id', $text_fileset->hash_id)

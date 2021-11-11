@@ -12,7 +12,6 @@ use App\Models\Language\AlphabetFont;
 use App\Traits\AccessControlAPI;
 use App\Traits\CheckProjectMembership;
 use App\Traits\CallsBucketsTrait;
-use App\Transformers\FontsTransformer;
 use App\Transformers\TextTransformer;
 use App\Http\Controllers\APIController;
 use App\Http\Controllers\Bible\Traits\TextControllerTrait;
@@ -92,5 +91,111 @@ class TextControllerV2 extends APIController
         );
 
         return $this->reply(fractal($verses, new TextTransformer(), $this->serializer));
+    }
+
+    /**
+     *
+     * @OA\Get(
+     *     path="/search",
+     *     tags={"Search"},
+     *     summary="Search a bible for a word",
+     *     description="",
+     *     operationId="v2_text_search",
+     *     @OA\Parameter(
+     *          name="query",
+     *          in="query",
+     *          description="The word or phrase being searched", required=true,
+     *          @OA\Schema(type="string"),
+     *          example="Jesus"
+     *     ),
+     *     @OA\Parameter(
+     *          name="fileset_id",
+     *          in="query",
+     *          description="The Bible fileset ID", required=true,
+     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
+     *     ),
+     *     @OA\Parameter(name="limit",  in="query", description="The number of search results to return",
+     *          @OA\Schema(type="integer",default=15)),
+     *     @OA\Parameter(ref="#/components/parameters/page"),
+     *     @OA\Parameter(name="books",  in="query", description="The usfm book ids to search through separated by a comma",
+     *          @OA\Schema(type="string",example="GEN,EXO,MAT")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v2_text_search"))
+     *     )
+     * )
+     *
+     * @return Response
+     *
+     * @OA\Schema(
+     *   schema="v2_text_search",
+     *   type="object",
+     *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter"),
+     *   @OA\Property(property="meta",ref="#/components/schemas/pagination")
+     *
+     * )
+     */
+    public function search()
+    {
+        if (!$this->api) {
+            return view('docs.v2.text_search');
+        }
+
+        $query      = checkParam('query', true);
+        $fileset_id = checkParam('fileset_id|dam_id', true);
+        $book_id    = checkParam('book|book_id|books');
+
+        $fileset = BibleFileset::with('bible')
+            ->uniqueFileset(
+                $fileset_id,
+                'text_plain',
+                false,
+                getTestamentString($fileset_id)
+            )
+            ->first();
+        if (!$fileset) {
+            return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
+        }
+        $bible = $fileset->bible->first();
+
+        $search_text  = '%' . $query . '%';
+        $select_columns = [
+            'bible_verses.book_id as book_id',
+            'bible_books.bible_id as bible_id',
+            'books.name as book_name',
+            'bible_books.name as book_vernacular_name',
+            'bible_verses.chapter',
+            'bible_verses.verse_start',
+            'bible_verses.verse_end',
+            'bible_verses.verse_text',
+            \DB::raw("'$fileset_id' as dam_id_request"),
+        ];
+        $verses = BibleVerse::where('hash_id', $fileset->hash_id)
+            ->withVernacularMetaData($bible)
+            ->when($book_id, function ($query) use ($book_id) {
+                $books = explode(',', $book_id);
+                $query->whereIn('bible_verses.book_id', $books);
+            })
+            ->where('bible_verses.verse_text', 'like', $search_text);
+
+        if ($bible && $bible->numeral_system_id) {
+            $select_columns_extra = array_merge(
+                $select_columns,
+                [
+                    'glyph_chapter.glyph as chapter_vernacular',
+                    'glyph_start.glyph as verse_start_vernacular',
+                    'glyph_end.glyph as verse_end_vernacular',
+                ]
+            );
+            $verses->select($select_columns_extra);
+        } else {
+            $verses->select($select_columns);
+        }
+
+        return $this->reply([
+            [['total_results' => strval($verses->count())]],
+            fractal($verses->get(), new TextTransformer(), $this->serializer)
+        ]);
     }
 }

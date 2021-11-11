@@ -405,7 +405,7 @@ class Alphabet extends Model
 
     public function regular()
     {
-        return $this->hasOne(AlphabetFont::class, 'script_id', 'script')->where('fontWeight', 400);
+        return $this->hasOne(AlphabetFont::class, 'script_id', 'script')->where('font_weight', 400);
     }
 
     public function bibles()

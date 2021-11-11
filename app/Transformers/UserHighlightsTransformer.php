@@ -67,13 +67,13 @@ class UserHighlightsTransformer extends TransformerAbstract
     private function checkColorPreference($highlight)
     {
         $color_preference = checkParam('prefer_color') ?? 'rgba';
-        if ($color_preference === 'hex') {
+        if ($color_preference === 'hex' && $highlight->color) {
             $highlight->color = '#' . $highlight->color->hex;
         }
-        if ($color_preference === 'rgb') {
+        if ($color_preference === 'rgb' && $highlight->color) {
             $highlight->color = 'rgb(' . $highlight->color->red . ',' . $highlight->color->green . ',' . $highlight->color->blue . ')';
         }
-        if ($color_preference === 'rgba') {
+        if ($color_preference === 'rgba' && $highlight->color) {
             $highlight->color = 'rgba(' . $highlight->color->red . ',' . $highlight->color->green . ',' . $highlight->color->blue . ',' . $highlight->color->opacity . ')';
         }
     }

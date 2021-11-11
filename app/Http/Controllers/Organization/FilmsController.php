@@ -60,7 +60,7 @@ class FilmsController extends APIController
                 'priority'  => 5,
             ],
             [
-                'server'    => 'video.dbt.io',
+                'server'    => config('services.cdn.video_server_v2'),
                 'root_path' => '',
                 'protocol'  => 'http',
                 'CDN'       => 1,

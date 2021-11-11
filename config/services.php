@@ -73,7 +73,7 @@ return [
         'key' => env('ARCLIGHT_API'),
         'url' => env('ARCLIGHT_API_URL', 'https://api.arclight.org/v2/'),
         // arclight service timeout in seconds
-        'service_timeout' => env('ARCLIGHT_SERVICE_TIMEOUT', 5) 
+        'service_timeout' => env('ARCLIGHT_SERVICE_TIMEOUT', 5)
     ],
 
     // Testing
@@ -86,7 +86,10 @@ return [
     'cdn' => [
         'server' => env('CDN_SERVER', 'content.cdn.dbp-prod.dbp4.org'),
         'server_v2' => env('CDN_SERVER_V2', 'fcbhabdm.s3.amazonaws.com'),
-        'video_server' => env('CDN_VIDEO_SERVER', 'content.cdn.dbp-vid.dbp4.org')
+        'video_server' => env('CDN_VIDEO_SERVER', 'content.cdn.dbp-vid.dbp4.org'),
+        'video_server_v2' => env('CDN_VIDEO_SERVER_V2', 'video.dbt.io'),
+        'fonts_server' => env('CDN_FONTS_SERVER', 'cdn.bible.build'),
+        'country_image_server' => env('MCDN_COUNTRY_IMAGE', 'dbp-mcdn.s3.us-west-2.amazonaws.com')
     ]
 
 ];

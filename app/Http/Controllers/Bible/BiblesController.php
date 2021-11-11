@@ -248,7 +248,9 @@ class BiblesController extends APIController
         $formatted_search = $this->transformQuerySearchText($search_text);
 
         $key = $this->key;
-        $cache_params = [$limit, $page, $formatted_search_cache, $key];
+        $cache_params = $this->removeSpaceFromCacheParameters(
+            [$limit, $page, $formatted_search_cache, $key]
+        );
         $bibles = cacheRemember('bibles_search', $cache_params, now()->addDay(), function () use ($key, $limit, $formatted_search) {
             $bibles = Bible::isContentAvailable($key)
             ->matchByFulltextSearch($formatted_search)
