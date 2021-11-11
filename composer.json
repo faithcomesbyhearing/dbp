@@ -32,7 +32,7 @@
         "maennchen/zipstream-php": "2.1.0",
         "mattkingshott/quest": "1.1.1",
         "ratehub/laravel-newrelic": "0.7",
-        "sentry/sentry-laravel": "2.10.0",
+        "sentry/sentry-laravel": "2.10.1",
         "socialiteproviders/generators": "dev-php-8",
         "socialiteproviders/google": "4.1.0",
         "spatie/array-to-xml": "3.1.0",
