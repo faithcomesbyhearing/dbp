@@ -124,6 +124,7 @@ trait AccessControlAPI
                 ->where(function ($query) use ($continent) {
                     $query->where('continent_id', $continent);
                 })
+                ->select('id', 'name')
                 ->first();
 
             if (!$access_type) {
@@ -132,16 +133,16 @@ trait AccessControlAPI
 
             $dbp_database = config('database.connections.dbp.database');
 
-            return AccessGroupKey::join(
+            return AccessGroupKey::join('user_keys', function ($join) use ($api_key) {
+                $join->on('user_keys.id', '=', 'access_group_api_keys.key_id')
+                    ->where('user_keys.key', $api_key);
+            })->join(
                 $dbp_database . '.access_group_filesets as acc_filesets',
                 function ($join) use ($fileset_hash) {
                     $join->on('access_group_api_keys.access_group_id', '=', 'acc_filesets.access_group_id')
                         ->where('hash_id', $fileset_hash);
                 }
-            )->join('user_keys', function ($join) use ($api_key) {
-                    $join->on('user_keys.id', '=', 'access_group_api_keys.key_id')
-                        ->where('user_keys.key', $api_key);
-            })->get();
+            )->select('user_keys.id')->get();
         });
     }
 

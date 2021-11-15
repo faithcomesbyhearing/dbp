@@ -72,7 +72,7 @@ class BibleVerse extends Model
         return $this->hasMany(BibleConcordance::class);
     }
 
-    public function scopeWithVernacularMetaData($query, $bible)
+    public function scopeWithVernacularMetaData($query, $bible, $testament_filter = null)
     {
         $numeral_system_id = $bible->numeral_system_id;
         $query->when($numeral_system_id, function ($query) use ($numeral_system_id) {
@@ -92,7 +92,12 @@ class BibleVerse extends Model
                     ->where('glyph_end.numeral_system_id', $numeral_system_id);
             });
         })
-        ->join('books', 'books.id', 'bible_verses.book_id')
+        ->join('books', function ($join) use ($testament_filter) {
+            $join->on('books.id', 'bible_verses.book_id');
+            if (is_array($testament_filter) && !empty($testament_filter)) {
+                $join->whereIn('books.book_testament', $testament_filter);
+            }
+        })
         ->join('bible_books', function ($join) use ($bible) {
             $join->on('bible_verses.book_id', 'bible_books.book_id')->where('bible_books.bible_id', $bible->id);
         });
