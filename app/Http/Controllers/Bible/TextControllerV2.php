@@ -146,12 +146,13 @@ class TextControllerV2 extends APIController
         $fileset_id = checkParam('fileset_id|dam_id', true);
         $book_id    = checkParam('book|book_id|books');
 
+        $testament_filter = getTestamentString($fileset_id);
         $fileset = BibleFileset::with('bible')
             ->uniqueFileset(
                 $fileset_id,
                 'text_plain',
                 false,
-                getTestamentString($fileset_id)
+                $testament_filter
             )
             ->first();
         if (!$fileset) {
@@ -172,7 +173,7 @@ class TextControllerV2 extends APIController
             \DB::raw("'$fileset_id' as dam_id_request"),
         ];
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)
-            ->withVernacularMetaData($bible)
+            ->withVernacularMetaData($bible, $testament_filter)
             ->when($book_id, function ($query) use ($book_id) {
                 $books = explode(',', $book_id);
                 $query->whereIn('bible_verses.book_id', $books);

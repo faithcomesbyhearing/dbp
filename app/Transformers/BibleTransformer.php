@@ -251,7 +251,9 @@ class BibleTransformer extends BaseTransformer
                             $chapters[$key] = intval($chapter);
                         }
                         $book->chapters = $chapters;
-                        $book->testament = $book->book['book_testament'];
+                        $book->testament = isset($book->book) && isset($book->book['book_testament'])
+                            ? $book->book['book_testament']
+                            : null;
                         unset($book->book);
                         return $book;
                     })->values(),
