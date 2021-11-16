@@ -57,7 +57,10 @@ class BooksControllerV2 extends APIController
             return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $id]));
         }
 
-        $cache_params = [$id, $fileset, implode('-', $testament)];
+        $cache_params = $this->removeSpaceFromCacheParameters(
+            [$id, $fileset->hash_id, implode('-', $testament)]
+        );
+
         $libraryBook = cacheRemember(
             'v2_library_book',
             $cache_params,
@@ -65,11 +68,17 @@ class BooksControllerV2 extends APIController
             function () use ($id, $fileset, $testament) {
                 if ($fileset->set_type_code === 'text_plain') {
                     // If plain text check BibleVerse
-                    $booksChapters = BibleVerse::where('hash_id', $fileset->hash_id)->select(['book_id', 'chapter'])->distinct()->get();
+                    $booksChapters = BibleVerse::where('hash_id', $fileset->hash_id)
+                        ->select(['book_id', 'chapter'])
+                        ->distinct()
+                        ->get();
                     $chapter_field = 'chapter';
                 } else {
                     // Otherwise refer to Bible Files
-                    $booksChapters = BibleFile::where('hash_id', $fileset->hash_id)->select(['book_id', 'chapter_start'])->distinct()->get();
+                    $booksChapters = BibleFile::where('hash_id', $fileset->hash_id)
+                        ->select(['book_id', 'chapter_start'])
+                        ->distinct()
+                        ->get();
                     $chapter_field = 'chapter_start';
                 }
 
@@ -84,7 +93,9 @@ class BooksControllerV2 extends APIController
                 }
 
                 $bible_id = $fileset->bible->first()->id;
-                $book_translation = BibleBook::whereIn('book_id', $book_ids)->where('bible_id', $bible_id)->pluck('name', 'book_id');
+                $book_translation = BibleBook::whereIn('book_id', $book_ids)
+                    ->where('bible_id', $bible_id)
+                    ->pluck('name', 'book_id');
                 foreach ($books as $key => $book) {
                     $books[$key]->source_id       = $id;
                     $books[$key]->bible_id        = $bible_id;
