@@ -141,12 +141,16 @@ class LanguageControllerV2 extends APIController
         $additional         = checkParam('additional');
 
         $key = $this->key;
-        $cache_params = [
-            $sort_by, $lang_code,
-            $country_code, $img_size,
-            $img_type, $additional,
+
+        $cache_params = $this->removeSpaceFromCacheParameters([
+            $sort_by,
+            $lang_code,
+            $country_code,
+            $img_size,
+            $img_type,
+            $additional,
             $key
-        ];
+        ]);
 
         if ($sort_by === 'lang_code') {
             $sort_by = 'languages.iso';
@@ -178,7 +182,7 @@ class LanguageControllerV2 extends APIController
                     })
                     ->whereHas('country', function ($query) use ($country_code) {
                         $query->when($country_code, function ($subquery) use ($country_code) {
-                            $subquery->where('country.country_id', $country_code);
+                            $subquery->where('country_language.country_id', $country_code);
                         });
                     })
                     ->orderBy($sort_by, 'desc')->get()->each(function ($item) use ($img_size, $img_type) {
