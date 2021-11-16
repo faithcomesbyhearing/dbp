@@ -265,7 +265,7 @@ class LibraryController extends APIController
         $name = checkParam('name');
         $sort = checkParam('sort_by');
 
-        $cache_params = [$code, $name, $sort];
+        $cache_params = $this->removeSpaceFromCacheParameters([$code, $name, $sort]);
         $versions = cacheRemember('v2_library_version', $cache_params, now()->addDay(), function () use ($code, $sort, $name) {
             $english_id = Language::where('iso', 'eng')->first()->id ?? '6414';
 
@@ -298,7 +298,11 @@ class LibraryController extends APIController
             return $versions;
         });
 
-        return $this->reply(fractal($versions[0], new LibraryVolumeTransformer(), $this->serializer));
+        return $this->reply(fractal(
+            isset($versions[0]) ? $versions[0] : [],
+            new LibraryVolumeTransformer(),
+            $this->serializer
+        ));
     }
 
     /**
