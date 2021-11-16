@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9121e4cabac1593565fe427a88e2ec13",
+    "content-hash": "d5f9bfd5b6f551d658de4f77bc497aca",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -5857,16 +5857,16 @@
         },
         {
             "name": "sentry/sentry-laravel",
-            "version": "2.10.1",
+            "version": "2.10.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/sentry-laravel.git",
-                "reference": "96643ed6c59db61dc9a629766ccc8b5293416ae0"
+                "reference": "82cf98c830d73f80dc67cf21381da4ede4c3989e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/sentry-laravel/zipball/96643ed6c59db61dc9a629766ccc8b5293416ae0",
-                "reference": "96643ed6c59db61dc9a629766ccc8b5293416ae0",
+                "url": "https://api.github.com/repos/getsentry/sentry-laravel/zipball/82cf98c830d73f80dc67cf21381da4ede4c3989e",
+                "reference": "82cf98c830d73f80dc67cf21381da4ede4c3989e",
                 "shasum": ""
             },
             "require": {
@@ -5932,7 +5932,7 @@
             ],
             "support": {
                 "issues": "https://github.com/getsentry/sentry-laravel/issues",
-                "source": "https://github.com/getsentry/sentry-laravel/tree/2.10.1"
+                "source": "https://github.com/getsentry/sentry-laravel/tree/2.10.2"
             },
             "funding": [
                 {
@@ -5944,7 +5944,7 @@
                     "type": "custom"
                 }
             ],
-            "time": "2021-11-11T20:08:08+00:00"
+            "time": "2021-11-16T19:20:42+00:00"
         },
         {
             "name": "socialiteproviders/generators",
@@ -9674,16 +9674,16 @@
         },
         {
             "name": "zircote/swagger-php",
-            "version": "3.3.1",
+            "version": "3.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/zircote/swagger-php.git",
-                "reference": "e8594d3578fa0e871ef9b435a0c0f3631bfa8292"
+                "reference": "68c76ce2bb43fb4603315fb973d4595711dcbfd3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/zircote/swagger-php/zipball/e8594d3578fa0e871ef9b435a0c0f3631bfa8292",
-                "reference": "e8594d3578fa0e871ef9b435a0c0f3631bfa8292",
+                "url": "https://api.github.com/repos/zircote/swagger-php/zipball/68c76ce2bb43fb4603315fb973d4595711dcbfd3",
+                "reference": "68c76ce2bb43fb4603315fb973d4595711dcbfd3",
                 "shasum": ""
             },
             "require": {
@@ -9741,9 +9741,9 @@
             ],
             "support": {
                 "issues": "https://github.com/zircote/swagger-php/issues",
-                "source": "https://github.com/zircote/swagger-php/tree/3.3.1"
+                "source": "https://github.com/zircote/swagger-php/tree/3.3.2"
             },
-            "time": "2021-11-13T23:19:29+00:00"
+            "time": "2021-11-15T20:45:42+00:00"
         }
     ],
     "packages-dev": [
