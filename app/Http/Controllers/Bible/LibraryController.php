@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 
 use App\Models\Language\Language;
 use App\Models\Bible\BibleFileset;
+use App\Models\Organization\Asset;
 
 use App\Transformers\V2\LibraryVolumeTransformer;
 use App\Transformers\V2\LibraryCatalog\LibraryMetadataTransformer;
@@ -449,9 +450,15 @@ class LibraryController extends APIController
         $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code];
         $filesets = cacheRemember('v2_library_volume', $cache_params, now()->addDay(), function () use ($dam_id, $media, $language_name, $iso, $updated, $organization, $version_code) {
             $language_id = $iso ? optional(Language::where('iso', $iso)->first())->id : null;
-            if (!$language_id && !$dam_id) {
-                return [];
-            }
+
+            $has_nondrama = BibleFileset::where('set_type_code', 'audio')
+                ->select('id')
+                ->where('set_type_code', 'audio')
+                ->whereHas('permissions', function ($query) {
+                    $query->whereHas('access', function ($query) {
+                        $query->where('name', '!=', 'RESTRICTED');
+                    });
+                });
 
             $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
@@ -490,9 +497,14 @@ class LibraryController extends APIController
                         languages.name as language_name,
                         language_translations.name as autonym,
                         MIN(bible_files_secondary.file_name) as secondary_file_name,
-                        bible_files_secondary.file_type as secondary_file_type'
+                        bible_files_secondary.file_type as secondary_file_type,
+                        bible_filesets_has_dram.id as bible_filesets_has_dram'
                     )
                 )->groupBy(['bible_filesets.hash_id', 'bible_files_secondary.file_type'])
+                ->leftJoinSub($has_nondrama, 'bible_filesets_has_dram', function ($join) {
+                    $join
+                        ->on('bible_filesets_has_dram.id', '=', 'bible_filesets.id');
+                })
                 ->when($updated, function ($query) use ($updated) {
                     $query->where('bible_filesets.updated_at', '>', $updated);
                 })
@@ -508,28 +520,69 @@ class LibraryController extends APIController
                     return $item->english_name;
                 });
 
-            foreach ($filesets as &$fileset) {
-                if ($fileset->secondary_file_type === 'zip') {
-                    $fileset->audio_zip_path = $fileset->id . '/' . $fileset->secondary_file_name;
-                }
-            }
+            $this->setSecondaryFilePathForEachFileset($filesets);
 
             return $this->generateV2StyleId($filesets);
         });
 
-        if ($dam_id) {
-            $filesets = $this->filterById($filesets, $dam_id);
-        }
+        $this->getBiblesByFilesetId($filesets);
 
         $filesets = fractal($filesets, new LibraryVolumeTransformer(), $this->serializer)->toArray();
         if (!empty($filesets) &&
             !isset($version_code) &&
-            (empty($media) || $media === 'video' || $media === 'video_stream')
+            (empty($media) || $media === 'video' || $media === 'video_stream') &&
+            !empty($iso)
         ) {
             $filesets = array_merge($filesets, $arclight->volumes($iso));
         }
 
         return $this->reply($filesets);
+    }
+
+    private function setSecondaryFilePathForEachFileset(&$filesets)
+    {
+        $cdn_server_url = config('services.cdn.server');
+
+        foreach ($filesets as $key => $fileset) {
+            if ($fileset && $fileset->secondary_file_name) {
+                $transaction = random_int(0, 10000000);
+                $file_path = storagePath(
+                    $fileset->bible_id,
+                    $fileset,
+                    null,
+                    $fileset->secondary_file_name
+                );
+                $filesets[$key]->secondary_file_path =
+                    'https://'. $cdn_server_url . '/' . $file_path . '?x-amz-transaction=' . $transaction;
+            }
+        }
+    }
+
+    private function getBiblesByFilesetId($filesets)
+    {
+        $filesets_ids = [];
+        foreach ($filesets as $fileset) {
+            $filesets_ids[] = $fileset->id;
+        }
+
+        $bible_filesets_with_bible_id = BibleFileset::whereIn('id', $filesets_ids)
+            ->whereIn('set_type_code', ['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama'])
+            ->select(
+                \DB::raw(
+                    'bible_filesets.id,
+                    (SELECT bibles.id
+                    FROM bibles
+                    INNER JOIN bible_fileset_connections ON bible_fileset_connections.bible_id = bibles.id
+                    WHERE bible_fileset_connections.hash_id = bible_filesets.hash_id LIMIT 1) as bible_id'
+                )
+            )->get()
+            ->pluck('id', 'bible_id');
+
+        foreach ($filesets as &$fileset) {
+            if (isset($bible_filesets_with_bible_id[$fileset->id])) {
+                $fileset->bible_id = $bible_filesets_with_bible_id[$fileset->id];
+            }
+        }
     }
 
     private function filterById($filesets, $dam_id)
@@ -550,16 +603,7 @@ class LibraryController extends APIController
     {
         $output = [];
         foreach ($filesets as $fileset) {
-            $has_nondrama = $fileset->where('id', 'LIKE', substr($fileset->id, 0, 6) . '%')
-                ->where('set_type_code', 'audio')
-                ->whereHas('permissions', function ($query) {
-                    $query->whereHas('access', function ($query) {
-                        $query->where('name', '!=', 'RESTRICTED');
-                    });
-                })
-                ->get();
-
-            $type_codes = $this->getV2TypeCode($fileset, !$has_nondrama->isEmpty());
+            $type_codes = $this->getV2TypeCode($fileset, !empty($fileset->bible_filesets_has_dram));
 
             foreach ($type_codes as $type_code) {
                 $ot_fileset_id = substr($fileset->id, 0, 6) . 'O' . $type_code;
@@ -591,6 +635,8 @@ class LibraryController extends APIController
                     case 'OTP':
                         $output[$ot_fileset_id] = clone $fileset;
                         $output[$ot_fileset_id]->generated_id = $pt_fileset_id;
+                        break;
+                    default:
                         break;
                 }
             }
