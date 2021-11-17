@@ -451,6 +451,10 @@ class LibraryController extends APIController
         $filesets = cacheRemember('v2_library_volume', $cache_params, now()->addDay(), function () use ($dam_id, $media, $language_name, $iso, $updated, $organization, $version_code) {
             $language_id = $iso ? optional(Language::where('iso', $iso)->first())->id : null;
 
+            if (!empty($iso) && empty($language_id)) {
+                return [];
+            }
+
             $has_nondrama = BibleFileset::where('set_type_code', 'audio')
                 ->select('id')
                 ->where('set_type_code', 'audio')
@@ -458,7 +462,9 @@ class LibraryController extends APIController
                     $query->whereHas('access', function ($query) {
                         $query->where('name', '!=', 'RESTRICTED');
                     });
-                });
+                })
+                ->whereColumn('id', 'bible_filesets.id')
+                ->limit(1);
 
             $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
@@ -497,14 +503,11 @@ class LibraryController extends APIController
                         languages.name as language_name,
                         language_translations.name as autonym,
                         MIN(bible_files_secondary.file_name) as secondary_file_name,
-                        bible_files_secondary.file_type as secondary_file_type,
-                        bible_filesets_has_dram.id as bible_filesets_has_dram'
+                        bible_files_secondary.file_type as secondary_file_type'
                     )
-                )->groupBy(['bible_filesets.hash_id', 'bible_files_secondary.file_type'])
-                ->leftJoinSub($has_nondrama, 'bible_filesets_has_dram', function ($join) {
-                    $join
-                        ->on('bible_filesets_has_dram.id', '=', 'bible_filesets.id');
-                })
+                )
+                ->addSelect(['bible_filesets_has_dram' => $has_nondrama])
+                ->groupBy(['bible_filesets.hash_id', 'bible_files_secondary.file_type'])
                 ->when($updated, function ($query) use ($updated) {
                     $query->where('bible_filesets.updated_at', '>', $updated);
                 })
@@ -527,6 +530,10 @@ class LibraryController extends APIController
 
         $this->getBiblesByFilesetId($filesets);
 
+        if ($dam_id) {
+            $filesets = $this->filterById($filesets, $dam_id);
+        }
+
         $filesets = fractal($filesets, new LibraryVolumeTransformer(), $this->serializer)->toArray();
         if (!empty($filesets) &&
             !isset($version_code) &&
@@ -541,19 +548,9 @@ class LibraryController extends APIController
 
     private function setSecondaryFilePathForEachFileset(&$filesets)
     {
-        $cdn_server_url = config('services.cdn.server');
-
-        foreach ($filesets as $key => $fileset) {
-            if ($fileset && $fileset->secondary_file_name) {
-                $transaction = random_int(0, 10000000);
-                $file_path = storagePath(
-                    $fileset->bible_id,
-                    $fileset,
-                    null,
-                    $fileset->secondary_file_name
-                );
-                $filesets[$key]->secondary_file_path =
-                    'https://'. $cdn_server_url . '/' . $file_path . '?x-amz-transaction=' . $transaction;
+        foreach ($filesets as &$fileset) {
+            if ($fileset->secondary_file_type === 'zip') {
+                $fileset->audio_zip_path = $fileset->id . '/' . $fileset->secondary_file_name;
             }
         }
     }
@@ -562,10 +559,10 @@ class LibraryController extends APIController
     {
         $filesets_ids = [];
         foreach ($filesets as $fileset) {
-            $filesets_ids[] = $fileset->id;
+            $filesets_ids[$fileset->id] = true;
         }
 
-        $bible_filesets_with_bible_id = BibleFileset::whereIn('id', $filesets_ids)
+        $bible_filesets_with_bible_id = BibleFileset::whereIn('id', array_keys($filesets_ids))
             ->whereIn('set_type_code', ['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama'])
             ->select(
                 \DB::raw(
