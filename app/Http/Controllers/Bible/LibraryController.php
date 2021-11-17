@@ -271,14 +271,14 @@ class LibraryController extends APIController
 
             $versions = BibleFileset::where('asset_id', config('filesystems.disks.s3_fcbh.bucket'))
                 ->rightJoin('bible_fileset_connections as bibles', 'bibles.hash_id', 'bible_filesets.hash_id')
-                ->join('bible_translations as ver_title', function ($join) use ($name) {
+                ->join('bible_translations as ver_title', function ($join) {
                     $join->on('ver_title.bible_id', 'bibles.bible_id')->where('ver_title.vernacular', 1);
                 })
-                ->join('bible_translations as eng_title', function ($join) use ($english_id, $name) {
+                ->join('bible_translations as eng_title', function ($join) use ($english_id) {
                     $join->on('eng_title.bible_id', 'bibles.bible_id')->where('eng_title.language_id', $english_id);
                 })
                 ->when($code, function ($q) use ($code) {
-                    $q->where('bible_filesets.id', 'LIKE', '%' . $code)->get();
+                    $q->where('bible_filesets.id', 'LIKE', '%' . $code .'%')->get();
                 })->when($sort, function ($q) use ($sort) {
                     $q->orderBy($sort, 'asc');
                 })->select([
@@ -497,7 +497,7 @@ class LibraryController extends APIController
                     $query->where('bible_filesets.updated_at', '>', $updated);
                 })
                 ->when($version_code, function ($query) use ($version_code) {
-                    $query->whereRaw('SUBSTRING(bibles.id,4) = ?', [$version_code]);
+                    $query->where('bible_filesets.id', 'LIKE', '%' . $version_code .'%')->get();
                 })
                 ->when($organization, function ($query) use ($organization) {
                     $query->where('bible_organizations.organization_id', $organization);
