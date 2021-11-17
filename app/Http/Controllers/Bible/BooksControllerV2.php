@@ -97,7 +97,10 @@ class BooksControllerV2 extends APIController
                     ->where('bible_id', $bible_id)
                     ->pluck('name', 'book_id');
                 foreach ($books as $key => $book) {
-                    $books[$key]->source_id       = $id;
+                    $testament_first_letter = $book->getTestamentFirstLetter($book->book_testament);
+                    $books[$key]->source_id       = $testament_first_letter && empty($testament)
+                        ? $id.$testament_first_letter
+                        : $id;
                     $books[$key]->bible_id        = $bible_id;
                     $books[$key]->number_chapters = $current_chapters[$key]->count();
                     $books[$key]->chapters        = $current_chapters[$key]->implode(',');
