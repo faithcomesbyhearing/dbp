@@ -239,6 +239,34 @@ class BibleFileset extends Model
         return $url;
     }
 
+    public function getArtworkUrlFromBibleId($bible_id, $isSigned = false)
+    {
+        $url = '';
+        $fileset_id = $this->id ?: $this->generated_id;
+
+        if ($bible_id && $fileset_id) {
+            $url = $isSigned === true
+                ? $this->getUriFromStorage($bible_id, $fileset_id)
+                : "audio/{$bible_id}/{$fileset_id}/Art/300x300/{$fileset_id}.jpg";
+        }
+
+        return $url;
+    }
+
+    private function getUriFromStorage($bible_id, $fileset_id)
+    {
+        $storage = \Storage::disk('dbp-web');
+        $client = $storage->getDriver()->getAdapter()->getClient();
+        $expiry = '+10 minutes';
+
+        $command = $client->getCommand('GetObject', [
+            'Bucket' => config('filesystems.disks.dbp-web.bucket'),
+            'Key'    => "audio/{$bible_id}/{$fileset_id}/Art/300x300/{$fileset_id}.jpg"
+        ]);
+
+        return (string) $client->createPresignedRequest($command, $expiry)->getUri();
+    }
+
     public function scopeIsContentAvailable($query, $key)
     {
         $dbp_users = config('database.connections.dbp_users.database');

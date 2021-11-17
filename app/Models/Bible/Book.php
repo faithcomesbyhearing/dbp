@@ -410,6 +410,19 @@ class Book extends Model
         });
     }
 
+    public function getTestamentFirstLetter($book_testament = null)
+    {
+        if (is_null($book_testament)) {
+            $book_testament = $this->book_testament;
+        }
+
+        if (!empty($book_testament)) {
+            return substr($book_testament, 0, 1);
+        }
+
+        return null;
+    }
+
     public function translations()
     {
         return $this->hasMany(BookTranslation::class, 'book_id');
