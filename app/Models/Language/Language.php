@@ -4,6 +4,7 @@ namespace App\Models\Language;
 
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFilesetConnection;
+use App\Models\Bible\BibleFileset;
 use App\Models\Bible\Video;
 use App\Models\Country\CountryLanguage;
 use App\Models\Country\CountryRegion;
@@ -658,5 +659,29 @@ class Language extends Model
             )',
             [$key]
         );
+    }
+
+    public function scopeFilterableByMedia($query, $media)
+    {
+        $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($media);
+
+        if (!empty($media) && !empty($set_type_code_array)) {
+            $query->whereHas('filesets', function ($query_fileset) use ($set_type_code_array) {
+                $query_fileset->whereHas('fileset', function ($query_fileset_single) use ($set_type_code_array) {
+                    $query_fileset_single->whereIn('set_type_code', $set_type_code_array);
+                });
+            });
+        }
+    }
+
+    public function scopeFilterableBySetTypeCode($query, $set_type_code)
+    {
+        if (!empty($set_type_code)) {
+            $query->whereHas('filesets', function ($query_fileset) use ($set_type_code) {
+                $query_fileset->whereHas('fileset', function ($query_fileset_single) use ($set_type_code) {
+                    $query_fileset_single->where('set_type_code', $set_type_code);
+                });
+            });
+        }
     }
 }
