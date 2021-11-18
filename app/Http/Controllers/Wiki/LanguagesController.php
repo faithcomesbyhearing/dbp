@@ -87,10 +87,11 @@ class LanguagesController extends APIController
         $code                  = checkParam('code|iso|language_code');
         $include_translations  = checkParam('include_translations|include_alt_names');
         $name                  = checkParam('name|language_name');
-        $show_bibles           = checkBoolean('show_bibles');
         $limit                 = (int) (checkParam('limit') ?? 50);
         $limit                 = min($limit, 150);
         $page                  = checkParam('page') ?? 1;
+        $set_type_code         = checkParam('set_type_code');
+        $media                 = checkParam('media');
 
         // note: this two commented changes can be removed when bibleis and gideons no longer require a non-paginated response
         // remove pagination for bibleis and gideons (temporal fix)
@@ -111,7 +112,7 @@ class LanguagesController extends APIController
         ];
 
         $select_country_population = $country ? 'country_population.population' : 'null';
-        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $key, $select_country_population, $limit) {
+        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $key, $select_country_population, $limit, $media, $set_type_code) {
             $languages = Language::includeCurrentTranslation()
                 ->includeAutonymTranslation()
                 ->includeExtraLanguageTranslations($include_translations)
@@ -120,6 +121,8 @@ class LanguagesController extends APIController
                 ->filterableByCountry($country)
                 ->filterableByIsoCode($code)
                 ->filterableByName($name)
+                ->filterableByMedia($media)
+                ->filterableBySetTypeCode($set_type_code)
                 ->select([
                     'languages.id',
                     'languages.glotto_id',
