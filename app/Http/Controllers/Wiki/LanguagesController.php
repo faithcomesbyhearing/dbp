@@ -98,7 +98,7 @@ class LanguagesController extends APIController
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
 
         $key = $this->key;
-        $cache_params = [
+        $cache_params = $this->removeSpaceFromCacheParameters([
             $this->v,
             $country,
             $code,
@@ -109,7 +109,9 @@ class LanguagesController extends APIController
             $limit,
             $page,
             $is_bibleis_gideons,
-        ];
+            $set_type_code,
+            $media,
+        ]);
 
         $select_country_population = $country ? 'country_population.population' : 'null';
         $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $key, $select_country_population, $limit, $media, $set_type_code) {
