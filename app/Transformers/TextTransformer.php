@@ -40,10 +40,21 @@ class TextTransformer extends BaseTransformer
              * )
              */
             case 'v2_text_search':
+                // This is a temporal fix while v2 transitions to v4
+                // It must return a damid longer than six characters, then it is using the request DAMID
+                $partial_testament_type = 'P';
+                $generalized_testament_types = ['NT', 'OT', 'C'];
+                $damid_with_testament = $text->dam_id_request;
+
+                if (strlen($text->dam_id_request) === 6 && in_array($text->book_testament, $generalized_testament_types)) {
+                    $testament_initial = substr($text->book_testament, 0, 1);
+                    $damid_with_testament = $text->dam_id_request . $testament_initial;
+                } else if (strlen($text->dam_id_request) === 6) {
+                    $damid_with_testament = $text->dam_id_request . $partial_testament_type;
+                }
+                
                 return [
-                    // It must return a damid longer than six characters, then it is using the request DAMID
-                    // to accomplish this goal
-                    'dam_id' => (string) $text->dam_id_request ?? $text->bible_id,
+                    'dam_id' => (string) $damid_with_testament ?? $text->bible_id,
                     'book_name' => (string) $text->book_name,
                     'book_id' => (string) $text->book_id,
                     'chapter_id' => (string) $text->chapter,
