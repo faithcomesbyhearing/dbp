@@ -282,4 +282,32 @@ class BibleFileset extends Model
             [$key]
         );
     }
+
+    public static function getsetTypeCodeFromMedia($media)
+    {
+        $result = [];
+        switch ($media) {
+            case 'audio':
+                $result = [
+                    'audio_drama',
+                    'audio',
+                    'audio_stream',
+                    'audio_drama_stream'
+                ];
+                break;
+            case 'video':
+                $result = ['video_stream'];
+                break;
+            case 'text':
+                $result = [
+                    'text_format',
+                    'text_plain',
+                    'text_usx'
+                ];
+                break;
+            default:
+                break;
+        }
+        return $result;
+    }
 }
