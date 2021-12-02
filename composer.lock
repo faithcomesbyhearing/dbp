@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "35c00563118d788f9b07bf4fcdf9c25f",
+    "content-hash": "53c83df649e1cc754f858af3ffebba68",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -824,16 +824,16 @@
         },
         {
             "name": "curl/curl",
-            "version": "2.3.2",
+            "version": "2.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-mod/curl.git",
-                "reference": "8a3e3f1cb6061180c53cb18e2ad823f68ff91ac0"
+                "reference": "ec22ad27dead47093f0944f5e651df4b12846f5a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-mod/curl/zipball/8a3e3f1cb6061180c53cb18e2ad823f68ff91ac0",
-                "reference": "8a3e3f1cb6061180c53cb18e2ad823f68ff91ac0",
+                "url": "https://api.github.com/repos/php-mod/curl/zipball/ec22ad27dead47093f0944f5e651df4b12846f5a",
+                "reference": "ec22ad27dead47093f0944f5e651df4b12846f5a",
                 "shasum": ""
             },
             "require": {
@@ -876,9 +876,9 @@
             ],
             "support": {
                 "issues": "https://github.com/php-mod/curl/issues",
-                "source": "https://github.com/php-mod/curl/tree/2.3.2"
+                "source": "https://github.com/php-mod/curl/tree/2.3.3"
             },
-            "time": "2021-04-11T19:00:09+00:00"
+            "time": "2021-11-30T20:19:35+00:00"
         },
         {
             "name": "dflydev/dot-access-data",
@@ -1734,16 +1734,16 @@
         },
         {
             "name": "geoip2/geoip2",
-            "version": "v2.12.1",
+            "version": "v2.12.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/maxmind/GeoIP2-php.git",
-                "reference": "d25660633755f3f064ca647cd916c5c65074e408"
+                "reference": "83adb44ac4b9553d36b579a14673ed124583082f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/maxmind/GeoIP2-php/zipball/d25660633755f3f064ca647cd916c5c65074e408",
-                "reference": "d25660633755f3f064ca647cd916c5c65074e408",
+                "url": "https://api.github.com/repos/maxmind/GeoIP2-php/zipball/83adb44ac4b9553d36b579a14673ed124583082f",
+                "reference": "83adb44ac4b9553d36b579a14673ed124583082f",
                 "shasum": ""
             },
             "require": {
@@ -1786,9 +1786,9 @@
             ],
             "support": {
                 "issues": "https://github.com/maxmind/GeoIP2-php/issues",
-                "source": "https://github.com/maxmind/GeoIP2-php/tree/v2.12.1"
+                "source": "https://github.com/maxmind/GeoIP2-php/tree/v2.12.2"
             },
-            "time": "2021-11-23T17:01:41+00:00"
+            "time": "2021-11-30T18:15:25+00:00"
         },
         {
             "name": "google/recaptcha",
