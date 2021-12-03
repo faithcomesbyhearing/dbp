@@ -110,7 +110,7 @@ Route::name('v4_filesets.books')->get(
     'Bible\BooksController@show'
 );
 
-// the order of these next two routes matters, the most general have to go first
+// the order of these next two routes matters, the most general (bibles/filesets/bulk) must go before /bibles/filesets/{fileset_id}
 Route::name('v4_filesets.bulk')->get(
   'bibles/filesets/bulk/{fileset_id}/{book?}',
   'Bible\BibleFileSetsController@showBulk'
