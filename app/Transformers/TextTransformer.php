@@ -133,7 +133,7 @@ class TextTransformer extends BaseTransformer
                     'chapter_title' => "Chapter $text->chapter",
                     'verse_id' => (string) $text->verse_start,
                     'verse_text' => (string) $text->verse_text,
-                    'paragraph_number' => ''
+                    'paragraph_number' => (string) $text->verse_start,
                 ];
         }
     }
