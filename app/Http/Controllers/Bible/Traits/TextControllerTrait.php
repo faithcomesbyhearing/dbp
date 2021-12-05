@@ -48,6 +48,7 @@ trait TextControllerTrait
                     ->when($verse_end, function ($query) use ($verse_end) {
                         return $query->where('verse_end', '<=', $verse_end);
                     })
+                    ->orderBy('chapter')
                     ->orderBy('verse_start')
                     ->select($select_columns)->get();
             }
