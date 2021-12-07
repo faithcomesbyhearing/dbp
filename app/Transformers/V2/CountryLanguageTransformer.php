@@ -11,6 +11,14 @@ class CountryLanguageTransformer extends TransformerAbstract
      *
      * @return array
      */
+
+    private $params = [];
+
+    function __construct($params = [])
+    {
+        $this->params = $params;
+    }
+
     public function transform($country_language)
     {
         /**
@@ -33,9 +41,12 @@ class CountryLanguageTransformer extends TransformerAbstract
          * )
          */
 
+        $language_v2 = $this->params['language_v2'];
+        $code = $language_v2->v2Code ?? $country_language->language->iso;
+
         return [
             'id'                   => (string) $country_language->language->id,
-            'lang_code'            => (string) $country_language->language->iso,
+            'lang_code'            => (string) $code,
             'region'               => (string) $country_language->language->area,
             'country_primary'      => strtoupper($country_language->country_id),
             'lang_id'              => strtoupper($country_language->language->iso),
