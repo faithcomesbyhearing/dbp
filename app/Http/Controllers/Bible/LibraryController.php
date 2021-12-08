@@ -469,13 +469,13 @@ class LibraryController extends APIController
                 ->whereColumn('id', 'bible_filesets.id')
                 ->limit(1);
 
-            $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
+            $filesets = BibleFileset::with('meta', 'bible.translations')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
                 ->uniqueFileset($dam_id, $media, true)
                 ->withBible($language_name, $language_id, $organization)
                 ->when($language_id, function ($query) use ($language_id) {
-                    $query->whereHas('bible', function ($subquery) use ($language_id) {
-                        $subquery->where('language_id', $language_id);
+                    $query->whereHas('translations', function ($query) use ($language_id) {
+                        $query->where('language_id', $language_id);
                     });
                 })
                 ->leftJoin('language_codes as arclight', function ($query) {

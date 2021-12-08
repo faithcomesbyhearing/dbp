@@ -75,7 +75,7 @@ class ArclightController extends APIController
         $dam_id_param = checkParam('dam_id|fcbh_id');
         $cache_params =   [$iso, $dam_id_param];
         return cacheRemember('media-languages', $cache_params, now()->addWeek(), function () use ($iso, $dam_id_param) {
-            $languages = collect($this->fetchArclight('media-languages')->mediaLanguages)->pluck('languageId', 'iso3')->toArray();
+            $languages = collect(optional($this->fetchArclight('media-languages'))->mediaLanguages)->pluck('languageId', 'iso3')->toArray();
             if ($iso) {
                 if (!isset($languages[$iso])) {
                     return [];
