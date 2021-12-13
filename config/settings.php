@@ -122,4 +122,9 @@ return [
       'bibleis' => env('BIBLEIS_DEPRECATE_FROM_VERSION', '3.3.10'),
       'gideons' => env('GIDEONS_DEPRECATE_FROM_VERSION', '2.1.3'),
   ],
+
+  /*
+   * Download access group list allowed
+   */
+  'download_access_group_list' => env('DOWNLOAD_ACCESS_GROUP_LIST', '12,181,183,185,191,193'),
 ];
