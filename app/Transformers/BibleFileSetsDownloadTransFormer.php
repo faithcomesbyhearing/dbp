@@ -17,10 +17,10 @@ class BibleFileSetsDownloadTransFormer extends BaseTransformer
         switch ($this->route) {
             case 'v4_bible_filesets_download.list':
                 return [
-                    'type'      => (string) $fileset->type,
-                    'language'  => (string) $fileset->language,
-                    'licensor'  => (string) $fileset->licensor,
-                    'filesetid' => (string) $fileset->filesetid,
+                    'type'       => (string) $fileset->type,
+                    'language'   => (string) $fileset->language,
+                    'licensor'   => (string) $fileset->licensor,
+                    'fileset_id' => (string) $fileset->filesetid,
                 ];
             default:
                 return [];

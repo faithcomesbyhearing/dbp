@@ -6,6 +6,7 @@ use App\Models\User\AccessGroupKey;
 use App\Models\User\AccessGroupFileset;
 use App\Models\User\AccessType;
 use App\Models\User\Key;
+use App\Exceptions\ResponseException as Response;
 use DB;
 
 trait AccessControlAPI
@@ -186,7 +187,9 @@ trait AccessControlAPI
         );
 
         if (sizeof($allowed_fileset_for_download) === 0) {
-            return $this->setStatusCode(404)->replyWithError('Not found');
+            return $this
+                ->setStatusCode(Response::HTTP_FORBIDDEN)
+                ->replyWithError(Response::getStatusTextByCode(Response::HTTP_FORBIDDEN));
         }
     }
 }
