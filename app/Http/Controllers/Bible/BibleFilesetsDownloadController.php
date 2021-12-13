@@ -20,7 +20,7 @@ class BibleFilesetsDownloadController extends APIController
     /**
      *
      * @OA\Get(
-     *     path="/download/{fileset_id}/{book}/{chapter}",
+     *     path="/download/{fileset_id}/{book_id}/{chapter}",
      *     tags={"Bibles"},
      *     summary="Download specific fileset",
      *     description="For a given fileset return content (text, audio or video)",
@@ -29,9 +29,10 @@ class BibleFilesetsDownloadController extends APIController
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
      *     @OA\Parameter(name="book_id", in="path", description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.",
+     *          required=false,
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
-     *     @OA\Parameter(name="chapter", in="path", description="Will filter the results by the given chapter", required=true,
+     *     @OA\Parameter(name="chapter", in="path", description="Will filter the results by the given chapter", required=false,
      *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")
      *     ),
      *     @OA\Response(
@@ -133,13 +134,13 @@ class BibleFilesetsDownloadController extends APIController
     /**
      *
      * @OA\Get(
-     *     path="download/list",
+     *     path="/download/list",
      *     tags={"Bibles"},
      *     summary="List of filesets which can be downloaded for this API key",
      *     description="List of filesets which can be downloaded for this API key",
      *     operationId="v4_download_list",
-     *     @OA\Parameter(name="fileset_id", in="path", description="The fileset ID", required=true,
-     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
+     *     @OA\Parameter(name="limit", in="query", description="The number of search results to return",
+     *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id", type="integer", default=50)
      *     ),
      *     @OA\Response(
      *         response=200,
