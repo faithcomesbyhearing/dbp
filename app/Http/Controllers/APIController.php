@@ -399,4 +399,16 @@ class APIController extends Controller
             $cache_params
         );
     }
+
+    public function getCorrectFilesetType($fileset_type, $param_type)
+    {
+        $is_text_fileset = in_array($fileset_type, ['text_plain', 'text_format', 'text_html']);
+        if ($is_text_fileset && $param_type === '') {
+            $fileset_type = 'text_plain';
+        } elseif ($is_text_fileset) {
+            $fileset_type = $param_type;
+        }
+
+        return $fileset_type;
+    }
 }
