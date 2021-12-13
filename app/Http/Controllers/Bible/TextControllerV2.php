@@ -34,7 +34,7 @@ class TextControllerV2 extends APIController
      * API Note: I removed the v4 openapi docs. Returning text for a fileset/book/chapter is now handled in BibleFileSetsController:showChapter, along with all other filesets
      *
      * @OA\Get(
-     *     path="/text/verse",
+     *     path="text/verse",
      *     tags={"Library Text"},
      *     summary="Returns Signed URLs or Text",
      *     description="V2's base fileset route",
@@ -96,7 +96,7 @@ class TextControllerV2 extends APIController
     /**
      *
      * @OA\Get(
-     *     path="/search",
+     *     path="search",
      *     tags={"Search"},
      *     summary="Search a bible for a word",
      *     description="",
@@ -114,10 +114,10 @@ class TextControllerV2 extends APIController
      *          description="The Bible fileset ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")
      *     ),
-     *     @OA\Parameter(name="limit",  in="query", description="The number of search results to return",
+     *     @OA\Parameter(name="limit", in="query", description="The number of search results to return",
      *          @OA\Schema(type="integer",default=15)),
      *     @OA\Parameter(ref="#/components/parameters/page"),
-     *     @OA\Parameter(name="books",  in="query", description="The usfm book ids to search through separated by a comma",
+     *     @OA\Parameter(name="books", in="query", description="The usfm book ids to search through separated by a comma",
      *          @OA\Schema(type="string",example="GEN,EXO,MAT")),
      *     @OA\Response(
      *         response=200,
@@ -129,7 +129,7 @@ class TextControllerV2 extends APIController
      * @return Response
      *
      * @OA\Schema(
-     *   schema="v2_text_search",
+     *   schema="v2_text_search_response",
      *   type="object",
      *   @OA\Property(property="verses", ref="#/components/schemas/v4_bible_filesets_chapter"),
      *   @OA\Property(property="meta",ref="#/components/schemas/pagination")
