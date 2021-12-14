@@ -110,7 +110,7 @@ Route::name('v4_filesets.books')->get(
     'Bible\BooksController@show'
 );
 
-// the order of these next two routes matters, the most general have to go first
+// the order of these next two routes matters, the most general (bibles/filesets/bulk) must go before /bibles/filesets/{fileset_id}
 Route::name('v4_filesets.bulk')->get(
   'bibles/filesets/bulk/{fileset_id}/{book?}',
   'Bible\BibleFileSetsController@showBulk'
@@ -120,6 +120,17 @@ Route::name('v4_filesets.chapter')->get(
   'Bible\BibleFileSetsController@showChapter'
 );
 
+// BibleFileSet download version 4
+
+Route::name('v4_bible_filesets_download.list')->get(
+    'download/list',
+    'Bible\BibleFilesetsDownloadController@list'
+);
+
+Route::name('v4_bible_filesets_download.index')->get(
+    'download/{fileset_id}/{book?}/{chapter_id?}',
+    'Bible\BibleFilesetsDownloadController@index'
+);
 
 // VERSION 4 | Text
 // This is new, added Dec 28, to provide just the verses for a bible or chapter. Note that this does not have filesets in path

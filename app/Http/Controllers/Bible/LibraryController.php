@@ -8,6 +8,7 @@ use App\Traits\CallsBucketsTrait;
 use Illuminate\Http\JsonResponse;
 
 use App\Models\Language\Language;
+use App\Models\Language\LanguageCodeV2;
 use App\Models\Bible\BibleFileset;
 use App\Models\Organization\Asset;
 
@@ -449,7 +450,9 @@ class LibraryController extends APIController
 
         $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code];
         $filesets = cacheRemember('v2_library_volume', $cache_params, now()->addDay(), function () use ($dam_id, $media, $language_name, $iso, $updated, $organization, $version_code) {
-            $language_id = $iso ? optional(Language::where('iso', $iso)->first())->id : null;
+            $language_v2 = $this->getV2Language($iso);
+            $v2_iso = optional($language_v2)->language_ISO_639_3_id;
+            $language_id = $iso ? optional(Language::where('iso', $v2_iso ?? $iso)->first())->id : null;
 
             if (!empty($iso) && empty($language_id)) {
                 return [];
@@ -466,13 +469,13 @@ class LibraryController extends APIController
                 ->whereColumn('id', 'bible_filesets.id')
                 ->limit(1);
 
-            $filesets = BibleFileset::with('meta')->where('set_type_code', '!=', 'text_format')
+            $filesets = BibleFileset::with('meta', 'bible.translations')->where('set_type_code', '!=', 'text_format')
                 ->where('bible_filesets.id', 'NOT LIKE', '%16')
                 ->uniqueFileset($dam_id, $media, true)
                 ->withBible($language_name, $language_id, $organization)
                 ->when($language_id, function ($query) use ($language_id) {
-                    $query->whereHas('bible', function ($subquery) use ($language_id) {
-                        $subquery->where('language_id', $language_id);
+                    $query->whereHas('translations', function ($query) use ($language_id) {
+                        $query->where('language_id', $language_id);
                     });
                 })
                 ->leftJoin('language_codes as arclight', function ($query) {
@@ -664,5 +667,14 @@ class LibraryController extends APIController
             default:
                 return [];
         }
+    }
+    // This is used as an interface for backward compat with v2 languages due to iso code differences
+    private function getV2Language($code) 
+    {
+        $language_v2 = LanguageCodeV2::select(['id as v2Code', 'language_ISO_639_3_id', 'name', 'english_name'])
+            ->when($code, function ($query) use ($code) {
+                return $query->where('id', $code);
+            })->first();
+        return $language_v2;
     }
 }
