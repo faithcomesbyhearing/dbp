@@ -6,6 +6,7 @@ use App\Models\User\AccessGroupKey;
 use App\Models\User\AccessGroupFileset;
 use App\Models\User\AccessType;
 use App\Models\User\Key;
+use App\Exceptions\ResponseException as Response;
 use DB;
 
 trait AccessControlAPI
@@ -108,42 +109,53 @@ trait AccessControlAPI
         });
     }
 
-    private function bulkAccessControl($api_key, $fileset_hash)
+    private function genericAccessControl($api_key, $fileset_hash, $access_group_ids = [])
     {
-        $cache_params = [$api_key, $fileset_hash];
-        return cacheRemember('bulk_access_control', $cache_params, now()->addMinutes(40), function () use ($api_key, $fileset_hash) {
-            $user_location = geoip(request()->ip());
-            $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
-            $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
 
-            // Defaults to type 'api' because that's the only access type; needs modification once there are multiple
-            $access_type = AccessType::where('name', 'api')
-                ->where(function ($query) use ($country_code) {
-                    $query->where('country_id', $country_code);
-                })
-                ->where(function ($query) use ($continent) {
-                    $query->where('continent_id', $continent);
-                })
-                ->select('id', 'name')
-                ->first();
+        $cache_params = [$api_key, $fileset_hash, join('', $access_group_ids)];
+        return cacheRemember(
+            'bulk_access_control',
+            $cache_params,
+            now()->addMinutes(40),
+            function () use ($api_key, $fileset_hash, $access_group_ids) {
+                $user_location = geoip(request()->ip());
+                $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
+                $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
 
-            if (!$access_type) {
-                return (object) ['identifiers' => [], 'string' => ''];
-            }
+                // Defaults to type 'api' because that's the only access type;
+                // needs modification once there are multiple
+                $access_type = AccessType::where('name', 'api')
+                    ->where(function ($query) use ($country_code) {
+                        $query->where('country_id', $country_code);
+                    })
+                    ->where(function ($query) use ($continent) {
+                        $query->where('continent_id', $continent);
+                    })
+                    ->select('id', 'name')
+                    ->first();
 
-            $dbp_database = config('database.connections.dbp.database');
-
-            return AccessGroupKey::join('user_keys', function ($join) use ($api_key) {
-                $join->on('user_keys.id', '=', 'access_group_api_keys.key_id')
-                    ->where('user_keys.key', $api_key);
-            })->join(
-                $dbp_database . '.access_group_filesets as acc_filesets',
-                function ($join) use ($fileset_hash) {
-                    $join->on('access_group_api_keys.access_group_id', '=', 'acc_filesets.access_group_id')
-                        ->where('hash_id', $fileset_hash);
+                if (!$access_type) {
+                    return (object) ['identifiers' => [], 'string' => ''];
                 }
-            )->select('user_keys.id')->get();
-        });
+
+                $dbp_database = config('database.connections.dbp.database');
+
+                return AccessGroupKey::join('user_keys', function ($join) use ($api_key) {
+                    $join->on('user_keys.id', '=', 'access_group_api_keys.key_id')
+                        ->where('user_keys.key', $api_key);
+                })->join(
+                    $dbp_database . '.access_group_filesets as acc_filesets',
+                    function ($join) use ($fileset_hash, $access_group_ids) {
+                        $join->on('access_group_api_keys.access_group_id', '=', 'acc_filesets.access_group_id')
+                            ->where('hash_id', $fileset_hash);
+
+                        if (!empty($access_group_ids)) {
+                            $join->whereIn('acc_filesets.access_group_id', $access_group_ids);
+                        }
+                    }
+                )->select('user_keys.id')->get();
+            }
+        );
     }
 
     public function blockedByAccessControl($fileset)
@@ -157,10 +169,27 @@ trait AccessControlAPI
 
     public function allowedByBulkAccessControl($fileset)
     {
-        $allowed_fileset = $this->bulkAccessControl($this->key, $fileset->hash_id);
+        $allowed_fileset = $this->genericAccessControl($this->key, $fileset->hash_id);
         if (sizeof($allowed_fileset) === 0) {
             return $this->setStatusCode(404)->replyWithError('Not found');
         }
         return true;
+    }
+
+    public function allowedForDownload($fileset)
+    {
+        $download_access_group_list = config('settings.download_access_group_list');
+        $download_access_group_array_ids = explode(',', $download_access_group_list);
+        $allowed_fileset_for_download = $this->genericAccessControl(
+            $this->key,
+            $fileset->hash_id,
+            $download_access_group_array_ids
+        );
+
+        if (sizeof($allowed_fileset_for_download) === 0) {
+            return $this
+                ->setStatusCode(Response::HTTP_FORBIDDEN)
+                ->replyWithError(Response::getStatusTextByCode(Response::HTTP_FORBIDDEN));
+        }
     }
 }

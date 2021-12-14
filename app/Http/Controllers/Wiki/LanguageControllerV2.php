@@ -6,6 +6,7 @@ use App\Http\Controllers\APIController;
 use App\Models\Bible\BibleFileset;
 use App\Models\Country\CountryLanguage;
 use App\Models\Language\Language;
+use App\Models\Language\LanguageCodeV2;
 use App\Traits\AccessControlAPI;
 use App\Transformers\V2\LibraryCatalog\LanguageListingTransformer;
 use App\Transformers\V2\CountryLanguageTransformer;
@@ -51,9 +52,11 @@ class LanguageControllerV2 extends APIController
         // Caching Logic
         $cache_params = [$this->v, $code, $full_word, $name, $sort_by];
         $cached_languages = cacheRemember('languages', $cache_params, now()->addDay(), function () use ($code, $full_word, $name, $sort_by) {
+            $language_v2 = $this->getV2Language($code);
+            $v2_code = optional($language_v2)->language_ISO_639_3_id;
             $languages = Language::select(['id', 'iso2B', 'iso', 'name'])->orderBy($sort_by)
-                ->when($code, function ($query) use ($code) {
-                    return $query->where('iso', $code);
+                ->when($code, function ($query) use ($code, $v2_code) {
+                    return $query->where('iso', $v2_code ?? $code);
                 })
                 ->has('filesets')
                 // Filter results by language name when set
@@ -63,7 +66,7 @@ class LanguageControllerV2 extends APIController
                         $query->where('name', 'like', '%' . $name . $added_space . '%')->orWhere('name', $name);
                     });
                 })->get();
-            return fractal($languages, new LanguageListingTransformer(), $this->serializer);
+            return fractal($languages, new LanguageListingTransformer(['language_v2' => $language_v2]), $this->serializer);
         });
 
         return $this->reply($cached_languages);
@@ -165,16 +168,18 @@ class LanguageControllerV2 extends APIController
             $cache_params,
             now()->addDay(),
             function () use ($sort_by, $lang_code, $country_code, $additional, $img_size, $img_type, $key) {
+                $language_v2 = $this->getV2Language($lang_code);
+                $v2_code = optional($language_v2)->language_ISO_639_3_id;
                 $country_langs = CountryLanguage::with(['country', 'language' => function ($query) use ($additional) {
                     $query->when($additional, function ($subquery) {
                         $subquery->with('countries');
                     });
                     $query->with('autonym');
                 }])
-                    ->join('languages', function ($join) use ($lang_code) {
+                    ->join('languages', function ($join) use ($lang_code, $v2_code) {
                         $join->on('languages.id', '=', 'country_language.language_id');
                         if ($lang_code) {
-                            $join->where('languages.iso', $lang_code);
+                            $join->where('languages.iso', $v2_code ?? $lang_code);
                         }
                     })
                     ->whereHas('language', function ($query) use ($key) {
@@ -194,7 +199,7 @@ class LanguageControllerV2 extends APIController
                         $item->country_image = $path;
                     });
 
-                return fractal($country_langs, new CountryLanguageTransformer(), $this->serializer);
+                return fractal($country_langs, new CountryLanguageTransformer(['language_v2' => $language_v2]), $this->serializer);
             }
         );
 
@@ -280,10 +285,12 @@ class LanguageControllerV2 extends APIController
             $cache_params,
             now()->addDay(),
             function () use ($root, $iso, $media, $full_word, $organization_id) {
+                $language_v2 = $this->getV2Language($iso);
+                $v2_code = optional($language_v2)->language_ISO_639_3_id;
                 $languages = Language::has('filesets')
                     ->includeCurrentTranslation()
                     ->includeAutonymTranslation()
-                    ->filterableByIsoCode($iso)
+                    ->filterableByIsoCode($v2_code ?? $iso)
                     ->filterableByName($root, $full_word)
                     // Note: the organization clause results in a 500 error. This may come back into the mix later, so want to keep the code available until we have time to investigate
                     // ->when($organization_id, function ($query) use ($organization_id) {
@@ -304,7 +311,7 @@ class LanguageControllerV2 extends APIController
                         'autonym.name as autonym'
                     ])->with('parent')->get();
 
-                return fractal($languages, new LanguageListingTransformer(), $this->serializer);
+                return fractal($languages, new LanguageListingTransformer(['language_v2' => $language_v2]), $this->serializer);
             }
         );
         return $this->reply($languages);
@@ -380,6 +387,9 @@ class LanguageControllerV2 extends APIController
 
         $cache_params = [$root, $iso, $media, $organization_id];
         $languages = cacheRemember('volumeLanguageFamily', $cache_params, now()->addDay(), function () use ($root, $iso, $media, $organization_id) {
+            $language_v2 = $this->getV2Language($iso);
+            $v2_code = optional($language_v2)->language_ISO_639_3_id;
+
             $languages = Language::with('bibles')->with('dialects')
                 ->includeAutonymTranslation()
                 ->includeCurrentTranslation()
@@ -391,8 +401,8 @@ class LanguageControllerV2 extends APIController
                 ->with(['dialects.childLanguage' => function ($query) {
                     $query->select(['id', 'iso']);
                 }])
-                ->when($iso, function ($query) use ($iso) {
-                    return $query->where('iso', $iso);
+                ->when($iso, function ($query) use ($iso, $v2_code) {
+                    return $query->where('iso', $v2_code ?? $iso);
                 })
                 ->when($root, function ($query) use ($root) {
                     return $query->where('name', 'LIKE', '%' . $root . '%');
@@ -409,8 +419,18 @@ class LanguageControllerV2 extends APIController
                 )
                 ->get();
 
-            return fractal($languages, new LanguageListingTransformer(), $this->serializer);
+            return fractal($languages, new LanguageListingTransformer(['language_v2' => $language_v2]), $this->serializer);
         });
         return $this->reply($languages);
+    }
+
+    // This is used as an interface for backward compat with v2 languages due to iso code differences
+    private function getV2Language($code) 
+    {
+        $language_v2 = LanguageCodeV2::select(['id as v2Code', 'language_ISO_639_3_id', 'name', 'english_name'])
+            ->when($code, function ($query) use ($code) {
+                return $query->where('id', $code);
+            })->first();
+        return $language_v2;
     }
 }
