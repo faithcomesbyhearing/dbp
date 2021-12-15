@@ -540,7 +540,7 @@ class Language extends Model
 
     public function alphabets()
     {
-        return $this->belongsToMany(Alphabet::class, 'alphabet_language', 'script', 'id')->distinct();
+        return $this->belongsToMany(Alphabet::class, 'alphabet_language', 'language_id', 'script_id')->distinct();
     }
 
     /**
@@ -683,5 +683,70 @@ class Language extends Model
                 });
             });
         }
+    }
+
+    public function scopeLanguageListingv2($query, $code)
+    {
+        $subquery_code_v2 = Language::select(
+            [
+                'languages.id',
+                'languages.iso2B',
+                'language_codes_v2.id as code',
+                'language_codes_v2.language_ISO_639_3_id as iso',
+                'language_codes_v2.name',
+                'language_codes_v2.english_name'
+            ]
+        )
+        ->join('language_codes_v2', function ($join_codes_v2) {
+            $join_codes_v2->on('language_codes_v2.language_ISO_639_3_id', 'languages.iso');
+        })
+        ->when($code, function ($query) use ($code) {
+            return $query->where('language_codes_v2.id', '=', $code);
+        });
+
+        $subquery_lang = Language::select(
+            [
+                'languages.id',
+                'languages.iso2B',
+                'languages.iso',
+                'languages.iso as code',
+                'languages.name',
+                'languages.name as english_name'
+            ]
+        )
+        ->when($code, function ($query) use ($code) {
+            return $query->where('languages.iso', '=', $code);
+        });
+
+        $subquery_code_v2_sql = $subquery_code_v2->toSql();
+        $subquery_lang_sql = $subquery_lang->toSql();
+
+        $new_language_query = \DB::table(
+            \DB::raw(
+                "(
+                $subquery_code_v2_sql
+                UNION ALL
+                $subquery_lang_sql
+                ) as languages"
+            )
+        )->select([
+            'languages.id',
+            'languages.iso2B',
+            'languages.iso',
+            'languages.code',
+            'languages.name',
+            'languages.english_name',
+        ])
+        ->whereRaw('EXISTS (
+            SELECT 1 FROM bible_fileset_connections
+            INNER JOIN bibles ON bibles.id = bible_fileset_connections.bible_id WHERE languages.id = bibles.language_id
+        )');
+
+        if (!empty($code)) {
+            $new_language_query->addBinding($code)
+                ->addBinding($code);
+        }
+
+        return $new_language_query;
     }
 }
