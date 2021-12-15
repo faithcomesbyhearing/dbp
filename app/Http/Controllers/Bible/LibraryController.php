@@ -270,8 +270,12 @@ class LibraryController extends APIController
         $cache_params = $this->removeSpaceFromCacheParameters([$code, $name, $sort]);
         $versions = cacheRemember('v2_library_version', $cache_params, now()->addDay(), function () use ($code, $sort, $name) {
             $english_id = Language::where('iso', 'eng')->first()->id ?? '6414';
-            $formatted_name = $this->transformQuerySearchText($name);
-            $formatted_name = "+$formatted_name*";
+            $formatted_name = null;
+
+            if (!empty($name)) {
+                $formatted_name = $this->transformQuerySearchText($name);
+                $formatted_name = "+$formatted_name*";
+            }
 
             return BibleFileset::where('asset_id', config('filesystems.disks.s3_fcbh.bucket'))
                 ->rightJoin('bible_fileset_connections as bibles', 'bibles.hash_id', 'bible_filesets.hash_id')
@@ -290,7 +294,7 @@ class LibraryController extends APIController
                     'ver_title.name as ver_title',
                     'bible_filesets.id'
                 ])
-                ->when($name, function ($query_name) use ($formatted_name) {
+                ->when($formatted_name, function ($query_name) use ($formatted_name) {
                     $query_name->where(function ($subquey_name) use ($formatted_name) {
                         $subquey_name
                             ->whereRaw('match (eng_title.name) against (? IN BOOLEAN MODE)', [$formatted_name])
