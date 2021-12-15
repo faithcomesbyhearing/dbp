@@ -144,8 +144,11 @@ class BibleFileset extends Model
     {
         return $query
             ->join('bible_fileset_connections as connection', 'connection.hash_id', 'bible_filesets.hash_id')
-            ->join('bibles', 'connection.bible_id', 'bibles.id', function ($q) use ($language_id) {
-                $q->where('bibles.language_id', $language_id);
+            ->join('bibles', function ($q) use ($language_id) {
+                $q->on('connection.bible_id', 'bibles.id')
+                    ->when($language_id, function ($subquery) use ($language_id) {
+                        $subquery->where('bibles.language_id', $language_id);
+                    });
             })
             ->leftJoin('languages', 'bibles.language_id', 'languages.id')
             ->join('language_translations', function ($q) {
