@@ -52,7 +52,7 @@ class LanguageControllerV2 extends APIController
         // Caching Logic
         $cache_params = [$this->v, $code, $full_word, $name, $sort_by];
         $cached_languages = cacheRemember('languages', $cache_params, now()->addDay(), function () use ($code, $full_word, $name, $sort_by) {
-            $language_v2 = $this->getV2Language($code);
+            $language_v2 = !empty($code) ? $this->getV2Language($code) : null;
             $v2_code = optional($language_v2)->language_ISO_639_3_id;
             $languages = Language::select(['id', 'iso2B', 'iso', 'name'])->orderBy($sort_by)
                 ->when($code, function ($query) use ($code, $v2_code) {
@@ -168,7 +168,7 @@ class LanguageControllerV2 extends APIController
             $cache_params,
             now()->addDay(),
             function () use ($sort_by, $lang_code, $country_code, $additional, $img_size, $img_type, $key) {
-                $language_v2 = $this->getV2Language($lang_code);
+                $language_v2 = !empty($lang_code) ? $this->getV2Language($lang_code) : null;
                 $v2_code = optional($language_v2)->language_ISO_639_3_id;
                 $country_langs = CountryLanguage::with(['country', 'language' => function ($query) use ($additional) {
                     $query->when($additional, function ($subquery) {
@@ -285,7 +285,7 @@ class LanguageControllerV2 extends APIController
             $cache_params,
             now()->addDay(),
             function () use ($root, $iso, $media, $full_word, $organization_id) {
-                $language_v2 = $this->getV2Language($iso);
+                $language_v2 = !empty($iso) ? $this->getV2Language($iso) : null;
                 $v2_code = optional($language_v2)->language_ISO_639_3_id;
                 $languages = Language::has('filesets')
                     ->includeCurrentTranslation()
@@ -387,7 +387,7 @@ class LanguageControllerV2 extends APIController
 
         $cache_params = [$root, $iso, $media, $organization_id];
         $languages = cacheRemember('volumeLanguageFamily', $cache_params, now()->addDay(), function () use ($root, $iso, $media, $organization_id) {
-            $language_v2 = $this->getV2Language($iso);
+            $language_v2 = !empty($iso) ? $this->getV2Language($iso) : null;
             $v2_code = optional($language_v2)->language_ISO_639_3_id;
 
             $languages = Language::with('bibles')->with('dialects')
@@ -425,12 +425,11 @@ class LanguageControllerV2 extends APIController
     }
 
     // This is used as an interface for backward compat with v2 languages due to iso code differences
-    private function getV2Language($code) 
+    private function getV2Language($code)
     {
-        $language_v2 = LanguageCodeV2::select(['id as v2Code', 'language_ISO_639_3_id', 'name', 'english_name'])
+        return LanguageCodeV2::select(['id as v2Code', 'language_ISO_639_3_id', 'name', 'english_name'])
             ->when($code, function ($query) use ($code) {
                 return $query->where('id', $code);
             })->first();
-        return $language_v2;
     }
 }

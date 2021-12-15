@@ -270,8 +270,14 @@ class LibraryController extends APIController
         $cache_params = $this->removeSpaceFromCacheParameters([$code, $name, $sort]);
         $versions = cacheRemember('v2_library_version', $cache_params, now()->addDay(), function () use ($code, $sort, $name) {
             $english_id = Language::where('iso', 'eng')->first()->id ?? '6414';
+            $formatted_name = null;
 
-            $versions = BibleFileset::where('asset_id', config('filesystems.disks.s3_fcbh.bucket'))
+            if (!empty($name)) {
+                $formatted_name = $this->transformQuerySearchText($name);
+                $formatted_name = "+$formatted_name*";
+            }
+
+            return BibleFileset::where('asset_id', config('filesystems.disks.s3_fcbh.bucket'))
                 ->rightJoin('bible_fileset_connections as bibles', 'bibles.hash_id', 'bible_filesets.hash_id')
                 ->join('bible_translations as ver_title', function ($join) {
                     $join->on('ver_title.bible_id', 'bibles.bible_id')->where('ver_title.vernacular', 1);
@@ -287,21 +293,20 @@ class LibraryController extends APIController
                     'eng_title.name as eng_title',
                     'ver_title.name as ver_title',
                     'bible_filesets.id'
-                ])->get();
-            
-            if ($name) {
-                $subsetVersions = $versions->where('eng_title', $name)->first();
-                if (!$subsetVersions) {
-                    $subsetVersions = $versions->where('ver_title', $name)->first();
-                }
-                $versions = [$subsetVersions];
-            }
-
-            return $versions;
+                ])
+                ->when($formatted_name, function ($query_name) use ($formatted_name) {
+                    $query_name->where(function ($subquey_name) use ($formatted_name) {
+                        $subquey_name
+                            ->whereRaw('match (eng_title.name) against (? IN BOOLEAN MODE)', [$formatted_name])
+                            ->orWhereRaw('match (ver_title.name) against (? IN BOOLEAN MODE)', [$formatted_name]);
+                    });
+                })
+                ->distinct()
+                ->get();
         });
 
         return $this->reply(fractal(
-            isset($versions[0]) ? $versions[0] : [],
+            $versions,
             new LibraryVolumeTransformer(),
             $this->serializer
         ));
