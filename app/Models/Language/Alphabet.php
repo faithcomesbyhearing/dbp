@@ -415,6 +415,13 @@ class Alphabet extends Model
 
     public function numerals()
     {
-        return $this->hasManyThrough(NumeralSystemGlyph::class, AlphabetNumeralSystem::class);
+        return $this->hasManyThrough(
+            NumeralSystemGlyph::class,
+            AlphabetNumeralSystem::class,
+            'script_id',
+            'numeral_system_id',
+            'script',
+            'numeral_system_id'
+        );
     }
 }

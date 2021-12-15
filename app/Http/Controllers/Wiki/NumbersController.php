@@ -6,6 +6,8 @@ use App\Http\Controllers\APIController;
 
 use App\Models\Language\NumeralSystem;
 use App\Models\Language\NumeralSystemGlyph;
+use App\Models\Language\Language;
+use App\Models\Bible\Bible;
 use App\Transformers\NumbersTransformer;
 
 class NumbersController extends APIController
@@ -68,18 +70,63 @@ class NumbersController extends APIController
      */
     public function customRange()
     {
-        $script = checkParam('script|script_id', true);
+        $script = checkParam('script|script_id');
+        $language_code = checkParam('language_code');
         $start  = checkParam('start') ?? 0;
         $end    = checkParam('end');
         if (($end - $start) > 200) {
             return $this->replyWithError(trans('api.numerals_range_error', ['num' => $end]));
         }
 
+        if ($language_code) {
+            $language = Language::select(
+                [
+                    'languages.id',
+                    'languages.iso2B',
+                    'languages.iso',
+                    'language_codes_v2.id as code',
+                    'language_codes_v2.language_ISO_639_3_id as isov2',
+                    'language_codes_v2.name as name_v2',
+                    'language_codes_v2.english_name as english_name_v2'
+                ]
+            )
+            ->leftJoin('language_codes_v2', function ($join_codes_v2) {
+                $join_codes_v2->on('language_codes_v2.language_ISO_639_3_id', 'languages.iso');
+            })
+            ->where(function ($query) use ($language_code) {
+                return $query
+                    ->where('language_codes_v2.id', $language_code)
+                    ->orWhere('languages.iso', $language_code);
+            })
+            ->with('alphabets')
+            ->first();
+
+            if (!empty($language)) {
+                if (!empty($language->alphabets)) {
+                    $alphabet = $language->alphabets->first();
+                    $alphabet_numeral = isset($alphabet->numerals) ? $alphabet->numerals->first() : null;
+                    $script = !empty($alphabet_numeral) ? $alphabet_numeral->numeral_system_id : $script;
+                }
+
+                if (empty($script)) {
+                    $bible = Bible::select('numeral_system_id')
+                        ->where('language_id', $language->id)
+                        ->whereNotNull('numeral_system_id')
+                        ->first();
+                    
+                    if (!empty($bible)) {
+                        $script = $bible->numeral_system_id;
+                    }
+                }
+            }
+        }
         // Fetch Numbers By Iso Or Script Code
         $numbers = NumeralSystemGlyph::where('numeral_system_id', $script)
             ->where('value', '>=', $start)
             ->where('value', '<=', $end)->select('value as numeral', 'glyph as numeral_vernacular')->get();
-        
+
+        $formatted_numbers = [];
+
         if ($this->v === 2 || $this->v === 3) {
             foreach ($numbers as $number) {
                 $formatted_numbers["num_$number->numeral"] = $number->numeral_vernacular ?? '';
