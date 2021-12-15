@@ -287,7 +287,9 @@ class LibraryController extends APIController
                     'eng_title.name as eng_title',
                     'ver_title.name as ver_title',
                     'bible_filesets.id'
-                ])->get();
+                ])
+                ->distinct()
+                ->get();
             
             if ($name) {
                 $subsetVersions = $versions->where('eng_title', $name)->first();
@@ -301,7 +303,7 @@ class LibraryController extends APIController
         });
 
         return $this->reply(fractal(
-            isset($versions[0]) ? $versions[0] : [],
+            $versions,
             new LibraryVolumeTransformer(),
             $this->serializer
         ));

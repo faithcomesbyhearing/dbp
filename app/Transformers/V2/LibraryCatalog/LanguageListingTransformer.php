@@ -30,13 +30,14 @@ class LanguageListingTransformer extends BaseTransformer
      */
     private $params = [];
 
-    function __construct($params = [])
+    public function __construct($params = [])
     {
+        parent::__construct();
         $this->params = $params;
     }
 
     public function transform($language)
-    {   
+    {
         $language_v2 = optional($this->params)['language_v2'];
         $code = $language_v2->v2Code ?? strtoupper($language->iso);
         $name = $language_v2->name ?? $language->name;
@@ -104,7 +105,7 @@ class LanguageListingTransformer extends BaseTransformer
                 return [
                     'language_code'        => $code,
                     'language_name'        => $name,
-                    'english_name'         => $language->name,
+                    'english_name'         => $english_name,
                     'language_iso'         => (string) $language->iso ?? '',
                     'language_iso_2B'      => $language->iso2B ?? '',
                     'language_iso_2T'      => $language->iso2B ?? '',
