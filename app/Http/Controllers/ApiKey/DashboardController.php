@@ -10,6 +10,7 @@ use App\Models\User\KeyRequest;
 use App\Models\User\AccessGroupKey;
 
 use Illuminate\Support\Facades\Validator;
+use App\Exceptions\ResponseException as Response;
 use Auth;
 use Exception;
 
@@ -227,10 +228,15 @@ class DashboardController extends APIController
             $key_request->save();
 
             $target_key = Key::where('key', $key)->first();
-            AccessGroupKey::where('key_id', $target_key->id)->delete();
-            $deleted_key = $target_key->delete();
 
-            return $target_key;
+            if (empty($target_key)) {
+                return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError(
+                    'Key doesn\'t exist'
+                );
+            }
+
+            AccessGroupKey::where('key_id', $target_key->id)->delete();
+            return $target_key->delete();
         }
     }
 
