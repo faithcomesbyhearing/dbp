@@ -700,8 +700,8 @@ class Language extends Model
         ->join('language_codes_v2', function ($join_codes_v2) {
             $join_codes_v2->on('language_codes_v2.language_ISO_639_3_id', 'languages.iso');
         })
-        ->when($code, function ($query) use ($code) {
-            return $query->where('language_codes_v2.id', '=', $code);
+        ->when($code, function ($subquery) use ($code) {
+            return $subquery->where('language_codes_v2.id', '=', $code);
         });
 
         $subquery_lang = Language::select(
@@ -714,33 +714,37 @@ class Language extends Model
                 'languages.name as english_name'
             ]
         )
-        ->when($code, function ($query) use ($code) {
-            return $query->where('languages.iso', '=', $code);
+        ->when($code, function ($subquery) use ($code) {
+            return $subquery->where('languages.iso', '=', $code);
         });
 
         $subquery_code_v2_sql = $subquery_code_v2->toSql();
         $subquery_lang_sql = $subquery_lang->toSql();
 
-        $new_language_query = \DB::table(
-            \DB::raw(
-                "(
-                $subquery_code_v2_sql
-                UNION ALL
-                $subquery_lang_sql
-                ) as languages"
-            )
-        )->select([
-            'languages.id',
-            'languages.iso2B',
-            'languages.iso',
-            'languages.code',
-            'languages.name',
-            'languages.english_name',
-        ])
-        ->whereRaw('EXISTS (
-            SELECT 1 FROM bible_fileset_connections
-            INNER JOIN bibles ON bibles.id = bible_fileset_connections.bible_id WHERE languages.id = bibles.language_id
-        )');
+        $db_connection_name = $query->getConnection()->getName() ?? $this->connection;
+
+        $new_language_query = \DB::connection($db_connection_name)
+            ->table(
+                \DB::connection($db_connection_name)->raw(
+                    "(
+                    $subquery_code_v2_sql
+                    UNION ALL
+                    $subquery_lang_sql
+                    ) as languages"
+                )
+            )->select([
+                'languages.id',
+                'languages.iso2B',
+                'languages.iso',
+                'languages.code',
+                'languages.name',
+                'languages.english_name',
+            ])
+            ->whereRaw('EXISTS (
+                SELECT 1 FROM bible_fileset_connections
+                INNER JOIN bibles ON bibles.id = bible_fileset_connections.bible_id
+                WHERE languages.id = bibles.language_id
+            )');
 
         if (!empty($code)) {
             $new_language_query->addBinding($code)
