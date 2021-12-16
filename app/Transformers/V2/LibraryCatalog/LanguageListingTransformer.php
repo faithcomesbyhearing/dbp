@@ -47,13 +47,13 @@ class LanguageListingTransformer extends BaseTransformer
             case 'v2_library_volumeLanguage':
                 return [
                     'language_name'             => $language->autonym ?? '',
-                    'english_name'              => (string) $language->name,
+                    'english_name'              => (string) $english_name,
                     'language_code'             => $code,
                     'language_iso'              => (string) $language->iso ?? '',
                     'language_iso_2B'           => (string) $language->iso2B ?? '',
                     'language_iso_2T'           => (string) $language->iso2T ?? '',
                     'language_iso_1'            => (string) $language->iso1 ?? '',
-                    'language_iso_name'         => (string) $language->name ?? '',
+                    'language_iso_name'         => (string) $name ?? '',
                     'language_family_code'      => strtoupper(optional($language->parent)->iso) ?? '',
                     'language_family_name'      => optional($language->parent)->autonym ?? '',
                     'language_family_english'   => optional($language->parent)->name ?? '',
@@ -103,9 +103,9 @@ class LanguageListingTransformer extends BaseTransformer
 
             default:
                 return [
-                    'language_code'        => $code,
-                    'language_name'        => $name,
-                    'english_name'         => $english_name,
+                    'language_code'        => strtoupper($language->code),
+                    'language_name'        => $language->name_v2 ?? $language->name,
+                    'english_name'         => $language->english_name_v2 ?? $language->name,
                     'language_iso'         => (string) $language->iso ?? '',
                     'language_iso_2B'      => $language->iso2B ?? '',
                     'language_iso_2T'      => $language->iso2B ?? '',
