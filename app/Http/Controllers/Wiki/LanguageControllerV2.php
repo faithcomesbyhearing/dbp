@@ -55,8 +55,8 @@ class LanguageControllerV2 extends APIController
             $language_v2 = !empty($code) ? $this->getV2Language($code) : null;
             
             $languages = Language::languageListingv2($code)
-                // Filter results by language name when set
                 ->orderBy($sort_by)
+                // Filter results by language name when set
                 ->when($name, function ($query) use ($name, $full_word) {
                     return $query->whereHas('translations', function ($query) use ($name, $full_word) {
                         $added_space = ($full_word === 'true') ? ' ' : '';
