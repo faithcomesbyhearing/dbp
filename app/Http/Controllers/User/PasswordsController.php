@@ -192,7 +192,9 @@ class PasswordsController extends APIController
 
         if ($request->token_id) {
             $reset = PasswordReset::where('email', $user->email)->where('token', $request->token_id)->first();
-            $reset->delete();
+            if (!empty($reset)) {
+                $reset->delete();
+            }
         }
 
         if ($this->api) {
