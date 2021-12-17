@@ -104,7 +104,9 @@ class BooksControllerV2 extends APIController
                     $books[$key]->bible_id        = $bible_id;
                     $books[$key]->number_chapters = $current_chapters[$key]->count();
                     $books[$key]->chapters        = $current_chapters[$key]->implode(',');
-                    $books[$key]->name            = $book_translation[$book->id];
+                    $books[$key]->name            = isset($book_translation[$book->id])
+                        ? $book_translation[$book->id]
+                        : '';
                 }
 
                 return fractal($books, new BookTransformer(), $this->serializer);

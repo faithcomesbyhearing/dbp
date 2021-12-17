@@ -17,6 +17,7 @@ use Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class HighlightsController extends APIController
 {
@@ -111,6 +112,10 @@ class HighlightsController extends APIController
         $sort_by    = checkParam('sort_by') ?? 'book';
         $sort_dir   = checkParam('sort_dir') ?? 'asc';
         $query      = checkParam('query');
+
+        if (!in_array(Str::lower($sort_dir), ['asc', 'desc'])) {
+            $sort_dir = 'desc';
+        }
 
         // Validate Project / User Connection
         $user = User::where('id', $user_id)->select('id')->first();

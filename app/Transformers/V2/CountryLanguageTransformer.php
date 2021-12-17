@@ -2,9 +2,9 @@
 
 namespace App\Transformers\V2;
 
-use League\Fractal\TransformerAbstract;
+use App\Transformers\BaseTransformer;
 
-class CountryLanguageTransformer extends TransformerAbstract
+class CountryLanguageTransformer extends BaseTransformer
 {
     /**
      * A Fractal transformer.
@@ -14,8 +14,9 @@ class CountryLanguageTransformer extends TransformerAbstract
 
     private $params = [];
 
-    function __construct($params = [])
+    public function __construct($params = [])
     {
+        parent::__construct();
         $this->params = $params;
     }
 

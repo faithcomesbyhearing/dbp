@@ -27,6 +27,7 @@ use Validator;
 use Illuminate\Support\Facades\Auth;
 
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
+use App\Exceptions\ResponseException as Response;
 
 class UsersController extends APIController
 {
@@ -859,7 +860,7 @@ class UsersController extends APIController
         $validator = Validator::make(request()->all(), $rules);
 
         if ($validator->fails()) {
-            return $this->setStatusCode(422)->replyWithError(
+            return $this->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY)->replyWithError(
                 $validator->errors()
             );
         }
