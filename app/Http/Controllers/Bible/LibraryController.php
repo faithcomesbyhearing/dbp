@@ -277,7 +277,13 @@ class LibraryController extends APIController
                 $formatted_name = "+$formatted_name*";
             }
 
-            return BibleFileset::where('asset_id', config('filesystems.disks.s3_fcbh.bucket'))
+            return BibleFileset::select([
+                    'eng_title.name as eng_title',
+                    'ver_title.name as ver_title',
+                    'bible_filesets.id'
+                ])
+                ->distinct()
+                ->where('asset_id', config('filesystems.disks.s3_fcbh.bucket'))
                 ->rightJoin('bible_fileset_connections as bibles', 'bibles.hash_id', 'bible_filesets.hash_id')
                 ->join('bible_translations as ver_title', function ($join) {
                     $join->on('ver_title.bible_id', 'bibles.bible_id')->where('ver_title.vernacular', 1);
@@ -286,14 +292,10 @@ class LibraryController extends APIController
                     $join->on('eng_title.bible_id', 'bibles.bible_id')->where('eng_title.language_id', $english_id);
                 })
                 ->when($code, function ($q) use ($code) {
-                    $q->where('bible_filesets.id', 'LIKE', '%' . $code .'%')->get();
+                    $q->where('bible_filesets.id', 'LIKE', '%' . $code .'%');
                 })->when($sort, function ($q) use ($sort) {
                     $q->orderBy($sort, 'asc');
-                })->select([
-                    'eng_title.name as eng_title',
-                    'ver_title.name as ver_title',
-                    'bible_filesets.id'
-                ])
+                })
                 ->when($formatted_name, function ($query_name) use ($formatted_name) {
                     $query_name->where(function ($subquey_name) use ($formatted_name) {
                         $subquey_name
@@ -301,7 +303,7 @@ class LibraryController extends APIController
                             ->orWhereRaw('match (ver_title.name) against (? IN BOOLEAN MODE)', [$formatted_name]);
                     });
                 })
-                ->distinct()
+                ->orderBy('bible_filesets.id')
                 ->get();
         });
 
@@ -520,7 +522,7 @@ class LibraryController extends APIController
                     $query->where('bible_filesets.updated_at', '>', $updated);
                 })
                 ->when($version_code, function ($query) use ($version_code) {
-                    $query->where('bible_filesets.id', 'LIKE', '%' . $version_code .'%')->get();
+                    $query->where('bible_filesets.id', 'LIKE', '%' . $version_code .'%');
                 })
                 ->when($organization, function ($query) use ($organization) {
                     $query->where('bible_organizations.organization_id', $organization);

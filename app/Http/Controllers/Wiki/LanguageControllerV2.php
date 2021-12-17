@@ -53,12 +53,9 @@ class LanguageControllerV2 extends APIController
         $cache_params = [$this->v, $code, $full_word, $name, $sort_by];
         $cached_languages = cacheRemember('languages', $cache_params, now()->addDay(), function () use ($code, $full_word, $name, $sort_by) {
             $language_v2 = !empty($code) ? $this->getV2Language($code) : null;
-            $v2_code = optional($language_v2)->language_ISO_639_3_id;
-            $languages = Language::select(['id', 'iso2B', 'iso', 'name'])->orderBy($sort_by)
-                ->when($code, function ($query) use ($code, $v2_code) {
-                    return $query->where('iso', $v2_code ?? $code);
-                })
-                ->has('filesets')
+            
+            $languages = Language::languageListingv2($code)
+                ->orderBy($sort_by)
                 // Filter results by language name when set
                 ->when($name, function ($query) use ($name, $full_word) {
                     return $query->whereHas('translations', function ($query) use ($name, $full_word) {
@@ -66,7 +63,11 @@ class LanguageControllerV2 extends APIController
                         $query->where('name', 'like', '%' . $name . $added_space . '%')->orWhere('name', $name);
                     });
                 })->get();
-            return fractal($languages, new LanguageListingTransformer(['language_v2' => $language_v2]), $this->serializer);
+            return fractal(
+                $languages,
+                new LanguageListingTransformer(['language_v2' => $language_v2]),
+                $this->serializer
+            );
         });
 
         return $this->reply($cached_languages);
