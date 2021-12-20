@@ -53,9 +53,9 @@ class LibraryVolumeTransformer extends BaseTransformer
 
             case 'v2_library_version':
                 return [
-                    'version_code' => substr($fileset->id, 3) ?? '',
-                    'version_name' => $fileset->ver_title,
-                    'english_name' => $fileset->eng_title
+                    'version_code' => $fileset->id,
+                    'version_name' => $fileset->name,
+                    'english_name' => $fileset->english_name
                 ];
                 break;
 
