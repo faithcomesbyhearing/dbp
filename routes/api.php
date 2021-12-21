@@ -412,6 +412,11 @@ Route::middleware('APIToken')->group(function () {
         'users/{user_id}/highlights/{id}',
         'User\HighlightsController@destroy'
     );
+    // User download annotations version 4
+    Route::name('v4_users_download_annotations.index')->get(
+        'users/{user_id}/annotations/{bible_id}/{book?}/{chapter?}',
+        'User\UsersDownloadAnnotations@index'
+    );
 });
 
 Route::middleware('APIToken:check')->group(function () {
