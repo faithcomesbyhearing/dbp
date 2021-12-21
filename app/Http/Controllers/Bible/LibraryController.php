@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use App\Models\Language\Language;
 use App\Models\Language\LanguageCodeV2;
 use App\Models\Bible\BibleFileset;
+use App\Models\Bible\Version;
 use App\Models\Organization\Asset;
 
 use App\Transformers\V2\LibraryVolumeTransformer;
@@ -268,44 +269,34 @@ class LibraryController extends APIController
         $sort = checkParam('sort_by');
 
         $cache_params = $this->removeSpaceFromCacheParameters([$code, $name, $sort]);
-        $versions = cacheRemember('v2_library_version', $cache_params, now()->addDay(), function () use ($code, $sort, $name) {
-            $english_id = Language::where('iso', 'eng')->first()->id ?? '6414';
-            $formatted_name = null;
+        $versions = cacheRemember(
+            'v2_library_version',
+            $cache_params,
+            now()->addDay(),
+            function () use ($code, $sort, $name) {
+                $english_id = Language::where('iso', 'eng')->first()->id ?? '6414';
+                $formatted_name = null;
 
-            if (!empty($name)) {
-                $formatted_name = $this->transformQuerySearchText($name);
-                $formatted_name = "+$formatted_name*";
+                if (!empty($name)) {
+                    $formatted_name = $this->transformQuerySearchText($name);
+                }
+
+                return Version::select([
+                        'version.id',
+                        'version.name as eng_title',
+                        'version.english_name as ver_title'
+                    ])
+                    ->all($english_id)
+                    ->filterableByNameOrEnglishName($formatted_name)
+                    ->when($code, function ($q) use ($code) {
+                        $q->where('version.id', $code);
+                    })
+                    ->when($sort, function ($q) use ($sort) {
+                        $q->orderBy($sort, 'asc');
+                    })
+                    ->get();
             }
-
-            return BibleFileset::select([
-                    'eng_title.name as eng_title',
-                    'ver_title.name as ver_title',
-                    'bible_filesets.id'
-                ])
-                ->distinct()
-                ->where('asset_id', config('filesystems.disks.s3_fcbh.bucket'))
-                ->rightJoin('bible_fileset_connections as bibles', 'bibles.hash_id', 'bible_filesets.hash_id')
-                ->join('bible_translations as ver_title', function ($join) {
-                    $join->on('ver_title.bible_id', 'bibles.bible_id')->where('ver_title.vernacular', 1);
-                })
-                ->join('bible_translations as eng_title', function ($join) use ($english_id) {
-                    $join->on('eng_title.bible_id', 'bibles.bible_id')->where('eng_title.language_id', $english_id);
-                })
-                ->when($code, function ($q) use ($code) {
-                    $q->where('bible_filesets.id', 'LIKE', '%' . $code .'%');
-                })->when($sort, function ($q) use ($sort) {
-                    $q->orderBy($sort, 'asc');
-                })
-                ->when($formatted_name, function ($query_name) use ($formatted_name) {
-                    $query_name->where(function ($subquey_name) use ($formatted_name) {
-                        $subquey_name
-                            ->whereRaw('match (eng_title.name) against (? IN BOOLEAN MODE)', [$formatted_name])
-                            ->orWhereRaw('match (ver_title.name) against (? IN BOOLEAN MODE)', [$formatted_name]);
-                    });
-                })
-                ->orderBy('bible_filesets.id')
-                ->get();
-        });
+        );
 
         return $this->reply(fractal(
             $versions,
