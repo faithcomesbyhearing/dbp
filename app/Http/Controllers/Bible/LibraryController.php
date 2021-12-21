@@ -441,13 +441,15 @@ class LibraryController extends APIController
         $organization       = checkParam('organization_id');
         $version_code       = checkParam('version_code');
 
+        $key = $this->key;
+
         $arclight = new ArclightController();
         if ($version_code === 'JFV') {
             return $arclight->volumes();
         }
 
-        $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code];
-        $filesets = cacheRemember('v2_library_volume', $cache_params, now()->addDay(), function () use ($dam_id, $media, $language_name, $iso, $updated, $organization, $version_code) {
+        $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code, $key];
+        $filesets = cacheRemember('v2_library_volume', $cache_params, now()->addDay(), function () use ($dam_id, $media, $language_name, $iso, $updated, $organization, $version_code, $key) {
             $language_v2 = $this->getV2Language($iso);
             $v2_iso = optional($language_v2)->language_ISO_639_3_id;
             $language_id = $iso ? optional(Language::where('iso', $v2_iso ?? $iso)->first())->id : null;
@@ -518,7 +520,7 @@ class LibraryController extends APIController
                 ->when($organization, function ($query) use ($organization) {
                     $query->where('bible_organizations.organization_id', $organization);
                 })
-                ->isContentAvailable($this->key)
+                ->isContentAvailable($key)
                 ->get()
                 ->filter(function ($item) {
                     return $item->english_name;
