@@ -86,8 +86,34 @@ class Language extends Model
 {
     protected $connection = 'dbp';
     public $table = 'languages';
-    //protected $hidden = ['pivot'];
-    protected $fillable = ['glotto_id','iso','name','maps','development','use','location','area','population','population_notes','notes','typology','writing','description','family_pk','father_pk','child_dialect_count','child_family_count','child_language_count','latitude','longitude','pk','status_id','status_notes','country_id','scope'];
+    protected $fillable = [
+        'glotto_id',
+        'iso',
+        'name',
+        'maps',
+        'development',
+        'use',
+        'location',
+        'area',
+        'population',
+        'population_notes',
+        'notes',
+        'typology',
+        'writing',
+        'description',
+        'family_pk',
+        'father_pk',
+        'child_dialect_count',
+        'child_family_count',
+        'child_language_count',
+        'latitude',
+        'longitude',
+        'pk',
+        'status_id',
+        'status_notes',
+        'country_id',
+        'scope'
+    ];
 
     /**
      * ID
@@ -418,94 +444,136 @@ class Language extends Model
         });
     }
 
-    public function scopeFilterableByNameAndKey($query, $name, $key)
+    private function getLanguagesAccessGroupQuery($key, $set_type_code = null, $media = null)
     {
         $dbp_users = config('database.connections.dbp_users.database');
         $dbp_prod = config('database.connections.dbp.database');
 
-        $formatted_name = "+$name*";
-
-        $lang = \DB::table('languages as lang')
+        return \DB::table('languages as lang')
             ->select('lang.id as id')
             ->whereRaw('MATCH (lang.name) against (? IN BOOLEAN MODE)')
-            ->whereRaw(
-                'EXISTS (select 1
-                    from ' . $dbp_users . '.user_keys uk
-                    join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                    join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                    join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                    join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
-                    where uk.key = ? and lang.id = b.language_id
-                )',
-            );
+            ->whereExists(function ($query) use ($dbp_users, $dbp_prod, $key, $set_type_code, $media) {
+                return $query->select(\DB::raw(1))
+                    ->from($dbp_users . '.user_keys as uk')
+                    ->join($dbp_users . '.access_group_api_keys as agak', 'agak.key_id', 'uk.id')
+                    ->join($dbp_prod . '.access_group_filesets as agf', 'agf.access_group_id', 'agak.access_group_id')
+                    ->join($dbp_prod . '.bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                    ->join($dbp_prod . '.bibles as b', 'bfc.bible_id', 'b.id')
+                    ->whereColumn('lang.id', '=', 'b.language_id')
+                    ->where('uk.key', $key)
+                    ->when($set_type_code || $media, function ($query) use ($dbp_prod) {
+                        $query->join($dbp_prod . '.bible_filesets as bfst', 'bfst.hash_id', 'bfc.hash_id');
+                    })
+                    ->when($set_type_code, function ($query) use ($set_type_code) {
+                        $query->where('bfst.set_type_code', $set_type_code);
+                    })
+                    ->when($media, function ($query) use ($media) {
+                        $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($media);
+                        $query->whereIn('bfst.set_type_code', $set_type_code_array);
+                    })
+                    ;
+            });
+    }
 
-        $priority_union = \DB::raw(
-            '(SELECT max(`priority`)
-            FROM language_translations as lang_trans_prior
-            WHERE lang_trans_prior.language_source_id = lang_trans.language_source_id
-            AND lang_trans_prior.language_source_id = lang_trans_prior.language_translation_id
-            LIMIT 1)'
-        );
+    private function getLanguagesTranslationsAccessGroupQuery($key, $set_type_code = null, $media = null)
+    {
+        $dbp_users = config('database.connections.dbp_users.database');
+        $dbp_prod = config('database.connections.dbp.database');
 
-        $lang_trans = \DB::table('language_translations as lang_trans')
+        return \DB::table('language_translations as lang_trans')
             ->select('lang_trans.language_source_id as id')
             ->whereRaw('lang_trans.language_source_id = lang_trans.language_translation_id')
             ->whereRaw('MATCH (lang_trans.name) against (? IN BOOLEAN MODE)')
-            ->whereRaw(
-                'EXISTS (select 1
-                    from ' . $dbp_users . '.user_keys uk
-                    join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                    join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                    join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                    join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
-                    WHERE uk.key = ? and lang_trans.language_source_id = b.language_id
-                )',
-            )->where('lang_trans.priority', '=', $priority_union);
+            ->whereExists(function ($query) use ($dbp_users, $dbp_prod, $key, $set_type_code, $media) {
+                return $query->select(\DB::raw(1))
+                    ->from($dbp_users . '.user_keys as uk')
+                    ->join($dbp_users . '.access_group_api_keys as agak', 'agak.key_id', 'uk.id')
+                    ->join($dbp_prod . '.access_group_filesets as agf', 'agf.access_group_id', 'agak.access_group_id')
+                    ->join($dbp_prod . '.bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                    ->join($dbp_prod . '.bibles as b', 'bfc.bible_id', 'b.id')
+                    ->whereColumn('lang_trans.language_source_id', '=', 'b.language_id')
+                    ->where('uk.key', $key)
+                    ->where('lang_trans.priority', '=', function ($query) {
+                        $query->select(\DB::raw('MAX(`priority`)'))
+                            ->from('language_translations as lang_trans_prior')
+                            ->whereColumn('lang_trans_prior.language_source_id', '=', 'lang_trans.language_source_id')
+                            ->whereColumn('lang_trans_prior.language_source_id', '=', 'lang_trans_prior.language_translation_id')
+                            ->limit(1);
+                    })
+                    ->when($set_type_code || $media, function ($query) use ($dbp_prod) {
+                        $query->join($dbp_prod . '.bible_filesets as bfst', 'bfst.hash_id', 'bfc.hash_id');
+                    })
+                    ->when($set_type_code, function ($query) use ($set_type_code) {
+                        $query->where('bfst.set_type_code', $set_type_code);
+                    })
+                    ->when($media, function ($query) use ($media) {
+                        $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($media);
+                        $query->whereIn('bfst.set_type_code', $set_type_code_array);
+                    })
+                    ;
+            });
+    }
 
-        $lang_trans_sql = $lang_trans->toSql();
-        $lang_sql = $lang->toSql();
-        
+    public function scopeFilterableByNameAndKey($query, $name, $key, $set_type_code = null, $media = null)
+    {
+        $formatted_name = "+$name*";
+
+        $lang = $this->getLanguagesAccessGroupQuery($key, $set_type_code, $media);
+        $lang_trans = $this->getLanguagesTranslationsAccessGroupQuery($key, $set_type_code, $media);
+
+        $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($media);
+
+        $lang_union_sql = \DB::table($lang)
+            ->unionAll($lang_trans)
+            ->toSql();
+
         return $query->join(
-            \DB::raw("(SELECT lang_and_trans_group.id FROM (
-                $lang_sql
-                UNION ALL
-                $lang_trans_sql
-            ) as lang_and_trans_group GROUP by lang_and_trans_group.id) as languages_and_translations"),
+            \DB::raw(
+                "(
+                    SELECT lang_and_trans_group.id
+                    FROM ($lang_union_sql) as lang_and_trans_group
+                    GROUP BY lang_and_trans_group.id
+                ) as languages_and_translations"
+            ),
             'languages_and_translations.id',
             '=',
             'languages.id'
         )->leftJoin('language_translations as autonym', function ($join) {
             $join->on('autonym.language_source_id', '=', 'languages.id')
                 ->on('autonym.language_translation_id', '=', 'languages.id')
-                ->where(
-                    'autonym.priority',
-                    '=',
-                    \DB::raw(
-                        '(SELECT max(`priority`)
-                        FROM language_translations
-                        WHERE language_translation_id = languages.id
-                        AND language_source_id = languages.id
-                        LIMIT 1)'
-                    )
-                );
+                ->where('autonym.priority', '=', function ($autonym_query) {
+                    $autonym_query->select(\DB::raw('MAX(`priority`)'))
+                        ->from('language_translations')
+                        ->whereColumn('language_translation_id', '=', 'languages.id')
+                        ->whereColumn('language_source_id', '=', 'languages.id')
+                        ->limit(1);
+                });
         })->leftJoin('language_translations as current_translation', function ($join) {
             $join->on('current_translation.language_source_id', 'languages.id')
                 ->whereRaw('current_translation.language_translation_id = ?')
-                ->where(
-                    'current_translation.priority',
-                    '=',
-                    \DB::raw(
-                        '(SELECT max(`priority`)
-                        FROM language_translations
-                        WHERE language_source_id = languages.id
-                        LIMIT 1)'
-                    )
-                );
+                ->where('current_translation.priority', '=', function ($current_translation_query) {
+                    $current_translation_query->select(\DB::raw('MAX(`priority`)'))
+                        ->from('language_translations')
+                        ->whereColumn('language_source_id', '=', 'languages.id')
+                        ->limit(1);
+                });
         })
         ->addBinding($formatted_name)
         ->addBinding($key)
+        ->when($set_type_code, function ($query) use ($set_type_code) {
+            $query->addBinding($set_type_code);
+        })
+        ->when($media, function ($query) use ($set_type_code_array) {
+            $query->addBinding($set_type_code_array);
+        })
         ->addBinding($formatted_name)
         ->addBinding($key)
+        ->when($set_type_code, function ($query) use ($set_type_code) {
+            $query->addBinding($set_type_code);
+        })
+        ->when($media, function ($query) use ($set_type_code_array) {
+            $query->addBinding($set_type_code_array);
+        })
         ->addBinding($GLOBALS['i18n_id']);
     }
 
