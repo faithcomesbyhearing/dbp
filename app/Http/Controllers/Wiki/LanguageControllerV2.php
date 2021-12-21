@@ -386,8 +386,10 @@ class LanguageControllerV2 extends APIController
         $media           = checkParam('media');
         $organization_id = checkParam('organization_id');
 
-        $cache_params = [$root, $iso, $media, $organization_id];
-        $languages = cacheRemember('volumeLanguageFamily', $cache_params, now()->addDay(), function () use ($root, $iso, $media, $organization_id) {
+        $key = $this->key;
+
+        $cache_params = [$root, $iso, $media, $organization_id, $key];
+        $languages = cacheRemember('volumeLanguageFamily', $cache_params, now()->addDay(), function () use ($root, $iso, $media, $organization_id, $key) {
             $language_v2 = !empty($iso) ? $this->getV2Language($iso) : null;
             $v2_code = optional($language_v2)->language_ISO_639_3_id;
 
@@ -395,7 +397,7 @@ class LanguageControllerV2 extends APIController
                 ->includeAutonymTranslation()
                 ->includeCurrentTranslation()
                 ->withRequiredFilesets([
-                    'key'             => $this->key,
+                    'key'             => $key,
                     'media'           => $media,
                     'organization_id' => $organization_id
                 ])
