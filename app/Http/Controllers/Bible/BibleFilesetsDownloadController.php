@@ -20,7 +20,7 @@ class BibleFilesetsDownloadController extends APIController
     /**
      *
      * @OA\Get(
-     *     path="download/{fileset_id}/{book}/{chapter}",
+     *     path="/download/{fileset_id}/{book}/{chapter}",
      *     tags={"Bibles"},
      *     summary="Download specific fileset",
      *     description="For a given fileset return content (text, audio or video)",
