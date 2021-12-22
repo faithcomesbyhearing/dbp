@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "72b9154357a056b6ba53177cc5937411",
+    "content-hash": "df8f43fefe62b42911b430af0ed03232",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -3518,16 +3518,16 @@
         },
         {
             "name": "mattkingshott/quest",
-            "version": "v1.1.1",
+            "version": "v2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mattkingshott/quest.git",
-                "reference": "54e53188043a96f10eac7dcfe7eb07f7ac067e95"
+                "reference": "8c206535169f43913ca0c3d5bd695c0982a82a69"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mattkingshott/quest/zipball/54e53188043a96f10eac7dcfe7eb07f7ac067e95",
-                "reference": "54e53188043a96f10eac7dcfe7eb07f7ac067e95",
+                "url": "https://api.github.com/repos/mattkingshott/quest/zipball/8c206535169f43913ca0c3d5bd695c0982a82a69",
+                "reference": "8c206535169f43913ca0c3d5bd695c0982a82a69",
                 "shasum": ""
             },
             "require": {
@@ -3565,9 +3565,9 @@
             ],
             "support": {
                 "issues": "https://github.com/mattkingshott/quest/issues",
-                "source": "https://github.com/mattkingshott/quest/tree/v1.1.1"
+                "source": "https://github.com/mattkingshott/quest/tree/v2.0.0"
             },
-            "time": "2021-01-31T12:09:27+00:00"
+            "time": "2021-11-22T15:43:52+00:00"
         },
         {
             "name": "maxmind-db/reader",
