@@ -191,6 +191,8 @@ class LanguagesController extends APIController
         $page  = checkParam('page') ?? 1;
         $limit = (int) (checkParam('limit') ?? 15);
         $limit = min($limit, 50);
+        $set_type_code = checkParam('set_type_code');
+        $media = checkParam('media');
         $formatted_search_cache = str_replace(' ', '', $search_text);
         $formatted_search = $this->transformQuerySearchText($search_text);
 
@@ -213,8 +215,8 @@ class LanguagesController extends APIController
             'languages_search',
             $cache_params,
             now()->addDay(),
-            function () use ($formatted_search, $limit, $key) {
-                $languages = Language::filterableByNameAndKey($formatted_search, $key)
+            function () use ($formatted_search, $limit, $key, $set_type_code, $media) {
+                $languages = Language::filterableByNameAndKey($formatted_search, $key, $set_type_code, $media)
                     ->select([
                         'languages.id',
                         'languages.glotto_id',
