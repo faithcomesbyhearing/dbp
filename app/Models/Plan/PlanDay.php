@@ -77,7 +77,7 @@ class PlanDay extends Model implements Sortable
             PlaylistItems::where('playlist_items.playlist_id', $this['playlist_id'])
             ->join('playlist_items_completed', function ($join) use ($user) {
                 $join->on('playlist_items_completed.playlist_item_id', '=', 'playlist_items.id')
-                    ->where('playlist_items_completed.user_id',  $user->id);
+                    ->where('playlist_items_completed.user_id', $user->id);
             })
             ->count();
         if ($playlist_items_count && $playlist_items_completed_count === $playlist_items_count) {
@@ -87,6 +87,20 @@ class PlanDay extends Model implements Sortable
             'total_items' => $playlist_items_count,
             'total_items_completed' => $playlist_items_completed_count
         ];
+    }
+
+    /**
+     * Validate if the playlist attached to the current day has filesets attached.
+     *
+     * @return bool
+     */
+    public function hasContentAvailable(Playlist $playlist_to_eval = null) : bool
+    {
+        if (!is_null($playlist_to_eval) && $this['playlist_id'] === $playlist_to_eval->id) {
+            return isset($playlist_to_eval->items) ? sizeof($playlist_to_eval->items) > 0 : false;
+        }
+
+        return PlaylistItems::where('playlist_id', $this['playlist_id'])->count() > 0;
     }
 
     public function complete()
@@ -100,6 +114,22 @@ class PlanDay extends Model implements Sortable
         PlaylistItems::where('playlist_id', $this['playlist_id'])->each(function ($playlist_item) {
             $playlist_item->complete();
         });
+    }
+
+    /**
+     * Get the playlist object related with the current day and it will include the items and fileset relationship.
+     *
+     * @return Playlist|null
+     */
+    public function getPlaylistWithItemsAndFilesets() : ?Playlist
+    {
+        return Playlist::with(
+            [
+                'items' => function ($subquery) {
+                    $subquery->with('fileset');
+                }
+            ]
+        )->where('user_playlists.id', $this['playlist_id'])->first();
     }
 
     public function unComplete()
