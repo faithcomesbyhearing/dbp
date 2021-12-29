@@ -826,14 +826,14 @@ class PlansController extends APIController
      * )
      */
 
-    private function getPlan($plan_id, $user, $with_order = false)
+    private function getPlan($plan_id, $user)
     {
         $select = ['plans.*'];
         if (!empty($user)) {
             $select[] = 'user_plans.start_date';
             $select[] = 'user_plans.percentage_completed';
         }
-        $plan = Plan::with('days')
+        return Plan::with('days')
             ->with('user')
             ->where('plans.id', $plan_id)
             ->when(!empty($user), function ($q) use ($user) {
@@ -841,8 +841,6 @@ class PlansController extends APIController
                     $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
                 });
             })->select($select)->first();
-
-        return $plan;
     }
 
     /**
@@ -922,8 +920,18 @@ class PlansController extends APIController
         $order = 1;
         $audio_fileset_types = collect(['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama']);
         $bible_audio_filesets = $bible->filesets->whereIn('set_type_code', $audio_fileset_types);
+        $count_plan_days = 0;
         foreach ($plan->days as $day) {
-            $playlist = (object) $this->translatePlaylist($day->playlist_id, $user, $new_plan->id, $bible, $audio_fileset_types, $bible_audio_filesets, $playlist_controller);
+            $playlist_by_day = $day->getPlaylistWithItemsAndFilesets();
+            $playlist = (object) $this->translatePlaylist(
+                $playlist_by_day,
+                $user,
+                $new_plan->id,
+                $bible,
+                $audio_fileset_types,
+                $bible_audio_filesets,
+                $playlist_controller
+            );
             $playlists_data[] = [
                 'plan_id'               => $new_plan->id,
                 'playlist_id'           => $playlist->id,
@@ -932,10 +940,16 @@ class PlansController extends APIController
             $translation_data[] = $playlist->translation_data;
             $translated_percentage += $playlist->translated_percentage;
             $order += 1;
-        }
-        PlanDay::insert($playlists_data);
-        $translated_percentage = sizeof($plan->days) ? $translated_percentage / sizeof($plan->days) : 0;
 
+            if ($day->hasContentAvailable($playlist_by_day)) {
+                $count_plan_days += 1;
+            }
+        }
+
+        PlanDay::insert($playlists_data);
+        $translated_percentage = $count_plan_days > 0
+            ? $translated_percentage / $count_plan_days
+            : 0;
 
         UserPlan::create([
             'user_id'               => $user->id,
@@ -949,9 +963,15 @@ class PlansController extends APIController
         return $plan;
     }
 
-    private function translatePlaylist($playlist_id, $user, $plan_id, $bible, $audio_fileset_types, $bible_audio_filesets, $playlist_controller)
-    {
-        $playlist = Playlist::with('items')->where('user_playlists.id', $playlist_id)->first();
+    private function translatePlaylist(
+        $playlist,
+        $user,
+        $plan_id,
+        $bible,
+        $audio_fileset_types,
+        $bible_audio_filesets,
+        $playlist_controller
+    ) {
         $translated_items = [];
         $metadata_items = [];
         $total_translated_items = 0;
@@ -961,17 +981,24 @@ class PlansController extends APIController
                 if (isset($item->fileset, $item->fileset->set_type_code)) {
                     $item->fileset = formatFilesetMeta($item->fileset);
                     $ordered_types = $audio_fileset_types->filter(function ($type) use ($item) {
-                      return $type !== $item->fileset->set_type_code;
+                        return $type !== $item->fileset->set_type_code;
                     })->prepend($item->fileset->set_type_code);
-                    $preferred_fileset = $ordered_types->map(function ($type) use ($bible_audio_filesets, $item, $playlist_controller) {
-                        return $playlist_controller->getFileset($bible_audio_filesets, $type, $item->fileset->set_size_code);
-                    })->firstWhere('id');
+                    $preferred_fileset = $ordered_types->map(
+                        function ($type) use ($bible_audio_filesets, $item, $playlist_controller) {
+                            return $playlist_controller->getFileset(
+                                $bible_audio_filesets,
+                                $type,
+                                $item->fileset->set_size_code
+                            );
+                        }
+                    )->firstWhere('id');
                     $has_translation = isset($preferred_fileset);
                     $is_streaming = true;
 
                     if ($has_translation) {
                         $item->fileset_id = $preferred_fileset->id;
-                        $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' || $preferred_fileset->set_type_code === 'audio_drama_stream';
+                        $is_streaming = $preferred_fileset->set_type_code === 'audio_stream'
+                            || $preferred_fileset->set_type_code === 'audio_drama_stream';
                         $translated_items[] = (object) [
                             'translated_id' => $item->id,
                             'fileset_id' => $item->fileset_id,
