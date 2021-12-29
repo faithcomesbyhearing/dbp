@@ -39,9 +39,9 @@
         "spatie/eloquent-sortable": "4.0.0",
         "spatie/laravel-fractal": "5.8.1",
         "sunra/php-simple-html-dom-parser": "1.5.2",
-        "symfony/process": "5.4.0",
+        "symfony/process": "5.4.2",
         "symfony/psr-http-message-bridge": "2.1.2",
-        "symfony/yaml": "5.4.0",
+        "symfony/yaml": "5.4.2",
         "torann/geoip": "3.0.3",
         "yosymfony/toml": "1.0.4",
         "zircote/swagger-php": "3.3.3"
