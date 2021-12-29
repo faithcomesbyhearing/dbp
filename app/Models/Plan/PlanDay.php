@@ -100,7 +100,19 @@ class PlanDay extends Model implements Sortable
             return isset($playlist_to_eval->items) ? sizeof($playlist_to_eval->items) > 0 : false;
         }
 
-        return PlaylistItems::where('playlist_id', $this['playlist_id'])->count() > 0;
+        $plan_day_items = collect(
+            \DB::connection($this->connection)
+            ->select(
+                \DB::raw(
+                    'SELECT EXISTS (
+                        SELECT 1 FROM playlist_items WHERE playlist_id = ?
+                    ) as has_content'
+                ),
+                [$this['playlist_id']]
+            )
+        )->first();
+
+        return $plan_day_items->has_content === 1;
     }
 
     public function complete()
