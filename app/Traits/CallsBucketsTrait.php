@@ -38,6 +38,21 @@ trait CallsBucketsTrait
             return $security_token;
         }
     }
+
+    /**
+     * Get a CloudFrontClient object for a given asset ID
+     *
+     * @param string $asset_id
+     *
+     * @return CloudFrontClient client
+     */
+    public function getCloudFrontClientFromAssetId(string $asset_id) : ?CloudFrontClient
+    {
+        $asset = Asset::where('id', $asset_id)->first();
+
+        return !empty($asset) ? $this->authorizeAWS($asset->asset_type) : null;
+    }
+
     /**
      * Method to sign a URL but the CloudFrontClient object should be passed by parameter
      * to do an only one call to AWS
