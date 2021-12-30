@@ -25,7 +25,9 @@ class StreamController extends APIController
      */
     public function index($id = null, $file_id_location = null)
     {
-        $cache_params = [$id, $file_id_location];
+        $cache_params = $this->removeSpaceFromCacheParameters(
+            [$id, $file_id_location]
+        );
 
         $current_file = cacheRemember('stream_master_index', $cache_params, now()->addHours(12), function () use ($id, $file_id_location) {
             $fileset = BibleFileset::uniqueFileset($id)->select('hash_id', 'id', 'asset_id')->first();
@@ -49,10 +51,15 @@ class StreamController extends APIController
             foreach ($file->streamBandwidth as $bandwidth) {
                 $current_file .= "\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=$bandwidth->bandwidth";
 
-                $transportStream = sizeof($bandwidth->transportStreamBytes) ? $bandwidth->transportStreamBytes : $bandwidth->transportStreamTS;
+                $transportStream = sizeof($bandwidth->transportStreamBytes)
+                    ? $bandwidth->transportStreamBytes
+                    : $bandwidth->transportStreamTS;
 
                 $extra_args = '';
-                if (sizeof($transportStream) && isset($transportStream[0]->timestamp) && $transportStream[0]->timestamp->verse_start === 0) {
+                if (sizeof($transportStream) &&
+                    isset($transportStream[0]->timestamp) &&
+                    $transportStream[0]->timestamp->verse_start === 0
+                ) {
                     $extra_args = '&v0=0';
                 }
                 if ($bandwidth->resolution_width) {
@@ -83,13 +90,13 @@ class StreamController extends APIController
      * @return $this
      * @throws \Exception
      */
-    public function transportStream(Response $response, $fileset_id = null, $file_id_location = null, $file_name = null)
+    public function transportStream($fileset_id = null, $file_id_location = null, $file_name = null)
     {
         $cache_params = $this->removeSpaceFromCacheParameters(
             [$fileset_id, $file_id_location, $file_name]
         );
 
-        $current_file = cacheRemember('stream_bandwidth', $cache_params, now()->addHours(12), function () use ($response, $fileset_id, $file_id_location, $file_name) {
+        $current_file = cacheRemember('stream_bandwidth', $cache_params, now()->addHours(12), function () use ($fileset_id, $file_id_location, $file_name) {
             $fileset = BibleFileset::uniqueFileset($fileset_id, 'audio', true)
                 ->select('hash_id', 'id', 'asset_id')
                 ->first();
@@ -163,7 +170,14 @@ class StreamController extends APIController
     {
         $parts = explode('-', $file_id_location);
         if (sizeof($parts) === 1) {
-            return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)->where('id', $parts[0])->first();
+            return BibleFile::with([
+                    'streamBandwidth' => function ($query_stream) {
+                        $query_stream->with(['transportStreamTS', 'transportStreamBytes']);
+                    }
+                ])
+                ->where('hash_id', $fileset->hash_id)
+                ->where('id', $parts[0])
+                ->first();
         }
 
         $where = [
@@ -176,8 +190,14 @@ class StreamController extends APIController
             $where['verse_end'] = $parts[3];
         }
 
-        return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)
-            ->where($where)->first();
+        return BibleFile::with([
+                'streamBandwidth' => function ($query_stream) {
+                    $query_stream->with(['transportStreamTS', 'transportStreamBytes']);
+                }
+            ])
+            ->where('hash_id', $fileset->hash_id)
+            ->where($where)
+            ->first();
     }
 
     private function generateMultipleMp3HLS($fileset_id, $file_id_location)
