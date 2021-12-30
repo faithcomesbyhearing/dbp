@@ -330,6 +330,8 @@ class Bible extends Model
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
+
+            $q->select(\DB::raw(1));
             $q->isContentAvailable($type_filters['key']);
             $this->setConditionFilesets($q, $type_filters);
             $this->setConditionTagExclude($q, $type_filters);
@@ -396,5 +398,24 @@ class Bible extends Model
             )',
             [$key]
         );
+    }
+    public function scopeIsTimingInformationAvailable($query)
+    {
+
+        $bibles_ids_with_timestamps = Bible::select('bibles.id')
+            ->distinct()
+            ->join('bible_fileset_connections', 'bibles.id', 'bible_fileset_connections.bible_id')
+            ->join('bible_files', 'bible_files.hash_id', 'bible_fileset_connections.hash_id')
+            ->join(
+                \DB::raw(
+                    "(SELECT DISTINCT bible_file_timestamps.bible_file_id FROM bible_file_timestamps)
+                    as timestamps_counts"
+                ),
+                'timestamps_counts.bible_file_id',
+                '=',
+                'bible_files.id'
+            )->get()->pluck('id');
+
+        return $query->whereIn('bibles.id', $bibles_ids_with_timestamps);
     }
 }
