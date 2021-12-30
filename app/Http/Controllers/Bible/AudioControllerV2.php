@@ -241,7 +241,7 @@ class AudioControllerV2 extends APIController
                 'protocol'  => 'http',
                 'CDN'       => '1',
                 'priority'  => '5',
-            ],            
+            ],
         ]);
     }
 }

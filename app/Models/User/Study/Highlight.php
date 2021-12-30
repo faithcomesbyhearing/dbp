@@ -217,4 +217,21 @@ class Highlight extends Model
 
         return collect(['verse_text' => $verse_text, 'audio_filesets' => array_values($available_filesets)]);
     }
+
+    public static function checkAndReturnColorPreference(Highlight $highlight, string $color_preference = 'rgba')
+    {
+        $color = null;
+
+        if ($color_preference === 'hex' && $highlight->color) {
+            $color = '#' . $highlight->color->hex;
+        }
+        if ($color_preference === 'rgb' && $highlight->color) {
+            $color = 'rgb(' . $highlight->color->red . ',' . $highlight->color->green . ',' . $highlight->color->blue . ')';
+        }
+        if ($color_preference === 'rgba' && $highlight->color) {
+            $color = 'rgba(' . $highlight->color->red . ',' . $highlight->color->green . ',' . $highlight->color->blue . ',' . $highlight->color->opacity . ')';
+        }
+
+        return $color;
+    }
 }

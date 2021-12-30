@@ -66,6 +66,19 @@ class BiblesController extends APIController
      *          description="Will exclude bibles based upon the media type of their filesets",
      *          example="audio"
      *     ),
+     *     @OA\Parameter(
+     *          name="country",
+     *          in="query",
+     *          @OA\Schema(ref="#/components/schemas/Country/properties/id),
+     *          description="The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `/country` route",
+     *          example="21"
+     *     ),
+     *     @OA\Parameter(
+     *          name="audio_timing",
+     *          in="query",
+     *          description="This will return results only which have audio timing information available for that bible. The timing information is stored in table bible_file_timestamps.",
+     *          example="true"
+     *     ),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Response(
@@ -87,6 +100,7 @@ class BiblesController extends APIController
         $country            = checkParam('country');
         $media              = checkParam('media');
         $media_exclude      = checkParam('media_exclude');
+        $audio_timing       = checkParam('audio_timing') ?? false;
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
         $limit              = (int) (checkParam('limit') ?? 50);
@@ -124,7 +138,7 @@ class BiblesController extends APIController
             ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first()
             : null;
         $key = $this->key;
-        $cache_params = [
+        $cache_params = $this->removeSpaceFromCacheParameters([
             $language_code,
             $organization,
             $country,
@@ -137,11 +151,13 @@ class BiblesController extends APIController
             $page,
             $is_bibleis_gideons,
             $order_cache_key,
-            $key
-        ];
+            $key,
+            $audio_timing
+        ]);
 
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $key, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by) {
-            $bibles = Bible::withRequiredFilesets([
+        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $key, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by, $audio_timing) {
+            $bibles = Bible::filterByLanguage($language_code)
+            ->withRequiredFilesets([
                 'key'            => $key,
                 'media'          => $media,
                 'media_exclude'  => $media_exclude,
@@ -173,7 +189,6 @@ class BiblesController extends APIController
                     $join->where('language_current.language_translation_id', '=', $GLOBALS['i18n_id']);
                 }
             })
-            ->filterByLanguage($language_code)
             ->when($country, function ($q) use ($country) {
                 $q->whereHas('country', function ($query) use ($country) {
                     $query->where('countries.id', $country);
@@ -185,6 +200,9 @@ class BiblesController extends APIController
                 })->orWhereHas('links', function ($q) use ($organization) {
                     $q->where('organization_id', $organization->id);
                 });
+            })
+            ->when($audio_timing, function ($q) {
+                $q->isTimingInformationAvailable();
             })
             ->select(
                 \DB::raw(
