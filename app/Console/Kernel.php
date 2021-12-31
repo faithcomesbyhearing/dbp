@@ -15,9 +15,6 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Commands\BibleFormats\FormatGetBible::class,
-        Commands\BibleFormats\FormatRunberg::class,
-
         Commands\Wiki\SyncAlphabets::class,
         Commands\Wiki\SyncLanguageDescriptions::class,
         Commands\Wiki\OrgDigitalBibleLibraryCompare::class,
@@ -26,9 +23,6 @@ class Kernel extends ConsoleKernel
 
         Commands\generateOpenApiDoc::class,
 
-        Commands\loaderPush::class,
-
-        Commands\syncV4Annotations::class,
         Commands\translatePlan::class,
         Commands\translatePlaylist::class,
         Commands\encryptNote::class,
