@@ -208,7 +208,9 @@ class LanguagesController extends APIController
                 $limit,
                 $page,
                 $GLOBALS['i18n_id'],
-                $key
+                $key,
+                $media,
+                $set_type_code
             ]
         );
         $languages = cacheRemember(
