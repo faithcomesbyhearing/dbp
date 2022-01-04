@@ -12,7 +12,7 @@
     ],
     "require": {
         "php": "^8.0",
-        "algolia/algoliasearch-client-php": "3.1.0",
+        "algolia/algoliasearch-client-php": "3.2.0",
         "appstract/laravel-opcache": "4.0.2",
         "aws/aws-sdk-php-laravel": "3.6.0",
         "bugsnag/bugsnag-laravel": "2.22.2",
