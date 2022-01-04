@@ -34,7 +34,7 @@ class TextControllerV2 extends APIController
      * API Note: I removed the v4 openapi docs. Returning text for a fileset/book/chapter is now handled in BibleFileSetsController:showChapter, along with all other filesets
      *
      * @OA\Get(
-     *     path="text/verse",
+     *     path="/text/verse",
      *     tags={"Library Text"},
      *     summary="Returns Signed URLs or Text",
      *     description="V2's base fileset route",
@@ -96,7 +96,7 @@ class TextControllerV2 extends APIController
     /**
      *
      * @OA\Get(
-     *     path="search",
+     *     path="/text/search",
      *     tags={"Search"},
      *     summary="Search a bible for a word",
      *     description="",
