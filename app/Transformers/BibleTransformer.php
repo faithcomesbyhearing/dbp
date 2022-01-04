@@ -190,12 +190,26 @@ class BibleTransformer extends BaseTransformer
 
                 return $output;
 
+            /**
+             * @OA\Schema (
+             *   type="array",
+             *   schema="v4_bible.search",
+             *   description="The bible being returned",
+             *   title="v4_bible.search",
+             *   @OA\Xml(name="v4_bible.search"),
+             *   @OA\Items(
+             *       @OA\Property(property="abbr",          ref="#/components/schemas/Bible/properties/id"),
+             *       @OA\Property(property="name",          ref="#/components/schemas/BibleTranslation/properties/name"),
+             *       @OA\Property(property="language_id",   ref="#/components/schemas/Language/properties/id")
+             *   )
+             * )
+             */
             case 'v4_bible.search':
-              return [
-                  'abbr'              => $bible->bible_id,
-                  'name'              => $bible->name,
-                  'language_id'       => $bible->language_id,
-              ];
+                return [
+                    'abbr'              => $bible->bible_id,
+                    'name'              => $bible->name,
+                    'language_id'       => $bible->language_id,
+                ];
 
                 /**
                  * @OA\Schema (
@@ -278,7 +292,8 @@ class BibleTransformer extends BaseTransformer
         }
     }
 
-    private function filesetWithMeta($fileset) {
+    private function filesetWithMeta($fileset)
+    {
         $fileset_data = [
             'id' => $fileset['id'],
             'type' => $fileset->set_type_code,
