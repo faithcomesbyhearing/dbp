@@ -98,7 +98,6 @@ class TextTransformer extends BaseTransformer
 
 
             case 'v2_library_verseInfo':
-
                 // WIP for v2 compatibility
                 return [
                     'book_name' => (string) $text->book_id

@@ -168,7 +168,7 @@ class LanguagesController extends APIController
      *          in="path",
      *          description="The language text to search by",
      *          required=true,
-     *          @OA\Schema(ref="#/components/schemas/Language/properties/search_text")
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/name", ref="#/components/schemas/LanguageTranslation/properties/name")
      *     ),
      *     @OA\Response(
      *         response=200,

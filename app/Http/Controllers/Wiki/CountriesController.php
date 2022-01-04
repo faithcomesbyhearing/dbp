@@ -92,23 +92,24 @@ class CountriesController extends APIController
      * @return mixed $countries string - A JSON string that contains the status code and error messages if applicable.
      *
      * @OA\Get(
-     *     path="/countries/search/{$search_text}",
+     *     path="/countries/search/{search_text}",
      *     tags={"Countries"},
      *     summary="Returns Countries",
      *     description="Returns the List of Countries filtered by names",
      *     operationId="v4_countries.search",
      *     @OA\Parameter(
-     *          name="l10n",
-     *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Language/properties/search_text"),
-     *          description="Search countries by name"
+     *          name="search_text",
+     *          in="path",
+     *          @OA\Schema(ref="#/components/schemas/Country/properties/name", ref="#/components/schemas/Country/properties/iso_a3"),
+     *          description="Search countries by name",
+     *          required=true
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
      *         @OA\MediaType(
-     *            mediaType="application/json",
-     *            @OA\Schema(ref="#/components/schemas/v4_countries.search")
+     *            mediaType="application/json"),
+     *            @OA\Schema(ref="#/components/schemas/v4_countries.all")
      *         )
      *     )
      * )
