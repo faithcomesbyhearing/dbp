@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * App\Models\Plan
@@ -158,5 +159,50 @@ class PlanDay extends Model implements Sortable
     public function playlist()
     {
         return $this->belongsTo(Playlist::class);
+    }
+
+    /**
+     * Get the summary of items completed and items no completed for each Plan day that belongs to specific plan
+     *
+     * @param Builder $query
+     * @param int $plan_id
+     */
+    public function scopeSummaryItemsCompletedByPlanId(Builder $query, int $plan_id) : Builder
+    {
+        return $query->select(
+            \DB::raw(
+                'plan_days.id,
+                COUNT(plan_days.id) AS total_items,
+                COUNT(playlist_items_completed.playlist_item_id) AS total_items_completed'
+            )
+        )
+            ->join('playlist_items', 'playlist_items.playlist_id', 'plan_days.playlist_id')
+            ->leftJoin('playlist_items_completed', 'playlist_items_completed.playlist_item_id', 'playlist_items.id')
+            ->where('plan_id', $plan_id)
+            ->groupBy('plan_days.id');
+    }
+
+    /**
+     * Get plan days records that has all items completed
+     *
+     * @param Builder $query
+     * @param int $plan_id
+     */
+    public function scopeDaysToCompleteByPlanId(Builder $query, int $plan_id) : Builder
+    {
+        return $query->select('plan_days.id')
+            ->leftJoin('plan_days_completed', 'plan_days.id', 'plan_days_completed.plan_day_id')
+            ->where('plan_days.plan_id', $plan_id)
+            ->whereExists(function ($sub_query) use ($plan_id) {
+                return $sub_query->select(\DB::raw(1))
+                    ->from('plan_days as pld')
+                    ->join('playlist_items as pli', 'pli.playlist_id', 'pld.playlist_id')
+                    ->leftJoin('playlist_items_completed as pldc', 'pldc.playlist_item_id', 'pli.id')
+                    ->where('pld.plan_id', $plan_id)
+                    ->whereColumn('pld.id', '=', 'plan_days.id')
+                    ->groupBy('pld.id')
+                    ->havingRaw('COUNT(pld.id) = COUNT(`pldc`.playlist_item_id)');
+            })
+            ->whereNull('plan_days_completed.plan_day_id');
     }
 }

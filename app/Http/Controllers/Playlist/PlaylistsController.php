@@ -728,49 +728,54 @@ class PlaylistsController extends APIController
      */
     public function completeItem(Request $request, $item_id)
     {
-        // Validate Project / User Connection
-        $user = $request->user();
-        $user_is_member = $this->compareProjects($user->id, $this->key);
-
-        if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
-        }
-
-        $playlist_item = PlaylistItems::where('id', $item_id)->first();
-
-        if (!$playlist_item) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Item Not Found');
-        }
-
-        $user_plan = UserPlan::join('plans', function ($join) use ($user) {
-            $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
-        })
-            ->join('plan_days', function ($join) use ($playlist_item) {
-                $join->on('plan_days.plan_id', '=', 'plans.id')->where('plan_days.playlist_id', $playlist_item->playlist_id);
-            })
-            ->select('user_plans.*')
-            ->first();
-
-        if (!$user_plan) {
-            return $this->setStatusCode(404)->replyWithError('User Plan Not Found');
-        }
-
         $complete = checkParam('complete') ?? true;
-        $complete = $complete && $complete !== 'false';
 
-        if ($complete) {
-            $playlist_item->complete();
-        } else {
-            $playlist_item->unComplete();
-        }
+        return DB::transaction(function () use ($request, $item_id, $complete) {
+            // Validate Project / User Connection
+            $user = $request->user();
+            $user_is_member = $this->compareProjects($user->id, $this->key);
 
-        $result = $complete ? 'completed' : 'not completed';
-        $user_plan->calculatePercentageCompleted()->save();
+            if (!$user_is_member) {
+                return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            }
 
-        return $this->reply([
-            'percentage_completed' => $user_plan->percentage_completed,
-            'message' => 'Playlist Item ' . $result
-        ]);
+            $playlist_item = PlaylistItems::where('id', $item_id)->first();
+
+            if (!$playlist_item) {
+                return $this->setStatusCode(404)->replyWithError('Playlist Item Not Found');
+            }
+
+            $user_plan = UserPlan::join('plans', function ($join) use ($user) {
+                $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
+            })
+                ->join('plan_days', function ($join) use ($playlist_item) {
+                    $join
+                        ->on('plan_days.plan_id', '=', 'plans.id')
+                        ->where('plan_days.playlist_id', $playlist_item->playlist_id);
+                })
+                ->select('user_plans.*')
+                ->first();
+
+            if (!$user_plan) {
+                return $this->setStatusCode(404)->replyWithError('User Plan Not Found');
+            }
+
+            $complete = $complete && $complete !== 'false';
+
+            if ($complete) {
+                $playlist_item->complete();
+            } else {
+                $playlist_item->unComplete();
+            }
+
+            $result = $complete ? 'completed' : 'not completed';
+            $user_plan->calculatePercentageCompleted()->save();
+
+            return $this->reply([
+                'percentage_completed' => $user_plan->percentage_completed,
+                'message' => 'Playlist Item ' . $result
+            ]);
+        });
     }
 
     /**

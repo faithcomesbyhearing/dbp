@@ -4,7 +4,10 @@ namespace App\Models\Plan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Traits\ModelBase;
+use App\Models\Playlist\PlaylistItems;
+use App\Models\Playlist\PlaylistItemsComplete;
 
 /**
  * @OA\Schema (
@@ -85,16 +88,39 @@ class UserPlan extends Model
 
         return $this->getAttribute($keyName);
     }
-
+   
     public function calculatePercentageCompleted()
     {
-        $completed_per_day = PlanDay::where('plan_id', $this->plan_id)->get()
-            ->map(function ($plan_day) {
-                $completed = $plan_day->verifyDayCompleted();
-                return $completed;
-            });
-        $this->attributes['percentage_completed'] = $completed_per_day->sum('total_items') ? $completed_per_day->sum('total_items_completed') / $completed_per_day->sum('total_items') * 100 : 0;
+        $completed_per_day = PlanDay::summaryItemsCompletedByPlanId($this->plan_id)->get();
+
+        $this->completeDaysCurrentUserPlan();
+
+        $this->attributes['percentage_completed'] = $completed_per_day->sum('total_items')
+            ? $completed_per_day->sum('total_items_completed') / $completed_per_day->sum('total_items') * 100
+            : 0;
         return $this;
+    }
+
+    /**
+     * Complete every Plan Day that belongs to current UserPlan object
+     *
+     * @return void
+     */
+    private function completeDaysCurrentUserPlan() : void
+    {
+        $plan_days_to_complete = PlanDay::daysToCompleteByPlanId($this->plan_id)->get();
+
+        $inserts_plan_days_completed = [];
+        foreach ($plan_days_to_complete as $plan_day) {
+            $inserts_plan_days_completed[] = [
+                'user_id'     => Auth::user()->id,
+                'plan_day_id' => $plan_day->id
+            ];
+        }
+
+        if (!empty($inserts_plan_days_completed)) {
+            PlanDayComplete::insert($inserts_plan_days_completed);
+        }
     }
 
     public function reset($start_date = null)
