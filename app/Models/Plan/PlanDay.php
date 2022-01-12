@@ -205,4 +205,23 @@ class PlanDay extends Model implements Sortable
             })
             ->whereNull('plan_days_completed.plan_day_id');
     }
+
+    /**
+     * Get the Play List IDs attached to a Plan and an User
+     *
+     * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Array
+     */
+    public static function getPlanDayIdsByPlanAndUser(int $plan_id, int $user_id) : Array
+    {
+        return PlanDay::select('playlist_id')
+            ->join('plan_days_completed as pdc', 'pdc.plan_day_id', 'plan_days.id')
+            ->where('plan_days.plan_id', $plan_id)
+            ->where('pdc.user_id', $user_id)
+            ->get()
+            ->pluck('playlist_id')
+            ->all();
+    }
 }
