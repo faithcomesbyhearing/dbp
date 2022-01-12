@@ -27,7 +27,7 @@
         "laravel/framework": "8.78.1",
         "laravel/slack-notification-channel": "2.3.1",
         "laravel/socialite": "5.2.6",
-        "laravel/tinker": "2.6.3",
+        "laravel/tinker": "2.7.0",
         "league/flysystem-aws-s3-v3": "1.0.29",
         "maennchen/zipstream-php": "2.1.0",
         "mattkingshott/quest": "2.0.0",
