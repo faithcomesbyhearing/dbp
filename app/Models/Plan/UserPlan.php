@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Traits\ModelBase;
 use App\Models\Playlist\PlaylistItems;
 use App\Models\Playlist\PlaylistItemsComplete;
+use App\Models\Plan\PlanDayComplete;
 
 /**
  * @OA\Schema (
@@ -123,15 +124,45 @@ class UserPlan extends Model
         }
     }
 
-    public function reset($start_date = null)
+    /**
+     * Reset the user plan according the given start date. If the save progress flag is true the
+     * plan progress will be removed.
+     *
+     * @param string $start_date
+     * @param bool   $save_progress
+     * @param int    $user_id
+     *
+     * @return Array
+     */
+    public function reset(string $start_date = null, bool $save_progress = false, ?int $user_id = null) : UserPlan
     {
-        PlanDay::where('plan_id', $this->plan_id)->get()
-            ->each(function ($plan_day) {
-                $plan_day->unComplete();
-            });
+        if ($save_progress) {
+            if (is_null($user_id)) {
+                $user = Auth::user();
+                $user_id = $user->id;
+            }
+
+            self::removePlanDaysCompleteByPlanId($this->plan_id, $user_id);
+        }
+
         $this->attributes['percentage_completed'] = 0;
         $this->attributes['start_date'] = $start_date;
 
         return $this;
+    }
+
+    /**
+     * Remove the Plan Days Completed records attached to a Plan and an User
+     *
+     * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Array
+     */
+    public static function removePlanDaysCompleteByPlanId(int $plan_id, int $user_id) : void
+    {
+        $playlist_ids_by_plan = PlanDay::getPlanDayIdsByPlanAndUser($plan_id, $user_id);
+        PlaylistItemsComplete::removeItemsByPlayListsAndUser($playlist_ids_by_plan, $user_id);
+        PlanDayComplete::removeDaysByPlanAndUser($plan_id, $user_id);
     }
 }
