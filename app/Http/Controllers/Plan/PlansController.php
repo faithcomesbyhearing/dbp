@@ -669,7 +669,6 @@ class PlansController extends APIController
             return $this->setStatusCode(404)->replyWithError('Plan Not Found');
         }
 
-
         $user_plan = UserPlan::where('plan_id', $plan->id)->where('user_id', $user->id)->first();
 
         if (!$user_plan) {
@@ -677,18 +676,19 @@ class PlansController extends APIController
         }
 
         $start_date = checkParam('start_date');
-        $save_progress = checkParam('save_progress', false);
+        $save_progress = checkParam('save_progress', false) ?? false;
 
         $plan = \DB::transaction(function () use ($user, $plan, $user_plan, $save_progress, $start_date) {
             $user_plan->reset($start_date, $save_progress, $user->id)->save();
             return fractal(
                 $plan,
                 new PlanTransformer(
-                    ['user' => $user, 'user_plan' => $user_plan]
+                    ['user' => $user, 'user_plan' => $user_plan, 'days' => PlanDay::getWithDaysById($plan->id)]
                 ),
                 new ArraySerializer()
             );
         });
+
         return $this->reply($plan);
     }
 
@@ -840,19 +840,8 @@ class PlansController extends APIController
 
     private function getPlan($plan_id, $user)
     {
-        $select = ['plans.*'];
-        if (!empty($user)) {
-            $select[] = 'user_plans.start_date';
-            $select[] = 'user_plans.percentage_completed';
-        }
-        return Plan::with('days')
-            ->with('user')
-            ->where('plans.id', $plan_id)
-            ->when(!empty($user), function ($q) use ($user) {
-                $q->leftJoin('user_plans', function ($join) use ($user) {
-                    $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
-                });
-            })->select($select)->first();
+        $user_id = !empty($user) ? $user->id : null;
+        return Plan::getWithDaysAndUserById($plan_id, $user_id);
     }
 
     /**

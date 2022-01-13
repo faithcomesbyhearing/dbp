@@ -136,7 +136,7 @@ class UserPlan extends Model
      */
     public function reset(string $start_date = null, bool $save_progress = false, ?int $user_id = null) : UserPlan
     {
-        if ($save_progress) {
+        if ($save_progress === false) {
             if (is_null($user_id)) {
                 $user = Auth::user();
                 $user_id = $user->id;
