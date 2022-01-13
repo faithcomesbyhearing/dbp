@@ -174,14 +174,20 @@ class Plan extends Model
             $select[] = 'user_plans.percentage_completed';
         }
 
-        return self::with(['days' => function ($days_query) {
-            $days_query->select([
-                    'id',
-                    'plan_id',
-                    'playlist_id',
-                    \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
-                ])
-                ->leftJoin('plan_days_completed', 'plan_days_completed.plan_day_id', 'plan_days.id');
+        return self::with(['days' => function ($days_query) use ($user_id) {
+            if (!empty($user_id)) {
+                $days_query->select([
+                        'id',
+                        'plan_id',
+                        'playlist_id',
+                        \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
+                    ])
+                    ->leftJoin('plan_days_completed', function ($query_join) use ($user_id) {
+                        $query_join
+                            ->on('plan_days_completed.plan_day_id', '=', 'plan_days.id')
+                            ->where('plan_days_completed.user_id', $user_id);
+                    });
+            }
         }])
         ->with('user')
         ->where('plans.id', $plan_id)

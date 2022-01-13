@@ -238,7 +238,7 @@ class PlanDay extends Model implements Sortable
      *
      * @return Collection
      */
-    public static function getWithDaysById(int $plan_id) : Collection
+    public static function getWithDaysById(int $plan_id, int $user_id) : Collection
     {
         return self::select([
             'id',
@@ -246,7 +246,11 @@ class PlanDay extends Model implements Sortable
             'playlist_id',
             \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
         ])
-        ->leftJoin('plan_days_completed', 'plan_days_completed.plan_day_id', 'plan_days.id')
+        ->leftJoin('plan_days_completed', function ($query_join) use ($user_id) {
+            $query_join
+                ->on('plan_days_completed.plan_day_id', '=', 'plan_days.id')
+                ->where('plan_days_completed.user_id', $user_id);
+        })
         ->where('plan_id', $plan_id)
         ->get();
     }
