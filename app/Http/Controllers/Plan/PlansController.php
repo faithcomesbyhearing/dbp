@@ -685,7 +685,11 @@ class PlansController extends APIController
             return fractal(
                 $plan,
                 new PlanTransformer(
-                    ['user' => $user, 'user_plan' => $user_plan, 'days' => PlanDay::getWithDaysById($plan->id)]
+                    [
+                        'user' => $user,
+                        'user_plan' => $user_plan,
+                        'days' => PlanDay::getWithDaysById($plan->id, $user->id)
+                    ]
                 ),
                 new ArraySerializer()
             );
