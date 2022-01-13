@@ -678,6 +678,7 @@ class PlansController extends APIController
 
         $start_date = checkParam('start_date', true);
         $save_progress = checkParam('save_progress', false) ?? false;
+        $save_progress = filter_var($save_progress, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 
         $plan = \DB::transaction(function () use ($user, $plan, $user_plan, $save_progress, $start_date) {
             $user_plan->reset($start_date, $save_progress, $user->id)->save();
