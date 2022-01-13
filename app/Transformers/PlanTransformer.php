@@ -30,7 +30,7 @@ class PlanTransformer extends BaseTransformer
             "start_date" => isset($this->params['start_date'])
                 ? $this->params['start_date']
                 : $this->params['user_plan']->start_date,
-            "percentage_completed" => $this->params['user_plan']->percentage_completed,
+            "percentage_completed" => (int) $this->params['user_plan']->percentage_completed,
             "user" => [
                 "id"   => $this->params['user']->id,
                 "name" => $this->params['user']->name,
