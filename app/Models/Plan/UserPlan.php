@@ -143,9 +143,9 @@ class UserPlan extends Model
             }
 
             self::removePlanDaysCompleteByPlanId($this->plan_id, $user_id);
+            $this->attributes['percentage_completed'] = 0;
         }
 
-        $this->attributes['percentage_completed'] = 0;
         $this->attributes['start_date'] = $start_date;
 
         return $this;

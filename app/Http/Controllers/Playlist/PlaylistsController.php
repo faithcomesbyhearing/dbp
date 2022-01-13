@@ -772,7 +772,7 @@ class PlaylistsController extends APIController
             $user_plan->calculatePercentageCompleted()->save();
 
             return $this->reply([
-                'percentage_completed' => $user_plan->percentage_completed,
+                'percentage_completed' => (int) $user_plan->percentage_completed,
                 'message' => 'Playlist Item ' . $result
             ]);
         });
