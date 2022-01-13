@@ -625,14 +625,14 @@ class PlansController extends APIController
         $user_plan->calculatePercentageCompleted()->save();
 
         return $this->reply([
-            'percentage_completed' => $user_plan->percentage_completed,
+            'percentage_completed' => (int) $user_plan->percentage_completed,
             'message' => 'Plan Day ' . $result
         ]);
     }
     /**
      * Reset the specified plan.
      *
-     *  @OA\Post(
+     * @OA\Post(
      *     path="/plans/{plan_id}/reset",
      *     tags={"Plans"},
      *     summary="Reset a plan",
@@ -642,7 +642,8 @@ class PlansController extends APIController
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\RequestBody(@OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
-     *              @OA\Property(property="start_date", type="string")
+     *              required={"start_date"},
+     *              @OA\Property(property="start_date", type="string", ref="#/components/schemas/UserPlan/properties/start_date")
      *          )
      *     )),
      *     @OA\Parameter(name="save_progress", in="query"),
@@ -675,7 +676,7 @@ class PlansController extends APIController
             return $this->setStatusCode(404)->replyWithError('User Plan Not Found');
         }
 
-        $start_date = checkParam('start_date');
+        $start_date = checkParam('start_date', true);
         $save_progress = checkParam('save_progress', false) ?? false;
 
         $plan = \DB::transaction(function () use ($user, $plan, $user_plan, $save_progress, $start_date) {
