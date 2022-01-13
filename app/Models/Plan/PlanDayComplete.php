@@ -55,4 +55,25 @@ class PlanDayComplete extends Model
 
         return $this->getAttribute($keyName);
     }
+
+    /**
+     * Remove the plan days completed records that belong to a Plan and an User
+     *
+     * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return bool
+     */
+    public static function removeDaysByPlanAndUser(int $plan_id, int $user_id) : bool
+    {
+        return self::select('plan_day_id')
+            ->whereExists(function ($sub_query) use ($plan_id) {
+                return $sub_query->select(\DB::raw(1))
+                    ->from('plan_days as pld')
+                    ->where('pld.plan_id', $plan_id)
+                    ->whereColumn('pld.id', '=', 'plan_days_completed.plan_day_id');
+            })
+            ->where('user_id', $user_id)
+            ->delete();
+    }
 }

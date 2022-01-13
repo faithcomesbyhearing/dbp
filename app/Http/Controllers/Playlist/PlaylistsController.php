@@ -118,9 +118,9 @@ class PlaylistsController extends APIController
         
         $language_id = null;
         if ($iso !== null) {
-          $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
-              return optional(Language::where('iso', $iso)->select('id')->first())->id;
-          });
+            $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
+                return optional(Language::where('iso', $iso)->select('id')->first())->id;
+            });
         }
         
         if ($featured) {
@@ -1378,7 +1378,7 @@ class PlaylistsController extends APIController
         $playlist_item->setAttribute('chapter_start', $chapter);
         $playlist_item->setAttribute('chapter_end', $chapter);
         $playlist_item->setAttribute('verse_start', $verse_start);
-        $playlist_item->setAttribute('verse_end',  $verse_end);
+        $playlist_item->setAttribute('verse_end', $verse_end);
         $playlist_item->calculateVerses();
         $playlist_item->calculateDuration();
 

@@ -155,4 +155,42 @@ class Plan extends Model
     {
         return $this->hasMany(PlanDay::class)->orderBy('order_column');
     }
+
+    /**
+     * Get the plan object by Id. The plan will be fetched with the user and days relationships.
+     * The completed attribute is fetching into the query.
+     *
+     * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Plan
+     */
+    public static function getWithDaysAndUserById(int $plan_id, ?int $user_id = null) : Plan
+    {
+        $select = ['plans.*'];
+
+        if (!empty($user_id)) {
+            $select[] = 'user_plans.start_date';
+            $select[] = 'user_plans.percentage_completed';
+        }
+
+        return self::with(['days' => function ($days_query) {
+            $days_query->select([
+                    'id',
+                    'plan_id',
+                    'playlist_id',
+                    \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
+                ])
+                ->leftJoin('plan_days_completed', 'plan_days_completed.plan_day_id', 'plan_days.id');
+        }])
+        ->with('user')
+        ->where('plans.id', $plan_id)
+        ->when(!empty($user_id), function ($q) use ($user_id) {
+            $q->leftJoin('user_plans', function ($join) use ($user_id) {
+                $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user_id);
+            });
+        })
+        ->select($select)
+        ->first();
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Plan;
 
+use Spatie\Fractalistic\ArraySerializer;
 use App\Traits\AccessControlAPI;
 use App\Http\Controllers\APIController;
 use App\Http\Controllers\Playlist\PlaylistsController;
@@ -12,6 +13,7 @@ use App\Traits\CheckProjectMembership;
 use App\Models\Plan\PlanDay;
 use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
+use App\Transformers\PlanTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -102,9 +104,9 @@ class PlansController extends APIController
 
         $language_id = null;
         if ($iso !== null) {
-          $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
-              return optional(Language::where('iso', $iso)->select('id')->first())->id;
-          });
+            $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
+                return optional(Language::where('iso', $iso)->select('id')->first())->id;
+            });
         }
 
         return $this->reply($this->getPlans($featured, $limit, $sort_by, $sort_dir, $user, $language_id));
@@ -643,6 +645,7 @@ class PlansController extends APIController
      *              @OA\Property(property="start_date", type="string")
      *          )
      *     )),
+     *     @OA\Parameter(name="save_progress", in="query"),
      *     @OA\Response(response=200, ref="#/components/responses/plan")
      * )
      *
@@ -666,7 +669,6 @@ class PlansController extends APIController
             return $this->setStatusCode(404)->replyWithError('Plan Not Found');
         }
 
-
         $user_plan = UserPlan::where('plan_id', $plan->id)->where('user_id', $user->id)->first();
 
         if (!$user_plan) {
@@ -674,9 +676,19 @@ class PlansController extends APIController
         }
 
         $start_date = checkParam('start_date');
+        $save_progress = checkParam('save_progress', false) ?? false;
 
-        $user_plan->reset($start_date)->save();
-        $plan = $this->getPlan($plan->id, $user);
+        $plan = \DB::transaction(function () use ($user, $plan, $user_plan, $save_progress, $start_date) {
+            $user_plan->reset($start_date, $save_progress, $user->id)->save();
+            return fractal(
+                $plan,
+                new PlanTransformer(
+                    ['user' => $user, 'user_plan' => $user_plan, 'days' => PlanDay::getWithDaysById($plan->id)]
+                ),
+                new ArraySerializer()
+            );
+        });
+
         return $this->reply($plan);
     }
 
@@ -828,19 +840,8 @@ class PlansController extends APIController
 
     private function getPlan($plan_id, $user)
     {
-        $select = ['plans.*'];
-        if (!empty($user)) {
-            $select[] = 'user_plans.start_date';
-            $select[] = 'user_plans.percentage_completed';
-        }
-        return Plan::with('days')
-            ->with('user')
-            ->where('plans.id', $plan_id)
-            ->when(!empty($user), function ($q) use ($user) {
-                $q->leftJoin('user_plans', function ($join) use ($user) {
-                    $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
-                });
-            })->select($select)->first();
+        $user_id = !empty($user) ? $user->id : null;
+        return Plan::getWithDaysAndUserById($plan_id, $user_id);
     }
 
     /**

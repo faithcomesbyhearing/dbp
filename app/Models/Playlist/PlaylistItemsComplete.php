@@ -55,4 +55,24 @@ class PlaylistItemsComplete extends Model
 
         return $this->getAttribute($keyName);
     }
+
+    /**
+     * Remove the Play List Items completed records that belong to one or more Play lists and an User
+     *
+     * @param Array $playlist_ids
+     * @param int   $user_id
+     *
+     * @return bool
+     */
+    public static function removeItemsByPlayListsAndUser(Array $playlist_ids, int $user_id) : bool
+    {
+        return self::whereExists(function ($sub_query) use ($playlist_ids) {
+            return $sub_query->select(\DB::raw(1))
+                ->from('playlist_items as pli', 'pli.playlist_id', 'pld.playlist_id')
+                ->whereIn('pli.playlist_id', $playlist_ids)
+                ->whereColumn('pli.id', '=', 'playlist_items_completed.playlist_item_id');
+        })
+            ->where('user_id', $user_id)
+            ->delete();
+    }
 }

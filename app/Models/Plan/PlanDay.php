@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * App\Models\Plan
@@ -59,6 +60,11 @@ class PlanDay extends Model implements Sortable
      */
     public function getCompletedAttribute()
     {
+        // if the object has the set virtual attribute is not necessary to do the query
+        if (isset($this->attributes['completed']) && !is_null($this->attributes['completed'])) {
+            return (bool) $this->attributes['completed'];
+        }
+
         $user = Auth::user();
         if (empty($user)) {
             return false;
@@ -204,5 +210,44 @@ class PlanDay extends Model implements Sortable
                     ->havingRaw('COUNT(pld.id) = COUNT(`pldc`.playlist_item_id)');
             })
             ->whereNull('plan_days_completed.plan_day_id');
+    }
+
+    /**
+     * Get the Play List IDs attached to a Plan and an User
+     *
+     * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Array
+     */
+    public static function getPlanDayIdsByPlanAndUser(int $plan_id, int $user_id) : Array
+    {
+        return PlanDay::select('playlist_id')
+            ->join('plan_days_completed as pdc', 'pdc.plan_day_id', 'plan_days.id')
+            ->where('plan_days.plan_id', $plan_id)
+            ->where('pdc.user_id', $user_id)
+            ->get()
+            ->pluck('playlist_id')
+            ->all();
+    }
+
+    /**
+     * Get the days records that belong to a specific plan. The completed attribute is performancing into the query.
+     *
+     * @param int $plan_id
+     *
+     * @return Collection
+     */
+    public static function getWithDaysById(int $plan_id) : Collection
+    {
+        return self::select([
+            'id',
+            'plan_id',
+            'playlist_id',
+            \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
+        ])
+        ->leftJoin('plan_days_completed', 'plan_days_completed.plan_day_id', 'plan_days.id')
+        ->where('plan_id', $plan_id)
+        ->get();
     }
 }
