@@ -254,4 +254,61 @@ class PlanDay extends Model implements Sortable
         ->where('plan_id', $plan_id)
         ->get();
     }
+
+    /**
+     * Get the plan Day with the day completed relationship and the completed attribute is fetching into the query.
+     *
+     * @param Builder $query
+     * @param int $user_id
+     *
+     * @return Builder
+     */
+    public function scopeWithCompletedDay(Builder $query, int $user_id) : Builder
+    {
+        return $query->select([
+            'id',
+            'plan_id',
+            'playlist_id',
+            \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
+        ])
+        ->leftJoin('plan_days_completed', function ($query_join) use ($user_id) {
+            $query_join
+                ->on('plan_days_completed.plan_day_id', '=', 'plan_days.id')
+                ->where('plan_days_completed.user_id', $user_id);
+        });
+    }
+
+    /**
+     * Get the plan Day with the Playlist relationship
+     *
+     * @param Builder $days_query
+     * @param int $user_id
+     *
+     * @return Builder
+     */
+    public function scopeWithPlaylistAndUserById(Builder $days_query, int $user_id) : Builder
+    {
+        return $days_query->with(['playlist' => function ($playlist_query) use ($user_id) {
+            $playlist_query->select([
+                'user_playlists.*',
+                \DB::Raw('IF(playlists_followers.user_id, true, false) as following')
+            ])
+            ->with(['user', 'items' => function ($query_items) use ($user_id) {
+                if (!empty($user_id)) {
+                    $query_items->withPlaylistItemCompleted($user_id);
+                }
+
+                $query_items->with(['fileset' => function ($query_fileset) {
+                    $query_fileset->with(['bible' => function ($query_bible) {
+                        $query_bible->with(['translations', 'vernacularTranslation', 'books.book']);
+                    }]);
+                }]);
+            }])
+            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
+                $join
+                    ->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
+                    ->where('playlists_followers.user_id', $user_id);
+            });
+        }]);
+    }
 }
