@@ -434,6 +434,11 @@ class PlaylistItems extends Model implements Sortable
      */
     public function getCompletedAttribute()
     {
+        // if the object has the set virtual attribute is not necessary to do the query
+        if (isset($this->attributes['completed']) && !is_null($this->attributes['completed'])) {
+            return (bool) $this->attributes['completed'];
+        }
+
         $user = Auth::user();
         if (empty($user)) {
             return false;

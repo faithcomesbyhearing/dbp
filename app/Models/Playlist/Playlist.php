@@ -145,6 +145,11 @@ class Playlist extends Model
      */
     public function getVersesAttribute()
     {
+        // if the object has the set virtual attribute is not necessary to do the query
+        if (isset($this->attributes['verses']) && !is_null($this->attributes['verses'])) {
+            return (bool) $this->attributes['verses'];
+        }
+
         return PlaylistItems::where('playlist_id', $this['id'])->get()->sum('verses');
     }
 
