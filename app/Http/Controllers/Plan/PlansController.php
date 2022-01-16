@@ -748,13 +748,80 @@ class PlansController extends APIController
             $user_plan->delete();
         }
 
-        $plan = $this->getPlan($plan->id, $user);
-        $playlist_controller = new PlaylistsController();
-        foreach ($plan->days as $day) {
-            $day_playlist = $playlist_controller->getPlaylist($user, $day->playlist_id);
-            $day_playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
-            $day->playlist = $day_playlist;
+        // $plan = $this->getPlan($plan->id, $user);
+        // $playlist_controller = new PlaylistsController();
+        // foreach ($plan->days as $day) {
+        //     $day_playlist = $playlist_controller->getPlaylist($user, $day->playlist_id);
+        //     $day_playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
+        //     $day->playlist = $day_playlist;
+        // }
+
+
+        $select = ['plans.*'];
+        $user_id = $user->id;
+        $plan_id = $plan->id;
+
+        if (!empty($user_id)) {
+            $select[] = 'user_plans.start_date';
+            $select[] = 'user_plans.percentage_completed';
         }
+
+        $plan = Plan::with(['days' => function ($days_query) use ($user_id) {
+            if (!empty($user_id)) {
+                $days_query->select([
+                        'id',
+                        'plan_id',
+                        'playlist_id',
+                        \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
+                    ])
+                    ->leftJoin('plan_days_completed', function ($query_join) use ($user_id) {
+                        $query_join
+                            ->on('plan_days_completed.plan_day_id', '=', 'plan_days.id')
+                            ->where('plan_days_completed.user_id', $user_id);
+                    });
+            }
+
+            $days_query->with(['playlist' => function ($playlist_query) use ($user_id) {
+                $playlist_query->with(['items' => function ($quey_items) use ($user_id) {
+                    if (!empty($user_id)) {
+                        $quey_items->select([
+                                'id',
+                                'fileset_id',
+                                'book_id',
+                                'chapter_start',
+                                'chapter_end',
+                                'playlist_id',
+                                'verse_start',
+                                'verse_end',
+                                'verses',
+                                'duration',
+                                \DB::Raw('IF(playlist_items_completed.playlist_item_id, true, false) as completed'),
+                            ])
+                            ->leftJoin('playlist_items_completed', function ($query_join) use ($user_id) {
+                                $query_join
+                                    ->on('playlist_items_completed.playlist_item_id', '=', 'playlist_items.id')
+                                    ->where('playlist_items_completed.user_id', $user_id);
+                            });
+                    }
+                }])
+                ->with('user')
+                ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
+                    $join
+                        ->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
+                        ->where('playlists_followers.user_id', $user_id);
+                });
+            }]);
+        }])
+        ->with('user')
+        ->where('plans.id', $plan_id)
+        ->when(!empty($user_id), function ($q) use ($user_id) {
+            $q->leftJoin('user_plans', function ($join) use ($user_id) {
+                $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user_id);
+            });
+        })
+        ->select($select)
+        ->first();
+
         return $this->reply($plan);
     }
 
