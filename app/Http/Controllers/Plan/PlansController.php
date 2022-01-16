@@ -809,7 +809,12 @@ class PlansController extends APIController
                     $join
                         ->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
                         ->where('playlists_followers.user_id', $user_id);
-                });
+                })
+                ->with(['fileset' => function ($query_fileset) {
+                    $query_fileset->with(['bible' => function ($query_bible) {
+                        $query_bible->with(['translations', 'books.book']);
+                    }]);
+                }]);
             }]);
         }])
         ->with('user')
