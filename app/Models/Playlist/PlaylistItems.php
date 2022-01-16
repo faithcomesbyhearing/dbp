@@ -493,19 +493,12 @@ class PlaylistItems extends Model implements Sortable
         $fileset_id = $this['fileset_id'];
         $book_id = $this['book_id'];
 
-        return [
-            'bible_id'   => null,
-            'bible_name' => null,
-            'bible_vname' =>  null,
-            'book_name' => null
-        ];
         return cacheRemember(
             'playlist_item_metadata',
             [$fileset_id, $book_id],
             now()->addDay(),
             function () use ($fileset_id, $book_id) {
-                // $bible_fileset = BibleFileset::whereId($fileset_id)->first();
-                $bible_fileset = $this->fileset;
+                $bible_fileset = BibleFileset::whereId($fileset_id)->first();
 
                 // check if there exists an invalid fileset for each playlist item (data issue)
                 if (isset($bible_fileset)) {
@@ -513,7 +506,7 @@ class PlaylistItems extends Model implements Sortable
                     if (!$bible) {
                         return null;
                     }
-                    // $bible = Bible::whereId($bible->id)->with(['translations', 'books.book'])->first();
+                    $bible = Bible::whereId($bible->id)->with(['translations', 'books.book'])->first();
                 } else {
                     return null;
                 }

@@ -150,6 +150,10 @@ class Playlist extends Model
             return (bool) $this->attributes['verses'];
         }
 
+        if (sizeof($this->items)) {
+            return $this->items->sum('verses');
+        }
+
         return PlaylistItems::where('playlist_id', $this['id'])->get()->sum('verses');
     }
 
@@ -170,7 +174,8 @@ class Playlist extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class)->select('id', 'name');
+        // return $this->belongsTo(User::class)->select('id', 'name');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     public function items()
