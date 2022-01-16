@@ -888,7 +888,11 @@ class PlansController extends APIController
                                 ] : [],
                             ];
                         }),
-                        "path" => $day->playlist->path,
+                        // "path" => $day->playlist->path,
+                        "path" => route(
+                            'v4_internal_playlists.hls',
+                            ['playlist_id'  => $day->playlist->id, 'v' => $this->v, 'key' => $this->key]
+                        ),
                         "verses" => $day->playlist->verses,
                         "verses" => 0,
                         "user" => [

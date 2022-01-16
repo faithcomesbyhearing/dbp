@@ -1293,30 +1293,7 @@ class PlaylistsController extends APIController
     public function getPlaylist($user, $playlist_id)
     {
         $select = ['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')];
-        // $playlist = Playlist::with('items')
-        $playlist = Playlist::with(['items' => function ($quey_items) use ($user) {
-            if (!empty($user->id)) {
-                $user_id = $user->id;
-                $quey_items->select([
-                        'id',
-                        'fileset_id',
-                        'book_id',
-                        'chapter_start',
-                        'chapter_end',
-                        'playlist_id',
-                        'verse_start',
-                        'verse_end',
-                        'verses',
-                        'duration',
-                        \DB::Raw('IF(playlist_items_completed.playlist_item_id, true, false) as completed'),
-                    ])
-                    ->leftJoin('playlist_items_completed', function ($query_join) use ($user_id) {
-                        $query_join
-                            ->on('playlist_items_completed.playlist_item_id', '=', 'playlist_items.id')
-                            ->where('playlist_items_completed.user_id', $user_id);
-                    });
-            }
-        }])
+        $playlist = Playlist::with('items')
             ->with('user')
             ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user) {
                 $user_id = empty($user) ? 0 : $user->id;
