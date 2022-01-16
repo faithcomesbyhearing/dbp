@@ -493,6 +493,12 @@ class PlaylistItems extends Model implements Sortable
         $fileset_id = $this['fileset_id'];
         $book_id = $this['book_id'];
 
+        return [
+            'bible_id'   => null,
+            'bible_name' => null,
+            'bible_vname' =>  null,
+            'book_name' => null
+        ];
         return cacheRemember(
             'playlist_item_metadata',
             [$fileset_id, $book_id],

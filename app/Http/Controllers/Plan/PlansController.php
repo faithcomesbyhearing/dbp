@@ -803,18 +803,19 @@ class PlansController extends APIController
                                     ->where('playlist_items_completed.user_id', $user_id);
                             });
                     }
+
+                    $quey_items->with(['fileset' => function ($query_fileset) {
+                        $query_fileset->with(['bible' => function ($query_bible) {
+                            $query_bible->with(['translations', 'books.book']);
+                        }]);
+                    }]);
                 }])
                 ->with('user')
                 ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
                     $join
                         ->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
                         ->where('playlists_followers.user_id', $user_id);
-                })
-                ->with(['fileset' => function ($query_fileset) {
-                    $query_fileset->with(['bible' => function ($query_bible) {
-                        $query_bible->with(['translations', 'books.book']);
-                    }]);
-                }]);
+                });
             }]);
         }])
         ->with('user')
@@ -827,7 +828,61 @@ class PlansController extends APIController
         ->select($select)
         ->first();
 
-        return $this->reply($plan);
+        
+
+        // return $this->reply($plan);
+        return $this->reply([
+            "id" => $plan->id,
+            "name" => $plan->name,
+            "thumbnail" => $plan->thumbnail,
+            "featured" => $plan->featured,
+            "suggested_start_date" => $plan->suggested_start_date,
+            "draft" => $plan->draft,
+            "created_at" => $plan->created_at,
+            "updated_at" => $plan->updated_at,
+            "start_date" => $plan->start_date,
+            "percentage_completed" => $plan->percentage_completed,
+            "days" => $plan->days->map(function ($day) {
+                return [
+                    "id" => $day->id,
+                    "playlist_id" => $day->playlist_id,
+                    "completed" => $day->completed,
+                    "playlist" =>  [
+                            "id" => $day->playlist->id,
+                            "name" => $day->playlist->name,
+                            "featured" => $day->playlist->featured,
+                            "draft" => $day->playlist->draft,
+                            "created_at" => $day->playlist->created_at,
+                            "updated_at" => $day->playlist->updated_at,
+                            "external_content" => $day->playlist->external_content,
+                            "following" => $day->playlist->following,
+                            "items" => $day->playlist->items->map(function ($item) {
+                                return [
+                                    "id" => $item->id,
+                                    "fileset_id" => $item->fileset_id,
+                                    "book_id" => $item->book_id,
+                                    "chapter_start" => $item->chapter_start,
+                                    "chapter_end" => $item->chapter_end,
+                                    "verse_start" => $item->verse_start,
+                                    "verse_end" => $item->verse_end,
+                                    // "verses" => $item->verses,
+                                    "duration" => $item->duration,
+                                    "bible_id" => $item->bible_id,
+                                    "completed" => $item->completed,
+                                    "full_chapter" => $item->full_chapter,
+                                    "path" => $item->path,
+                                    "metadata" => [
+                                        "bible_id" => null,
+                                        "bible_name" => null,
+                                        "bible_vname" => null,
+                                        "book_name" => null,
+                                    ]
+                                ];
+                            })
+                    ],
+                ];
+            })
+        ]);
     }
 
     /**
