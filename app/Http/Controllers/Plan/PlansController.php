@@ -782,7 +782,11 @@ class PlansController extends APIController
             }
 
             $days_query->with(['playlist' => function ($playlist_query) use ($user_id) {
-                $playlist_query->with(['items' => function ($quey_items) use ($user_id) {
+                $playlist_query->select([
+                    'user_playlists.*',
+                    DB::Raw('IF(playlists_followers.user_id, true, false) as following')
+                ])
+                ->with(['user', 'items' => function ($quey_items) use ($user_id) {
                     if (!empty($user_id)) {
                         $quey_items->select([
                                 'id',
@@ -810,7 +814,6 @@ class PlansController extends APIController
                         }]);
                     }]);
                 }])
-                ->with('user')
                 ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
                     $join
                         ->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
@@ -848,40 +851,57 @@ class PlansController extends APIController
                     "playlist_id" => $day->playlist_id,
                     "completed" => $day->completed,
                     "playlist" =>  [
-                            "id" => $day->playlist->id,
-                            "name" => $day->playlist->name,
-                            "featured" => $day->playlist->featured,
-                            "draft" => $day->playlist->draft,
-                            "created_at" => $day->playlist->created_at,
-                            "updated_at" => $day->playlist->updated_at,
-                            "external_content" => $day->playlist->external_content,
-                            "following" => $day->playlist->following,
-                            "items" => $day->playlist->items->map(function ($item) {
-                                return [
-                                    "id" => $item->id,
-                                    "fileset_id" => $item->fileset_id,
-                                    "book_id" => $item->book_id,
-                                    "chapter_start" => $item->chapter_start,
-                                    "chapter_end" => $item->chapter_end,
-                                    "verse_start" => $item->verse_start,
-                                    "verse_end" => $item->verse_end,
-                                    // "verses" => $item->verses,
-                                    "duration" => $item->duration,
-                                    "bible_id" => $item->bible_id,
-                                    "completed" => $item->completed,
-                                    "full_chapter" => $item->full_chapter,
-                                    "path" => $item->path,
-                                    "metadata" => [
-                                        "bible_id" => null,
-                                        "bible_name" => null,
-                                        "bible_vname" => null,
-                                        "book_name" => null,
-                                    ]
-                                ];
-                            })
+                        "id" => $day->playlist->id,
+                        "name" => $day->playlist->name,
+                        "featured" => $day->playlist->featured,
+                        "draft" => $day->playlist->draft,
+                        "created_at" => $day->playlist->created_at,
+                        "updated_at" => $day->playlist->updated_at,
+                        "external_content" => $day->playlist->external_content,
+                        "following" => $day->playlist->following,
+                        "items" => $day->playlist->items->map(function ($item) {
+                            $bible = optional($item->fileset->bible)->first();
+
+                            return [
+                                "id" => $item->id,
+                                "fileset_id" => $item->fileset_id,
+                                "book_id" => $item->book_id,
+                                "chapter_start" => $item->chapter_start,
+                                "chapter_end" => $item->chapter_end,
+                                "verse_start" => $item->verse_start,
+                                "verse_end" => $item->verse_end,
+                                "verses" => $item->verses,
+                                "duration" => $item->duration,
+                                "bible_id" => $bible ? $bible->id : null,
+                                "completed" => $item->completed,
+                                "full_chapter" => $item->full_chapter,
+                                "path" => $item->path,
+                                'metadata' => $bible ? [
+                                    "bible_id" => $bible->id,
+                                    "bible_name" => optional(
+                                        $bible->translations->where('language_id', $GLOBALS['i18n_id'])->first()
+                                    )->name,
+                                    "bible_vname" => optional($bible->vernacularTranslation)->name,
+                                    "book_name" => optional(
+                                        $bible->books->where('book_id', $item->book_id)->first()
+                                    )->name
+                                ] : [],
+                            ];
+                        }),
+                        "path" => $day->playlist->path,
+                        "verses" => $day->playlist->verses,
+                        "verses" => 0,
+                        "user" => [
+                            "id" => $day->playlist->user->id,
+                            "name" => $day->playlist->user->name
+                        ]
                     ],
                 ];
-            })
+            }),
+            "user" => [
+                "id" => $plan->user->id,
+                "name" => $plan->user->name
+            ]
         ]);
     }
 

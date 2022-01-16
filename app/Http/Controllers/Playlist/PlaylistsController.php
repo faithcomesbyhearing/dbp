@@ -1330,18 +1330,18 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(404)->replyWithError('No playlist could be found for: ' . $playlist_id);
         }
 
-        // if (isset($playlist->items)) {
-        //     $playlist->items = $playlist->items->map(function ($item) {
-        //         if (isset($item->fileset, $item->fileset->bible)) {
-        //             $bible = $item->fileset->bible->first();
-        //             if ($bible) {
-        //                 $item->bible_id = $bible->id;
-        //             }
-        //         }
-        //         unset($item->fileset);
-        //         return $item;
-        //     });
-        // }
+        if (isset($playlist->items)) {
+            $playlist->items = $playlist->items->map(function ($item) {
+                if (isset($item->fileset, $item->fileset->bible)) {
+                    $bible = $item->fileset->bible->first();
+                    if ($bible) {
+                        $item->bible_id = $bible->id;
+                    }
+                }
+                unset($item->fileset);
+                return $item;
+            });
+        }
 
         return $playlist;
     }
