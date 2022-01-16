@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
 
@@ -434,6 +435,11 @@ class PlaylistItems extends Model implements Sortable
      */
     public function getCompletedAttribute()
     {
+        // if the object has the set virtual attribute is not necessary to do the query
+        if (isset($this->attributes['completed']) && !is_null($this->attributes['completed'])) {
+            return (bool) $this->attributes['completed'];
+        }
+
         $user = Auth::user();
         if (empty($user)) {
             return false;
@@ -537,5 +543,36 @@ class PlaylistItems extends Model implements Sortable
         $completed_item = PlaylistItemsComplete::where('playlist_item_id', $this['id'])
             ->where('user_id', $user->id);
         $completed_item->delete();
+    }
+
+    /**
+     * Get the Playlist Item with the Playlist Item completed relationship and
+     * the completed attribute is fetching into the query.
+     *
+     * @param Builder $query_items
+     * @param int $user_id
+     *
+     * @return Builder
+     */
+    public function scopeWithPlaylistItemCompleted(Builder $query_items, int $user_id) : Builder
+    {
+        return $query_items->select([
+            'id',
+            'fileset_id',
+            'book_id',
+            'chapter_start',
+            'chapter_end',
+            'playlist_id',
+            'verse_start',
+            'verse_end',
+            'verses',
+            'duration',
+            \DB::Raw('IF(playlist_items_completed.playlist_item_id, true, false) as completed'),
+        ])
+        ->leftJoin('playlist_items_completed', function ($query_join) use ($user_id) {
+            $query_join
+                ->on('playlist_items_completed.playlist_item_id', '=', 'playlist_items.id')
+                ->where('playlist_items_completed.user_id', $user_id);
+        });
     }
 }
