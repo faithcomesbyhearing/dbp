@@ -169,11 +169,15 @@ class PlanDay extends Model implements Sortable
 
     /**
      * Get the summary of items completed and items no completed for each Plan day that belongs to specific plan
+     * and user
      *
      * @param Builder $query
      * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Builder
      */
-    public function scopeSummaryItemsCompletedByPlanId(Builder $query, int $plan_id) : Builder
+    public function scopeSummaryItemsCompletedByPlanId(Builder $query, int $plan_id, int $user_id) : Builder
     {
         return $query->select(
             \DB::raw(
@@ -183,7 +187,11 @@ class PlanDay extends Model implements Sortable
             )
         )
             ->join('playlist_items', 'playlist_items.playlist_id', 'plan_days.playlist_id')
-            ->leftJoin('playlist_items_completed', 'playlist_items_completed.playlist_item_id', 'playlist_items.id')
+            ->leftJoin('playlist_items_completed', function ($query_join) use ($user_id) {
+                $query_join
+                    ->on('playlist_items_completed.playlist_item_id', '=', 'playlist_items.id')
+                    ->where('playlist_items_completed.user_id', $user_id);
+            })
             ->where('plan_id', $plan_id)
             ->groupBy('plan_days.id');
     }
@@ -193,17 +201,24 @@ class PlanDay extends Model implements Sortable
      *
      * @param Builder $query
      * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Builder
      */
-    public function scopeDaysToCompleteByPlanId(Builder $query, int $plan_id) : Builder
+    public function scopeDaysToCompleteByPlanId(Builder $query, int $plan_id, int $user_id) : Builder
     {
         return $query->select('plan_days.id')
             ->leftJoin('plan_days_completed', 'plan_days.id', 'plan_days_completed.plan_day_id')
             ->where('plan_days.plan_id', $plan_id)
-            ->whereExists(function ($sub_query) use ($plan_id) {
+            ->whereExists(function ($sub_query) use ($plan_id, $user_id) {
                 return $sub_query->select(\DB::raw(1))
                     ->from('plan_days as pld')
                     ->join('playlist_items as pli', 'pli.playlist_id', 'pld.playlist_id')
-                    ->leftJoin('playlist_items_completed as pldc', 'pldc.playlist_item_id', 'pli.id')
+                    ->leftJoin('playlist_items_completed as pldc', function ($query_join) use ($user_id) {
+                        $query_join
+                            ->on('pldc.playlist_item_id', '=', 'pli.id')
+                            ->where('pldc.user_id', $user_id);
+                    })
                     ->where('pld.plan_id', $plan_id)
                     ->whereColumn('pld.id', '=', 'plan_days.id')
                     ->groupBy('pld.id')
@@ -253,5 +268,62 @@ class PlanDay extends Model implements Sortable
         })
         ->where('plan_id', $plan_id)
         ->get();
+    }
+
+    /**
+     * Get the plan Day with the day completed relationship and the completed attribute is fetching into the query.
+     *
+     * @param Builder $query
+     * @param int $user_id
+     *
+     * @return Builder
+     */
+    public function scopeWithCompletedDay(Builder $query, int $user_id) : Builder
+    {
+        return $query->select([
+            'id',
+            'plan_id',
+            'playlist_id',
+            \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
+        ])
+        ->leftJoin('plan_days_completed', function ($query_join) use ($user_id) {
+            $query_join
+                ->on('plan_days_completed.plan_day_id', '=', 'plan_days.id')
+                ->where('plan_days_completed.user_id', $user_id);
+        });
+    }
+
+    /**
+     * Get the plan Day with the Playlist relationship
+     *
+     * @param Builder $days_query
+     * @param int $user_id
+     *
+     * @return Builder
+     */
+    public function scopeWithPlaylistAndUserById(Builder $days_query, int $user_id) : Builder
+    {
+        return $days_query->with(['playlist' => function ($playlist_query) use ($user_id) {
+            $playlist_query->select([
+                'user_playlists.*',
+                \DB::Raw('IF(playlists_followers.user_id, true, false) as following')
+            ])
+            ->with(['user', 'items' => function ($query_items) use ($user_id) {
+                if (!empty($user_id)) {
+                    $query_items->withPlaylistItemCompleted($user_id);
+                }
+
+                $query_items->with(['fileset' => function ($query_fileset) {
+                    $query_fileset->with(['bible' => function ($query_bible) {
+                        $query_bible->with(['translations', 'vernacularTranslation', 'books.book']);
+                    }]);
+                }]);
+            }])
+            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
+                $join
+                    ->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
+                    ->where('playlists_followers.user_id', $user_id);
+            });
+        }]);
     }
 }
