@@ -198,9 +198,9 @@ class Plan extends Model
      */
     public function scopeWithDaysPlaylistItemsAndUserById(Builder $query, int $plan_id, int $user_id) : Builder
     {
-        return $query->with(['days' => function ($days_query) use ($plan_id, $user_id) {
+        return $query->with(['days' => function ($days_query) use ($user_id) {
             $days_query
-                ->withCompletedDay($plan_id, $user_id)
+                ->withCompletedDay($user_id)
                 ->withPlaylistAndUserById($user_id);
         }])
         ->withUserById($plan_id, $user_id);
@@ -217,10 +217,10 @@ class Plan extends Model
      */
     public static function getWithDaysAndUserById(int $plan_id, ?int $user_id = null) : Plan
     {
-        return self::with(['days' => function ($days_query) use ($plan_id, $user_id) {
+        return self::with(['days' => function ($days_query) use ($user_id) {
             if (!empty($user_id)) {
                 $days_query
-                    ->withCompletedDay($plan_id, $user_id);
+                    ->withCompletedDay($user_id);
             }
         }])
         ->withUserById($plan_id, $user_id)
