@@ -145,6 +145,10 @@ class Playlist extends Model
      */
     public function getVersesAttribute()
     {
+        if (sizeof($this->items) > 0) {
+            return $this->items->sum('verses');
+        }
+
         return PlaylistItems::where('playlist_id', $this['id'])->get()->sum('verses');
     }
 

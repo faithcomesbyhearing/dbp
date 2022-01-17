@@ -14,6 +14,7 @@ use App\Models\Plan\PlanDay;
 use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
 use App\Transformers\PlanTransformer;
+use App\Transformers\PlanDayPlaylistItemsTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -748,14 +749,18 @@ class PlansController extends APIController
             $user_plan->delete();
         }
 
-        $plan = $this->getPlan($plan->id, $user);
-        $playlist_controller = new PlaylistsController();
-        foreach ($plan->days as $day) {
-            $day_playlist = $playlist_controller->getPlaylist($user, $day->playlist_id);
-            $day_playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
-            $day->playlist = $day_playlist;
-        }
-        return $this->reply($plan);
+        $plan = Plan::getWithDaysPlaylistItemsAndUserById($plan->id, $user->id);
+       
+        return fractal(
+            $plan,
+            new PlanDayPlaylistItemsTransformer(
+                [
+                    'v' => $this->v,
+                    'key' => $this->key,
+                ]
+            ),
+            new ArraySerializer()
+        );
     }
 
     /**

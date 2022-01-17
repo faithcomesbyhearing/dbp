@@ -78,6 +78,7 @@ class Book extends Model
     protected $table = 'books';
     public $incrementing = false;
     public $hidden = ['description','created_at','updated_at','notes'];
+    protected $keyType = 'string';
 
     /**
      *

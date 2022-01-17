@@ -4,6 +4,7 @@ namespace App\Models\Plan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
 use App\Models\User\User;
 
@@ -157,6 +158,55 @@ class Plan extends Model
     }
 
     /**
+     * Get the plan query filtering by ID and User ID. The plan will be fetched with the user relationship.
+     *
+     * @param Builder $query
+     * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Builder
+     */
+    public function scopeWithUserById(Builder $query, int $plan_id, ?int $user_id = null) : Builder
+    {
+        $select = ['plans.*'];
+
+        if (!empty($user_id)) {
+            $select[] = 'user_plans.start_date';
+            $select[] = 'user_plans.percentage_completed';
+        }
+
+        return $query->with('user')
+            ->where('plans.id', $plan_id)
+            ->when(!empty($user_id), function ($q) use ($user_id) {
+                $q->leftJoin('user_plans', function ($join) use ($user_id) {
+                    $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user_id);
+                });
+            })
+            ->select($select);
+    }
+
+    /**
+     * Get the plan query filtering by ID and User ID.
+     * The plan will be fetched with the user, days, playlist and playlist items relationships.
+     * The completed attribute is fetching into the query.
+     *
+     * @param Builder $query
+     * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Builder
+     */
+    public function scopeWithDaysPlaylistItemsAndUserById(Builder $query, int $plan_id, int $user_id) : Builder
+    {
+        return $query->with(['days' => function ($days_query) use ($user_id) {
+            $days_query
+                ->withCompletedDay($user_id)
+                ->withPlaylistAndUserById($user_id);
+        }])
+        ->withUserById($plan_id, $user_id);
+    }
+
+    /**
      * Get the plan object by Id. The plan will be fetched with the user and days relationships.
      * The completed attribute is fetching into the query.
      *
@@ -167,36 +217,27 @@ class Plan extends Model
      */
     public static function getWithDaysAndUserById(int $plan_id, ?int $user_id = null) : Plan
     {
-        $select = ['plans.*'];
-
-        if (!empty($user_id)) {
-            $select[] = 'user_plans.start_date';
-            $select[] = 'user_plans.percentage_completed';
-        }
-
         return self::with(['days' => function ($days_query) use ($user_id) {
             if (!empty($user_id)) {
-                $days_query->select([
-                        'id',
-                        'plan_id',
-                        'playlist_id',
-                        \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
-                    ])
-                    ->leftJoin('plan_days_completed', function ($query_join) use ($user_id) {
-                        $query_join
-                            ->on('plan_days_completed.plan_day_id', '=', 'plan_days.id')
-                            ->where('plan_days_completed.user_id', $user_id);
-                    });
+                $days_query
+                    ->withCompletedDay($user_id);
             }
         }])
-        ->with('user')
-        ->where('plans.id', $plan_id)
-        ->when(!empty($user_id), function ($q) use ($user_id) {
-            $q->leftJoin('user_plans', function ($join) use ($user_id) {
-                $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user_id);
-            });
-        })
-        ->select($select)
+        ->withUserById($plan_id, $user_id)
         ->first();
+    }
+
+    /**
+     * Get the entire plan object by Id. The plan will be fetched with the user, days, playlist and playlist items
+     * relationships. The completed attribute is fetching into the query.
+     *
+     * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Plan
+     */
+    public static function getWithDaysPlaylistItemsAndUserById(int $plan_id, int $user_id) : Plan
+    {
+        return self::withDaysPlaylistItemsAndUserById($plan_id, $user_id)->first();
     }
 }
