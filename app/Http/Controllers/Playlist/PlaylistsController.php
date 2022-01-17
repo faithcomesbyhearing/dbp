@@ -1206,7 +1206,9 @@ class PlaylistsController extends APIController
                 if (!Str::contains($fileset->set_type_code, 'audio')) {
                     continue;
                 }
-                $bible_files = BibleFile::with('streamBandwidth.transportStreamTS')->with('streamBandwidth.transportStreamBytes')->where([
+                $bible_files = BibleFile::with('streamBandwidth.transportStreamTS')
+                ->with('streamBandwidth.transportStreamBytes.timestamp.bibleFile')
+                ->where([
                     'hash_id' => $fileset->hash_id,
                     'book_id' => $item->book_id,
                 ])

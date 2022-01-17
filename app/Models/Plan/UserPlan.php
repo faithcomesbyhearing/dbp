@@ -92,7 +92,7 @@ class UserPlan extends Model
    
     public function calculatePercentageCompleted()
     {
-        $completed_per_day = PlanDay::summaryItemsCompletedByPlanId($this->plan_id)->get();
+        $completed_per_day = PlanDay::summaryItemsCompletedByPlanId($this->plan_id, $this->user_id)->get();
 
         $this->completeDaysCurrentUserPlan();
 
@@ -109,7 +109,7 @@ class UserPlan extends Model
      */
     private function completeDaysCurrentUserPlan() : void
     {
-        $plan_days_to_complete = PlanDay::daysToCompleteByPlanId($this->plan_id)->get();
+        $plan_days_to_complete = PlanDay::daysToCompleteByPlanId($this->plan_id, $this->user_id)->get();
 
         $inserts_plan_days_completed = [];
         foreach ($plan_days_to_complete as $plan_day) {
