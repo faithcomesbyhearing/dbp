@@ -616,15 +616,18 @@ class PlansController extends APIController
         $complete = checkParam('complete') ?? true;
         $complete = $complete && $complete !== 'false';
 
-        if ($complete) {
-            $plan_day->complete();
-        } else {
-            $plan_day->unComplete();
-        }
+        $user_plan = \DB::transaction(function () use ($complete, $plan_day, $user, $user_plan) {
+            if ($complete) {
+                $plan_day->complete($user->id);
+            } else {
+                $plan_day->unComplete($user->id);
+            }
+
+            $user_plan->calculatePercentageCompleted()->save();
+            return $user_plan;
+        });
 
         $result = $complete ? 'completed' : 'not completed';
-        $user_plan->calculatePercentageCompleted()->save();
-
         return $this->reply([
             'percentage_completed' => (int) $user_plan->percentage_completed,
             'message' => 'Plan Day ' . $result

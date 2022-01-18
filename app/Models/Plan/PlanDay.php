@@ -4,6 +4,7 @@ namespace App\Models\Plan;
 
 use App\Models\Playlist\Playlist;
 use App\Models\Playlist\PlaylistItems;
+use App\Models\Playlist\PlaylistItemsComplete;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Spatie\EloquentSortable\Sortable;
@@ -122,17 +123,58 @@ class PlanDay extends Model implements Sortable
         return $plan_day_items->has_content === 1;
     }
 
-    public function complete()
+    /**
+     * Complete plan day and all items for a given user
+     *
+     * @param int $user_id
+     *
+     * @return void
+     */
+    public function complete(int $user_id = null) : void
     {
-        $user = Auth::user();
+        if (is_null($user_id)) {
+            $user_id = Auth::user()->id;
+        }
         $completed_item = PlanDayComplete::firstOrNew([
-            'user_id'               => $user->id,
-            'plan_day_id'           => $this['id']
+            'user_id'     => $user_id,
+            'plan_day_id' => $this['id']
         ]);
         $completed_item->save();
-        PlaylistItems::where('playlist_id', $this['playlist_id'])->each(function ($playlist_item) {
-            $playlist_item->complete();
-        });
+
+        $this->completePlaylistItems($this['id'], $user_id);
+    }
+
+    /**
+     * Complete all items for the current plan day and a given user
+     *
+     * @param int $plan_day_id
+     * @param int $user_id
+     *
+     * @return bool
+     */
+    public function completePlaylistItems(int $plan_day_id, int $user_id = null) : bool
+    {
+        if (is_null($user_id)) {
+            $user_id = Auth::user()->id;
+        }
+
+        $items_to_complete = PlaylistItems::select(['playlist_items.id'])
+            ->withItemsToCompleteByPlanDayAndUser($plan_day_id, $user_id)
+            ->get();
+
+        $inserts_items_completed = [];
+        foreach ($items_to_complete as $item) {
+            $inserts_items_completed[] = [
+                'user_id' => $user_id,
+                'playlist_item_id' => $item->id
+            ];
+        }
+
+        if (!empty($inserts_items_completed)) {
+            return PlaylistItemsComplete::insert($inserts_items_completed);
+        }
+
+        return false;
     }
 
     /**
@@ -151,15 +193,41 @@ class PlanDay extends Model implements Sortable
         )->where('user_playlists.id', $this['playlist_id'])->first();
     }
 
-    public function unComplete()
+    /**
+     * Remove plan day completed record and all items completed for a given user
+     *
+     * @param int $user_id
+     *
+     * @return void
+     */
+    public function unComplete(int $user_id = null) : void
     {
-        $user = Auth::user();
-        $completed_item = PlanDayComplete::where('plan_day_id', $this['id'])
-            ->where('user_id', $user->id);
-        $completed_item->delete();
-        PlaylistItems::where('playlist_id', $this['playlist_id'])->each(function ($playlist_item) {
-            $playlist_item->unComplete();
-        });
+        if (is_null($user_id)) {
+            $user_id = Auth::user()->id;
+        }
+        $this->unCompletePlaylistItems($this['id'], $user_id);
+
+        PlanDayComplete::where('plan_day_id', $this['id'])
+            ->where('user_id', $user_id)
+            ->delete();
+    }
+
+    /**
+     * Remove all items complated for the current plan day and a given user
+     *
+     * @param int $plan_day_id
+     * @param int $user_id
+     *
+     * @return bool
+     */
+    public function unCompletePlaylistItems(int $plan_day_id, int $user_id = null)
+    {
+        if (is_null($user_id)) {
+            $user_id = Auth::user()->id;
+        }
+
+        return PlaylistItemsComplete::withItemsCompletedByPlanDayAndUser($plan_day_id, $user_id)
+        ->delete();
     }
 
     public function playlist()
