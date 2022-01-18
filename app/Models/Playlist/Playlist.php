@@ -145,7 +145,7 @@ class Playlist extends Model
      */
     public function getVersesAttribute()
     {
-        if (sizeof($this->items) > 0) {
+        if ($this->relationLoaded('items') && sizeof($this->items) > 0) {
             return $this->items->sum('verses');
         }
 

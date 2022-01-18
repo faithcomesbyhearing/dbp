@@ -115,7 +115,7 @@ class PlaylistsController extends APIController
         if ($show_text) {
             $show_details = $show_text;
         }
-        
+
         $language_id = null;
         if ($iso !== null) {
             $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
@@ -150,8 +150,12 @@ class PlaylistsController extends APIController
         $playlists = Playlist::with('user')
             ->where('draft', 0)
             ->where('plan_id', 0)
-            ->when($show_details, function ($query) {
-                $query->with('items');
+            ->when($show_details, function ($query) use ($user) {
+                $query->with(['items' => function ($query_items) use ($user) {
+                    if (!empty($user)) {
+                        $query_items->withPlaylistItemCompleted($user->id);
+                    }
+                }]);
             })
             ->when($language_id, function ($q) use ($language_id) {
                 $q->where('user_playlists.language_id', $language_id);
@@ -1294,12 +1298,20 @@ class PlaylistsController extends APIController
 
     public function getPlaylist($user, $playlist_id)
     {
+        $user_id = empty($user) ? 0 : $user->id;
         $select = ['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')];
-        $playlist = Playlist::with('items')
-            ->with('user')
-            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user) {
-                $user_id = empty($user) ? 0 : $user->id;
-                $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')->where('playlists_followers.user_id', $user_id);
+        $playlist = Playlist::with(['user', 'items' => function ($query_items) use ($user_id) {
+            if (!empty($user_id)) {
+                $query_items->withPlaylistItemCompleted($user_id);
+            }
+
+            $query_items->with(['fileset' => function ($query_fileset) {
+                $query_fileset->with('bible');
+            }]);
+        }])
+            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
+                $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
+                    ->where('playlists_followers.user_id', $user_id);
             })
             ->where('user_playlists.id', $playlist_id)
             ->select($select)
