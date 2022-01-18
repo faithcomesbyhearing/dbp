@@ -75,4 +75,25 @@ class PlaylistItemsComplete extends Model
             ->where('user_id', $user_id)
             ->delete();
     }
+
+    /**
+     * Get query with all items completed for a plan day and a specific user
+     *
+     * @param Builder $query
+     * @param int $plan_day_id
+     * @param int $user_id
+     *
+     * @return Builder
+     */
+    public function scopeWithItemsCompletedByPlanDayAndUser(
+        Builder $query,
+        int $plan_day_id,
+        int $user_id
+    ) : Builder {
+        return $query
+            ->join('playlist_items', 'playlist_items.id', 'playlist_items_completed.playlist_item_id')
+            ->join('plan_days as pld', 'playlist_items.playlist_id', 'pld.playlist_id')
+            ->where('pld.id', $plan_day_id)
+            ->where('playlist_items_completed.user_id', $user_id);
+    }
 }

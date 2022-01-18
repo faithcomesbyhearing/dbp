@@ -575,4 +575,29 @@ class PlaylistItems extends Model implements Sortable
                 ->where('playlist_items_completed.user_id', $user_id);
         });
     }
+
+    /**
+     * Get query with all items that have NOT been completed for a plan day and a specific user
+     *
+     * @param Builder $query
+     * @param int $plan_day_id
+     * @param int $user_id
+     *
+     * @return Builder
+     */
+    public function scopeWithItemsToCompleteByPlanDayAndUser(
+        Builder $query,
+        int $plan_day_id,
+        int $user_id
+    ) : Builder {
+        return $query
+            ->join('plan_days as pld', 'playlist_items.playlist_id', 'pld.playlist_id')
+            ->leftJoin('playlist_items_completed as pldc', function ($query_join) use ($user_id) {
+                $query_join
+                    ->on('pldc.playlist_item_id', '=', 'playlist_items.id')
+                    ->where('pldc.user_id', $user_id);
+            })
+            ->where('pld.id', $plan_day_id)
+            ->whereNull('pldc.playlist_item_id');
+    }
 }
