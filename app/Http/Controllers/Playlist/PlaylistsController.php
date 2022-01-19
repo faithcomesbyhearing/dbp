@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Playlist;
 
+use Spatie\Fractalistic\ArraySerializer;
 use App\Traits\AccessControlAPI;
 use App\Http\Controllers\APIController;
 use App\Models\Bible\Bible;
@@ -13,8 +14,10 @@ use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
 use App\Models\Playlist\PlaylistFollower;
 use App\Models\Playlist\PlaylistItems;
+use App\Models\Bible\BibleVerse;
 use App\Traits\CallsBucketsTrait;
 use App\Traits\CheckProjectMembership;
+use App\Transformers\PlaylistTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
@@ -838,7 +841,34 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(404)->replyWithError('Bible Not Found');
         }
 
-        $playlist = $this->getPlaylist(false, $playlist_id);
+        // $playlist = $this->getPlaylist(false, $playlist_id);
+
+        $playlist = Playlist::with(['user', 'items' => function ($query_items) {
+            $query_items->select([
+                'id',
+                'fileset_id',
+                'book_id',
+                'chapter_start',
+                'chapter_end',
+                'playlist_id',
+                'verse_start',
+                'verse_end',
+                'verses',
+                'duration',
+                \DB::Raw('false as completed'),
+            ]);
+            
+
+            $query_items->with(['fileset' => function ($query_fileset) {
+                $query_fileset->with(['bible' => function ($query_bible) {
+                    $query_bible->with(['translations', 'vernacularTranslation', 'books.book']);
+                }]);
+            }]);
+        }])
+            ->where('user_playlists.id', $playlist_id)
+            ->select(['user_playlists.*', DB::Raw('false as following')])
+            ->first();
+
         if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
         }
@@ -906,14 +936,86 @@ class PlaylistsController extends APIController
             }
         }
 
-        $playlist = $this->getPlaylist($user, $playlist->id);
-        $playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $playlist->id, 'v' => $this->v, 'key' => $this->key]);
+        // $playlist = $this->getPlaylist($user, $playlist->id);
+
+        $user_id = empty($user) ? 0 : $user->id;
+
+        $playlist = Playlist::with(['user', 'items' => function ($query_items) {
+            $query_items->select([
+                'id',
+                'fileset_id',
+                'book_id',
+                'chapter_start',
+                'chapter_end',
+                'playlist_id',
+                'verse_start',
+                'verse_end',
+                'verses',
+                'duration',
+                \DB::Raw('false as completed'),
+            ]);
+
+            $query_items->with(['fileset' => function ($query_fileset) {
+                $query_fileset->with(['files.timestamps', 'bible' => function ($query_bible) {
+                    $query_bible->with(['translations', 'vernacularTranslation', 'books.book']);
+                }]);
+            }]);
+        }])
+            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
+                $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
+                    ->where('playlists_followers.user_id', $user_id);
+            })
+            ->where('user_playlists.id', $playlist->id)
+            ->select(['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
+            ->first();
+
+        // $playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $playlist->id, 'v' => $this->v, 'key' => $this->key]);
         $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
 
         if ($show_details && isset($playlist->items)) {
-            $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist->id);
+            // $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist->id);
+
+            // $filesets = Arr::pluck(DB::connection('dbp_users')
+            // ->select('select DISTINCT(fileset_id) from playlist_items where playlist_id = ?', [$playlist->id]), 'fileset_id');
+
+            // $filesets_hashes = DB::connection('dbp')
+            // ->table('bible_filesets')
+            // ->select(['hash_id', 'id'])
+            // ->whereIn('id', $filesets)->get()->pluck('hash_id');
+
+            // $hashes_bibles = DB::connection('dbp')
+            // ->table('bible_fileset_connections')
+            // ->select(['hash_id', 'bible_id'])
+            // // ->whereIn('hash_id', $filesets_hashes->pluck('hash_id'))->get();
+            // ->whereIn('hash_id', $filesets_hashes)->get();
+
+            // $text_filesets = DB::connection('dbp')
+            // ->table('bible_fileset_connections as fc')
+            // ->join('bible_filesets as f', 'f.hash_id', '=', 'fc.hash_id')
+            // ->select(['f.hash_id'])
+            // ->where('f.set_type_code', 'text_plain')
+            // ->whereIn('fc.bible_id', $hashes_bibles->pluck('bible_id'))
+            // ->get();
+
+            // var_dump($text_filesets->pluck('hash_id')->toArray());
+            // $verses_by_hash_id = BibleVerse::select(['bible_verses.*'])
+            //     ->whereIn('hash_id', $text_filesets->pluck('hash_id'))
+            //     ->get()
+            //     ->keyBy('hash_id');
+
+                // var_dump($filesets_hashes->toArray());
+                // var_dump('<br>');
+                // var_dump($hashes_bibles->toArray());
+                // var_dump('<br>');
+                // var_dump($text_filesets->toArray());
+                // var_dump('<br>');
+                // var_dump($verses_by_hash_id->toArray());
+                // exit();
+
             foreach ($playlist->items as $item) {
-                $item->verse_text = $item->getVerseText($playlist_text_filesets);
+                // $item->verse_text = $item->getVerseText($playlist_text_filesets);
+                // $item->verse_text = $item->getVerseText($verses_by_hash_id);
+                $item->verse_text = $item->getVerseText([]);
                 $item->item_timestamps = $item->getTimestamps();
             }
         }
@@ -921,7 +1023,18 @@ class PlaylistsController extends APIController
         $playlist->translation_data = $metadata_items;
         $playlist->translated_percentage = $translated_percentage * 100;
 
-        return $this->reply($playlist);
+        // return $this->reply($playlist);
+        return $this->reply(fractal(
+            $playlist,
+            new PlaylistTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     /**
@@ -1369,6 +1482,7 @@ class PlaylistsController extends APIController
                 $fileset_text_info[$fileset] = $text_filesets[$bible_id] ?? null;
             }
         }
+
         return $fileset_text_info;
     }
 
