@@ -331,16 +331,10 @@ class PlaylistItems extends Model implements Sortable
         return $this;
     }
 
-    public function getVerseText($text_filesets = null)
+    public function getVerseText($verses_by_hash_id = [])
     {
-        if ($text_filesets) {
-            $text_fileset = $text_filesets[$this['fileset_id']][0] ?? null;
-        } else {
-            $fileset = BibleFileset::where('id', $this['fileset_id'])->first();
-            $text_fileset = $fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first();
-        }
+        $text_fileset = $this->fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first();
 
-        $verses = null;
         if ($text_fileset) {
             $where = [
                 ['book_id', $this['book_id']],
@@ -355,7 +349,8 @@ class PlaylistItems extends Model implements Sortable
             $verses =  cacheRemember('playlist_item_text', $cache_params, now()->addDay(), function () use ($text_fileset, $where) {
                 return BibleVerse::where('hash_id', $text_fileset->hash_id)
                     ->where($where)
-                    ->get()->pluck('verse_text');
+                    ->get()
+                    ->pluck('verse_text');
             });
         }
 
@@ -374,24 +369,41 @@ class PlaylistItems extends Model implements Sortable
         $verse_end = $this['verse_end'];
         $cache_params = [$fileset_id, $book, $chapter_start, $chapter_end, $verse_start, $verse_end];
         return cacheRemember('playlist_item_timestamps', $cache_params, now()->addDay(), function () use ($fileset_id, $book, $chapter_start, $chapter_end, $verse_start, $verse_end) {
-            $fileset = BibleFileset::where('id', $fileset_id)->first();
+            $fileset = $this->relationLoaded('fileset')
+                ? $this->fileset
+                : BibleFileset::where('id', $fileset_id)->first();
             if (!$fileset) {
                 return null;
             }
             
-            $bible_files = BibleFile::where('hash_id', $fileset->hash_id)
+            $bible_files_query = $fileset->relationLoaded('files')
+                ? $fileset->files
+                : BibleFile::where('hash_id', $fileset->hash_id);
+            $bible_files_query = $bible_files_query
                 ->when($book, function ($query) use ($book) {
                     return $query->where('book_id', $book);
                 })->where('chapter_start', '>=', $chapter_start)
-                ->where('chapter_end', '<=', $chapter_end)
+                ->where('chapter_end', '<=', $chapter_end);
+            
+            $bible_files = $fileset->relationLoaded('files')
+                ? $bible_files_query
+                : $bible_files_query->get();
+
+            if ($fileset->relationLoaded('files')) {
+                $audioTimestamps = $bible_files
+                    ->pluck('timestamps')
+                    ->filter(function ($timestamp) {
+                        return !empty($timestamp) && !$timestamp->isEmpty();
+                    })
+                    ->sortBy('verse_start');
+            } else {
+                // Fetch Timestamps
+                $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))
+                ->orderBy('verse_start')
                 ->get();
-
-            // Fetch Timestamps
-            $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))->orderBy('verse_start')->get();
-
+            }
 
             if ($audioTimestamps->isEmpty() && ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream')) {
-                $audioTimestamps = [];
                 $bible_files_ids = BibleFile::where([
                     'hash_id' => $fileset->hash_id,
                     'book_id' => $book,
@@ -400,16 +412,18 @@ class PlaylistItems extends Model implements Sortable
                     ->where('chapter_start', '<=', $chapter_end)
                     ->get()->pluck('id');
 
-
-                foreach ($bible_files_ids as $bible_file_id) {
-                    $timestamps = DB::connection('dbp')->select('select t.* from bible_file_stream_bandwidths as b
-                    join bible_file_stream_bytes as s 
-                    on s.stream_bandwidth_id = b.id 
-                    join bible_file_timestamps as t
-                    on t.id = s.timestamp_id
-                    where b.bible_file_id = ? and  s.timestamp_id IS NOT NULL', [$bible_file_id]);
-                    $audioTimestamps = array_merge($audioTimestamps, $timestamps);
-                }
+                $timestamps = sizeof($bible_files_ids) > 0
+                    ? DB::connection('dbp')->select(
+                        'select t.* from bible_file_stream_bandwidths as b
+                        join bible_file_stream_bytes as s 
+                        on s.stream_bandwidth_id = b.id 
+                        join bible_file_timestamps as t
+                        on t.id = s.timestamp_id
+                        where b.bible_file_id IN (?) and  s.timestamp_id IS NOT NULL',
+                        [join(',', $bible_files_ids->toArray())]
+                    )
+                    : [];
+                $audioTimestamps = $timestamps;
             } else {
                 $audioTimestamps = $audioTimestamps->toArray();
             }
