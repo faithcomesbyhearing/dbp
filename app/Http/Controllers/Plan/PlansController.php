@@ -1014,7 +1014,7 @@ class PlansController extends APIController
                         $item->fileset_id = $preferred_fileset->id;
                         $is_streaming = $preferred_fileset->set_type_code === 'audio_stream'
                             || $preferred_fileset->set_type_code === 'audio_drama_stream';
-                        $translated_items[] = (object) [
+                        $translated_items[] = [
                             'translated_id' => $item->id,
                             'fileset_id' => $item->fileset_id,
                             'book_id' => $item->book_id,
