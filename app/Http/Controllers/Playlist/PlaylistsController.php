@@ -679,16 +679,15 @@ class PlaylistsController extends APIController
         $playlist_items_to_create = [];
         $order = 1;
         foreach ($playlist_items as $playlist_item) {
-            $playlist_item = (object) $playlist_item;
             $playlist_item_data = [
                 'playlist_id'       => $playlist->id,
-                'fileset_id'        => $playlist_item->fileset_id,
-                'book_id'           => $playlist_item->book_id,
-                'chapter_start'     => $playlist_item->chapter_start,
-                'chapter_end'       => $playlist_item->chapter_end,
-                'verse_start'       => $playlist_item->verse_start ?? null,
-                'verse_end'         => $playlist_item->verse_end ?? null,
-                'verses'            => $playlist_items->verses ?? 0,
+                'fileset_id'        => $playlist_item['fileset_id'],
+                'book_id'           => $playlist_item['book_id'],
+                'chapter_start'     => $playlist_item['chapter_start'],
+                'chapter_end'       => $playlist_item['chapter_end'],
+                'verse_start'       => $playlist_item['verse_start'] ?? null,
+                'verse_end'         => $playlist_item['verse_end'] ?? null,
+                'verses'            => $playlist_item['verses'] ?? 0,
                 'order_column'      => $order
             ];
             $playlist_items_to_create[] = $playlist_item_data;
@@ -696,12 +695,37 @@ class PlaylistsController extends APIController
         }
 
         PlaylistItems::insert($playlist_items_to_create);
-        $new_items = PlaylistItems::where('playlist_id', $playlist->id)->orderBy('order_column')->get();
-        $created_playlist_items = [];
-        foreach ($new_items as $key => $playlist_item) {
-            $playlist_item->translated_id = $playlist_items[$key]->translated_id;
+        $new_items = PlaylistItems::select([
+            'id',
+            'fileset_id',
+            'book_id',
+            'chapter_start',
+            'chapter_end',
+            'playlist_id',
+            'verse_start',
+            'verse_end',
+            'verses',
+            'duration',
+            \DB::Raw('false as completed'),
+        ])
+            ->where('playlist_id', $playlist->id)
+            ->with(['fileset' => function ($query_fileset) {
+                $query_fileset->with(['bible' => function ($query_bible) {
+                    $query_bible->with([
+                        'translations',
+                        'vernacularTranslation',
+                        'books.book'
+                    ]);
+                }]);
+            }])
+            ->orderBy('order_column')
+            ->get();
 
-            $created_playlist_items[] = $playlist_item;
+        $created_playlist_items = [];
+
+        foreach ($new_items as $key => $new_playlist_item) {
+            $new_playlist_item->translated_id = $playlist_items[$key]['translated_id'];
+            $created_playlist_items[$new_playlist_item->translated_id] = $new_playlist_item;
         }
 
         return $created_playlist_items;
@@ -841,22 +865,8 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(404)->replyWithError('Bible Not Found');
         }
 
-        // $playlist = $this->getPlaylist(false, $playlist_id);
-
-        $playlist = Playlist::with(['user', 'items' => function ($query_items) {
-            $query_items->select([
-                'id',
-                'fileset_id',
-                'book_id',
-                'chapter_start',
-                'chapter_end',
-                'playlist_id',
-                'verse_start',
-                'verse_end',
-                'verses',
-                'duration',
-                \DB::Raw('false as completed'),
-            ]);
+        $playlist = Playlist::with(['user', 'items' => function ($query_items) use ($user) {
+            $query_items->withPlaylistItemCompleted($user->id);
             
 
             $query_items->with(['fileset' => function ($query_fileset) {
@@ -896,7 +906,7 @@ class PlaylistsController extends APIController
                     if ($has_translation) {
                         $item->fileset_id = $preferred_fileset->id;
                         $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' || $preferred_fileset->set_type_code === 'audio_drama_stream';
-                        $translated_items[] = (object)[
+                        $translated_items[] = [
                             'translated_id' => $item->id,
                             'fileset_id' => $item->fileset_id,
                             'book_id' => $item->book_id,
@@ -904,6 +914,7 @@ class PlaylistsController extends APIController
                             'chapter_end' => $item->chapter_end,
                             'verse_start' => $is_streaming ? $item->verse_start : null,
                             'verse_end' => $is_streaming ? $item->verse_end : null,
+                            'verses' => $item->verses,
                         ];
                         $total_translated_items += 1;
                     }
@@ -923,20 +934,13 @@ class PlaylistsController extends APIController
 
 
         $playlist = Playlist::create($playlist_data);
-        $items = collect($this->createTranslatedPlaylistItems($playlist, $translated_items));
-
+        $items = $this->createTranslatedPlaylistItems($playlist, $translated_items);
 
         foreach ($metadata_items as $item) {
-            $new_item = $items->first(function ($new_item) use ($item) {
-                return $new_item->translated_id === $item->id;
-            });
-            if ($new_item) {
-                unset($new_item->translated_id);
-                $item->translation_item = $new_item;
+            if (isset($items[$item->id])) {
+                $item->translation_item = $items[$item->id];
             }
         }
-
-        // $playlist = $this->getPlaylist($user, $playlist->id);
 
         $user_id = empty($user) ? 0 : $user->id;
 
@@ -969,52 +973,10 @@ class PlaylistsController extends APIController
             ->select(['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
             ->first();
 
-        // $playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $playlist->id, 'v' => $this->v, 'key' => $this->key]);
         $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
 
         if ($show_details && isset($playlist->items)) {
-            // $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist->id);
-
-            // $filesets = Arr::pluck(DB::connection('dbp_users')
-            // ->select('select DISTINCT(fileset_id) from playlist_items where playlist_id = ?', [$playlist->id]), 'fileset_id');
-
-            // $filesets_hashes = DB::connection('dbp')
-            // ->table('bible_filesets')
-            // ->select(['hash_id', 'id'])
-            // ->whereIn('id', $filesets)->get()->pluck('hash_id');
-
-            // $hashes_bibles = DB::connection('dbp')
-            // ->table('bible_fileset_connections')
-            // ->select(['hash_id', 'bible_id'])
-            // // ->whereIn('hash_id', $filesets_hashes->pluck('hash_id'))->get();
-            // ->whereIn('hash_id', $filesets_hashes)->get();
-
-            // $text_filesets = DB::connection('dbp')
-            // ->table('bible_fileset_connections as fc')
-            // ->join('bible_filesets as f', 'f.hash_id', '=', 'fc.hash_id')
-            // ->select(['f.hash_id'])
-            // ->where('f.set_type_code', 'text_plain')
-            // ->whereIn('fc.bible_id', $hashes_bibles->pluck('bible_id'))
-            // ->get();
-
-            // var_dump($text_filesets->pluck('hash_id')->toArray());
-            // $verses_by_hash_id = BibleVerse::select(['bible_verses.*'])
-            //     ->whereIn('hash_id', $text_filesets->pluck('hash_id'))
-            //     ->get()
-            //     ->keyBy('hash_id');
-
-                // var_dump($filesets_hashes->toArray());
-                // var_dump('<br>');
-                // var_dump($hashes_bibles->toArray());
-                // var_dump('<br>');
-                // var_dump($text_filesets->toArray());
-                // var_dump('<br>');
-                // var_dump($verses_by_hash_id->toArray());
-                // exit();
-
             foreach ($playlist->items as $item) {
-                // $item->verse_text = $item->getVerseText($playlist_text_filesets);
-                // $item->verse_text = $item->getVerseText($verses_by_hash_id);
                 $item->verse_text = $item->getVerseText([]);
                 $item->item_timestamps = $item->getTimestamps();
             }
@@ -1023,7 +985,6 @@ class PlaylistsController extends APIController
         $playlist->translation_data = $metadata_items;
         $playlist->translated_percentage = $translated_percentage * 100;
 
-        // return $this->reply($playlist);
         return $this->reply(fractal(
             $playlist,
             new PlaylistTransformer(
