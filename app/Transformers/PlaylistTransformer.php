@@ -33,6 +33,7 @@ class PlaylistTransformer extends BaseTransformer
      */
     public function transform($playlist)
     {
+        $book_name_indexed_by_id = [];
         return [
             "id" => $playlist->id,
             "name" => $playlist->name,
@@ -59,12 +60,12 @@ class PlaylistTransformer extends BaseTransformer
                     "verse_end" => $item->verse_end,
                     "verses" => $item->verses,
                     "duration" => $item->duration,
-                    "bible_id" => $bible ? $bible->id : null,
                     "completed" => $item->completed,
+                    "bible_id" => $bible ? $bible->id : null,
+                    "verse_text" => $item->verse_text,
+                    "item_timestamps" => $item->item_timestamps,
                     "full_chapter" => $item->full_chapter,
                     "path" => $item->path,
-                    "item_timestamps" => $item->item_timestamps,
-                    "verse_text" => $item->verse_text,
                     "metadata" => $bible ? [
                         "bible_id" => $bible->id,
                         "bible_name" => optional(
@@ -83,12 +84,93 @@ class PlaylistTransformer extends BaseTransformer
                     'key' => $this->params['key']
                 ]
             ),
+            "total_duration" => $playlist->total_duration,
+            "translation_data" => array_map(function ($item_translation) use (&$book_name_indexed_by_id) {
+                $bible = optional($item_translation->fileset->bible)->first();
+                $book_name = $bible
+                    ? $this->getBookNameFromItem($book_name_indexed_by_id, $bible, $item_translation->book_id)
+                    : null;
+
+                $bible_translation_item = null;
+                $book_name_translation_item = null;
+                if (isset($item_translation->translation_item)) {
+                    $bible_translation_item = optional($item_translation->translation_item->fileset->bible)->first();
+                    $book_name_translation_item = $bible_translation_item
+                        ? $this->getBookNameFromItem(
+                            $book_name_indexed_by_id,
+                            $bible_translation_item,
+                            $item_translation->translation_item->book_id
+                        )
+                        : null;
+                }
+
+                return [
+                    "id" => $item_translation->id,
+                    "fileset_id" => $item_translation->fileset_id,
+                    "book_id" => $item_translation->book_id,
+                    "chapter_start" => $item_translation->chapter_start,
+                    "chapter_end" => $item_translation->chapter_end,
+                    "verse_start" => $item_translation->verse_start,
+                    "verse_end" => $item_translation->verse_end,
+                    "verses" => $item_translation->verses,
+                    "duration" => $item_translation->duration,
+                    "bible_id" => $bible ? $bible->id : null,
+                    "fileset" => [
+                        "id" => $item_translation->fileset->id,
+                        "asset_id" => $item_translation->fileset->asset_id,
+                        "set_type_code" => $item_translation->fileset->set_type_code,
+                        "set_size_code" => $item_translation->fileset->set_size_code,
+                        "codec" => $item_translation->fileset->codec,
+                        "container" => $item_translation->fileset->container,
+                        "stock_no" => $item_translation->fileset->stock_no,
+                        "timing_est_err" => $item_translation->fileset->timing_est_err,
+                        "volume" => $item_translation->fileset->volume,
+                        "meta" => $item_translation->fileset->meta
+                    ],
+                    "translation_item" => $item_translation->translation_item
+                        ? [
+                            "id" => $item_translation->translation_item->id,
+                            "fileset_id" => $item_translation->translation_item->fileset_id,
+                            "book_id" => $item_translation->translation_item->book_id,
+                            "chapter_start" => $item_translation->translation_item->chapter_start,
+                            "chapter_end" => $item_translation->translation_item->chapter_end,
+                            "verse_start" => $item_translation->translation_item->verse_start,
+                            "verse_end" => $item_translation->translation_item->verse_end,
+                            "verses" => $item_translation->translation_item->verses,
+                            "duration" =>
+                            $item_translation->translation_item->duration,
+                            "completed" => $item_translation->translation_item->completed,
+                            "full_chapter" => $item_translation->translation_item->full_chapter,
+                            "path" => $item_translation->translation_item->path,
+                            "metadata" => [
+                                "bible_id" => $bible_translation_item->id,
+                                "bible_name" => optional(
+                                    $bible_translation_item->translations->where('language_id', $GLOBALS['i18n_id'])->first()
+                                )->name,
+                                "bible_vname" => optional($bible_translation_item->vernacularTranslation)->name,
+                                "book_name" => $book_name_translation_item
+                            ]]
+                        : [],
+                    "completed" => $item_translation->completed,
+                    "full_chapter" => $item_translation->full_chapter,
+                    "path" => $item_translation->path,
+                    "metadata" => [
+                        "bible_id" => $bible->id,
+                        "bible_name" => optional(
+                            $bible->translations->where('language_id', $GLOBALS['i18n_id'])->first()
+                        )->name,
+                        "bible_vname" => optional($bible->vernacularTranslation)->name,
+                        "book_name" => $book_name
+                    ]
+                ];
+            }, $playlist->translation_data),
+            "translated_percentage" => $playlist->translated_percentage,
             "verses" => $playlist->verses,
-            "verses" => 0,
             "user" => [
                 "id" => $playlist->user->id,
                 "name" => $playlist->user->name
-            ]
+            ],
+
         ];
     }
 }
