@@ -14,6 +14,7 @@ use App\Models\Plan\PlanDay;
 use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
 use App\Transformers\PlanTransformer;
+use App\Transformers\PlanTranslateTransformer;
 use App\Transformers\PlanDayPlaylistItemsTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -971,11 +972,45 @@ class PlansController extends APIController
             'plan_id'               => $new_plan->id
         ]);
 
-        $plan = $this->show($request, $new_plan->id)->original;
-        $plan['translation_data'] = $translation_data;
-        $plan['translated_percentage'] = $translated_percentage;
+        $plan = $this->getPlan($new_plan->id, $user);
 
-        return $plan;
+        $show_details = checkBoolean('show_details');
+        $show_text = checkBoolean('show_text');
+        if ($show_text) {
+            $show_details = $show_text;
+        }
+
+        $playlist_controller = new PlaylistsController();
+        if ($show_details) {
+            foreach ($plan->days as $day) {
+                $day_playlist = $playlist_controller->getPlaylist($user, $day->playlist_id);
+                $day_playlist->path = route(
+                    'v4_internal_playlists.hls',
+                    ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]
+                );
+                if ($show_text) {
+                    foreach ($day_playlist->items as $item) {
+                        $item->verse_text = $item->getVerseText();
+                    }
+                }
+                $day->playlist = $day_playlist;
+            }
+        }
+
+        $plan->translation_data = $translation_data;
+        $plan->translated_percentage = $translated_percentage;
+
+        return $this->reply(fractal(
+            $plan,
+            new PlanTranslateTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     private function translatePlaylist(
@@ -1014,7 +1049,7 @@ class PlansController extends APIController
                         $item->fileset_id = $preferred_fileset->id;
                         $is_streaming = $preferred_fileset->set_type_code === 'audio_stream'
                             || $preferred_fileset->set_type_code === 'audio_drama_stream';
-                        $translated_items[] = (object) [
+                        $translated_items[] = [
                             'translated_id' => $item->id,
                             'fileset_id' => $item->fileset_id,
                             'book_id' => $item->book_id,
@@ -1042,14 +1077,11 @@ class PlansController extends APIController
 
 
         $playlist = Playlist::create($playlist_data);
-        $items = collect($playlist_controller->createTranslatedPlaylistItems($playlist, $translated_items));
+        $items = $playlist_controller->createTranslatedPlaylistItems($playlist, $translated_items);
+
         foreach ($metadata_items as $item) {
-            $new_item = $items->first(function ($new_item) use ($item) {
-                return $new_item->translated_id === $item->id;
-            });
-            if ($new_item) {
-                unset($new_item->translated_id);
-                $item->translation_item = $new_item;
+            if (isset($items[$item->id])) {
+                $item->translation_item = $items[$item->id];
             }
         }
 

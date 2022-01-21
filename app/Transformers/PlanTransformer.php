@@ -2,16 +2,8 @@
 
 namespace App\Transformers;
 
-class PlanTransformer extends BaseTransformer
+class PlanTransformer extends PlanTransformerBase
 {
-    private $params = [];
-
-    public function __construct($params = [])
-    {
-        parent::__construct();
-        $this->params = $params;
-    }
-
     /**
      * A Fractal transformer.
      *
