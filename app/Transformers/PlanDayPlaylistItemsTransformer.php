@@ -2,30 +2,8 @@
 
 namespace App\Transformers;
 
-class PlanDayPlaylistItemsTransformer extends BaseTransformer
+class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
 {
-    private $params = [];
-
-    public function __construct($params = [])
-    {
-        parent::__construct();
-        $this->params = $params;
-    }
-
-    private function getBookNameFromItem(&$book_name_indexed_by_id, $bible, $item_book_id)
-    {
-        if (isset($book_name_indexed_by_id[$item_book_id]) &&
-            !is_null($book_name_indexed_by_id[$item_book_id])
-        ) {
-            return $book_name_indexed_by_id[$item_book_id];
-        } else {
-            $book_name_indexed_by_id[$item_book_id] = optional(
-                $bible->books->where('book_id', $item_book_id)->first()
-            )->name;
-            return $book_name_indexed_by_id[$item_book_id];
-        }
-    }
-
     /**
      * A Fractal transformer.
      *
