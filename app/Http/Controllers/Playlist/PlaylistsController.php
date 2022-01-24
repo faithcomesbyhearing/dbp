@@ -158,6 +158,9 @@ class PlaylistsController extends APIController
                     if (!empty($user)) {
                         $query_items->withPlaylistItemCompleted($user->id);
                     }
+                    $query_items->with(['fileset' => function ($query_fileset) {
+                        $query_fileset->with('bible');
+                    }]);
                 }]);
             })
             ->when($language_id, function ($q) use ($language_id) {
@@ -184,6 +187,10 @@ class PlaylistsController extends APIController
             if ($show_text && isset($playlist->items)) {
                 foreach ($playlist->items as $item) {
                     $item->verse_text = $item->getVerseText();
+                }
+
+                foreach ($playlist->items as $item) {
+                    unset($item->fileset);
                 }
             }
             $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
@@ -383,10 +390,11 @@ class PlaylistsController extends APIController
         
         if ($show_text && isset($playlist->items)) {
             $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist_id);
-            
+
             foreach ($playlist->items as $item) {
                 $item->verse_text = $item->getVerseText($playlist_text_filesets);
                 $item->item_timestamps = $item->getTimestamps();
+                unset($item->fileset);
             }
         }
 
