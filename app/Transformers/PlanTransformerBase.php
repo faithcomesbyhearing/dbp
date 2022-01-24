@@ -52,6 +52,7 @@ class PlanTransformerBase extends BaseTransformer
             "asset_id" => $fileset->asset_id,
             "set_type_code" => $fileset->set_type_code,
             "set_size_code" => $fileset->set_size_code,
+            "bitrate" => $fileset->bitrate,
             "codec" => $fileset->codec,
             "container" => $fileset->container,
             "stock_no" => $fileset->stock_no,
