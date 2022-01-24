@@ -333,8 +333,17 @@ class PlaylistItems extends Model implements Sortable
 
     public function getVerseText($verses_by_hash_id = [])
     {
-        $text_fileset = $this->fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first();
+        $text_fileset = null;
 
+        if (!empty($verses_by_hash_id)) {
+            $text_fileset = $verses_by_hash_id[$this['fileset_id']][0] ?? null;
+        }
+
+        if (empty($text_fileset)) {
+            $text_fileset = $this->fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first();
+        }
+
+        $verses = null;
         if ($text_fileset) {
             $where = [
                 ['book_id', $this['book_id']],
