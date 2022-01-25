@@ -27,7 +27,6 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
                 return [
                     "id" => $day->id,
                     "playlist_id" => $day->playlist_id,
-                    "completed" => $day->completed,
                     "playlist" => $day->playlist
                         ? [
                             "id" => $day->playlist->id,
@@ -45,7 +44,7 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
                                     ? $this->getBookNameFromItem($book_name_indexed_by_id, $bible, $item->book_id)
                                     : null;
 
-                                return [
+                                $result_item = [
                                     "id" => $item->id,
                                     "fileset_id" => $item->fileset_id,
                                     "book_id" => $item->book_id,
@@ -68,6 +67,12 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
                                         "book_name" => $book_name
                                     ] : [],
                                 ];
+
+                                if (isset($item->verse_text)) {
+                                    $result_item["verse_text"] = $item->verse_text;
+                                }
+
+                                return $result_item;
                             }),
                             "path" => route(
                                 'v4_internal_playlists.hls',
@@ -85,6 +90,7 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
                             ]
                         ]
                     : [],
+                    "completed" => $day->completed
                 ];
             }),
             "user" => [
