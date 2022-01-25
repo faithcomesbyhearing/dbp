@@ -16,6 +16,7 @@ use App\Models\Playlist\Playlist;
 use App\Transformers\PlanTransformer;
 use App\Transformers\PlanTranslateTransformer;
 use App\Transformers\PlanDayPlaylistItemsTransformer;
+use App\Transformers\PlanAndPlaylistTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -273,18 +274,66 @@ class PlansController extends APIController
             $show_details = $show_text;
         }
 
-        $playlist_controller = new PlaylistsController();
         if ($show_details) {
             foreach ($plan->days as $day) {
-                $day_playlist = $playlist_controller->getPlaylist($user, $day->playlist_id);
-                $day_playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $day_playlist->id, 'v' => $this->v, 'key' => $this->key]);
-                if ($show_text) {
-                    foreach ($day_playlist->items as $item) {
-                        $item->verse_text = $item->getVerseText();
+                $day_playlist_ids[] = $day->playlist_id;
+            }
+
+            $user_id = empty($user) ? 0 : $user->id;
+            $playlists = Playlist::with(['user', 'items' => function ($query_items) use ($user_id) {
+                if (!empty($user_id)) {
+                    $query_items->withPlaylistItemCompleted($user_id);
+                }
+
+                $query_items->with(['fileset' => function ($query_fileset) {
+                    $query_fileset->with('bible');
+                }]);
+            }])
+                ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
+                    $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
+                        ->where('playlists_followers.user_id', $user_id);
+                })
+                ->whereIn('user_playlists.id', $day_playlist_ids)
+                ->select(['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
+                ->get()
+                ->keyBy('id');
+
+            foreach ($plan->days as $day) {
+                if (isset($playlists[$day->playlist_id])) {
+                    $day->playlist = $playlists[$day->playlist_id];
+                    $day->playlist->path = route(
+                        'v4_internal_playlists.hls',
+                        ['playlist_id'  => $day->playlist->id, 'v' => $this->v, 'key' => $this->key]
+                    );
+                    if (isset($day->playlist->items)) {
+                        $day->playlist->items = $day->playlist->items->map(function ($item) use ($show_text) {
+                            if (isset($item->fileset, $item->fileset->bible)) {
+                                $bible = $item->fileset->bible->first();
+                                if ($bible) {
+                                    $item->bible_id = $bible->id;
+                                }
+                            }
+
+                            if ($show_text) {
+                                $item->verse_text = $item->getVerseText();
+                            }
+                            return $item;
+                        });
                     }
                 }
-                $day->playlist = $day_playlist;
             }
+
+            return fractal(
+                $plan,
+                new PlanDayPlaylistItemsTransformer(
+                    [
+                        'user' => $user,
+                        'v' => $this->v,
+                        'key' => $this->key,
+                    ]
+                ),
+                new ArraySerializer()
+            );
         }
 
         return $this->reply($plan);
