@@ -68,9 +68,9 @@ class PlanTransformerBase extends BaseTransformer
      * @param Array $item_translations
      * @return Array
      */
-    protected function parseTranslationData(Array $item_translations) : Array
+    protected function parseTranslationData(Array $item_translations, bool $render_bible_id = true) : Array
     {
-        return array_map(function (PlaylistItems $item_translation) use (&$book_name_indexed_by_id) {
+        return array_map(function (PlaylistItems $item_translation) use (&$book_name_indexed_by_id, $render_bible_id) {
             $bible = optional($item_translation->fileset->bible)->first();
             $book_name = $bible
                 ? $this->getBookNameFromItem($book_name_indexed_by_id, $bible, $item_translation->book_id)
@@ -102,21 +102,7 @@ class PlanTransformerBase extends BaseTransformer
                 "duration" => $item_translation->duration,
                 "bible_id" => $bible ? $bible->id : null,
                 "fileset" => $this->parseTranslationDataFileset($item_translation->fileset),
-                "completed" => $item_translation->completed,
-                "full_chapter" => $item_translation->full_chapter,
-                "path" => $item_translation->path,
-                "metadata" => [
-                    "bible_id" => $bible->id,
-                    "bible_name" => optional(
-                        $bible->translations->where('language_id', $GLOBALS['i18n_id'])->first()
-                    )->name,
-                    "bible_vname" => optional($bible->vernacularTranslation)->name,
-                    "book_name" => $book_name
-                ]
-            ];
-
-            if (isset($item_translation->translation_item) && !empty($item_translation->translation_item)) {
-                $result["translation_item"] = [
+                "translation_item" => $item_translation->translation_item ? [
                     "id" => $item_translation->translation_item->id,
                     "fileset_id" => $item_translation->translation_item->fileset_id,
                     "book_id" => $item_translation->translation_item->book_id,
@@ -141,7 +127,26 @@ class PlanTransformerBase extends BaseTransformer
                         "bible_vname" => optional($bible_translation_item->vernacularTranslation)->name,
                         "book_name" => $book_name_translation_item
                     ]
-                ];
+                ] : [],
+                "completed" => $item_translation->completed,
+                "full_chapter" => $item_translation->full_chapter,
+                "path" => $item_translation->path,
+                "metadata" => [
+                    "bible_id" => $bible->id,
+                    "bible_name" => optional(
+                        $bible->translations->where('language_id', $GLOBALS['i18n_id'])->first()
+                    )->name,
+                    "bible_vname" => optional($bible->vernacularTranslation)->name,
+                    "book_name" => $book_name
+                ]
+            ];
+
+            if ($render_bible_id === false) {
+                unset($result["bible_id"]);
+            }
+
+            if (!isset($item_translation->translation_item) || empty($item_translation->translation_item)) {
+                unset($result["translation_item"]);
             }
 
             return $result;

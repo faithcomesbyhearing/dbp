@@ -12,7 +12,7 @@ class PlaylistTransformer extends PlanTransformerBase
     public function transform($playlist)
     {
         $book_name_indexed_by_id = [];
-        return [
+        $result = [
             "id" => $playlist->id,
             "name" => $playlist->name,
             "featured" => $playlist->featured,
@@ -63,8 +63,6 @@ class PlaylistTransformer extends PlanTransformerBase
                 ]
             ),
             "total_duration" => $playlist->total_duration,
-            "translation_data" => $this->parseTranslationData($playlist->translation_data),
-            "translated_percentage" => $playlist->translated_percentage,
             "verses" => $playlist->verses,
             "user" => [
                 "id" => $playlist->user->id,
@@ -72,5 +70,15 @@ class PlaylistTransformer extends PlanTransformerBase
             ],
 
         ];
+
+        if (isset($playlist->translation_data) && !empty($playlist->translation_data)) {
+            $result["translation_data"] = $this->parseTranslationData($playlist->translation_data);
+        }
+
+        if (isset($playlist->translated_percentage) && !empty($playlist->translated_percentage)) {
+            $result["translated_percentage"] = $playlist->translated_percentage;
+        }
+
+        return $result;
     }
 }
