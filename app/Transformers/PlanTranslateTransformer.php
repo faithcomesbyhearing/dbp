@@ -17,6 +17,7 @@ class PlanTranslateTransformer extends PlanTransformerBase
             "id"         => $plan->id,
             "name"       => $plan->name,
             "thumbnail"  => $plan->thumbnail,
+            "language_id"  => $plan->language_id,
             "featured"   => $plan->featured,
             "suggested_start_date" => $plan->suggested_start_date,
             "draft"      => $plan->draft,
@@ -26,9 +27,10 @@ class PlanTranslateTransformer extends PlanTransformerBase
             "percentage_completed" => (int) $plan->percentage_completed,
             "days" => $plan->days->map(function ($day) {
                 return [
-                    "id"          => $day->id,
+                    "id" => $day->id,
                     "playlist_id" => $day->playlist_id,
-                    "completed"   => (bool) $day->completed
+                    "playlist" => $this->parsePlaylistData($day->playlist),
+                    "completed" => $day->completed
                 ];
             }),
             "user" => [
@@ -36,7 +38,7 @@ class PlanTranslateTransformer extends PlanTransformerBase
                 "name" => $this->params['user']->name,
             ],
             "translation_data" => array_map(function ($item_translations) {
-                return $this->parseTranslationData($item_translations);
+                return $this->parseTranslationData($item_translations, false);
             }, $plan->translation_data),
             "translated_percentage" => $plan->translated_percentage
         ];

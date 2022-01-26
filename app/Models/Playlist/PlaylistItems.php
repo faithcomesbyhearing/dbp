@@ -12,6 +12,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
 
@@ -282,7 +283,7 @@ class PlaylistItems extends Model implements Sortable
                 ->first();
         });
 
-        $bible_files = cacheRemember(
+        $bible_files = $fileset ? cacheRemember(
             'bible_file_verses',
             [$fileset->hash_id, $book_id, $chapter_start, $chapter_end],
             now()->addDay(),
@@ -295,7 +296,7 @@ class PlaylistItems extends Model implements Sortable
                     ])
                     ->get();
             }
-        );
+        ) : [];
         $verses_middle = 0;
         foreach ($bible_files as $bible_file) {
             $verses_middle += ($bible_file->verse_start - 1) + $bible_file->verse_end;
@@ -308,7 +309,9 @@ class PlaylistItems extends Model implements Sortable
 
         // Try to get the verse count from the bible_verses table
         if (!$verses) {
-            $text_fileset = $fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first();
+            $text_fileset = $fileset
+                ? $fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first()
+                : null;
             if ($text_fileset) {
                 $verses = cacheRemember('playlist_item_verses', [
                     $text_fileset->hash_id,
@@ -340,7 +343,9 @@ class PlaylistItems extends Model implements Sortable
         }
 
         if (empty($text_fileset)) {
-            $text_fileset = $this->fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first();
+            $text_fileset = $this->fileset
+                ? $this->fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first()
+                : null;
         }
 
         $verses = null;
@@ -622,5 +627,54 @@ class PlaylistItems extends Model implements Sortable
             })
             ->where('pld.id', $plan_day_id)
             ->whereNull('pldc.playlist_item_id');
+    }
+
+    public static function findByIdsWithFilesetRelation(Array $playlist_ids) : Collection
+    {
+        return PlaylistItems::select([
+            'id',
+            'fileset_id',
+            'book_id',
+            'chapter_start',
+            'chapter_end',
+            'playlist_id',
+            'verse_start',
+            'verse_end',
+            'order_column',
+            'verses',
+            'duration',
+            \DB::Raw('false as completed'),
+        ])
+            ->whereIn('playlist_id', $playlist_ids)
+            ->with(['fileset' => function ($query_fileset) {
+                $query_fileset->with(['bible' => function ($query_bible) {
+                    $query_bible->with([
+                        'translations',
+                        'vernacularTranslation',
+                        'books.book'
+                    ]);
+                }]);
+            }])
+            ->orderBy('id')
+            ->get();
+    }
+
+    public function generateUniqueKey() : string
+    {
+        return implode(
+            '-',
+            [
+                'playlist_id'   => $this['playlist_id'],
+                'fileset_id'    => $this['fileset_id'],
+                'book_id'       => $this['book_id'],
+                'chapter_start' => $this['chapter_start'],
+                'chapter_end'   => $this['chapter_end'],
+                'verse_start'   => $this['verse_start'] ?? null,
+                'verse_end'     => $this['verse_end'] ?? null,
+                'verses'        => $this['verses'] ?? 0,
+                'order_column'  => $this['order_column'],
+                'duration'      => $this['duration']
+            ]
+        );
     }
 }
