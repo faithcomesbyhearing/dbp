@@ -302,19 +302,8 @@ class PlansController extends APIController
             foreach ($plan->days as $day) {
                 if (isset($playlists[$day->playlist_id])) {
                     $day->playlist = $playlists[$day->playlist_id];
-                    $day->playlist->path = route(
-                        'v4_internal_playlists.hls',
-                        ['playlist_id'  => $day->playlist->id, 'v' => $this->v, 'key' => $this->key]
-                    );
                     if (isset($day->playlist->items)) {
                         $day->playlist->items = $day->playlist->items->map(function ($item) use ($show_text) {
-                            if (isset($item->fileset, $item->fileset->bible)) {
-                                $bible = $item->fileset->bible->first();
-                                if ($bible) {
-                                    $item->bible_id = $bible->id;
-                                }
-                            }
-
                             if ($show_text) {
                                 $item->verse_text = $item->getVerseText();
                             }
@@ -978,7 +967,7 @@ class PlansController extends APIController
             'draft'                 => $draft,
             'suggested_start_date'  => $plan->suggested_start_date,
             'thumbnail'             => $plan->thumbnail,
-            'language_id'           => $plan->language_id,
+            'language_id'           => $bible->language_id,
         ];
 
         $new_plan = Plan::create($plan_data);
