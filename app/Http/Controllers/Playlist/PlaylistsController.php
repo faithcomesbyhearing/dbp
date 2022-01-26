@@ -382,7 +382,8 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
-        $playlist = $this->getPlaylist($user, $playlist_id);
+        $user_id = $user ? $user->id : 0;
+        $playlist = Playlist::withUserAndItemsById($playlist_id, $user_id)->first();
 
         if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
@@ -398,10 +399,19 @@ class PlaylistsController extends APIController
             }
         }
 
-        $playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $playlist_id, 'v' => $this->v, 'key' => $this->key]);
-        $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist_id)->sum('duration');
+        $playlist->total_duration = $playlist->items->sum('duration');
 
-        return $this->reply($playlist);
+        return $this->reply(fractal(
+            $playlist,
+            new PlaylistTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     /**
@@ -873,19 +883,7 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(404)->replyWithError('Bible Not Found');
         }
 
-        $playlist = Playlist::with(['user', 'items' => function ($query_items) use ($user) {
-            $query_items->withPlaylistItemCompleted($user->id);
-            
-
-            $query_items->with(['fileset' => function ($query_fileset) {
-                $query_fileset->with(['bible' => function ($query_bible) {
-                    $query_bible->with(['translations', 'vernacularTranslation', 'books.book']);
-                }]);
-            }]);
-        }])
-            ->where('user_playlists.id', $playlist_id)
-            ->select(['user_playlists.*', DB::Raw('false as following')])
-            ->first();
+        $playlist = Playlist::findWithBibleRelationByUserAndId($user->id, $playlist_id);
 
         if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
@@ -952,36 +950,8 @@ class PlaylistsController extends APIController
 
         $user_id = empty($user) ? 0 : $user->id;
 
-        $playlist = Playlist::with(['user', 'items' => function ($query_items) {
-            $query_items->select([
-                'id',
-                'fileset_id',
-                'book_id',
-                'chapter_start',
-                'chapter_end',
-                'playlist_id',
-                'verse_start',
-                'verse_end',
-                'verses',
-                'duration',
-                \DB::Raw('false as completed'),
-            ]);
-
-            $query_items->with(['fileset' => function ($query_fileset) {
-                $query_fileset->with(['files.timestamps', 'bible' => function ($query_bible) {
-                    $query_bible->with(['translations', 'vernacularTranslation', 'books.book']);
-                }]);
-            }]);
-        }])
-            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
-                $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
-                    ->where('playlists_followers.user_id', $user_id);
-            })
-            ->where('user_playlists.id', $playlist->id)
-            ->select(['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
-            ->first();
-
-        $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
+        $playlist = Playlist::findWithPlaylistItemsByUserAndId($user_id, $playlist->id);
+        $playlist->total_duration = $playlist->items->sum('duration');
 
         if ($show_details && isset($playlist->items)) {
             foreach ($playlist->items as $item) {
