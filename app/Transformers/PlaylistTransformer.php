@@ -11,7 +11,6 @@ class PlaylistTransformer extends PlanTransformerBase
      */
     public function transform($playlist)
     {
-        $book_name_indexed_by_id = [];
         $result = [
             "id" => $playlist->id,
             "name" => $playlist->name,
@@ -21,11 +20,11 @@ class PlaylistTransformer extends PlanTransformerBase
             "updated_at" => $playlist->updated_at,
             "external_content" => $playlist->external_content,
             "following" => $playlist->following,
-            "items" => $playlist->items->map(function ($item) use (&$book_name_indexed_by_id) {
+            "items" => $playlist->items->map(function ($item) {
 
                 $bible = optional($item->fileset->bible)->first();
                 $book_name = $bible
-                    ? $this->getBookNameFromItem($book_name_indexed_by_id, $bible, $item->book_id)
+                    ? $this->getBookNameFromItem($bible, $item->book_id)
                     : null;
 
                 return [

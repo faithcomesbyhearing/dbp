@@ -209,7 +209,15 @@ class Playlist extends Model
                     if (!empty($user_id)) {
                         $subquery->withPlaylistItemCompleted($user_id);
                     }
-                    $subquery->with('fileset');
+                    $subquery->with(['fileset' => function ($query_fileset) {
+                        $query_fileset->with(['bible' => function ($query_bible) {
+                            $query_bible->with([
+                                'translations',
+                                'vernacularTranslation',
+                                'books.book'
+                            ]);
+                        }]);
+                    }]);
                 }
             ]
         )->whereIn('user_playlists.id', $playlist_ids)

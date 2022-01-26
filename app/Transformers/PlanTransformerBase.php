@@ -2,12 +2,15 @@
 
 namespace App\Transformers;
 
+use Illuminate\Support\Collection;
 use App\Models\Playlist\PlaylistItems;
+use App\Models\Playlist\Playlist;
 use App\Models\Bible\BibleFileset;
 
 class PlanTransformerBase extends BaseTransformer
 {
     protected $params = [];
+    protected $book_name_indexed_by_id = [];
 
     public function __construct($params = [])
     {
@@ -25,17 +28,17 @@ class PlanTransformerBase extends BaseTransformer
      *
      * @return string
      */
-    protected function getBookNameFromItem(&$book_name_indexed_by_id, $bible, $item_book_id)
+    protected function getBookNameFromItem($bible, $item_book_id)
     {
-        if (isset($book_name_indexed_by_id[$item_book_id]) &&
-            !is_null($book_name_indexed_by_id[$item_book_id])
+        if (isset($this->book_name_indexed_by_id[$bible->id][$item_book_id]) &&
+            !is_null($this->book_name_indexed_by_id[$bible->id][$item_book_id])
         ) {
-            return $book_name_indexed_by_id[$item_book_id];
+            return $this->book_name_indexed_by_id[$bible->id][$item_book_id];
         } else {
-            $book_name_indexed_by_id[$item_book_id] = optional(
+            $this->book_name_indexed_by_id[$bible->id][$item_book_id] = optional(
                 $bible->books->where('book_id', $item_book_id)->first()
             )->name;
-            return $book_name_indexed_by_id[$item_book_id];
+            return $this->book_name_indexed_by_id[$bible->id][$item_book_id];
         }
     }
 
@@ -70,10 +73,10 @@ class PlanTransformerBase extends BaseTransformer
      */
     protected function parseTranslationData(Array $item_translations, bool $render_bible_id = true) : Array
     {
-        return array_map(function (PlaylistItems $item_translation) use (&$book_name_indexed_by_id, $render_bible_id) {
+        return array_map(function (PlaylistItems $item_translation) use ($render_bible_id) {
             $bible = optional($item_translation->fileset->bible)->first();
             $book_name = $bible
-                ? $this->getBookNameFromItem($book_name_indexed_by_id, $bible, $item_translation->book_id)
+                ? $this->getBookNameFromItem($bible, $item_translation->book_id)
                 : null;
 
             $bible_translation_item = null;
@@ -83,7 +86,6 @@ class PlanTransformerBase extends BaseTransformer
                     ->first();
                 $book_name_translation_item = $bible_translation_item
                     ? $this->getBookNameFromItem(
-                        $book_name_indexed_by_id,
                         $bible_translation_item,
                         $item_translation->translation_item->book_id
                     )
@@ -151,5 +153,91 @@ class PlanTransformerBase extends BaseTransformer
 
             return $result;
         }, $item_translations);
+    }
+
+    /**
+     * Get the data structure about the Playlist Object
+     *
+     * @param Playlist $playlist_items
+     * @return Array
+     */
+    protected function parsePlaylistData(?Playlist $playlist) : Array
+    {
+        return $playlist ? [
+            "id"                => $playlist->id,
+            "name"              => $playlist->name,
+            "featured"          => $playlist->featured,
+            "draft"             => $playlist->draft,
+            "created_at"        => $playlist->created_at,
+            "updated_at"        => $playlist->updated_at,
+            "external_content"  => $playlist->external_content,
+            "following"         => $playlist->following,
+            "items"             => $this->parsePlaylistItemData($playlist->items),
+            "path" => route(
+                'v4_internal_playlists.hls',
+                [
+                    'playlist_id'  => $playlist->id,
+                    'v' => $this->params['v'],
+                    'key' => $this->params['key']
+                ]
+            ),
+            "verses" => $playlist->verses,
+            "verses" => 0,
+            "user" => [
+                "id" => $playlist->user->id,
+                "name" => $playlist->user->name
+            ]
+        ] : [];
+    }
+
+    /**
+     * Get the data structure about the Playlist items Collection
+     *
+     * @param Collection $playlist_items
+     * @return Array
+     */
+    protected function parsePlaylistItemData(?Collection $playlist_items) : Collection
+    {
+        if (is_null($playlist_items)) {
+            return [];
+        }
+
+        return $playlist_items->map(function ($item) {
+            $bible = optional($item->fileset->bible)->first();
+            $book_name = $bible
+                ? $this->getBookNameFromItem($bible, $item->book_id)
+                : null;
+
+            $result_item = [
+                "id"            => $item->id,
+                "fileset_id"    => $item->fileset_id,
+                "book_id"       => $item->book_id,
+                "chapter_start" => $item->chapter_start,
+                "chapter_end"   => $item->chapter_end,
+                "verse_start"   => $item->verse_start,
+                "verse_end"     => $item->verse_end,
+                "verses"        => $item->verses,
+                "duration"      => $item->duration,
+                "bible_id"      => $bible ? $bible->id : null,
+                "verse_text"    => $item->verse_text ? $item->verse_text : null,
+                "completed"     => $item->completed,
+                "full_chapter"  => $item->full_chapter,
+                "path"          => $item->path,
+                "metadata"      => $bible ? [
+                    "bible_id"   => $bible->id,
+                    "bible_name" => optional(
+                        $bible->translations->where('language_id', $GLOBALS['i18n_id'])->first()
+                    )->name,
+                    "bible_vname" => optional($bible->vernacularTranslation)->name,
+                    "book_name"   => $book_name
+                ] : [],
+            ];
+
+            if (!isset($item->verse_text)) {
+                $result_item["verse_text"] = $item->verse_text;
+            }
+
+            return $result_item;
+        });
     }
 }
