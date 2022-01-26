@@ -18,6 +18,7 @@ use App\Transformers\PlanTransformer;
 use App\Transformers\PlanTranslateTransformer;
 use App\Transformers\PlanDayPlaylistItemsTransformer;
 use App\Transformers\PlanAndPlaylistTransformer;
+use App\Transformers\PlanBasicTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -792,14 +793,13 @@ class PlansController extends APIController
             $user_plan->delete();
         }
 
-        $plan = Plan::getWithDaysPlaylistItemsAndUserById($plan->id, $user->id);
-       
         return fractal(
             $plan,
-            new PlanDayPlaylistItemsTransformer(
+            new PlanBasicTransformer(
                 [
                     'v' => $this->v,
                     'key' => $this->key,
+                    'user' => $user,
                 ]
             ),
             new ArraySerializer()
