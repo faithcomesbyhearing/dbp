@@ -395,7 +395,6 @@ class PlaylistsController extends APIController
             foreach ($playlist->items as $item) {
                 $item->verse_text = $item->getVerseText($playlist_text_filesets);
                 $item->item_timestamps = $item->getTimestamps();
-                unset($item->fileset);
             }
         }
 
