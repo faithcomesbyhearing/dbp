@@ -26,12 +26,17 @@ class PlanTranslateTransformer extends PlanTransformerBase
             "start_date" => $plan->start_date,
             "percentage_completed" => (int) $plan->percentage_completed,
             "days" => $plan->days->map(function ($day) {
-                return [
+                $day_result = [
                     "id" => $day->id,
                     "playlist_id" => $day->playlist_id,
-                    "playlist" => $this->parsePlaylistData($day->playlist),
                     "completed" => $day->completed
                 ];
+
+                if ($this->params['show_details']) {
+                    $day_result["playlist"] = $this->parsePlaylistData($day->playlist);
+                }
+
+                return $day_result;
             }),
             "user" => [
                 "id"   => $this->params['user']->id,

@@ -629,7 +629,7 @@ class PlaylistItems extends Model implements Sortable
             ->whereNull('pldc.playlist_item_id');
     }
 
-    public static function findByIdsWithFilesetRelation(Array $playlist_ids) : Collection
+    public static function findByIdsWithFilesetRelation(Array $playlist_ids, string $order_by = 'id') : Collection
     {
         return PlaylistItems::select([
             'id',
@@ -655,7 +655,7 @@ class PlaylistItems extends Model implements Sortable
                     ]);
                 }]);
             }])
-            ->orderBy('id')
+            ->orderBy($order_by)
             ->get();
     }
 
