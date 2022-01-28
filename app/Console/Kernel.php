@@ -23,8 +23,8 @@ class Kernel extends ConsoleKernel
 
         Commands\generateOpenApiDoc::class,
 
-        Commands\translatePlan::class,
-        Commands\translatePlaylist::class,
+        Commands\TranslatePlan::class,
+        Commands\TranslatePlaylist::class,
         Commands\encryptNote::class,
 
         Commands\syncPlaylistDuration::class,

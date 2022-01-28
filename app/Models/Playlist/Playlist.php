@@ -36,7 +36,7 @@ class Playlist extends Model
 
     protected $connection = 'dbp_users';
     public $table         = 'user_playlists';
-    protected $fillable   = ['user_id', 'name', 'external_content', 'draft', 'plan_id'];
+    protected $fillable   = ['user_id', 'name', 'external_content', 'draft', 'plan_id', 'language_id'];
     protected $hidden     = ['user_id', 'deleted_at', 'plan_id', 'language_id'];
     protected $dates      = ['deleted_at'];
     /**
@@ -300,5 +300,10 @@ class Playlist extends Model
             ->where('user_playlists.id', $playlist_id)
             ->select(['user_playlists.*', \DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
             ->first();
+    }
+
+    public static function findOne(int $playlist_id) : ?Playlist
+    {
+        return Playlist::where('id', $playlist_id)->first();
     }
 }
