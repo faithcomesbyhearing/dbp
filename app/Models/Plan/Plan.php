@@ -240,4 +240,9 @@ class Plan extends Model
     {
         return self::withDaysPlaylistItemsAndUserById($plan_id, $user_id)->first();
     }
+
+    public static function findOne(int $plan_id) : ?Plan
+    {
+        return Plan::where('id', $plan_id)->first();
+    }
 }
