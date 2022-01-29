@@ -22,6 +22,7 @@ use App\Transformers\PlanBasicTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use App\Services\Plans\PlanService;
 
 class PlansController extends APIController
 {
@@ -29,6 +30,12 @@ class PlansController extends APIController
     use CheckProjectMembership;
 
     protected $days_limit = 1095;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->plan_service = new PlanService();
+    }
 
     /**
      * Display a listing of the resource.
@@ -170,6 +177,7 @@ class PlansController extends APIController
 
         // Validate Project / User Connection
         $user = $request->user();
+        
         $user_is_member = $this->compareProjects($user->id, $this->key);
 
         if (!$user_is_member) {
@@ -277,57 +285,27 @@ class PlansController extends APIController
         }
 
         if ($show_details) {
+            $day_playlist_ids = [];
             foreach ($plan->days as $day) {
                 $day_playlist_ids[] = $day->playlist_id;
             }
 
             $user_id = empty($user) ? 0 : $user->id;
-            $playlists = Playlist::with(['user', 'items' => function ($query_items) use ($user_id) {
-                if (!empty($user_id)) {
-                    $query_items->withPlaylistItemCompleted($user_id);
-                }
 
-                $query_items->with(['fileset' => function ($query_fileset) {
-                    $query_fileset->with('bible');
-                }]);
-            }])
-                ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
-                    $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
-                        ->where('playlists_followers.user_id', $user_id);
-                })
-                ->whereIn('user_playlists.id', $day_playlist_ids)
-                ->select(['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
-                ->get()
-                ->keyBy('id');
-
-            foreach ($plan->days as $day) {
-                if (isset($playlists[$day->playlist_id])) {
-                    $day->playlist = $playlists[$day->playlist_id];
-                    if (isset($day->playlist->items)) {
-                        $day->playlist->items = $day->playlist->items->map(function ($item) use ($show_text) {
-                            if ($show_text) {
-                                $item->verse_text = $item->getVerseText();
-                            }
-                            return $item;
-                        });
-                    }
-                }
-            }
-
-            return fractal(
-                $plan,
-                new PlanDayPlaylistItemsTransformer(
-                    [
-                        'user' => $user,
-                        'v' => $this->v,
-                        'key' => $this->key,
-                    ]
-                ),
-                new ArraySerializer()
-            );
+            $this->plan_service->setVerseTextToEachPlaylistItem($plan, $user_id, $day_playlist_ids);
         }
 
-        return $this->reply($plan);
+        return $this->reply(fractal(
+            $plan,
+            new PlanDayPlaylistItemsTransformer(
+                [
+                    'v' => $this->v,
+                    'key' => $this->key,
+                    'show_details' => $show_details
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     /**
@@ -793,7 +771,7 @@ class PlansController extends APIController
             $user_plan->delete();
         }
 
-        return fractal(
+        return $this->reply(fractal(
             $plan,
             new PlanBasicTransformer(
                 [
@@ -803,7 +781,7 @@ class PlansController extends APIController
                 ]
             ),
             new ArraySerializer()
-        );
+        ));
     }
 
     /**
@@ -953,196 +931,34 @@ class PlansController extends APIController
             return $this->setStatusCode(404)->replyWithError('Bible Not Found');
         }
 
-        $plan = $this->getPlan($plan_id, false);
+        $plan = $this->plan_service->getPlanById($plan_id);
 
         if (!$plan) {
             return $this->setStatusCode(404)->replyWithError('Plan Not Found');
         }
 
         $user_id = empty($user) ? 0 : $user->id;
-        $plan_data = [
-            'user_id'               => $user_id,
-            'name'                  => $plan->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
-            'featured'              => false,
-            'draft'                 => $draft,
-            'suggested_start_date'  => $plan->suggested_start_date,
-            'thumbnail'             => $plan->thumbnail,
-            'language_id'           => $bible->language_id,
-        ];
-
-        $new_plan = Plan::create($plan_data);
-        $playlist_controller = new PlaylistsController();
-        $translation_data = [];
-        $translated_percentage = 0;
-        $play_day_data = [];
-        $order = 1;
-        $audio_fileset_types = collect(['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama']);
-        $bible_audio_filesets = $bible->filesets->whereIn('set_type_code', $audio_fileset_types);
-        $count_plan_days = 0;
-        $playlist_ids = [];
-
-        foreach ($plan->days as $day) {
-            $playlist_ids[] = $day->playlist_id;
-        }
-
-        $playlists = Playlist::findByUserAndIds($user_id, $playlist_ids);
-
-        $playlists_to_create = [];
-        $translated_items = [];
-        foreach ($plan->days as $day) {
-            if (isset($playlists[$day->playlist_id])) {
-                $playlist_by_day = $playlists[$day->playlist_id];
-                $playlist_translated =$this->translatePlaylist(
-                    $playlist_by_day,
-                    $user,
-                    $new_plan->id,
-                    $bible,
-                    $audio_fileset_types,
-                    $bible_audio_filesets,
-                    $playlist_controller
-                );
-                $playlists_to_create[] = $playlist_translated['playlist_data'];
-                $translation_data[$day->playlist_id] = $playlist_translated["translation_data"];
-                $translated_percentage += $playlist_translated["translated_percentage"];
-                $translated_items[$day->playlist_id] = $playlist_translated["translated_items"];
-
-                if ($day->hasContentAvailable($playlist_by_day)) {
-                    $count_plan_days += 1;
-                }
-            }
-        }
-
-        Playlist::insert($playlists_to_create);
-
-        $new_playlists = Playlist::findByUserAndPlan($user_id, $new_plan->id);
-
-        $new_day_playlist_ids = [];
-        foreach ($new_playlists as $new_palyslist_index => $new_playlist) {
-            $play_day_data[] = [
-                'plan_id'               => $new_plan->id,
-                'playlist_id'           => $new_playlist->id,
-                'order_column'          => $order,
-            ];
-            $order += 1;
-            $new_day_playlist_ids[$playlist_ids[$new_palyslist_index]] = $new_playlist->id;
-        }
-
-        $playlist_items_to_create = [];
-        $playlist_items_to_create_indexed = [];
-
-        foreach ($translated_items as $playlist_id_key => $playlist_translated_item) {
-            $order = 0;
-            foreach ($playlist_translated_item as $translated_item) {
-                $new_playlist_id_key = $new_day_playlist_ids[$playlist_id_key];
-                $playlist_item_data = [
-                    'playlist_id'   => $new_playlist_id_key,
-                    'fileset_id'    => $translated_item['fileset_id'],
-                    'book_id'       => $translated_item['book_id'],
-                    'chapter_start' => $translated_item['chapter_start'],
-                    'chapter_end'   => $translated_item['chapter_end'],
-                    'verse_start'   => $translated_item['verse_start'] ?? null,
-                    'verse_end'     => $translated_item['verse_end'] ?? null,
-                    'verses'        => $translated_item['verses'] ?? 0,
-                    'order_column'  => $translated_item['order_column'] ?? $order,
-                    'duration'      => $translated_item['duration'],
-                ];
-                $key_translated = implode('-', $playlist_item_data);
-                $playlist_items_to_create_indexed[$new_playlist_id_key][$key_translated] = [
-                    "translated_id" => $translated_item['translated_id'],
-                    "playlist_id_key" => $playlist_id_key
-                ];
-                $playlist_items_to_create[] = $playlist_item_data;
-                $order += 1;
-            }
-        }
-
-        PlaylistItems::insert($playlist_items_to_create);
-
-        $new_items = PlaylistItems::findByIdsWithFilesetRelation($new_day_playlist_ids);
-
-        foreach ($new_items as $new_playlist_item) {
-            $key_translated = $new_playlist_item->generateUniqueKey();
-
-            if (isset($playlist_items_to_create_indexed[$new_playlist_item->playlist_id][$key_translated])) {
-                $translated_item_id = $playlist_items_to_create_indexed
-                    [$new_playlist_item->playlist_id][$key_translated]['translated_id'];
-                $translated_playlist_id = $playlist_items_to_create_indexed
-                    [$new_playlist_item->playlist_id][$key_translated]['playlist_id_key'];
-
-                if (isset($translation_data[$translated_playlist_id][$translated_item_id])) {
-                    $translation_data[$translated_playlist_id][$translated_item_id]->translation_item =
-                        $new_playlist_item;
-                }
-            }
-        }
-
-        PlanDay::insert($play_day_data);
-        $translated_percentage = $count_plan_days > 0
-            ? $translated_percentage / $count_plan_days
-            : 0;
-
-        UserPlan::create([
-            'user_id'               => $user->id,
-            'plan_id'               => $new_plan->id
-        ]);
-
-        $plan = $this->getPlan($new_plan->id, $user);
-
         $show_details = checkBoolean('show_details');
         $show_text = checkBoolean('show_text');
+
         if ($show_text) {
             $show_details = $show_text;
         }
+        
+        $plan = $this->plan_service->translate($plan_id, $bible, $user_id, $draft, $show_details);
 
-        if ($show_details) {
-            $playlists = Playlist::findWithFollowersByUserAndIds($user_id, $new_day_playlist_ids);
-            foreach ($plan->days as $day) {
-                if (isset($playlists[$day->playlist_id])) {
-                    $day->playlist = $playlists[$day->playlist_id];
-                    if (isset($day->playlist->items)) {
-                        foreach ($day->playlist->items as $item) {
-                            $item->verse_text = $item->getVerseText();
-                        }
-                    }
-                }
-            }
-        }
-
-        $plan->translation_data = $this->transformTranslationData($translation_data);
-        $plan->translated_percentage = $translated_percentage*100;
-
-        if ($show_details) {
-            return $this->reply(fractal(
-                $plan,
-                new PlanTranslateTransformer(
-                    [
-                        'user' => $user,
-                        'v' => $this->v,
-                        'key' => $this->key
-                    ]
-                ),
-                new ArraySerializer()
-            ));
-        }
-
-        return $this->reply($plan);
-    }
-
-    private function transformTranslationData(?Array $translation_data) : Array
-    {
-        $new_translation_data = [];
-
-        if ($translation_data) {
-            foreach ($translation_data as $translation_data_playlist) {
-                $new_translation_data_item = [];
-                foreach ($translation_data_playlist as $translation_data_item) {
-                    $new_translation_data_item[] = $translation_data_item;
-                }
-                $new_translation_data[] = $new_translation_data_item;
-            }
-        }
-
-        return $new_translation_data;
+        return $this->reply(fractal(
+            $plan,
+            new PlanTranslateTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key,
+                    'show_details' => $show_details
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     private function translatePlaylist(
@@ -1154,66 +970,14 @@ class PlansController extends APIController
         $bible_audio_filesets,
         $playlist_controller
     ) {
-        $translated_items = [];
-        $metadata_items = [];
-        $total_translated_items = 0;
-        
-        if (isset($playlist->items)) {
-            foreach ($playlist->items as $item) {
-                if (isset($item->fileset, $item->fileset->set_type_code)) {
-                    $item->fileset = formatFilesetMeta($item->fileset);
-                    $ordered_types = $audio_fileset_types->filter(function ($type) use ($item) {
-                        return $type !== $item->fileset->set_type_code;
-                    })->prepend($item->fileset->set_type_code);
-                    $preferred_fileset = $ordered_types->map(
-                        function ($type) use ($bible_audio_filesets, $item, $playlist_controller) {
-                            return $playlist_controller->getFileset(
-                                $bible_audio_filesets,
-                                $type,
-                                $item->fileset->set_size_code
-                            );
-                        }
-                    )->firstWhere('id');
-                    $has_translation = isset($preferred_fileset);
-                    $is_streaming = true;
-
-                    if ($has_translation) {
-                        $item->fileset_id = $preferred_fileset->id;
-                        $is_streaming = $preferred_fileset->set_type_code === 'audio_stream'
-                            || $preferred_fileset->set_type_code === 'audio_drama_stream';
-                        $translated_items[$item->id] = [
-                            'translated_id' => $item->id,
-                            'fileset_id' => $item->fileset_id,
-                            'book_id' => $item->book_id,
-                            'chapter_start' => $item->chapter_start,
-                            'chapter_end' => $item->chapter_end,
-                            'verse_start' => $is_streaming ? $item->verse_start : null,
-                            'verse_end' => $is_streaming ? $item->verse_end : null,
-                            'order_column' => $item->order_column,
-                            'duration' => $item->duration,
-                        ];
-                        $total_translated_items += 1;
-                    }
-                }
-                $metadata_items[$item->id] = $item;
-            }
-
-            $translated_percentage = sizeof($playlist->items) ? $total_translated_items / sizeof($playlist->items) : 0;
-        }
-
-        return [
-            "playlist_data" =>
-                [
-                    'user_id'           => $user->id,
-                    'name'              => $playlist->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
-                    'external_content'  => $playlist->external_content,
-                    'featured'          => false,
-                    'draft'             => true,
-                    'plan_id'           => $plan_id
-                ],
-            "translation_data" => $metadata_items,
-            "translated_items" => $translated_items,
-            "translated_percentage" => $translated_percentage
-        ];
+        return $this->plan_service->translatePlaylist(
+            $playlist,
+            $user,
+            $plan_id,
+            $bible,
+            $audio_fileset_types,
+            $bible_audio_filesets,
+            $playlist_controller
+        );
     }
 }
