@@ -22,12 +22,12 @@ class PlaylistTransformer extends PlanTransformerBase
             "following" => $playlist->following,
             "items" => $playlist->items->map(function ($item) {
 
-                $bible = optional($item->fileset->bible)->first();
+                $bible = optional(optional($item->fileset)->bible)->first();
                 $book_name = $bible
                     ? $this->getBookNameFromItem($bible, $item->book_id)
                     : null;
 
-                return [
+                $result_item = [
                     "id" => $item->id,
                     "fileset_id" => $item->fileset_id,
                     "book_id" => $item->book_id,
@@ -50,8 +50,18 @@ class PlaylistTransformer extends PlanTransformerBase
                         )->name,
                         "bible_vname" => optional($bible->vernacularTranslation)->name,
                         "book_name" => $book_name
-                    ] : [],
+                    ] : null,
                 ];
+
+                if (!isset($item->verse_text)) {
+                    unset($result_item["verse_text"]);
+                }
+
+                if (!isset($item->item_timestamps)) {
+                    unset($result_item["item_timestamps"]);
+                }
+
+                return $result_item;
             }),
             "path" => route(
                 'v4_internal_playlists.hls',
