@@ -54,21 +54,19 @@ class TranslatePlan extends Command
         $plan_id = $this->argument('plan_id');
         $bible_ids = $this->argument('bible_ids');
 
-        $cache_params = ['eng'];
-        $current_language = cacheRemember('selected_api_language', $cache_params, now()->addDay(), function () {
-            $language = Language::where('iso', 'eng')->select(['iso', 'id'])->first();
-            return [
-                'i18n_iso' => $language->iso,
-                'i18n_id'  => $language->id
-            ];
-        });
-        $GLOBALS['i18n_iso'] = $current_language['i18n_iso'];
-        $GLOBALS['i18n_id']  = $current_language['i18n_id'];
+        $language = Language::where('iso', 'eng')->select(['iso', 'id'])->first();
+
+        if (!$language) {
+            $this->error('Language ENG do not exist');
+        }
+
+        $GLOBALS['i18n_iso'] = $language->iso;
+        $GLOBALS['i18n_id']  = $language->id;
 
         $plan = $this->plan_service->getPlanById($plan_id);
 
         if (!$plan) {
-            $this->error('Plan with ID:' . $plan_id . ' do not exist');
+            $this->error('Plan with ID:' . $plan_id . ' does not exist');
         } else {
             $this->alert('Translating plan ' . $plan->name . ' starting: ' . Carbon::now());
             $bible_ids = explode(',', $bible_ids);
@@ -76,14 +74,11 @@ class TranslatePlan extends Command
             foreach ($bible_ids as $key => $bible_id) {
                 try {
                     $this->line('Translating plan to bible ' . $bible_id . ' started ' . Carbon::now());
-                    $bible = cacheRemember(
-                        'bible_translate',
-                        [$bible_id],
-                        now()->addDay(),
-                        function () use ($bible_id) {
-                            return Bible::whereId($bible_id)->first();
-                        }
-                    );
+                    $bible = Bible::whereId($bible_id)->first();
+                    if (!$bible) {
+                        $this->alert('Bible with ID:' . $bible_id . ' does not exist' . Carbon::now());
+                        continue;
+                    }
                     $translated_plan = $this->plan_service->translate($plan_id, $bible, $plan->user_id, false, false);
                     $plan = Plan::where('id', $translated_plan['id'])->first();
 
