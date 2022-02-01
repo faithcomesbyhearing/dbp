@@ -82,11 +82,10 @@ class TranslatePlan extends Command
                     $translated_plan = $this->plan_service->translate($plan_id, $bible, $plan->user_id, false, false);
                     $plan = Plan::where('id', $translated_plan['id'])->first();
 
-                    $this->line('Calculating duration and verses ' . Carbon::now());
+                    $this->line('Calculating verses' . Carbon::now());
                     foreach ($plan->days as $day) {
                         $playlist_items = PlaylistItems::where('playlist_id', $day['playlist_id'])->get();
                         foreach ($playlist_items as $playlist_item) {
-                            $playlist_item->calculateDuration()->save();
                             $playlist_item->calculateVerses()->save();
                         }
                     }
