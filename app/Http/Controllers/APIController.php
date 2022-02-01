@@ -390,14 +390,7 @@ class APIController extends Controller
      */
     public function removeSpaceFromCacheParameters(array $cache_params): array
     {
-        return array_map(
-            function ($param) {
-                return is_string($param)
-                    ? preg_replace('/[[:cntrl:]]/', '', str_replace(' ', '', $param))
-                    : $param;
-            },
-            $cache_params
-        );
+        return removeSpaceAndCntrlFromCacheParameters($cache_params);
     }
 
     public function getCorrectFilesetType($fileset_type, $param_type)

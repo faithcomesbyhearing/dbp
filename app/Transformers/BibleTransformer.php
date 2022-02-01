@@ -287,11 +287,8 @@ class BibleTransformer extends BaseTransformer
                     'filesets'     => $bible->filesets->mapToGroups(function ($item) {
                         return [$item['asset_id'] => $this->filesetWithMeta($item)];
                     }),
+                    'fonts' => $fonts
                 ];
-
-                if (!empty($fonts)) {
-                    $bible['fonts'] = $fonts;
-                }
 
                 return $bible;
 
