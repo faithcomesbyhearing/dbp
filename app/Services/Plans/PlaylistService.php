@@ -6,6 +6,7 @@ use App\Models\Plan\Plan;
 use App\Models\Playlist\Playlist;
 use App\Models\Playlist\PlaylistItems;
 use App\Models\Bible\Bible;
+use Illuminate\Database\Eloquent\Collection;
 
 class PlaylistService
 {
@@ -179,5 +180,33 @@ class PlaylistService
             })->first();
         }
         return null;
+    }
+
+    /**
+     * Calculate the duration value for each playlist item that belong to plan
+     *
+     * @param int $plan_id
+     *
+     * @return Plan
+     */
+    public function calculateDurationAndUpdateItem(?Collection $playlist_items) : void
+    {
+        foreach ($playlist_items as $playlist_item) {
+            $playlist_item->calculateDuration();
+        }
+    }
+
+    /**
+     * Calculate the verses value for each playlist item that belong to plan
+     *
+     * @param int $plan_id
+     *
+     * @return Plan
+     */
+    public function calculateVersesAndUpdateItem(?Collection $playlist_items) : void
+    {
+        foreach ($playlist_items as $playlist_item) {
+            $playlist_item->calculateVerses();
+        }
     }
 }

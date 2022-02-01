@@ -326,4 +326,31 @@ class PlanService
     {
         return Plan::findOne($plan_id);
     }
+
+    /**
+     * Calculate the duration and verses values for each playlist item that belong to plan
+     *
+     * @param int $plan_id
+     *
+     * @return Plan
+     */
+    public function calculateDurationAndVersesUpdatePlan(Plan $plan, bool $save = false) : Plan
+    {
+        $playlist_ids = [];
+        foreach ($plan->days as $day) {
+            $playlist_ids[] = $day->playlist_id;
+        }
+
+        $playlist_items = PlaylistItems::whereIn('playlist_id', $playlist_ids)->get();
+        $this->playlist_service->calculateDurationAndUpdateItem($playlist_items, $save);
+        $this->playlist_service->calculateVersesAndUpdateItem($playlist_items, $save);
+
+        if ($save === true) {
+            foreach ($playlist_items as $playlist_item) {
+                $playlist_item->save();
+            }
+        }
+
+        return $plan;
+    }
 }
