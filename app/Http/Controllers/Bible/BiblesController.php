@@ -310,6 +310,9 @@ class BiblesController extends APIController
     public function show($id = null)
     {
         $id   = checkParam('dam_id', false, $id);
+
+        $include_font = is_null(checkParam('include_font')) ? true : checkBoolean('include_font', false);
+
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
         }
@@ -321,15 +324,30 @@ class BiblesController extends APIController
             return $this->setStatusCode(404)->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
-        $cache_params = [$id, $key];
-        $bible = cacheRemember('bibles_show', $cache_params, now()->addDay(), function () use ($key, $id) {
-            return Bible::with([
-                'translations', 'books.book', 'links', 'organizations.logo', 'organizations.logoIcon', 'organizations.translations', 'alphabet.primaryFont', 'equivalents',
-                'filesets' => function ($query) use ($key) {
-                    $query->isContentAvailable($key);
-                }
-            ])->find($id);
-        });
+        $cache_params = [$id, $key, $include_font];
+        $bible = cacheRemember(
+            'bibles_show',
+            $cache_params,
+            now()->addDay(),
+            function () use ($key, $id, $include_font) {
+                return Bible::with([
+                    'translations',
+                    'books.book',
+                    'links',
+                    'organizations.logo',
+                    'organizations.logoIcon',
+                    'organizations.translations',
+                    'alphabet.primaryFont',
+                    'equivalents',
+                    'filesets' => function ($query) use ($key, $include_font) {
+                        $query->isContentAvailable($key);
+                        $query->when($include_font, function ($sub_query) {
+                            $sub_query->with('fonts');
+                        });
+                    }
+                ])->find($id);
+            }
+        );
 
         if (!$bible || !sizeof($bible->filesets)) {
             return $this->setStatusCode(404)->replyWithError(trans($key_error_404, ['bible_id' => $id]));
