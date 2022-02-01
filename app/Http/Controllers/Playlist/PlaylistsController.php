@@ -294,11 +294,12 @@ class PlaylistsController extends APIController
         }
         PlaylistItems::insert($playlist_items_to_create);
         $created_playlist_items = PlaylistItems::where('playlist_id', $playlist->id)->orderBy('order_column')->get();
-        foreach ($created_playlist_items as $created_playlist_item) {
-            $created_playlist_item->calculateDuration()->save();
-            if (!$created_playlist_item->verses) {
-                $created_playlist_item->calculateVerses()->save();
-            }
+
+        $this->playlist_service->calculateDurationAndUpdateItem($created_playlist_items);
+        $this->playlist_service->calculateVersesAndUpdateItem($created_playlist_items);
+
+        foreach ($created_playlist_items as $playlist_item) {
+            $playlist_item->save();
         }
         return $created_playlist_items;
     }
@@ -689,10 +690,11 @@ class PlaylistsController extends APIController
                 'verse_end'         => $playlist_item->verse_end ?? null,
                 'verses'            => $verses
             ]);
-            $created_playlist_item->calculateDuration()->save();
+            $created_playlist_item->calculateDuration();
             if (!$verses) {
-                $created_playlist_item->calculateVerses()->save();
+                $created_playlist_item->calculateVerses();
             }
+            $created_playlist_item->save();
             $created_playlist_items[] = $created_playlist_item;
         }
 

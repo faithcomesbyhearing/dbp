@@ -215,27 +215,27 @@ class PlaylistItems extends Model implements Sortable
             return 0;
         }
 
-        $bible_files = cacheRemember(
-            'bible_file_duration',
-            [$fileset->hash_id, $playlist_item->book_id, $playlist_item->chapter_start, $playlist_item->chapter_end],
-            now()->addDay(),
-            function () use ($fileset, $playlist_item) {
-                return BibleFile::with('streamBandwidth.transportStreamTS')->with('streamBandwidth.transportStreamBytes')->where([
+        $bible_files = BibleFile::with('streamBandwidth.transportStreamTS')
+            ->with('streamBandwidth.transportStreamBytes')->where([
                     'hash_id' => $fileset->hash_id,
                     'book_id' => $playlist_item->book_id,
                 ])
-                    ->where('chapter_start', '>=', $playlist_item->chapter_start)
-                    ->where('chapter_start', '<=', $playlist_item->chapter_end)
-                    ->get();
-            }
-        );
+            ->where('chapter_start', '>=', $playlist_item->chapter_start)
+            ->where('chapter_start', '<=', $playlist_item->chapter_end)
+            ->get();
         $duration = 0;
         if ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream') {
             foreach ($bible_files as $bible_file) {
                 $currentBandwidth = $bible_file->streamBandwidth->first();
-                $transportStream = sizeof($currentBandwidth->transportStreamBytes) ? $currentBandwidth->transportStreamBytes : $currentBandwidth->transportStreamTS;
+                $transportStream = sizeof($currentBandwidth->transportStreamBytes)
+                    ? $currentBandwidth->transportStreamBytes
+                    : $currentBandwidth->transportStreamTS;
                 if ($playlist_item->verse_end && $playlist_item->verse_start) {
-                    $transportStream = $this->processVersesOnTransportStream($playlist_item, $transportStream, $bible_file);
+                    $transportStream = $this->processVersesOnTransportStream(
+                        $playlist_item,
+                        $transportStream,
+                        $bible_file
+                    );
                 }
 
                 foreach ($transportStream as $stream) {
@@ -285,20 +285,15 @@ class PlaylistItems extends Model implements Sortable
                 ->first();
         });
 
-        $bible_files = $fileset ? cacheRemember(
-            'bible_file_verses',
-            [$fileset->hash_id, $book_id, $chapter_start, $chapter_end],
-            now()->addDay(),
-            function () use ($fileset, $book_id, $chapter_start, $chapter_end) {
-                return BibleFile::where('hash_id', $fileset->hash_id)
-                    ->where([
-                        ['book_id', $book_id],
-                        ['chapter_start', '>=', $chapter_start],
-                        ['chapter_start', '<', $chapter_end],
-                    ])
-                    ->get();
-            }
-        ) : [];
+        $bible_files = $fileset
+            ? BibleFile::where('hash_id', $fileset->hash_id)
+                ->where([
+                    ['book_id', $book_id],
+                    ['chapter_start', '>=', $chapter_start],
+                    ['chapter_start', '<', $chapter_end],
+                ])
+                ->get()
+        : [];
         $verses_middle = 0;
         foreach ($bible_files as $bible_file) {
             $verses_middle += ($bible_file->verse_start - 1) + $bible_file->verse_end;
@@ -315,20 +310,13 @@ class PlaylistItems extends Model implements Sortable
                 ? $fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first()
                 : null;
             if ($text_fileset) {
-                $verses = cacheRemember('playlist_item_verses', [
-                    $text_fileset->hash_id,
-                    $book_id,
-                    $chapter_start,
-                    $chapter_end
-                ], now()->addDay(), function () use ($text_fileset, $book_id, $chapter_start, $chapter_end) {
-                    return BibleVerse::where('hash_id', $text_fileset->hash_id)
-                        ->where([
-                            ['book_id', $book_id],
-                            ['chapter', '>=', $chapter_start],
-                            ['chapter', '<=', $chapter_end],
-                        ])
-                        ->count();
-                });
+                $verses =  BibleVerse::where('hash_id', $text_fileset->hash_id)
+                    ->where([
+                        ['book_id', $book_id],
+                        ['chapter', '>=', $chapter_start],
+                        ['chapter', '<=', $chapter_end],
+                    ])
+                    ->count();
             }
         }
 
