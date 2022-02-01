@@ -241,17 +241,29 @@ class BibleTransformer extends BaseTransformer
                  */
             case 'v4_bible.one':
                 $currentTranslation = optional($bible->translations->where('language_id', $GLOBALS['i18n_id']));
-                $fonts = [];
+                $fonts = $bible->filesets->reduce(function ($carry, $item) {
+                    if ($item->relationLoaded('fonts')) {
+                        foreach ($item->fonts as $font) {
+                            if (!isset($carry[$font->name])) {
+                                $carry = ['name' => $font->name, 'data' => $font->data, 'type' => $font->type];
+                            }
+                        }
+                    }
+                    return $carry;
+                }, null);
+
                 $bible = [
                     'abbr'          => $bible->id,
                     'alphabet'      => $bible->alphabet,
                     'mark'          => $bible->copyright,
-                    'name'          => optional($bible->translations->where('language_id', $GLOBALS['i18n_id'])->first())->name,
-                    'description'   => optional($bible->translations->where('language_id', $GLOBALS['i18n_id'])->first())->description,
+                    'name'          => optional($currentTranslation->first())->name,
+                    'description'   => optional($currentTranslation->first())->description,
                     'vname'         => optional($bible->vernacularTranslation)->name,
                     'vdescription'  => optional($bible->vernacularTranslation)->description,
-                    'publishers'    => optional($bible->organizations)->where('pivot.relationship_type', 'publisher')->all(),
-                    'providers'     => optional($bible->organizations)->where('pivot.relationship_type', 'provider')->all(),
+                    'publishers'    => optional($bible->organizations)
+                        ->where('pivot.relationship_type', 'publisher')->all(),
+                    'providers'     => optional($bible->organizations)
+                        ->where('pivot.relationship_type', 'provider')->all(),
                     'equivalents'   => $bible->equivalents,
                     'language'      => optional($bible->language)->name,
                     'language_id'   => optional($bible->language)->id,
@@ -272,18 +284,14 @@ class BibleTransformer extends BaseTransformer
                         return $book;
                     })->values(),
                     'links'        => $bible->links,
-                    'filesets'     => $bible->filesets->mapToGroups(function ($item, $key) {
+                    'filesets'     => $bible->filesets->mapToGroups(function ($item) {
                         return [$item['asset_id'] => $this->filesetWithMeta($item)];
                     }),
-                    'fonts' => $bible->filesets->reduce(function ($carry, $item) {
-                        foreach ($item->fonts as $font) {
-                            if (!isset($carry[$font->name])) {
-                                $carry = ['name' => $font->name, 'data' => $font->data, 'type' => $font->type];
-                            }
-                        }
-                        return $carry;
-                    }, null)
                 ];
+
+                if (!empty($fonts)) {
+                    $bible['fonts'] = $fonts;
+                }
 
                 return $bible;
 
