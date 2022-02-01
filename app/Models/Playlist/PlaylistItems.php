@@ -196,6 +196,8 @@ class PlaylistItems extends Model implements Sortable
 
     public function calculateDuration()
     {
+        // Currently, this method may not work because it is not supporting to use the cache methods
+        // that are executing into the getDuration method
         $playlist_item = (object) $this->attributes;
         $this->attributes['duration'] = $this->getDuration($playlist_item) ?? 0;
         return $this;
