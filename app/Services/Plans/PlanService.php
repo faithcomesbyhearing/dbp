@@ -24,14 +24,12 @@ class PlanService
      * @param int $plan_id
      * @param Bible $bible
      * @param int $user_id
-     * @param int $show_details - If it is true, it will create the verse_text property for each play list item that belong to a day
      * @param int $draft
      */
     public function translate(
         int $plan_id,
         Bible $bible,
         int $user_id = 0,
-        bool $show_details = true,
         bool $draft = true
     ) : Plan {
         $plan = $this->getPlanWithDaysByIdAndUser($plan_id, $user_id);
@@ -118,8 +116,7 @@ class PlanService
                     'verse_start'   => $translated_item['verse_start'] ?? null,
                     'verse_end'     => $translated_item['verse_end'] ?? null,
                     'verses'        => $translated_item['verses'] ?? 0,
-                    'order_column'  => $translated_item['order_column'] ?? $order,
-                    'duration'      => $translated_item['duration'],
+                    'order_column'  => $translated_item['order_column'] ?? $order
                 ];
                 $key_translated = implode('-', $playlist_item_data);
                 $playlist_items_to_create_indexed[$new_playlist_id_key][$key_translated] = [
@@ -166,31 +163,46 @@ class PlanService
         $plan->translation_data = $this->transformTranslationData($translation_data);
         $plan->translated_percentage = $translated_percentage*100;
 
-        if ($show_details === true) {
-            $this->setVerseTextToEachPlaylistItem($plan, $user_id, $new_day_playlist_ids);
+        return $plan;
+    }
+
+    /**
+     * For each play day that belong to a Plan, it will attached the correct playlist for the given Plan Object
+     *
+     * @param Plan $plan
+     * @param int $user_id
+     *
+     * @return void
+     */
+    public function setPlaylistItemsForEachPlaylist(Plan $plan, int $user_id) : void
+    {
+        $new_day_playlist_ids = [];
+
+        foreach ($plan->days as $day) {
+            $new_day_playlist_ids[] = $day->playlist_id;
         }
 
-        return $plan;
+        $playlists = Playlist::findWithFollowersByUserAndIds($user_id, $new_day_playlist_ids);
+
+        foreach ($plan->days as $day) {
+            if (isset($playlists[$day->playlist_id])) {
+                $day->playlist = $playlists[$day->playlist_id];
+            }
+        }
     }
 
     /**
      * For each play list item that belong to a Plan, it will create the verse_text property for the given Plan Object
      *
      * @param Plan $plan
-     * @param int $user_id
-     * @param Array $new_day_playlist_ids
      *
      * @return void
      */
-    public function setVerseTextToEachPlaylistItem(Plan $plan, int $user_id, Array $new_day_playlist_ids) : void
+    public function setVerseTextToEachPlaylistItem(Plan $plan) : void
     {
-        $playlists = Playlist::findWithFollowersByUserAndIds($user_id, $new_day_playlist_ids);
         foreach ($plan->days as $day) {
-            if (isset($playlists[$day->playlist_id])) {
-                $day->playlist = $playlists[$day->playlist_id];
-                foreach ($day->playlist->items as $item) {
-                    $item->verse_text = $item->getVerseText();
-                }
+            foreach ($day->playlist->items as $item) {
+                $item->verse_text = $item->getVerseText();
             }
         }
     }
@@ -276,6 +288,7 @@ class PlanService
                             'verse_end' => $is_streaming ? $item->verse_end : null,
                             'order_column' => $item->order_column,
                             'duration' => $item->duration,
+                            'verses' => $item->verses,
                         ];
                         $total_translated_items += 1;
                     }
