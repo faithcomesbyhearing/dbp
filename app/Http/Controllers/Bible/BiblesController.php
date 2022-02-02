@@ -69,13 +69,14 @@ class BiblesController extends APIController
      *     @OA\Parameter(
      *          name="country",
      *          in="query",
-     *          @OA\Schema(ref="#/components/schemas/Country/properties/id),
+     *          @OA\Schema(ref="#/components/schemas/Country/properties/id"),
      *          description="The iso code to filter results by. This will return results only in the language specified. For a complete list see the `iso` field in the `/country` route",
      *          example="21"
      *     ),
      *     @OA\Parameter(
      *          name="audio_timing",
      *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
      *          description="This will return results only which have audio timing information available for that bible. The timing information is stored in table bible_file_timestamps.",
      *          example="true"
      *     ),
@@ -239,13 +240,14 @@ class BiblesController extends APIController
      *     path="/bibles/search/{search_text}",
      *     tags={"Bibles"},
      *     summary="Returns metadata for all bibles meeting the search_text in it's name",
-     *     description="metadata for all bibles meeting the search_text in it's name,
+     *     description="metadata for all bibles meeting the search_text in it's name",
      *     operationId="v4_bible.search",
-     *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/search_text")),
+     *     @OA\Parameter(name="search_text",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_bible.search"))
+     *         @OA\MediaType(mediaType="application/json",
+     *         @OA\Schema(ref="#/components/schemas/v4_bible.search"))
      *     )
      * )
      *
@@ -294,6 +296,7 @@ class BiblesController extends APIController
      *     description="Detailed information for a single Bible",
      *     operationId="v4_bible.one",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
+     *     @OA\Parameter(name="include_font",in="query"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -308,6 +311,9 @@ class BiblesController extends APIController
     public function show($id = null)
     {
         $id   = checkParam('dam_id', false, $id);
+
+        $include_font = is_null(checkParam('include_font')) ? true : checkBoolean('include_font', false);
+
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
         }
@@ -319,15 +325,30 @@ class BiblesController extends APIController
             return $this->setStatusCode(404)->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
-        $cache_params = [$id, $key];
-        $bible = cacheRemember('bibles_show', $cache_params, now()->addDay(), function () use ($key, $id) {
-            return Bible::with([
-                'translations', 'books.book', 'links', 'organizations.logo', 'organizations.logoIcon', 'organizations.translations', 'alphabet.primaryFont', 'equivalents',
-                'filesets' => function ($query) use ($key) {
-                    $query->isContentAvailable($key);
-                }
-            ])->find($id);
-        });
+        $cache_params = [$id, $key, $include_font];
+        $bible = cacheRemember(
+            'bibles_show',
+            $cache_params,
+            now()->addDay(),
+            function () use ($key, $id, $include_font) {
+                return Bible::with([
+                    'translations',
+                    'books.book',
+                    'links',
+                    'organizations.logo',
+                    'organizations.logoIcon',
+                    'organizations.translations',
+                    'alphabet.primaryFont',
+                    'equivalents',
+                    'filesets' => function ($query) use ($key, $include_font) {
+                        $query->isContentAvailable($key);
+                        $query->when($include_font, function ($sub_query) {
+                            $sub_query->with('fonts');
+                        });
+                    }
+                ])->find($id);
+            }
+        );
 
         if (!$bible || !sizeof($bible->filesets)) {
             return $this->setStatusCode(404)->replyWithError(trans($key_error_404, ['bible_id' => $id]));

@@ -4,6 +4,8 @@ namespace App\Models\Playlist;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Carbon\Carbon;
 use App\Models\User\User;
 
@@ -34,7 +36,7 @@ class Playlist extends Model
 
     protected $connection = 'dbp_users';
     public $table         = 'user_playlists';
-    protected $fillable   = ['user_id', 'name', 'external_content', 'draft', 'plan_id'];
+    protected $fillable   = ['user_id', 'name', 'external_content', 'draft', 'plan_id', 'language_id'];
     protected $hidden     = ['user_id', 'deleted_at', 'plan_id', 'language_id'];
     protected $dates      = ['deleted_at'];
     /**
@@ -145,6 +147,10 @@ class Playlist extends Model
      */
     public function getVersesAttribute()
     {
+        if ($this->relationLoaded('items')) {
+            return $this->items->sum('verses');
+        }
+
         return PlaylistItems::where('playlist_id', $this['id'])->get()->sum('verses');
     }
 
@@ -171,5 +177,133 @@ class Playlist extends Model
     public function items()
     {
         return $this->hasMany(PlaylistItems::class)->orderBy('order_column');
+    }
+
+    public function scopeWithUserAndItemsById(Builder $query, int $playlist_id, int $user_id) : Builder
+    {
+        return Playlist::select([
+            'user_playlists.*',
+            \DB::Raw('IF(playlists_followers.user_id, true, false) as following')
+        ])
+        ->with(['user', 'items' => function ($query_items) use ($user_id) {
+            if (!empty($user_id)) {
+                $query_items->withPlaylistItemCompleted($user_id);
+            }
+
+            $query_items->with(['fileset' => function ($query_fileset) {
+                $query_fileset->with('bible');
+            }]);
+        }])
+            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
+                $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
+                    ->where('playlists_followers.user_id', $user_id);
+            })
+            ->where('user_playlists.id', $playlist_id);
+    }
+
+    public static function findByUserAndIds(int $user_id, Array $playlist_ids) : Collection
+    {
+        return Playlist::with(
+            [
+                'items' => function ($subquery) use ($user_id) {
+                    if (!empty($user_id)) {
+                        $subquery->withPlaylistItemCompleted($user_id);
+                    }
+                    $subquery->with(['fileset' => function ($query_fileset) {
+                        $query_fileset->with(['bible' => function ($query_bible) {
+                            $query_bible->with([
+                                'translations',
+                                'vernacularTranslation',
+                                'books.book'
+                            ]);
+                        }]);
+                    }]);
+                }
+            ]
+        )->whereIn('user_playlists.id', $playlist_ids)
+        ->get()
+        ->keyBy('id');
+    }
+
+    public static function findWithBibleRelationByUserAndId(int $user_id, int $playlist_id) : Playlist
+    {
+        return Playlist::with(['user', 'items' => function ($query_items) use ($user_id) {
+            $query_items->withPlaylistItemCompleted($user_id);
+
+            $query_items->with(['fileset' => function ($query_fileset) {
+                $query_fileset->with(['bible' => function ($query_bible) {
+                    $query_bible->with(['translations', 'vernacularTranslation', 'books.book']);
+                }]);
+            }]);
+        }])
+            ->where('user_playlists.id', $playlist_id)
+            ->select(['user_playlists.*', \DB::Raw('false as following')])
+            ->first();
+    }
+
+    public static function findByUserAndPlan(int $user_id, int $plan_id) : Collection
+    {
+        return Playlist::where('user_id', $user_id)
+            ->where('plan_id', $plan_id)
+            ->orderBy('id')
+            ->get();
+    }
+
+    public static function findWithFollowersByUserAndIds(int $user_id, Array $playlist_ids) : Collection
+    {
+        return Playlist::with(['user', 'items' => function ($query_items) use ($user_id) {
+            if (!empty($user_id)) {
+                $query_items->withPlaylistItemCompleted($user_id);
+            }
+
+            $query_items->with(['fileset' => function ($query_fileset) {
+                $query_fileset->with('bible');
+            }]);
+        }])
+            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
+                $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
+                    ->where('playlists_followers.user_id', $user_id);
+            })
+            ->whereIn('user_playlists.id', $playlist_ids)
+            ->select(['user_playlists.*', \DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
+            ->get()
+            ->keyBy('id');
+    }
+
+    public static function findWithPlaylistItemsByUserAndId(int $user_id, int $playlist_id) : Playlist
+    {
+        return Playlist::with(['user', 'items' => function ($query_items) {
+            $query_items->select([
+                'id',
+                'fileset_id',
+                'book_id',
+                'chapter_start',
+                'chapter_end',
+                'playlist_id',
+                'verse_start',
+                'verse_end',
+                'verses',
+                'duration',
+                \DB::Raw('false as completed'),
+            ]);
+
+            $query_items->with(['fileset' => function ($query_fileset) {
+                $query_fileset->with(['files.timestamps', 'bible' => function ($query_bible) {
+                    $query_bible->with(['translations', 'vernacularTranslation', 'books.book']);
+                }]);
+            }]);
+        }])
+            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
+                $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
+                    ->where('playlists_followers.user_id', $user_id);
+            })
+            ->where('user_playlists.id', $playlist_id)
+            ->select(['user_playlists.*', \DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
+            ->first();
+    }
+
+    public static function findOne(int $playlist_id) : ?Playlist
+    {
+        return Playlist::where('id', $playlist_id)->first();
     }
 }

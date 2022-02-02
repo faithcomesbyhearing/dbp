@@ -4,7 +4,11 @@ namespace App\Models\Plan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Traits\ModelBase;
+use App\Models\Playlist\PlaylistItems;
+use App\Models\Playlist\PlaylistItemsComplete;
+use App\Models\Plan\PlanDayComplete;
 
 /**
  * @OA\Schema (
@@ -85,27 +89,80 @@ class UserPlan extends Model
 
         return $this->getAttribute($keyName);
     }
-
+   
     public function calculatePercentageCompleted()
     {
-        $completed_per_day = PlanDay::where('plan_id', $this->plan_id)->get()
-            ->map(function ($plan_day) {
-                $completed = $plan_day->verifyDayCompleted();
-                return $completed;
-            });
-        $this->attributes['percentage_completed'] = $completed_per_day->sum('total_items') ? $completed_per_day->sum('total_items_completed') / $completed_per_day->sum('total_items') * 100 : 0;
+        $completed_per_day = PlanDay::summaryItemsCompletedByPlanId($this->plan_id, $this->user_id)->get();
+
+        $this->completeDaysCurrentUserPlan();
+
+        $this->attributes['percentage_completed'] = $completed_per_day->sum('total_items')
+            ? $completed_per_day->sum('total_items_completed') / $completed_per_day->sum('total_items') * 100
+            : 0;
         return $this;
     }
 
-    public function reset($start_date = null)
+    /**
+     * Complete every Plan Day that belongs to current UserPlan object
+     *
+     * @return void
+     */
+    private function completeDaysCurrentUserPlan() : void
     {
-        PlanDay::where('plan_id', $this->plan_id)->get()
-            ->each(function ($plan_day) {
-                $plan_day->unComplete();
-            });
-        $this->attributes['percentage_completed'] = 0;
+        $plan_days_to_complete = PlanDay::daysToCompleteByPlanId($this->plan_id, $this->user_id)->get();
+
+        $inserts_plan_days_completed = [];
+        foreach ($plan_days_to_complete as $plan_day) {
+            $inserts_plan_days_completed[] = [
+                'user_id'     => Auth::user()->id,
+                'plan_day_id' => $plan_day->id
+            ];
+        }
+
+        if (!empty($inserts_plan_days_completed)) {
+            PlanDayComplete::insert($inserts_plan_days_completed);
+        }
+    }
+
+    /**
+     * Reset the user plan according the given start date. If the save progress flag is true the
+     * plan progress will be removed.
+     *
+     * @param string $start_date
+     * @param bool   $save_progress
+     * @param int    $user_id
+     *
+     * @return Array
+     */
+    public function reset(string $start_date = null, bool $save_progress = false, ?int $user_id = null) : UserPlan
+    {
+        if ($save_progress === false) {
+            if (is_null($user_id)) {
+                $user = Auth::user();
+                $user_id = $user->id;
+            }
+
+            self::removePlanDaysCompleteByPlanId($this->plan_id, $user_id);
+            $this->attributes['percentage_completed'] = 0;
+        }
+
         $this->attributes['start_date'] = $start_date;
 
         return $this;
+    }
+
+    /**
+     * Remove the Plan Days Completed records attached to a Plan and an User
+     *
+     * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Array
+     */
+    public static function removePlanDaysCompleteByPlanId(int $plan_id, int $user_id) : void
+    {
+        $playlist_ids_by_plan = PlanDay::getPlanDayIdsByPlanAndUser($plan_id, $user_id);
+        PlaylistItemsComplete::removeItemsByPlayListsAndUser($playlist_ids_by_plan, $user_id);
+        PlanDayComplete::removeDaysByPlanAndUser($plan_id, $user_id);
     }
 }

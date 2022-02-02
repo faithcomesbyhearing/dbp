@@ -28,37 +28,39 @@ class UsersDownloadAnnotations extends APIController
     /**
      *
      * @OA\Get(
-     *     path="/users/{user_id}/annotations/{bible_id}/{book}/{chapter}",
+     *     path="/users/{user_id}/annotations/{bible_id}/{book_id}/{chapter}",
      *     tags={"Annotations"},
      *     summary="Download annotations for specific user and bible fileset",
      *     description="For a given fileset return content (text, audio or video)",
      *     operationId="v4_download",
-     *     @OA\Parameter(name="user_id", in="query", description="The User ID", required=true,
+     *     @OA\Parameter(name="user_id", in="path", description="The User ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/User/properties/id")),
-     *     @OA\Parameter(name="bible_id", in="query", description="Will filter the results by the given bible",
+     *      @OA\Parameter(name="bible_id", in="path", description="Will filter the results by the given bible", required=true,
+     *          @OA\Schema(ref="#/components/schemas/Bible/properties/id")
+     *     ),
      *     @OA\Parameter(name="book_id", in="path",
      *          description="Will filter the results by the given book. For a complete list see the `book_id` field in the `/bibles/books` route.",
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
      *     @OA\Parameter(name="chapter", in="path",
-     *          description="Will filter the results by the given chapter", required=true,
+     *          description="Will filter the results by the given chapter",
      *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")
      *     ),
-     *     @OA\Parameter(parameter="notes_sort_by", name="notes_sort_by", in="query",
+     *     @OA\Parameter(name="notes_sort_by", in="query",
      *          description="The field to sort by for the notes",
      *          @OA\Schema(type="string")
      *     ),
-     *     @OA\Parameter(parameter="bookmarks_sort_by", name="bookmarks_sort_by", in="query",
+     *     @OA\Parameter(name="bookmarks_sort_by", in="query",
      *          description="The field to sort by for the bookmarks",
      *          @OA\Schema(type="string")
      *     ),
-     *     @OA\Parameter(parameter="highlights_sort_by", name="highlights_sort_by", in="query",
+     *     @OA\Parameter(name="highlights_sort_by", in="query",
      *          description="The field to sort by for the highlights",
      *          @OA\Schema(type="string")
      *     ),
-     *     @OA\Parameter(parameter="sort_dir", name="sort_dir", in="query", description="The direction to sort by",
+     *     @OA\Parameter(name="sort_dir", in="query", description="The direction to sort by",
      *          @OA\Schema(type="string",enum={"asc","desc"})
-     *     )
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
