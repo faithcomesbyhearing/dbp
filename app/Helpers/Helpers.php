@@ -141,7 +141,8 @@ function cacheRememberForever($cache_key, $callback)
 
 function generateCacheString($key, $args = [])
 {
-    $cache_string =  strtolower(array_reduce($args, function ($carry, $item) {
+    $new_args = removeSpaceAndCntrlFromCacheParameters($args);
+    $cache_string =  strtolower(array_reduce($new_args, function ($carry, $item) {
         return $carry .= ':' . $item;
     }, $key));
     // cache key max out at 250 bytes, so we use md5 to avoid it from maxing out
@@ -535,5 +536,26 @@ if (!function_exists('getTestamentString')) {
                 $testament = [];
         }
         return $testament;
+    }
+}
+
+/**
+ * Remove space and cntrl for each value that belongs to cache params array
+ *
+ * @param array $cache_params
+ *
+ * @return array
+ */
+if (!function_exists('removeSpaceAndCntrlFromCacheParameters')) {
+    function removeSpaceAndCntrlFromCacheParameters(array $cache_params): array
+    {
+        return array_map(
+            function ($param) {
+                return is_string($param)
+                    ? preg_replace('/[[:cntrl:]]/', '', str_replace(' ', '', $param))
+                    : $param;
+            },
+            $cache_params
+        );
     }
 }

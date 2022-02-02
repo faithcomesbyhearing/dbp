@@ -7,13 +7,15 @@ use App\Models\Language\Language;
 use App\Models\Playlist\Playlist;
 use App\Models\Playlist\PlaylistItems;
 use App\Models\User\User;
+use App\Models\Bible\Bible;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\Plans\PlaylistService;
 
-class translatePlaylist extends Command
+class TranslatePlaylist extends Command
 {
     /**
      * The name and signature of the console command.
@@ -29,6 +31,8 @@ class translatePlaylist extends Command
      */
     protected $description = 'Command to translate a playlist to a list of bibles';
 
+    private $playlist_service;
+
     /**
      * Create a new command instance.
      *
@@ -37,6 +41,8 @@ class translatePlaylist extends Command
     public function __construct()
     {
         parent::__construct();
+
+        $this->playlist_service = new PlaylistService();
     }
 
     /**
@@ -50,55 +56,54 @@ class translatePlaylist extends Command
         $bible_ids = $this->argument('bible_ids');
 
         // i18n
+        $language = Language::where('iso', 'eng')->select(['iso', 'id'])->first();
 
-        $cache_params = ['eng'];
-        $current_language = cacheRemember('selected_api_language', $cache_params, now()->addDay(), function () {
-            $language = Language::where('iso', 'eng')->select(['iso', 'id'])->first();
-            return [
-                'i18n_iso' => $language->iso,
-                'i18n_id'  => $language->id
-            ];
-        });
-        $GLOBALS['i18n_iso'] = $current_language['i18n_iso'];
-        $GLOBALS['i18n_id']  = $current_language['i18n_id'];
+        if (!$language) {
+            $this->error('Language ENG do not exist');
+        }
 
+        $GLOBALS['i18n_iso'] = $language->iso;
+        $GLOBALS['i18n_id']  = $language->id;
 
-        $playlist = Playlist::where('id', $playlist_id)->first();
+        $playlist = Playlist::findOne($playlist_id);
+
         if (!$playlist) {
             $this->error('Playlist with ID:' . $playlist_id . ' does not exist');
         } else {
             $this->alert('Translating playlist ' . $playlist->name . ' starting: ' . Carbon::now());
             $bible_ids = explode(',', $bible_ids);
-            $user = User::with('projects')->whereId($playlist->user_id)->first();
-            $playlist_controller = new MessagedPlaylistController();
             foreach ($bible_ids as $key => $bible_id) {
-                $request = new Request();
-                request()->merge(['bible_id' => $bible_id]);
                 try {
                     $this->line('Translating playlist to bible ' . $bible_id . ' started ' . Carbon::now());
-                    $translated_playlist = $playlist_controller->translate($request, $playlist_id, $user, false)->getData();
-                    $playlist = Playlist::where('id', $translated_playlist->id)->first();
-                    $language_id = DB::connection('dbp')
-                        ->table('bibles')
-                        ->select(['language_id'])
-                        ->whereId($bible_id)->first();
-
-                    $playlist->language_id = $language_id->language_id;
-                    $playlist->save();
+                    $bible = Bible::whereId($bible_id)->first();
+                    if (!$bible) {
+                        $this->alert('Bible with ID:' . $bible_id . ' does not exist' . Carbon::now());
+                        continue;
+                    }
+                    $translated_playlist = $this->playlist_service->translate($playlist_id, $bible, $playlist->user_id);
+                    $playlist = Playlist::findOne($translated_playlist['id']);
 
                     $playlist_items = PlaylistItems::when($playlist_id, function ($query, $playlist_id) {
                         $query->where('playlist_id', $playlist_id);
                     })->get();
                     $this->line(Carbon::now() . ' Sync starting for ' . sizeof($playlist_items) . ' items');
                     foreach ($playlist_items as $key => $playlist_item) {
-                        $this->line(Carbon::now() . ' Calculating duration and verses of item ' . ($key + 1) . ' started');
+                        $this->line(
+                            Carbon::now() . ' Calculating duration and verses of item ' . ($key + 1) . ' started'
+                        );
                         $playlist_item->calculateDuration()->save();
                         $playlist_item->calculateVerses()->save();
-                        $this->info(Carbon::now() . ' Calculating duration and verses of item ' . ($key + 1) . ' finalized');
+                        $this->info(
+                            Carbon::now() . ' Calculating duration and verses of item ' . ($key + 1) . ' finalized'
+                        );
                         $this->line('');
                     }
 
                     $this->info('Translating playlist to bible ' . $bible_id . ' finalized ' . Carbon::now());
+                    $this->info('Translating playlist to language ID' . $bible->language_id . ' ' . Carbon::now());
+                    $this->info('Plan Translated ID: ' . $playlist->id . ' ' . Carbon::now());
+                    $this->info('Plan Translated Language ID: ' . $playlist->language_id . ' ' . Carbon::now());
+
                     $this->line('');
                 } catch (Exception $e) {
                     $this->error('Error translating playlist to bible ' . $bible_id . ' ');
@@ -117,13 +122,5 @@ class translatePlaylist extends Command
 
         $this->line('');
         $this->alert('Translating playlist end: ' . Carbon::now());
-    }
-}
-
-class MessagedPlaylistController extends PlaylistsController
-{
-    public function replyWithError($message, $action = null)
-    {
-        throw (new Exception($message));
     }
 }

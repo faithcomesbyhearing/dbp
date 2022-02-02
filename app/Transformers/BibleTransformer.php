@@ -190,12 +190,26 @@ class BibleTransformer extends BaseTransformer
 
                 return $output;
 
+            /**
+             * @OA\Schema (
+             *   type="array",
+             *   schema="v4_bible.search",
+             *   description="The bible being returned",
+             *   title="v4_bible.search",
+             *   @OA\Xml(name="v4_bible.search"),
+             *   @OA\Items(
+             *       @OA\Property(property="abbr",          ref="#/components/schemas/Bible/properties/id"),
+             *       @OA\Property(property="name",          ref="#/components/schemas/BibleTranslation/properties/name"),
+             *       @OA\Property(property="language_id",   ref="#/components/schemas/Language/properties/id")
+             *   )
+             * )
+             */
             case 'v4_bible.search':
-              return [
-                  'abbr'              => $bible->bible_id,
-                  'name'              => $bible->name,
-                  'language_id'       => $bible->language_id,
-              ];
+                return [
+                    'abbr'              => $bible->bible_id,
+                    'name'              => $bible->name,
+                    'language_id'       => $bible->language_id,
+                ];
 
                 /**
                  * @OA\Schema (
@@ -227,17 +241,29 @@ class BibleTransformer extends BaseTransformer
                  */
             case 'v4_bible.one':
                 $currentTranslation = optional($bible->translations->where('language_id', $GLOBALS['i18n_id']));
-                $fonts = [];
+                $fonts = $bible->filesets->reduce(function ($carry, $item) {
+                    if ($item->relationLoaded('fonts')) {
+                        foreach ($item->fonts as $font) {
+                            if (!isset($carry[$font->name])) {
+                                $carry = ['name' => $font->name, 'data' => $font->data, 'type' => $font->type];
+                            }
+                        }
+                    }
+                    return $carry;
+                }, null);
+
                 $bible = [
                     'abbr'          => $bible->id,
                     'alphabet'      => $bible->alphabet,
                     'mark'          => $bible->copyright,
-                    'name'          => optional($bible->translations->where('language_id', $GLOBALS['i18n_id'])->first())->name,
-                    'description'   => optional($bible->translations->where('language_id', $GLOBALS['i18n_id'])->first())->description,
+                    'name'          => optional($currentTranslation->first())->name,
+                    'description'   => optional($currentTranslation->first())->description,
                     'vname'         => optional($bible->vernacularTranslation)->name,
                     'vdescription'  => optional($bible->vernacularTranslation)->description,
-                    'publishers'    => optional($bible->organizations)->where('pivot.relationship_type', 'publisher')->all(),
-                    'providers'     => optional($bible->organizations)->where('pivot.relationship_type', 'provider')->all(),
+                    'publishers'    => optional($bible->organizations)
+                        ->where('pivot.relationship_type', 'publisher')->all(),
+                    'providers'     => optional($bible->organizations)
+                        ->where('pivot.relationship_type', 'provider')->all(),
                     'equivalents'   => $bible->equivalents,
                     'language'      => optional($bible->language)->name,
                     'language_id'   => optional($bible->language)->id,
@@ -258,17 +284,10 @@ class BibleTransformer extends BaseTransformer
                         return $book;
                     })->values(),
                     'links'        => $bible->links,
-                    'filesets'     => $bible->filesets->mapToGroups(function ($item, $key) {
+                    'filesets'     => $bible->filesets->mapToGroups(function ($item) {
                         return [$item['asset_id'] => $this->filesetWithMeta($item)];
                     }),
-                    'fonts' => $bible->filesets->reduce(function ($carry, $item) {
-                        foreach ($item->fonts as $font) {
-                            if (!isset($carry[$font->name])) {
-                                $carry = ['name' => $font->name, 'data' => $font->data, 'type' => $font->type];
-                            }
-                        }
-                        return $carry;
-                    }, null)
+                    'fonts' => $fonts
                 ];
 
                 return $bible;
@@ -278,7 +297,8 @@ class BibleTransformer extends BaseTransformer
         }
     }
 
-    private function filesetWithMeta($fileset) {
+    private function filesetWithMeta($fileset)
+    {
         $fileset_data = [
             'id' => $fileset['id'],
             'type' => $fileset->set_type_code,
