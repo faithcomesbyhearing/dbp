@@ -203,12 +203,12 @@ class PlanTransformerBase extends BaseTransformer
         }
 
         return $playlist_items->map(function ($item) {
-            $bible = optional($item->fileset->bible)->first();
+            $bible = optional(optional($item->fileset)->bible)->first();
             $book_name = $bible
                 ? $this->getBookNameFromItem($bible, $item->book_id)
                 : null;
 
-            $result_item = [
+            return [
                 "id"            => $item->id,
                 "fileset_id"    => $item->fileset_id,
                 "book_id"       => $item->book_id,
@@ -232,12 +232,6 @@ class PlanTransformerBase extends BaseTransformer
                     "book_name"   => $book_name
                 ] : [],
             ];
-
-            if (!isset($item->verse_text)) {
-                $result_item["verse_text"] = $item->verse_text;
-            }
-
-            return $result_item;
         });
     }
 }

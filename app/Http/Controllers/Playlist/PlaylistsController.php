@@ -494,7 +494,19 @@ class PlaylistsController extends APIController
         }
 
         $playlist = $this->getPlaylist($user, $playlist_id);
-        return $this->reply($playlist);
+        $playlist->total_duration = $playlist->items->sum('duration');
+
+        return $this->reply(fractal(
+            $playlist,
+            new PlaylistTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     /**
@@ -578,8 +590,8 @@ class PlaylistsController extends APIController
 
         if ($follow) {
             $follower = PlaylistFollower::firstOrNew([
-                'user_id'               => $user->id,
-                'playlist_id'               => $playlist->id
+                'user_id'     => $user->id,
+                'playlist_id' => $playlist->id
             ]);
             $follower->save();
         } else {
@@ -589,7 +601,20 @@ class PlaylistsController extends APIController
         }
 
         $playlist = $this->getPlaylist($user, $playlist_id);
-        return $this->reply($playlist);
+
+        $playlist->total_duration = $playlist->items->sum('duration');
+
+        return $this->reply(fractal(
+            $playlist,
+            new PlaylistTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     /**
@@ -1184,39 +1209,11 @@ class PlaylistsController extends APIController
     public function getPlaylist($user, $playlist_id)
     {
         $user_id = empty($user) ? 0 : $user->id;
-        $select = ['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')];
-        $playlist = Playlist::with(['user', 'items' => function ($query_items) use ($user_id) {
-            if (!empty($user_id)) {
-                $query_items->withPlaylistItemCompleted($user_id);
-            }
 
-            $query_items->with(['fileset' => function ($query_fileset) {
-                $query_fileset->with('bible');
-            }]);
-        }])
-            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
-                $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
-                    ->where('playlists_followers.user_id', $user_id);
-            })
-            ->where('user_playlists.id', $playlist_id)
-            ->select($select)
-            ->first();
+        $playlist = Playlist::withUserAndItemsById($playlist_id, $user_id)->first();
 
         if (!$playlist) {
             return $this->setStatusCode(404)->replyWithError('No playlist could be found for: ' . $playlist_id);
-        }
-
-        if (isset($playlist->items)) {
-            $playlist->items = $playlist->items->map(function ($item) {
-                if (isset($item->fileset, $item->fileset->bible)) {
-                    $bible = $item->fileset->bible->first();
-                    if ($bible) {
-                        $item->bible_id = $bible->id;
-                    }
-                }
-                unset($item->fileset);
-                return $item;
-            });
         }
 
         return $playlist;

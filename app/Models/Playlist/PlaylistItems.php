@@ -662,8 +662,7 @@ class PlaylistItems extends Model implements Sortable
                 'verse_start'   => $this['verse_start'] ?? null,
                 'verse_end'     => $this['verse_end'] ?? null,
                 'verses'        => $this['verses'] ?? 0,
-                'order_column'  => $this['order_column'],
-                'duration'      => $this['duration']
+                'order_column'  => $this['order_column']
             ]
         );
     }

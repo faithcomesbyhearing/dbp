@@ -539,7 +539,6 @@ if (!function_exists('getTestamentString')) {
     }
 }
 
-
 /**
  * Remove space and cntrl for each value that belongs to cache params array
  *

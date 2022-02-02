@@ -945,7 +945,16 @@ class PlansController extends APIController
             $show_details = $show_text;
         }
         
-        $plan = $this->plan_service->translate($plan_id, $bible, $user_id, $draft, $show_details);
+        $plan = $this->plan_service->translate($plan_id, $bible, $user_id, $draft);
+
+        if ($show_details === true) {
+            $this->plan_service->setPlaylistItemsForEachPlaylist($plan, $user_id);
+        }
+
+        // If it is true, it will create the verse_text property for each play list item that belong to a day
+        if ($show_text === true) {
+            $this->plan_service->setVerseTextToEachPlaylistItem($plan);
+        }
 
         return $this->reply(fractal(
             $plan,

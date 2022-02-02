@@ -296,6 +296,7 @@ class BiblesController extends APIController
      *     description="Detailed information for a single Bible",
      *     operationId="v4_bible.one",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
+     *     @OA\Parameter(name="include_font",in="query"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
