@@ -285,14 +285,12 @@ class PlansController extends APIController
         }
 
         if ($show_details) {
-            $day_playlist_ids = [];
-            foreach ($plan->days as $day) {
-                $day_playlist_ids[] = $day->playlist_id;
-            }
-
             $user_id = empty($user) ? 0 : $user->id;
 
-            $this->plan_service->setVerseTextToEachPlaylistItem($plan, $user_id, $day_playlist_ids);
+            $this->plan_service->setPlaylistItemsForEachPlaylist($plan, $user_id);
+            if ($show_text) {
+                $this->plan_service->setVerseTextToEachPlaylistItem($plan);
+            }
         }
 
         return $this->reply(fractal(
