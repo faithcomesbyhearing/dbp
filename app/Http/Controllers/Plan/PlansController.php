@@ -902,6 +902,18 @@ class PlansController extends APIController
      *          @OA\Schema(type="boolean"),
      *          description="Give full details of the translated plan"
      *     ),
+     *     @OA\Parameter(
+     *          name="show_text",
+     *          in="query",
+     *          @OA\Schema(type="boolean"),
+     *          description="Give full details about the text verse for each playlist item"
+     *     ),
+     *     @OA\Parameter(
+     *          name="save_completed_items",
+     *          in="query",
+     *          @OA\Schema(type="boolean"),
+     *          description="Save progress for the translated plan"
+     *     ),
      *     @OA\Response(response=200, ref="#/components/responses/plan")
      * )
      *
@@ -938,12 +950,13 @@ class PlansController extends APIController
         $user_id = empty($user) ? 0 : $user->id;
         $show_details = checkBoolean('show_details');
         $show_text = checkBoolean('show_text');
+        $save_completed_items = checkBoolean('save_completed_items');
 
         if ($show_text) {
             $show_details = $show_text;
         }
         
-        $plan = $this->plan_service->translate($plan_id, $bible, $user_id, $draft);
+        $plan = $this->plan_service->translate($plan_id, $bible, $user_id, $draft, $save_completed_items);
 
         if ($show_details === true) {
             $this->plan_service->setPlaylistItemsForEachPlaylist($plan, $user_id);
@@ -966,25 +979,5 @@ class PlansController extends APIController
             ),
             new ArraySerializer()
         ));
-    }
-
-    private function translatePlaylist(
-        $playlist,
-        $user,
-        $plan_id,
-        $bible,
-        $audio_fileset_types,
-        $bible_audio_filesets,
-        $playlist_controller
-    ) {
-        return $this->plan_service->translatePlaylist(
-            $playlist,
-            $user,
-            $plan_id,
-            $bible,
-            $audio_fileset_types,
-            $bible_audio_filesets,
-            $playlist_controller
-        );
     }
 }

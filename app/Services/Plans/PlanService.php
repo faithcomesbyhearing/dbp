@@ -4,11 +4,14 @@ namespace App\Services\Plans;
 
 use App\Models\Plan\Plan;
 use App\Models\Plan\PlanDay;
+use App\Models\Plan\PlanDayComplete;
 use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
 use App\Models\Playlist\PlaylistItems;
+use App\Models\Playlist\PlaylistItemsComplete;
 use App\Models\Bible\Bible;
 use App\Services\Plans\PlaylistService;
+use Illuminate\Database\Eloquent\Collection;
 
 class PlanService
 {
@@ -30,7 +33,8 @@ class PlanService
         int $plan_id,
         Bible $bible,
         int $user_id = 0,
-        bool $draft = true
+        bool $draft = true,
+        bool $save_completed_items = true
     ) : Plan {
         $plan = $this->getPlanWithDaysByIdAndUser($plan_id, $user_id);
 
@@ -52,6 +56,7 @@ class PlanService
         $bible_audio_filesets = $bible->filesets->whereIn('set_type_code', $audio_fileset_types);
         $count_plan_days = 0;
         $playlist_ids = [];
+        $valid_bible_audio_filesets = $this->playlist_service->getValidAudioStreamFilesets($bible_audio_filesets);
 
         foreach ($plan->days as $day) {
             $playlist_ids[] = $day->playlist_id;
@@ -70,7 +75,7 @@ class PlanService
                     $new_plan->id,
                     $bible,
                     $audio_fileset_types,
-                    $bible_audio_filesets
+                    $valid_bible_audio_filesets
                 );
                 $playlists_to_create[] = $playlist_translated['playlist_data'];
                 $translation_data[$day->playlist_id] = $playlist_translated["translation_data"];
@@ -132,38 +137,206 @@ class PlanService
 
         $new_items = PlaylistItems::findByIdsWithFilesetRelation($new_day_playlist_ids);
 
-        foreach ($new_items as $new_playlist_item) {
-            $key_translated = $new_playlist_item->generateUniqueKey();
+        if (!$new_items->isEmpty()) {
+            $this->linkTranslationPlaylistItems(
+                $new_items,
+                $playlist_items_to_create_indexed,
+                $translation_data,
+            );
 
-            if (isset($playlist_items_to_create_indexed[$new_playlist_item->playlist_id][$key_translated])) {
-                $translated_item_id = $playlist_items_to_create_indexed
-                    [$new_playlist_item->playlist_id][$key_translated]['translated_id'];
-                $translated_playlist_id = $playlist_items_to_create_indexed
-                    [$new_playlist_item->playlist_id][$key_translated]['playlist_id_key'];
-
-                if (isset($translation_data[$translated_playlist_id][$translated_item_id])) {
-                    $translation_data[$translated_playlist_id][$translated_item_id]->translation_item =
-                        $new_playlist_item;
-                }
+            if ($user_id && $save_completed_items === true) {
+                $this->createCompletePlaylistItems(
+                    $user_id,
+                    $new_items,
+                    $playlist_items_to_create_indexed,
+                    $translation_data,
+                );
             }
         }
 
         PlanDay::insert($play_day_data);
-        $translated_percentage = $count_plan_days > 0
-            ? $translated_percentage / $count_plan_days
-            : 0;
 
         UserPlan::create([
             'user_id'               => $user_id,
             'plan_id'               => $new_plan->id
         ]);
 
+        $old_plan_days_complete_indexed = [];
+
+        if ($user_id && $save_completed_items === true) {
+            $old_plan_days_complete_indexed = $this->getPlanDaysCompleteIndexed($plan->days);
+        }
+
         $plan = $this->getPlanWithDaysByIdAndUser($new_plan->id, $user_id);
+
+        if ($user_id && $save_completed_items === true) {
+            $new_plist_id_indexed_old_plist_id = $this->gePlaylistIndexedNewAndOld($new_playlists, $playlist_ids);
+            $this->createCompletePlayDays(
+                $user_id,
+                $plan->days,
+                $new_plist_id_indexed_old_plist_id,
+                $old_plan_days_complete_indexed,
+            );
+        }
+
+        $translated_percentage = $count_plan_days > 0
+            ? $translated_percentage / $count_plan_days
+            : 0;
 
         $plan->translation_data = $this->transformTranslationData($translation_data);
         $plan->translated_percentage = $translated_percentage*100;
 
         return $plan;
+    }
+
+    /**
+     * Get an indexed by playlist ID to match the new playlist IDs with the old playlist IDs
+     *
+     * @param Collection $days
+     * @return Array
+     */
+    private function gePlaylistIndexedNewAndOld(Collection $new_playlists, Array $old_playlist_ids) : Array
+    {
+        $new_plist_id_indexed_old_plist_id = [];
+        foreach ($new_playlists as $new_palyslist_index => $new_playlist) {
+            $new_plist_id_indexed_old_plist_id[$new_playlist->id] = $old_playlist_ids[$new_palyslist_index];
+        }
+        return $new_plist_id_indexed_old_plist_id;
+    }
+
+    /**
+     * Get an indexed by playlist ID to know if a day has been completed
+     *
+     * @param Collection $days
+     * @return Array
+     */
+    private function getPlanDaysCompleteIndexed(Collection $days) : Array
+    {
+        $plan_days_complete_indexed = [];
+        foreach ($days as $day) {
+            if ($day->completed === true) {
+                $plan_days_complete_indexed[$day->playlist_id] = true;
+            }
+        }
+        return $plan_days_complete_indexed;
+    }
+
+    /**
+     * Create the complate play day records by user.
+     *
+     * @param int $user_id
+     * @param Collection $plan_days
+     * @param Array $old_day_playlist_ids
+     * @param Array $plan_days_complete_indexed
+     *
+     * @return bool
+     */
+    public function createCompletePlayDays(
+        int $user_id,
+        Collection $plan_days,
+        Array $old_day_playlist_ids,
+        Array $plan_days_complete_indexed
+    ) : bool {
+        $plan_days_complete_to_create = [];
+        foreach ($plan_days as $new_day_translate) {
+            if (isset($old_day_playlist_ids[$new_day_translate->playlist_id])) {
+                $old_day_playlist_id = $old_day_playlist_ids[$new_day_translate->playlist_id];
+
+                if (isset($plan_days_complete_indexed[$old_day_playlist_id])) {
+                    $plan_days_complete_to_create[] = [
+                        "user_id" => $user_id,
+                        "plan_day_id" => $new_day_translate->id
+                    ];
+
+                    $new_day_translate->completed = true;
+                }
+            }
+        }
+
+        if (!empty($plan_days_complete_to_create)) {
+            return PlanDayComplete::insert($plan_days_complete_to_create);
+        }
+
+        return false;
+    }
+
+    /**
+     * Create the complate playlist item records by user.
+     *
+     * @param int $user_id
+     * @param Collection $items
+     * @param Array $old_day_playlist_ids
+     * @param Array $plan_days_complete_indexed
+     *
+     * @return bool
+     */
+    public function createCompletePlaylistItems(
+        int $user_id,
+        Collection $items,
+        Array $playlist_indexed,
+        Array $translation_data,
+    ) : bool {
+        if (!$user_id) {
+            return false;
+        }
+
+        $pitems_complete_to_create = [];
+
+        foreach ($items as $playlist_item) {
+            $key_translated = $playlist_item->generateUniqueKey();
+
+            if (isset($playlist_indexed[$playlist_item->playlist_id][$key_translated])) {
+                $translated_item_indexed = $playlist_indexed[$playlist_item->playlist_id][$key_translated];
+                $translated_item_id = $translated_item_indexed['translated_id'];
+                $translated_playlist_id = $translated_item_indexed['playlist_id_key'];
+
+                if (isset($translation_data[$translated_playlist_id][$translated_item_id]) &&
+                    $translation_data[$translated_playlist_id][$translated_item_id]->completed === true
+                ) {
+                    $pitems_complete_to_create[] = [
+                        "user_id" => $user_id,
+                        "playlist_item_id" => $playlist_item->id,
+                    ];
+                    $playlist_item->completed = true;
+                }
+            }
+        }
+
+        if (!empty($pitems_complete_to_create)) {
+            return PlaylistItemsComplete::insert($pitems_complete_to_create);
+        }
+
+        return false;
+    }
+
+    /**
+     * Add the translation_item property to each translation data record if the record has a translation available
+     *
+     * @param Collection $items - playlist items
+     * @param Array $playlist_indexed - array to know if an item has a translation
+     * @param Array $translation_data - array of playlist items translated
+     *
+     * @return void
+     */
+    public function linkTranslationPlaylistItems(
+        Collection $items,
+        Array $playlist_indexed,
+        Array $translation_data
+    ) : void {
+        foreach ($items as $playlist_item) {
+            $key_translated = $playlist_item->generateUniqueKey();
+
+            if (isset($playlist_indexed[$playlist_item->playlist_id][$key_translated])) {
+                $translated_item_indexed = $playlist_indexed[$playlist_item->playlist_id][$key_translated];
+                $translated_item_id = $translated_item_indexed['translated_id'];
+                $translated_playlist_id = $translated_item_indexed['playlist_id_key'];
+
+                if (isset($translation_data[$translated_playlist_id][$translated_item_id])) {
+                    $translation_data[$translated_playlist_id][$translated_item_id]
+                        ->translation_item = $playlist_item;
+                }
+            }
+        }
     }
 
     /**
@@ -264,7 +437,7 @@ class PlanService
                     })->prepend($item->fileset->set_type_code);
                     $preferred_fileset = $ordered_types->map(
                         function ($type) use ($bible_audio_filesets, $item) {
-                            return $this->playlist_service->getFileset(
+                            return $this->playlist_service->getFilesetFromValidFilesets(
                                 $bible_audio_filesets,
                                 $type,
                                 $item->fileset->set_size_code
@@ -303,7 +476,8 @@ class PlanService
             "playlist_data" =>
                 [
                     'user_id'           => $user_id,
-                    'name'              => $playlist->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
+                    'name'              =>
+                        $playlist->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
                     'external_content'  => $playlist->external_content,
                     'featured'          => false,
                     'draft'             => true,
