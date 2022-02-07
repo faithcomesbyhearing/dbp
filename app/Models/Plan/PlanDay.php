@@ -276,7 +276,11 @@ class PlanDay extends Model implements Sortable
     public function scopeDaysToCompleteByPlanId(Builder $query, int $plan_id, int $user_id) : Builder
     {
         return $query->select('plan_days.id')
-            ->leftJoin('plan_days_completed', 'plan_days.id', 'plan_days_completed.plan_day_id')
+            ->leftJoin('plan_days_completed', function ($query_left_join) use ($user_id) {
+                $query_left_join
+                    ->on('plan_days.id', '=', 'plan_days_completed.plan_day_id')
+                    ->where('plan_days_completed.user_id', $user_id);
+            })
             ->where('plan_days.plan_id', $plan_id)
             ->whereExists(function ($sub_query) use ($plan_id, $user_id) {
                 return $sub_query->select(\DB::raw(1))
