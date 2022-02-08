@@ -142,6 +142,15 @@ class BibleFilesetsDownloadController extends APIController
      *     @OA\Parameter(name="limit", in="query", description="The number of search results to return",
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id", type="integer", default=50)
      *     ),
+     *     @OA\Parameter(name="page", in="query", description="The current page of the results",
+     *          @OA\Schema(type="integer",default=1)
+     *     ),
+     *     @OA\Parameter(
+     *          name="type",
+     *          in="query",
+     *          description="Filter by type of content (audio, video, text)",
+     *          @OA\Schema(type="string")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -163,18 +172,24 @@ class BibleFilesetsDownloadController extends APIController
     public function list($cache_key = 'bible_filesets_download_list')
     {
         $limit = (int) (checkParam('limit') ?? 50);
+        $page = (int) (checkParam('page') ?? 1);
+        $type = checkParam('type');
         $limit = min($limit, 50);
         $key = $this->getKey();
 
-        $cache_params = $this->removeSpaceFromCacheParameters([$key, $limit]);
+        $cache_params = $this->removeSpaceFromCacheParameters([$key, $limit, $page, $type]);
 
         $filesets = cacheRemember(
             $cache_key,
             $cache_params,
             now()->addHours(12),
-            function () use ($key, $limit) {
+            function () use ($key, $limit, $type) {
                 return BibleFilesetLookup::contentAvailable($key)
                     ->select(['filesetid', 'type', 'language', 'licensor'])
+                    ->when($type, function ($query) use ($type) {
+                        $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($type);
+                        $query->whereIn('type', $set_type_code_array);
+                    })
                     ->distinct()
                     ->orderBy('filesetid')
                     ->paginate($limit);
