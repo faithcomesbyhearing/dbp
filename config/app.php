@@ -163,7 +163,6 @@ return [
         App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        // Laravel\Socialite\SocialiteServiceProvider::class,
         SocialiteProviders\Manager\ServiceProvider::class,
         SocialiteProviders\Generators\GeneratorsServiceProvider::class,
         Illuminate\Notifications\NotificationServiceProvider::class,
@@ -172,6 +171,7 @@ return [
         App\Providers\LocalEnvironmentServiceProvider::class,
         Bugsnag\BugsnagLaravel\BugsnagServiceProvider::class,
         Sentry\Laravel\ServiceProvider::class,
+        Biscolab\ReCaptcha\ReCaptchaServiceProvider::class,
     ],
 
     /*
@@ -225,7 +225,8 @@ return [
         'Localization' => Lunaweb\Localization\Facades\Localization::class,
         'i18n'         => Lunaweb\Localization\Facades\Localization::class,
         'Bugsnag'      => Bugsnag\BugsnagLaravel\Facades\Bugsnag::class,
-        'Sentry' => Sentry\Laravel\Facade::class,
+        'Sentry'       => Sentry\Laravel\Facade::class,
+        'ReCaptcha'    => Biscolab\ReCaptcha\Facades\ReCaptcha::class
     ],
 
 ];
