@@ -91,5 +91,4 @@ return [
         'fonts_server' => env('CDN_FONTS_SERVER', 'cdn.bible.build'),
         'country_image_server' => env('MCDN_COUNTRY_IMAGE', 'dbp-mcdn.s3.us-west-2.amazonaws.com')
     ]
-
 ];

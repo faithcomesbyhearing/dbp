@@ -955,7 +955,7 @@ class PlansController extends APIController
         if ($show_text) {
             $show_details = $show_text;
         }
-        
+
         $plan = $this->plan_service->translate($plan_id, $bible, $user_id, $draft, $save_completed_items);
 
         if ($show_details === true) {
