@@ -1,6 +1,7 @@
 @extends('layouts.apiKey')
 @section('head')
 <title>Request your API key</title>
+{!! htmlScriptTagJsApi(['lang' => 'en']) !!}
 @endsection
 
 @section('content')
@@ -9,10 +10,14 @@
     <h1 class="txt-h2">Request Your API Key</h1>
   </div>
 </div>
-
 <div class="section">
   <div class="api-form-container">
     <div class="form-single-col__container w-form">
+      @if($errors->has('g-recaptcha-response'))
+        <div class="full-col__input-wrapper mb-24">
+          <p class="card-header notification is-danger is-danger is-light">Captcha Required</p>
+        </div>
+      @endif
       <form id="key_request" method="POST" name="wf-form-API-Key-Request" data-name="API Key Request" class="form-single-col" action="{{ route('api_key.request') }}">
         @csrf <!-- add csrf field on your form -->
         <div class="full-col__input-wrapper mb-24">
@@ -48,6 +53,16 @@
               <br>‍
             </span>
           </label>
+        </div>
+        @if($errors->has('g-recaptcha-response'))
+          <div class="full-col__input-wrapper align-center mb-24">
+            <span class="help-block notification is-danger is-light">
+              Error verifying Captcha, please try again.
+            </span>
+          </div>
+        @endif
+        <div class="full-col__input-wrapper align-center mb-24">
+          {!! htmlFormSnippet() !!}
         </div>
         <div class="full-col__input-wrapper align-center">
           <input type="submit" value="Submit" data-wait="Please wait..." class="btn-md btn--send mb-40 w-button">
