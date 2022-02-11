@@ -79,11 +79,15 @@ class TranslatePlan extends Command
                         $this->alert('Bible with ID:' . $bible_id . ' does not exist' . Carbon::now());
                         continue;
                     }
-                    $translated_plan = $this->plan_service->translate($plan_id, $bible, $plan->user_id, false);
+                    $translated_plan = $this->plan_service->translate(
+                        $plan_id,
+                        $bible,
+                        $plan->user_id,
+                        false,
+                        true,
+                        true
+                    );
                     $plan = Plan::where('id', $translated_plan['id'])->first();
-
-                    $this->line('Calculating Duration and Verses ' . Carbon::now());
-                    $this->plan_service->calculateDurationAndVersesUpdatePlan($plan, true);
 
                     $this->info('Translating plan to bible ' . $bible_id . ' finalized ' . Carbon::now());
                     $this->info('Plan Translated ID: ' . $plan->id . ' ' . Carbon::now());
