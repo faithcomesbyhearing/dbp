@@ -295,8 +295,8 @@ class PlaylistsController extends APIController
         PlaylistItems::insert($playlist_items_to_create);
         $created_playlist_items = PlaylistItems::where('playlist_id', $playlist->id)->orderBy('order_column')->get();
 
-        $this->playlist_service->calculateDurationAndUpdateItem($created_playlist_items);
-        $this->playlist_service->calculateVersesAndUpdateItem($created_playlist_items);
+        $this->playlist_service->calculateDuration($created_playlist_items);
+        $this->playlist_service->calculateVerses($created_playlist_items);
 
         foreach ($created_playlist_items as $playlist_item) {
             $playlist_item->save();

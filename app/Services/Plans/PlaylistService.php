@@ -218,7 +218,7 @@ class PlaylistService
      *
      * @return Plan
      */
-    public function calculateDurationAndUpdateItem(?Collection $playlist_items) : void
+    public function calculateDuration(?Collection $playlist_items) : void
     {
         foreach ($playlist_items as $playlist_item) {
             $playlist_item->calculateDuration();
@@ -232,7 +232,7 @@ class PlaylistService
      *
      * @return Plan
      */
-    public function calculateVersesAndUpdateItem(?Collection $playlist_items) : void
+    public function calculateVerses(?Collection $playlist_items) : void
     {
         foreach ($playlist_items as $playlist_item) {
             $playlist_item->calculateVerses();
