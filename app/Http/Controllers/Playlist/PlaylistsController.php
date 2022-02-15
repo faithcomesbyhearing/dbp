@@ -865,7 +865,7 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(404)->replyWithError('Bible Not Found');
         }
 
-        $playlist = Playlist::findOne($playlist_id);
+        $playlist = Playlist::findOne((int) $playlist_id);
 
         if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
