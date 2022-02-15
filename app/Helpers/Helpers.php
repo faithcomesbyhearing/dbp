@@ -266,11 +266,13 @@ function shouldUseBibleisBackwardCompat($key)
     $app_compat_keys = getBackwardCompatibilityInfo($key);
     $deprecation_version = null;
 
+    $backward_compatibility = config('settings.backward_compatibility.app_name');
+
     if ($app_compat_keys['isBibleis']) {
-        $app_name = 'Bible.is';
+        $app_name = $backward_compatibility['bibleis'];
         $deprecation_version = config('settings.deprecate_from_version.bibleis');
     } elseif ($app_compat_keys['isGideons']) {
-        $app_name = 'Gideons';
+        $app_name = $backward_compatibility['gideons'];
         $deprecation_version = config('settings.deprecate_from_version.gideons');
     }
 
