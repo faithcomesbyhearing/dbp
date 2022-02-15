@@ -941,7 +941,7 @@ class PlansController extends APIController
             return $this->setStatusCode(404)->replyWithError('Bible Not Found');
         }
 
-        $plan = $this->plan_service->getPlanById($plan_id);
+        $plan = $this->plan_service->getPlanById((int) $plan_id);
 
         if (!$plan) {
             return $this->setStatusCode(404)->replyWithError('Plan Not Found');

@@ -401,20 +401,22 @@ class Bible extends Model
     }
     public function scopeIsTimingInformationAvailable($query)
     {
+        $timestamps_counts = BibleFileTimestamp::select('bible_file_timestamps.bible_file_id')
+            ->distinct();
 
-        $bibles_ids_with_timestamps = Bible::select('bibles.id')
+        $files_timestamps = BibleFile::select('bible_files.hash_id')
             ->distinct()
-            ->join('bible_fileset_connections', 'bibles.id', 'bible_fileset_connections.bible_id')
-            ->join('bible_files', 'bible_files.hash_id', 'bible_fileset_connections.hash_id')
-            ->join(
-                \DB::raw(
-                    "(SELECT DISTINCT bible_file_timestamps.bible_file_id FROM bible_file_timestamps)
-                    as timestamps_counts"
-                ),
-                'timestamps_counts.bible_file_id',
-                '=',
-                'bible_files.id'
-            )->get()->pluck('id');
+            ->joinSub($timestamps_counts, 'timestamps_counts', function ($join) {
+                $join->on('timestamps_counts.bible_file_id', '=', 'bible_files.id');
+            });
+
+        $bibles_ids_with_timestamps = BibleFilesetConnection::select('bible_fileset_connections.bible_id')
+            ->distinct()
+            ->joinSub($files_timestamps, 'files_timestamps', function ($join) {
+                $join->on('bible_fileset_connections.hash_id', '=', 'files_timestamps.hash_id');
+            })
+            ->get()
+            ->pluck('bible_id');
 
         return $query->whereIn('bibles.id', $bibles_ids_with_timestamps);
     }
