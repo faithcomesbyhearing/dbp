@@ -9,6 +9,7 @@ use App\Models\Bible\Video;
 use App\Models\Country\CountryLanguage;
 use App\Models\Country\CountryRegion;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use App\Models\Country\Country;
 use App\Models\Resource\Resource;
 
@@ -820,5 +821,18 @@ class Language extends Model
         }
 
         return $new_language_query;
+    }
+
+    /**
+     * Sort the languages records by country_population
+     *
+     * @param Builder $query
+     * @see scopeIncludeCountryPopulation
+     *
+     * @return Builder
+     */
+    public function scopeIncludeOrderByCountryPopulation(Builder $query) : Builder
+    {
+        return $query->orderBy('country_population', 'DESC');
     }
 }
