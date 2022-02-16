@@ -19,7 +19,6 @@
         "bugsnag/bugsnag-laravel": "2.23.0",
         "curl/curl": "2.3.3",
         "doctrine/dbal": "3.3.2",
-        "fideloper/proxy": "4.4.1",
         "geoip2/geoip2": "2.12.2",
         "google/recaptcha": "1.2.4",
         "guzzlehttp/guzzle": "7.4.1",
