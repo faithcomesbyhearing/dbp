@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Transformers;
+namespace App\Transformers\V2\LibraryCatalog;
 
 use App\Models\Language\Language;
 
