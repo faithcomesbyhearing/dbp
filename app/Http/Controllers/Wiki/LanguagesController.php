@@ -119,6 +119,7 @@ class LanguagesController extends APIController
                 ->includeAutonymTranslation()
                 ->includeExtraLanguageTranslations($include_translations)
                 ->includeCountryPopulation($country)
+                ->includeOrderByCountryPopulation()
                 ->isContentAvailable($key)
                 ->filterableByCountry($country)
                 ->filterableByIsoCode($code)
