@@ -61,7 +61,7 @@
         </div>
         
         <div class="full-col__input-wrapper align-center">
-            <input type="submit" value="{{ __('Reset Password') }}" data-wait="Please wait..." class="btn-md btn--send mb-40 button"/>
+            <input type="submit" value="{{ __('Reset Password') }}" data-wait="Please wait..." class="btn-md btn--send mb-40 w-button"/>
         </div>
     </form>
 </div>
