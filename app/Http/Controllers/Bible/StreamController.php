@@ -208,6 +208,10 @@ class StreamController extends APIController
             ->select('hash_id', 'id', 'asset_id')
             ->first();
 
+        if (!$audio_fileset) {
+            return $this->setStatusCode(404)->replyWithError('No Audio fileset found for the provided params');
+        }
+
         $bible_files = BibleFile::where([
             'hash_id' => $audio_fileset->hash_id,
             'book_id' => $parts[0],
