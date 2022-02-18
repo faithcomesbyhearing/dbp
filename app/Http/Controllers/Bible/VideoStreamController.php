@@ -18,10 +18,6 @@ class VideoStreamController extends APIController
         $book_id = null,
         $chapter = null
     ) {
-
-        $forbidden_isos = explode(',', config('settings.forbiddenArclightIso'));
-        $iso = in_array($iso, $forbidden_isos) ? 'eng' : $iso;
-
         $book = Book::where('id', $book_id)->select('id_osis')->first();
         if (!$book) {
             return $this->setStatusCode(404)->replyWithError('Book not found');
@@ -112,17 +108,10 @@ class VideoStreamController extends APIController
     {
         try {
             $show_detail = checkBoolean('show_detail');
-            $metadata_tag = checkParam('metadata_tag') ?? 'en';
             $iso  = checkParam('iso') ?? false;
             $language_code = false;
 
             if ($iso) {
-                // For iso equals to "hun", we need to substitute iso=eng due to a problem with the jesus
-                // film recording for Hungarian
-                if ($iso === 'hun') {
-                    $iso = 'eng';
-                }
-
                 $language_code = optional(
                     LanguageCode::whereHas('language', function ($query) use ($iso) {
                         $query->where('iso', $iso);
@@ -137,27 +126,20 @@ class VideoStreamController extends APIController
                 }
             }
 
-            if (!$show_detail) {
-                $parameters = 'ids='.$language_code;
-                return collect($this->fetchArclight('media-languages', false, false, $parameters)->mediaLanguages)
-                    ->pluck('languageId', 'iso3')->toArray();
-            }
+            $cache_params = [$show_detail, $language_code, $iso];
 
-            $cache_params = [$metadata_tag, $language_code];
             $languages = cacheRemember(
                 'arclight_languages_detail',
                 $cache_params,
                 now()->addDay(),
-                function () use ($metadata_tag, $language_code) {
-                    $parameters =
-                        'contentTypes=video&metadataLanguageTags=' . $metadata_tag . ',en&ids='.$language_code;
-                    $languages = collect(
-                        $this->fetchArclight(
-                            'media-languages',
-                            false,
-                            false,
-                            $parameters
-                        )->mediaLanguages
+                function () use ($language_code, $show_detail) {
+                    $parameters = $language_code ? 'ids='.$language_code : '';
+
+                    $languages =  $this->fetchArclight(
+                        'media-languages',
+                        false,
+                        false,
+                        $parameters
                     );
 
                     if (isset($languages->original, $languages->original['error'])) {
@@ -166,8 +148,15 @@ class VideoStreamController extends APIController
                             ->setStatusCode($arclight_error['status_code'])
                             ->replyWithError($arclight_error['message']);
                     }
+                    $languages_collection = collect(optional($languages)->mediaLanguages);
 
-                    return $languages->where('counts.speakerCount.value', '>', 0)->map(function ($language) {
+                    if (!$show_detail) {
+                        return $languages_collection
+                            ->pluck('languageId', 'iso3')
+                            ->toArray();
+                    }
+
+                    return $languages_collection->map(function ($language) {
                         return [
                             'jesus_film_id' => $language->languageId,
                             'iso' => $language->iso3,
@@ -188,8 +177,6 @@ class VideoStreamController extends APIController
     {
         try {
             $iso = checkParam('iso') ?? $iso;
-            $forbidden_isos = explode(',', config('settings.forbiddenArclightIso'));
-            $iso = in_array($iso, $forbidden_isos) ? 'eng' : $iso;
 
             if ($iso) {
                 $languages = cacheRemember('arclight_languages', [$iso], now()->addDay(), function () use ($iso) {
