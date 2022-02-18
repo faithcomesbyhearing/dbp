@@ -27,14 +27,12 @@ trait ArclightConnection
         try {
             $ctx = stream_context_create(array('http'=>
                 array('timeout' =>  (int) config('services.arclight.service_timeout'))
-            ));       
+            ));
             $results = json_decode(file_get_contents($path, false, $ctx));
         } catch (Exception $e) {
-            $error = 
-                strpos($e, 'timed out') !== false ? 
-                $this->setStatusCode(408)->replyWithError('Request timeout') :
-                $this->setStatusCode(500)->replyWithError('Internal server error');
-            return $error;
+            return strpos($e, 'timed out') !== false
+                ? $this->setStatusCode(408)->replyWithError('Request timeout')
+                : $this->setStatusCode(500)->replyWithError('Internal server error');
         }
 
         if (isset($results->_embedded)) {
