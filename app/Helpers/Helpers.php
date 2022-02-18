@@ -3,6 +3,48 @@
 use Illuminate\Support\Facades\Cache;
 
 /**
+ * Get param from request object and check that the param is set if param is required
+ *
+ * @param string $param_name
+ * @param bool $required
+ * @param Array|string|int|null|bool $init_value
+ *
+ * @return array|bool|null|string
+ */
+function getAndCheckParam(
+    string $param_name,
+    bool $required = false,
+    Array|string|int|null|bool $init_value = null
+) : Array|string|int|null {
+    $parameter_value = $init_value;
+    $parameter_value = removeSpaceAndCntrlParameter($parameter_value);
+
+    if (!is_null($init_value) && $parameter_value !== '') {
+        return $init_value;
+    }
+
+    foreach (explode('|', $param_name) as $current_param) {
+        if (request()->has($current_param)) {
+            $parameter_value = request()->input($current_param);
+        } elseif (session()->has($current_param)) {
+            $parameter_value = request()->get($current_param);
+        } elseif (request()->hasHeader($current_param)) {
+            $parameter_value = request()->header($current_param);
+        }
+    }
+
+    if ($required && empty($parameter_value)) {
+        Log::channel('errorlog')->error(["Missing Param '$param_name", 422]);
+        abort(
+            422,
+            "You need to provide the missing parameter '$param_name'. Please append it to the url or the request Header."
+        );
+    }
+
+    return $parameter_value;
+}
+
+/**
  * Check query parameters for a given parameter name, and check the headers for the same parameter name;
  * also allow for two or more parameter names to match to the same $paramName using pipes to separate them.
  * Also check specially for the "key" param to come from the Authorization header.
@@ -553,11 +595,25 @@ if (!function_exists('removeSpaceAndCntrlFromCacheParameters')) {
     {
         return array_map(
             function ($param) {
-                return is_string($param)
-                    ? preg_replace('/[[:cntrl:]]/', '', str_replace(' ', '', $param))
-                    : $param;
+                return removeSpaceAndCntrlParameter($param);
             },
             $cache_params
         );
+    }
+}
+
+/**
+ * Remove space and cntrl for a value
+ *
+ * @param string|int|Array|bool|null $param
+ *
+ * @return string|int|Array|bool|null
+ */
+if (!function_exists('removeSpaceAndCntrlParameter')) {
+    function removeSpaceAndCntrlParameter(string|int|Array|bool|null $param): string|int|Array|bool|null
+    {
+        return is_string($param)
+            ? preg_replace('/[[:cntrl:]]/', '', str_replace(' ', '', $param))
+            : $param;
     }
 }

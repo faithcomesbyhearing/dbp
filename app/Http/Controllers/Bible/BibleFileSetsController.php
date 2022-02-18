@@ -171,10 +171,10 @@ class BibleFileSetsController extends APIController
     ) {
         $fileset_id   = checkParam('dam_id|fileset_id', true, $fileset_url_param);
         $book_id      = checkParam('book_id', true, $book_url_param);
-        $chapter_id   = checkParam('chapter_id|chapter', true, $chapter_url_param);
         $verse_start  = checkParam('verse_start') ?? 1;
         $verse_end    = checkParam('verse_end');
         $type         = checkParam('type') ?? '';
+        $chapter_id   = getAndCheckParam('chapter_id|chapter', true, $chapter_url_param);
 
         $cache_params = $this->removeSpaceFromCacheParameters(
             [
