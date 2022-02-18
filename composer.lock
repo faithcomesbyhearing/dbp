@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "02ceb28e2b904f6aaf2ff74dca601e11",
+    "content-hash": "4f3d0cc0b1faa0b3ca96476ded30b2ad",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -2422,26 +2422,26 @@
         },
         {
             "name": "josiasmontag/laravel-localization",
-            "version": "0.8.2",
+            "version": "1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/josiasmontag/laravel-localization.git",
-                "reference": "092231b48ed30c6c7440e25756ba6986dd50d71e"
+                "reference": "ab72ee658048758f64b89c3ac481ecc3dd181573"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/josiasmontag/laravel-localization/zipball/092231b48ed30c6c7440e25756ba6986dd50d71e",
-                "reference": "092231b48ed30c6c7440e25756ba6986dd50d71e",
+                "url": "https://api.github.com/repos/josiasmontag/laravel-localization/zipball/ab72ee658048758f64b89c3ac481ecc3dd181573",
+                "reference": "ab72ee658048758f64b89c3ac481ecc3dd181573",
                 "shasum": ""
             },
             "require": {
-                "laravel/framework": "^6.0|^7.0|^8.0",
+                "laravel/framework": "^6.0|^7.0|^8.0|^9.0",
                 "php": ">=7.2.0"
             },
             "require-dev": {
                 "mockery/mockery": "^1.2",
-                "orchestra/testbench": "^4.0|^5.0|^6.0",
-                "phpunit/phpunit": "^8.0"
+                "orchestra/testbench": "^4.0|^5.0|^6.0|^7.0",
+                "phpunit/phpunit": "^8.0|^9.5.10"
             },
             "type": "library",
             "extra": {
@@ -2479,9 +2479,9 @@
             ],
             "support": {
                 "issues": "https://github.com/josiasmontag/laravel-localization/issues",
-                "source": "https://github.com/josiasmontag/laravel-localization/tree/0.8.2"
+                "source": "https://github.com/josiasmontag/laravel-localization/tree/1.0.0"
             },
-            "time": "2020-10-02T10:29:11+00:00"
+            "time": "2022-02-09T11:32:57+00:00"
         },
         {
             "name": "laravel/framework",
