@@ -172,7 +172,12 @@ class StreamController extends APIController
         if (sizeof($parts) === 1) {
             return BibleFile::with([
                     'streamBandwidth' => function ($query_stream) {
-                        $query_stream->with(['transportStreamTS', 'transportStreamBytes']);
+                        $query_stream->with([
+                            'transportStreamTS',
+                            'transportStreamBytes',
+                            'transportStreamBytes.timestamp',
+                            'transportStreamBytes.timestamp.bibleFile'
+                        ]);
                     }
                 ])
                 ->where('hash_id', $fileset->hash_id)
@@ -192,7 +197,12 @@ class StreamController extends APIController
 
         return BibleFile::with([
                 'streamBandwidth' => function ($query_stream) {
-                    $query_stream->with(['transportStreamTS', 'transportStreamBytes']);
+                    $query_stream->with([
+                        'transportStreamTS',
+                        'transportStreamBytes',
+                        'transportStreamBytes.timestamp',
+                        'transportStreamBytes.timestamp.bibleFile'
+                    ]);
                 }
             ])
             ->where('hash_id', $fileset->hash_id)

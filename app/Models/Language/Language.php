@@ -10,6 +10,7 @@ use App\Models\Country\CountryLanguage;
 use App\Models\Country\CountryRegion;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use App\Models\Country\Country;
 use App\Models\Resource\Resource;
 
@@ -712,22 +713,33 @@ class Language extends Model
         return $this->hasOne(LanguageDialect::class, 'dialect_id', 'id');
     }
 
-    public function scopeIsContentAvailable($query, $key)
+    /**
+     * Get the query to filter the languages by available bible fileset
+     * @param Illuminate\Database\Query\Builder $query
+     * @param string $key
+     *
+     * @return Illuminate\Database\Query\Builder
+     */
+    public function getQueryContentAvailable(QueryBuilder $query, string $key) : QueryBuilder
     {
         $dbp_users = config('database.connections.dbp_users.database');
         $dbp_prod = config('database.connections.dbp.database');
 
-        return $query->whereRaw(
-            'EXISTS (select 1
-                from ' . $dbp_users . '.user_keys uk
-                join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
-                where uk.key = ? and languages.id = b.language_id
-            )',
-            [$key]
-        );
+        return $query->select(\DB::raw(1))
+            ->from($dbp_users . '.user_keys as uk')
+            ->join($dbp_users . '.access_group_api_keys as agak', 'agak.key_id', 'uk.id')
+            ->join($dbp_prod . '.access_group_filesets as agf', 'agf.access_group_id', 'agak.access_group_id')
+            ->join($dbp_prod . '.bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+            ->join($dbp_prod . '.bibles as b', 'bfc.bible_id', 'b.id')
+            ->whereColumn('languages.id', '=', 'b.language_id')
+            ->where('uk.key', $key);
+    }
+
+    public function scopeIsContentAvailable($query, $key)
+    {
+        return $query->whereExists(function ($query) use ($key) {
+            return $this->getQueryContentAvailable($query, $key);
+        });
     }
 
     public function scopeFilterableByMedia($query, $media)
@@ -741,6 +753,29 @@ class Language extends Model
                 });
             });
         }
+    }
+
+    /**
+     * Filter the languages by available bible fileset and the given media parameter.
+     *
+     * @param Builder $query
+     * @param string $key
+     * @param string $media
+     *
+     * @return Builder
+     */
+    public function scopeIsContentAvailableAndfilterableByMedia(Builder $query, ?string $key, ?string $media) : Builder
+    {
+        $dbp_prod = config('database.connections.dbp.database');
+
+        return $query->whereExists(function ($query) use ($dbp_prod, $key, $media) {
+            return $this->getQueryContentAvailable($query, $key)
+                ->when($media, function ($query) use ($media, $dbp_prod) {
+                    $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($media);
+                    $query->join($dbp_prod . '.bible_filesets as bfst', 'bfst.hash_id', 'bfc.hash_id')
+                        ->whereIn('bfst.set_type_code', $set_type_code_array);
+                });
+        });
     }
 
     public function scopeFilterableBySetTypeCode($query, $set_type_code)

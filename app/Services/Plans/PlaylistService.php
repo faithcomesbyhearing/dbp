@@ -293,4 +293,20 @@ class PlaylistService
 
         return $created_playlist_items;
     }
+
+    /*
+     * Get the playlist records with the duration field for each playlist given a list of ids.
+     * Records will be indexed by playlist_id
+     *
+     * @param Array $playlist_ids
+     * @return Collection
+     */
+    public function getDurationByIds(Array $playlist_ids) : ?Collection
+    {
+        return PlaylistItems::select('playlist_id', \DB::raw('SUM(duration) as duration'))
+            ->whereIn('playlist_id', $playlist_ids)
+            ->groupBy('playlist_id')
+            ->get()
+            ->keyBy('playlist_id');
+    }
 }
