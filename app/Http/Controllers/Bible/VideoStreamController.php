@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Bible;
 use App\Http\Controllers\APIController;
 use App\Traits\ArclightConnection;
 use App\Models\Bible\Book;
+use App\Models\Language\LanguageCode;
 use Exception;
 
 class VideoStreamController extends APIController
@@ -17,10 +18,6 @@ class VideoStreamController extends APIController
         $book_id = null,
         $chapter = null
     ) {
-
-        $forbidden_isos = explode(',', config('settings.forbiddenArclightIso'));
-        $iso = in_array($iso, $forbidden_isos) ? 'eng' : $iso;
-
         $book = Book::where('id', $book_id)->select('id_osis')->first();
         if (!$book) {
             return $this->setStatusCode(404)->replyWithError('Book not found');
@@ -83,33 +80,92 @@ class VideoStreamController extends APIController
         return $this->reply($films);
     }
 
+    /**
+     * Description:
+     * Display the languages available for jesus films for arclight.
+     *
+     * @OA\Get(
+     *     path="/arclight/jesus-film/languages",
+     *     tags={"Arclight"},
+     *     summary="Returns detailed metadata for a single Bible arclight",
+     *     description="Returns detailed metadata for a single Bible arclight",
+     *     operationId="v4_video_jesus_film_languages",
+     *     @OA\Parameter(name="show_detail",in="query"),
+     *     @OA\Parameter(name="metadata_tag",in="query"),
+     *     @OA\Parameter(name="iso",in="query"),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json")
+     *     )
+     * )
+     *
+     * @param  string $id
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function jesusFilmsLanguages()
     {
         try {
             $show_detail = checkBoolean('show_detail');
-            $metadata_tag = checkParam('metadata_tag') ?? 'en';
-            if (!$show_detail) {
-                return collect($this->fetchArclight('media-languages', false)->mediaLanguages)->pluck('languageId', 'iso3')->toArray();
+            $iso  = checkParam('iso') ?? false;
+            $language_code = false;
+
+            if ($iso) {
+                $language_code = optional(
+                    LanguageCode::whereHas('language', function ($query) use ($iso) {
+                        $query->where('iso', $iso);
+                    })
+                    ->where('source', 'arclight')
+                    ->select('code')
+                    ->first()
+                )->code;
+
+                if (!$language_code) {
+                    return $this->setStatusCode(404)->replyWithError(trans('api.languages_errors_404'));
+                }
             }
 
-            $cache_params = [$metadata_tag];
-            $languages = cacheRemember('arclight_languages_detail', $cache_params, now()->addDay(), function () use ($metadata_tag) {
-                $languages = collect($this->fetchArclight('media-languages', false, false, 'contentTypes=video&metadataLanguageTags=' . $metadata_tag . ',en')->mediaLanguages);
-                
-                if (isset($languages->original, $languages->original['error'])) {
-                  $arclight_error = $languages->original['error'];
-                  return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
+            $cache_params = [$show_detail, $language_code, $iso];
+
+            $languages = cacheRemember(
+                'arclight_languages_detail',
+                $cache_params,
+                now()->addDay(),
+                function () use ($language_code, $show_detail) {
+                    $parameters = $language_code ? 'ids='.$language_code : '';
+
+                    $languages =  $this->fetchArclight(
+                        'media-languages',
+                        false,
+                        false,
+                        $parameters
+                    );
+
+                    if (isset($languages->original, $languages->original['error'])) {
+                        $arclight_error = $languages->original['error'];
+                        return $this
+                            ->setStatusCode($arclight_error['status_code'])
+                            ->replyWithError($arclight_error['message']);
+                    }
+                    $languages_collection = collect(optional($languages)->mediaLanguages);
+
+                    if (!$show_detail) {
+                        return $languages_collection
+                            ->pluck('languageId', 'iso3')
+                            ->toArray();
+                    }
+
+                    return $languages_collection->map(function ($language) {
+                        return [
+                            'jesus_film_id' => $language->languageId,
+                            'iso' => $language->iso3,
+                            'name' => $language->name,
+                            'autonym' => $language->nameNative
+                        ];
+                    })->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)->values()->all();
                 }
-                
-                return $languages->where('counts.speakerCount.value', '>', 0)->map(function ($language) {
-                    return [
-                        'jesus_film_id' => $language->languageId,
-                        'iso' => $language->iso3,
-                        'name' => $language->name,
-                        'autonym' => $language->nameNative
-                    ];
-                })->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)->values()->all();
-            });
+            );
 
             return $languages;
         } catch (Exception $e) {
@@ -121,8 +177,6 @@ class VideoStreamController extends APIController
     {
         try {
             $iso = checkParam('iso') ?? $iso;
-            $forbidden_isos = explode(',', config('settings.forbiddenArclightIso'));
-            $iso = in_array($iso, $forbidden_isos) ? 'eng' : $iso;
 
             if ($iso) {
                 $languages = cacheRemember('arclight_languages', [$iso], now()->addDay(), function () use ($iso) {

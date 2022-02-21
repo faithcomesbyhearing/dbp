@@ -6,6 +6,7 @@ use App\Models\Plan\Plan;
 use App\Models\Playlist\Playlist;
 use App\Models\Playlist\PlaylistItems;
 use App\Models\Bible\Bible;
+use App\Models\Bible\BibleFileset;
 use Illuminate\Database\Eloquent\Collection;
 
 class PlaylistService
@@ -115,11 +116,15 @@ class PlaylistService
         return $created_playlist_items;
     }
 
-    public function getFileset($filesets, $type, $size)
+    /**
+     * Filter the filesets by audio and streaming given a colletion of filesets
+     *
+     * @param Collection $filesets
+     *
+     * @return \Illuminate\Support\Collection $filesets
+     */
+    public function getValidAudioStreamFilesets(Collection $filesets) : \Illuminate\Support\Collection
     {
-        $available_filesets = [];
-
-        // This code avoids using filesets that have audio, but are not usable for translations i.e opus
         $valid_filesets = $filesets->filter(function ($fileset) {
             $valid_item = isset($fileset->set_type_code);
             $codec_meta = $this->getCodecMetadata($fileset);
@@ -130,7 +135,25 @@ class PlaylistService
             $is_audio_fileset = $is_mp3 || $is_audio_stream;
             return ($valid_item && $is_audio_fileset);
         });
-        $valid_filesets = collect($valid_filesets);
+
+        return collect($valid_filesets);
+    }
+
+    /**
+     * Get available filesets given a collection and according to a give type and size
+     *
+     * @param \Illuminate\Support\Collection $valid_filesets
+     * @param string $type
+     * @param string $size
+     *
+     * @return bool|BibleFileset
+     */
+    public function getFilesetFromValidFilesets(
+        ?\Illuminate\Support\Collection $valid_filesets,
+        string $type,
+        string $size
+    ) : bool|BibleFileset {
+        $available_filesets = [];
 
         $complete_fileset = $valid_filesets->where('set_type_code', $type)->where('set_size_code', 'C')->first();
         if ($complete_fileset) {
@@ -172,6 +195,12 @@ class PlaylistService
         return false;
     }
 
+    public function getFileset($filesets, $type, $size)
+    {
+        $valid_filesets = $this->getValidAudioStreamFilesets($filesets);
+        return $this->getFilesetFromValidFilesets($valid_filesets, $type, $size);
+    }
+
     private function getCodecMetadata($fileset)
     {
         if (isset($fileset->meta)) {
@@ -189,7 +218,7 @@ class PlaylistService
      *
      * @return Plan
      */
-    public function calculateDurationAndUpdateItem(?Collection $playlist_items) : void
+    public function calculateDuration(?Collection $playlist_items) : void
     {
         foreach ($playlist_items as $playlist_item) {
             $playlist_item->calculateDuration();
@@ -203,7 +232,7 @@ class PlaylistService
      *
      * @return Plan
      */
-    public function calculateVersesAndUpdateItem(?Collection $playlist_items) : void
+    public function calculateVerses(?Collection $playlist_items) : void
     {
         foreach ($playlist_items as $playlist_item) {
             $playlist_item->calculateVerses();

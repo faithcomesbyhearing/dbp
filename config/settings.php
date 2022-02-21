@@ -99,8 +99,8 @@ return [
    * DropZone CDN
    */
   'dropZoneJsCDN' => env(
-    'DROPZONE_JS_CDN',
-    'https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.4.0/dropzone.js'
+      'DROPZONE_JS_CDN',
+      'https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.4.0/dropzone.js'
   ),
   
   /*
@@ -127,4 +127,11 @@ return [
    * Download access group list allowed
    */
   'download_access_group_list' => env('DOWNLOAD_ACCESS_GROUP_LIST', '12,181,183,185,191,193'),
+
+  'backward_compatibility' => [
+      'app_name' => [
+        'bibleis' => env('BIBLEIS_COMPATIBILITY_APP_NAME', 'Bible.is'),
+        'gideons' => env('GIDEONS_COMPATIBILITY_APP_NAME', 'Gideon Bible App'),
+      ]
+  ]
 ];

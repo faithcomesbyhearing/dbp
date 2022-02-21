@@ -42,10 +42,10 @@ trait BibleFileSetsTrait
             'books.id',
             'bible_files.book_id'
         )
-        ->when($chapter_id, function ($query) use ($chapter_id) {
+        ->when(!is_null($chapter_id), function ($query) use ($chapter_id) {
             return $query->where(
                 'bible_files.chapter_start',
-                $chapter_id
+                (int) $chapter_id
             );
         })
         ->when($book, function ($query) use ($book) {
@@ -142,8 +142,8 @@ trait BibleFileSetsTrait
         ->when($book, function ($query) use ($book) {
             return $query->where('bible_verses.book_id', $book->id);
         })
-        ->when($chapter_id, function ($query) use ($chapter_id) {
-            return $query->where('chapter', $chapter_id);
+        ->when(!is_null($chapter_id), function ($query) use ($chapter_id) {
+            return $query->where('chapter', (int) $chapter_id);
         })
         ->when($verse_start, function ($query) use ($verse_start) {
             return $query->where('verse_end', '>=', $verse_start);
@@ -282,9 +282,13 @@ trait BibleFileSetsTrait
                         'chapter' => $fileset_chapters[0]->chapter_start,
                     ]
                 );
-                $collection = collect($fileset_chapters);
+                if (!empty($fileset_chapters) > 0 && $fileset_chapters->last() instanceof \App\Models\Bible\BibleFile) {
+                    $collection = $fileset_chapters;
+                } else {
+                    $collection = collect($fileset_chapters);
+                }
                 $fileset_chapters[0]->duration = $collection->sum('duration');
-                $fileset_chapters[0]->verse_end = $collection->last()->verse_end;
+                $fileset_chapters[0]->verse_end = optional($collection->last())->verse_end;
                 $fileset_chapters[0]->multiple_mp3 = true;
                 $fileset_chapters = [$fileset_chapters[0]];
             } else {
