@@ -225,7 +225,7 @@ class Playlist extends Model
         ->keyBy('id');
     }
 
-    public static function findWithBibleRelationByUserAndId(int $user_id, int $playlist_id) : Playlist
+    public static function findWithBibleRelationByUserAndId(int $user_id, int $playlist_id) : ?Playlist
     {
         return Playlist::with(['user', 'items' => function ($query_items) use ($user_id) {
             $query_items->withPlaylistItemCompleted($user_id);
@@ -270,7 +270,7 @@ class Playlist extends Model
             ->keyBy('id');
     }
 
-    public static function findWithPlaylistItemsByUserAndId(int $user_id, int $playlist_id) : Playlist
+    public static function findWithPlaylistItemsByUserAndId(int $user_id, int $playlist_id) : ?Playlist
     {
         return Playlist::with(['user', 'items' => function ($query_items) {
             $query_items->select([

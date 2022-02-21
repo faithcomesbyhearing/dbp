@@ -215,7 +215,7 @@ class Plan extends Model
      *
      * @return Plan
      */
-    public static function getWithDaysAndUserById(int $plan_id, ?int $user_id = null) : Plan
+    public static function getWithDaysAndUserById(int $plan_id, ?int $user_id = null) : ?Plan
     {
         return self::with(['days' => function ($days_query) use ($user_id) {
             if (!empty($user_id)) {
@@ -236,7 +236,7 @@ class Plan extends Model
      *
      * @return Plan
      */
-    public static function getWithDaysPlaylistItemsAndUserById(int $plan_id, int $user_id) : Plan
+    public static function getWithDaysPlaylistItemsAndUserById(int $plan_id, int $user_id) : ?Plan
     {
         return self::withDaysPlaylistItemsAndUserById($plan_id, $user_id)->first();
     }
