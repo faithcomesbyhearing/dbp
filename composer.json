@@ -25,7 +25,7 @@
         "guzzlehttp/guzzle": "7.4.1",
         "intervention/image": "2.7.1",
         "josiasmontag/laravel-localization": "0.8.2",
-        "laravel/framework": "8.83.1",
+        "laravel/framework": "9.2.0",
         "laravel/slack-notification-channel": "2.4.0",
         "laravel/socialite": "5.5.1",
         "laravel/tinker": "2.7.0",
