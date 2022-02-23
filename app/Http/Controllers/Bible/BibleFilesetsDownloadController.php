@@ -64,7 +64,7 @@ class BibleFilesetsDownloadController extends APIController
         $limit = max($limit, 5000);
         $key = $this->getKey();
 
-        $cache_params = $this->removeSpaceFromCacheParameters([$fileset_id, $book_id, $chapter, $key]);
+        $cache_params = $this->removeSpaceFromCacheParameters([$fileset_id, $book_id, $chapter, $key, $limit, $type]);
 
         $fileset_chapters = cacheRemember(
             $cache_key,
