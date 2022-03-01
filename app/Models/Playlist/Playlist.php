@@ -192,7 +192,8 @@ class Playlist extends Model
 
             $query_items->with(['fileset' => function ($query_fileset) {
                 $query_fileset->with('bible');
-            }]);
+            }])
+            ->conditionTagExcludeFileset(['opus', 'webm']);
         }])
             ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
                 $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
@@ -258,7 +259,8 @@ class Playlist extends Model
 
             $query_items->with(['fileset' => function ($query_fileset) {
                 $query_fileset->with('bible');
-            }]);
+            }])
+            ->conditionTagExcludeFileset(['opus', 'webm']);
         }])
             ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
                 $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
