@@ -8,6 +8,7 @@ use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileSecondary;
 use App\Models\Bible\BibleVerse;
 use App\Models\Organization\Asset;
+use App\Models\Bible\BibleFileset;
 use App\Transformers\FileSetTransformer;
 use App\Transformers\TextTransformer;
 use DB;
@@ -249,10 +250,10 @@ trait BibleFileSetsTrait
         $client
     ) {
         $is_stream =
-            $fileset->set_type_code === 'video_stream' ||
-            $fileset->set_type_code === 'audio_stream' ||
-            $fileset->set_type_code === 'audio_drama_stream';
-        $is_video = Str::contains($fileset->set_type_code, 'video');
+            $fileset->set_type_code === BibleFileset::TYPE_VIDEO_STREAM ||
+            $fileset->set_type_code === BibleFileset::TYPE_AUDIO_STREAM ||
+            $fileset->set_type_code === BibleFileset::TYPE_AUDIO_DRAMA_STREAM;
+        $is_video = Str::contains($fileset->set_type_code, BibleFileset::VIDEO);
 
         if ($is_stream) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
@@ -273,7 +274,10 @@ trait BibleFileSetsTrait
         } else {
             // Multiple files per chapter
             $hasMultiMp3Chapter = $this->hasMultipleMp3Chapters($fileset_chapters);
-            if (sizeof($fileset_chapters) > 1 && !$is_video && $hasMultiMp3Chapter) {
+            if (sizeof($fileset_chapters) > 1 &&
+                !$is_video && $hasMultiMp3Chapter &&
+                $fileset->set_type_code !== BibleFileset::TYPE_TEXT_USX
+            ) {
                 $fileset_chapters[0]->file_name = route(
                     'v4_media_stream',
                     [

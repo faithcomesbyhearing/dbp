@@ -36,12 +36,24 @@ use Illuminate\Support\Str;
  */
 class BibleFileset extends Model
 {
+    public const AUDIO = 'audio';
+    public const VIDEO = 'video';
+    public const TEXT = 'text';
+
+    public const TYPE_AUDIO_DRAMA = 'audio_drama';
+    public const TYPE_AUDIO = 'audio';
+    public const TYPE_AUDIO_STREAM = 'audio_stream';
+    public const TYPE_AUDIO_DRAMA_STREAM = 'audio_drama_stream';
+    public const TYPE_VIDEO_STREAM = 'video_stream';
+    public const TYPE_TEXT_FORMAT = 'text_format';
+    public const TYPE_TEXT_PLAIN = 'text_plain';
+    public const TYPE_TEXT_USX = 'text_usx';
+
     protected $connection = 'dbp';
     public $incrementing = false;
     protected $keyType = 'string';
     protected $hidden = ['created_at', 'updated_at', 'response_time', 'hidden', 'bible_id', 'hash_id'];
     protected $fillable = ['name', 'set_type', 'organization_id', 'variation_id', 'bible_id', 'set_copyright'];
-
 
     /**
      *
