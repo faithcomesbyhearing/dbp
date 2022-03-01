@@ -5,6 +5,8 @@ namespace App\Models\Bible;
 use App\Models\Organization\Asset;
 use App\Models\Organization\Organization;
 use App\Models\User\AccessGroupFileset;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -312,5 +314,42 @@ class BibleFileset extends Model
                 break;
         }
         return $result;
+    }
+
+    /**
+     * Filter record by given ids array
+     *
+     * @param Builder $query
+     * @param Array $fileset_ids
+     *
+     * @return Builder
+     */
+    public function scopeFilterByIds(Builder $query, Array $fileset_ids) : Builder
+    {
+        return $query->select('id', 'hash_id')
+            ->whereIn('id', $fileset_ids);
+    }
+
+    /**
+     * Get records that they are not related with the tag
+     *
+     * @param Builder $query
+     * @param Array $tags_exclude
+     *
+     * @return Builder
+     */
+    public function scopeConditionTagExclude(Builder $query, Array $tags_exclude) : Builder
+    {
+        return $query->whereDoesntHave('meta', function ($query_meta) use ($tags_exclude) {
+            $query_meta->where('description', $tags_exclude);
+        });
+    }
+
+    public static function getConditionTagExcludeByIds(Array $fileset_ids, Array $tags_exclude) : Collection
+    {
+        return self::filterByIds($fileset_ids)
+            ->conditionTagExclude($tags_exclude)
+            ->get()
+            ->keyBy('id');
     }
 }
