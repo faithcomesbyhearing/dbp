@@ -364,4 +364,32 @@ class BibleFileset extends Model
             ->get()
             ->keyBy('id');
     }
+
+    /**
+     * Get a boolean to know if the fileset belongs to audio type
+     *
+     * @return bool
+     */
+    public function isAudio() : bool
+    {
+        return in_array(
+            $this['set_type_code'],
+            [
+                BibleFileset::TYPE_AUDIO_DRAMA,
+                BibleFileset::TYPE_AUDIO,
+                BibleFileset::TYPE_AUDIO_DRAMA,
+                BibleFileset::TYPE_AUDIO_DRAMA_STREAM
+            ]
+        );
+    }
+
+    /**
+     * Get a boolean to know if the fileset belongs to video type
+     *
+     * @return bool
+     */
+    public function isVideo() : bool
+    {
+        return Str::contains($this['set_type_code'], BibleFileset::VIDEO);
+    }
 }
