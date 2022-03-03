@@ -18,18 +18,6 @@
         <div class="row">
             <div class="medium-4 columns">
                 <h5>{{ trans('docs.bibles_show_title') }}</h5>
-                <code>{{ route('api_bibles.equivalents', 'ENGKJV') }}</code>
-
-                <code><pre><?php
-                    $arrContextOptions=[
-                        'ssl'=>[
-                            'verify_peer'=>false,
-                            'verify_peer_name'=>false,
-                        ],
-                    ];
-                    echo json_decode(json_encode(file_get_contents(route('api_bibles.equivalents', 'ENGKJV', ['v' => 2]), false, stream_context_create($arrContextOptions))), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?>
-                </pre></code>
-
             </div>
         </div>
 
