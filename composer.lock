@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "645b999cf4c67c1f7f33af4e6bbcc74e",
+    "content-hash": "f44a07c681a4c96b45d3a37dbc8d4c2d",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -2419,16 +2419,16 @@
         },
         {
             "name": "laravel/framework",
-            "version": "v9.3.0",
+            "version": "v9.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "d442195be0c1a95324522d733e2369e406db51d1"
+                "reference": "c1c4404511b83fbf90ccbcdf864d4a85537f35e4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/d442195be0c1a95324522d733e2369e406db51d1",
-                "reference": "d442195be0c1a95324522d733e2369e406db51d1",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/c1c4404511b83fbf90ccbcdf864d4a85537f35e4",
+                "reference": "c1c4404511b83fbf90ccbcdf864d4a85537f35e4",
                 "shasum": ""
             },
             "require": {
@@ -2514,7 +2514,7 @@
                 "mockery/mockery": "^1.4.4",
                 "orchestra/testbench-core": "^7.1",
                 "pda/pheanstalk": "^4.0",
-                "phpstan/phpstan": "^1.0",
+                "phpstan/phpstan": "^1.4.7",
                 "phpunit/phpunit": "^9.5.8",
                 "predis/predis": "^1.1.9",
                 "symfony/cache": "^6.0"
@@ -2594,7 +2594,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2022-03-02T14:37:13+00:00"
+            "time": "2022-03-03T15:15:10+00:00"
         },
         {
             "name": "laravel/serializable-closure",
@@ -5752,16 +5752,16 @@
         },
         {
             "name": "spatie/array-to-xml",
-            "version": "3.1.1",
+            "version": "3.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/array-to-xml.git",
-                "reference": "18d474f5d53d3ff8d98e7ca00781d84c9c98d286"
+                "reference": "dd6f7de05ce12a321dfca8ac0c3cfeade5e37a2d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/array-to-xml/zipball/18d474f5d53d3ff8d98e7ca00781d84c9c98d286",
-                "reference": "18d474f5d53d3ff8d98e7ca00781d84c9c98d286",
+                "url": "https://api.github.com/repos/spatie/array-to-xml/zipball/dd6f7de05ce12a321dfca8ac0c3cfeade5e37a2d",
+                "reference": "dd6f7de05ce12a321dfca8ac0c3cfeade5e37a2d",
                 "shasum": ""
             },
             "require": {
@@ -5800,7 +5800,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/array-to-xml/issues",
-                "source": "https://github.com/spatie/array-to-xml/tree/3.1.1"
+                "source": "https://github.com/spatie/array-to-xml/tree/3.1.2"
             },
             "funding": [
                 {
@@ -5812,7 +5812,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2021-11-22T19:44:12+00:00"
+            "time": "2022-03-03T14:20:46+00:00"
         },
         {
             "name": "spatie/eloquent-sortable",
