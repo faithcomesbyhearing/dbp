@@ -342,7 +342,6 @@ class BiblesController extends APIController
                     'organizations.logoIcon',
                     'organizations.translations',
                     'alphabet.primaryFont',
-                    'equivalents',
                     'filesets' => function ($query) use ($key, $include_font) {
                         $query->isContentAvailable($key);
                         $query->when($include_font, function ($sub_query) {
