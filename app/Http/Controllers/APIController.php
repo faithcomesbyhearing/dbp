@@ -376,7 +376,7 @@ class APIController extends Controller
      */
     public function transformQuerySearchText(string $search_text): string
     {
-        $formatted_search = preg_replace('/[+\-><\(\)~*\"@]+/', ' ', $search_text);
+        $formatted_search = preg_replace('/[+\-><\(\)~*\"@%]+/', ' ', $search_text);
         $formatted_search = preg_replace('!\s+!', ' ', $formatted_search);
         return trim($formatted_search);
     }
