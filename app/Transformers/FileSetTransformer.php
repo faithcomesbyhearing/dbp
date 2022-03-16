@@ -133,7 +133,7 @@ class FileSetTransformer extends BaseTransformer
                     'duration'      => $fileset->duration
                 ];
                 if ($is_video) {
-                  $schema['thumbnail'] = $fileset->thumbnail;
+                    $schema['thumbnail'] = $fileset->thumbnail;
                 }
                 if ($fileset->multiple_mp3) {
                     $schema['multiple_mp3'] = true;
@@ -169,16 +169,17 @@ class FileSetTransformer extends BaseTransformer
                  * )
                  */
                 $schema = [
-                    'book_id'       => $fileset->book_id,
-                    'book_name'     => $fileset->book_name,
-                    'chapter_start' => $fileset->chapter_start,
-                    'chapter_end'   => $fileset->chapter_end,
-                    'verse_start'   => $fileset->verse_start,
-                    'verse_end'     => $fileset->verse_end,
-                    'timestamp'     => $fileset->timestamp,
-                    'path'          => $fileset->file_name,
-                    'duration'      => $fileset->duration,
-                    'thumbnail'     => $fileset->thumbnail,
+                    'book_id'           => $fileset->book_id,
+                    'book_name'         => $fileset->book_name,
+                    'chapter_start'     => $fileset->chapter_start,
+                    'chapter_end'       => $fileset->chapter_end,
+                    'verse_start'       => $fileset->verse_start,
+                    'verse_end'         => $fileset->verse_end,
+                    'timestamp'         => $fileset->timestamp,
+                    'path'              => $fileset->file_name,
+                    'duration'          => $fileset->duration,
+                    'thumbnail'         => $fileset->thumbnail,
+                    'filesize_in_bytes' => $fileset->file_size,
                 ];
 
                 if ($fileset->multiple_mp3) {
