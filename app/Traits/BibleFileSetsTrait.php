@@ -61,6 +61,7 @@ trait BibleFileSetsTrait
             'bible_files.verse_start',
             'bible_files.verse_end',
             'bible_files.file_name',
+            'bible_files.file_size',
             'bible_books.name as book_name',
             'books.protestant_order as book_order',
         ]);
