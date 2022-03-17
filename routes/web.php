@@ -198,10 +198,6 @@ Route::group(['middleware' => ['web']], function () {
             'guides/getting-started',
             'User\DocsController@start'
         );
-        Route::name('docs_bible_equivalents')->get(
-            'docs/bibles/equivalents',
-            'User\DocsController@bibleEquivalents'
-        );
         Route::name('docs_bible_books')->get(
             'docs/bibles/books',
             'User\DocsController@books'
@@ -229,11 +225,6 @@ Route::group(['middleware' => ['web']], function () {
         Route::name('docs_alphabets')->get(
             'docs/alphabets',
             'User\DocsController@alphabets'
-        );
-
-        Route::name('apiDocs_bible_equivalents')->get(
-            '/api/bible/bible-equivalents',
-            'Bible\BibleEquivalentsController@index'
         );
 
         Route::name('projects.connect')->get(

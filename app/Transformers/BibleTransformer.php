@@ -264,7 +264,6 @@ class BibleTransformer extends BaseTransformer
                         ->where('pivot.relationship_type', 'publisher')->all(),
                     'providers'     => optional($bible->organizations)
                         ->where('pivot.relationship_type', 'provider')->all(),
-                    'equivalents'   => $bible->equivalents,
                     'language'      => optional($bible->language)->name,
                     'language_id'   => optional($bible->language)->id,
                     'iso'           => optional($bible->language)->iso,

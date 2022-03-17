@@ -432,11 +432,6 @@ Route::name('v4_internal_lexicon_index')->get(
     'lexicons',
     'Bible\Study\LexiconController@index'
 );
-// Bible Equivalents will be updated at some point in the future. Not to be removed
-Route::name('v4_internal_bible_equivalents.all')->get(
-    'bible/equivalents',
-    'Bible\BibleEquivalentsController@index'
-);
 
 // Joshua Project -- is this current? this endpoint is not used by bible.is
 Route::name('v4_countries.jsp')->get(

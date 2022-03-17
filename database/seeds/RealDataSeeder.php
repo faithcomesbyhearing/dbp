@@ -19,7 +19,6 @@ use App\Models\Language\NumeralSystem;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleTranslation;
 use App\Models\Bible\BibleLink;
-use App\Models\Bible\BibleEquivalent;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleBook;
 use App\Models\Bible\BibleOrganization;
@@ -88,7 +87,6 @@ class RealDataSeeder extends Seeder
         $this->seedData('/bibles/bible_file_video_resolutions',          StreamBandwidth::class);
         $this->seedData('/bibles/bible_file_video_transport_stream',     StreamTS::class);
         $this->seedData('/bibles/bible_organization',                    BibleOrganization::class);
-        $this->seedData('/bibles/equivalents/bible-gateway',             BibleEquivalent::class);
         $this->seedData('/access/access_groups',                         AccessGroup::class);
         $this->seedData('/access/access_types',                          AccessType::class);
         $this->seedData('/access/access_group_filesets',                 AccessGroupFileset::class);
