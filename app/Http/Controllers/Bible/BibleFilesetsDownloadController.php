@@ -184,15 +184,7 @@ class BibleFilesetsDownloadController extends APIController
             $cache_params,
             now()->addHours(12),
             function () use ($key, $limit, $type) {
-                return BibleFilesetLookup::contentAvailable($key)
-                    ->select(['filesetid', 'type', 'language', 'licensor'])
-                    ->when($type, function ($query) use ($type) {
-                        $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($type);
-                        $query->whereIn('type', $set_type_code_array);
-                    })
-                    ->distinct()
-                    ->orderBy('filesetid')
-                    ->paginate($limit);
+                return BibleFilesetLookup::getContentAvailableByKey($key, $limit, $type);
             }
         );
 
