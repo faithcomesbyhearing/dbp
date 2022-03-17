@@ -37,7 +37,7 @@
         "spatie/eloquent-sortable": "4.0.1",
         "spatie/laravel-fractal": "6.0.0",
         "sunra/php-simple-html-dom-parser": "1.5.2",
-        "symfony/http-client": "^6.0",
+        "symfony/http-client": "6.0.5",
         "symfony/psr-http-message-bridge": "2.1.2",
         "symfony/yaml": "6.0.3",
         "torann/geoip": "3.0.4",
