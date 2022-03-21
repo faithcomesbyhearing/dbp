@@ -277,14 +277,26 @@ trait BibleFileSetsTrait
                 $this->hasMultipleMp3Chapters($fileset_chapters);
 
             if ($hasMultiMp3Chapter) {
-                $fileset_chapters[0]->file_name = route(
-                    'v4_media_stream',
-                    [
-                        'fileset_id' => $fileset->id,
-                        'book_id' => $fileset_chapters[0]->book_id,
-                        'chapter' => $fileset_chapters[0]->chapter_start,
-                    ]
-                );
+                if ($fileset_chapters[0]->chapter_start) {
+                    $fileset_chapters[0]->file_name = route(
+                        'v4_media_stream',
+                        [
+                            'fileset_id' => $fileset->id,
+                            'book_id' => $fileset_chapters[0]->book_id,
+                            'chapter' => $fileset_chapters[0]->chapter_start,
+                        ]
+                    );
+                } else {
+                    $fileset_chapters[0]->file_name = sprintf(
+                        '%s/bible/filesets/%s/%s-%s-%s-%s/playlist.m3u8',
+                        config('app.api_url'),
+                        $fileset->id,
+                        $fileset_chapters[0]->book_id,
+                        $fileset_chapters[0]->chapter_start,
+                        '',
+                        ''
+                    );
+                }
                 if (!empty($fileset_chapters) > 0 && $fileset_chapters->last() instanceof \App\Models\Bible\BibleFile) {
                     $collection = $fileset_chapters;
                 } else {

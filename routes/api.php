@@ -153,7 +153,6 @@ Route::name('v4_timestamps.verse')->get(
     'Bible\AudioController@timestampsByReference'
 );
 
-
 // VERSION 4 | Stream
 Route::name('v4_media_stream')->get(
     'bible/filesets/{fileset_id}/{file_id}/playlist.m3u8',
