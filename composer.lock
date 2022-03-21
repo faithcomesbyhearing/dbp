@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "76e15b9c5bec13c54c90a0859f217742",
+    "content-hash": "05acb7a4efdb71961d4f7e4533e513b0",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -194,16 +194,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.215.0",
+            "version": "3.215.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "79c4ffdf93cdcc7be9196ae2e22f0d0323cb2557"
+                "reference": "32cb9c6ac53ef7eb773d645ce6eda308ff069c5e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/79c4ffdf93cdcc7be9196ae2e22f0d0323cb2557",
-                "reference": "79c4ffdf93cdcc7be9196ae2e22f0d0323cb2557",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/32cb9c6ac53ef7eb773d645ce6eda308ff069c5e",
+                "reference": "32cb9c6ac53ef7eb773d645ce6eda308ff069c5e",
                 "shasum": ""
             },
             "require": {
@@ -279,9 +279,9 @@
             "support": {
                 "forum": "https://forums.aws.amazon.com/forum.jspa?forumID=80",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.215.0"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.215.1"
             },
-            "time": "2022-03-18T18:16:01+00:00"
+            "time": "2022-03-21T18:18:55+00:00"
         },
         {
             "name": "biscolab/laravel-recaptcha",
@@ -2040,16 +2040,16 @@
         },
         {
             "name": "guzzlehttp/psr7",
-            "version": "2.2.0",
+            "version": "2.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/psr7.git",
-                "reference": "6565c7e0db3231e92dd5ca3bed448b30fbc89eb1"
+                "reference": "c94a94f120803a18554c1805ef2e539f8285f9a2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/psr7/zipball/6565c7e0db3231e92dd5ca3bed448b30fbc89eb1",
-                "reference": "6565c7e0db3231e92dd5ca3bed448b30fbc89eb1",
+                "url": "https://api.github.com/repos/guzzle/psr7/zipball/c94a94f120803a18554c1805ef2e539f8285f9a2",
+                "reference": "c94a94f120803a18554c1805ef2e539f8285f9a2",
                 "shasum": ""
             },
             "require": {
@@ -2135,7 +2135,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/psr7/issues",
-                "source": "https://github.com/guzzle/psr7/tree/2.2.0"
+                "source": "https://github.com/guzzle/psr7/tree/2.2.1"
             },
             "funding": [
                 {
@@ -2151,7 +2151,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-03-20T13:51:08+00:00"
+            "time": "2022-03-20T21:55:58+00:00"
         },
         {
             "name": "http-interop/http-factory-guzzle",
