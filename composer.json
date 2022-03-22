@@ -14,7 +14,7 @@
         "php": "^8.0",
         "algolia/algoliasearch-client-php": "3.2.0",
         "appstract/laravel-opcache": "4.0.2",
-        "aws/aws-sdk-php": "3.215.1",
+        "aws/aws-sdk-php": "3.215.2",
         "biscolab/laravel-recaptcha": "5.3.0",
         "bugsnag/bugsnag-laravel": "2.23.0",
         "curl/curl": "2.3.3",
