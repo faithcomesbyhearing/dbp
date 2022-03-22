@@ -86,6 +86,8 @@ use App\Models\Resource\Resource;
  */
 class Language extends Model
 {
+    const ENGLISH_ID = 6414;
+
     protected $connection = 'dbp';
     public $table = 'languages';
     protected $fillable = [
