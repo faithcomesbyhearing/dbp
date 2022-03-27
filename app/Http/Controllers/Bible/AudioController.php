@@ -97,8 +97,8 @@ class AudioController extends APIController
         $chapter  = checkParam('chapter_id|chapter_number', true, $chapter_url_param);
 
         // Fetch Fileset & Files
-        $fileset = BibleFileset::uniqueFileset($id, 'audio', true)->first();  // BWF suggest removing audio and true. For audio, the filesetid is unique
-        //$fileset = BibleFileset::uniqueFileset($id)->first();
+        // BWF suggest removing audio and true. For audio, the filesetid is unique
+        $fileset = BibleFileset::uniqueFileset($id, 'audio', true)->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $id]));
         }
@@ -115,7 +115,10 @@ class AudioController extends APIController
         $audioTimestamps = BibleFileTimestamp::whereIn(
             'bible_file_id',
             $bible_files->pluck('id')
-        )->orderBy('verse_start')->get();
+        )
+        ->with('bibleFile')
+        ->orderBy('verse_start')
+        ->get();
 
 
         if ($audioTimestamps->isEmpty() &&

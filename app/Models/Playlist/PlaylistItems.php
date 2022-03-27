@@ -208,7 +208,9 @@ class PlaylistItems extends Model implements Sortable
     private function getDuration($playlist_item)
     {
         $fileset = cacheRemember('bible_fileset', [$playlist_item->fileset_id], now()->addDay(), function () use ($playlist_item) {
-            return BibleFileset::whereId($playlist_item->fileset_id)->first();
+            return $this->relationLoaded('fileset')
+                ? $this->fileset
+                : BibleFileset::whereId($playlist_item->fileset_id)->first();
         });
 
         if (!$fileset) {
@@ -517,7 +519,9 @@ class PlaylistItems extends Model implements Sortable
             [$fileset_id, $book_id],
             now()->addDay(),
             function () use ($fileset_id, $book_id) {
-                $bible_fileset = BibleFileset::whereId($fileset_id)->first();
+                $bible_fileset = $this->relationLoaded('fileset')
+                    ? $this->fileset
+                    : BibleFileset::whereId($fileset_id)->first();
 
                 // check if there exists an invalid fileset for each playlist item (data issue)
                 if (isset($bible_fileset)) {
@@ -532,7 +536,9 @@ class PlaylistItems extends Model implements Sortable
 
                 return [
                     'bible_id' => $bible->id,
-                    'bible_name' => optional($bible->translations->where('language_id', $GLOBALS['i18n_id'])->first())->name,
+                    'bible_name' => optional(
+                        $bible->translations->where('language_id', $GLOBALS['i18n_id'])->first()
+                    )->name,
                     'bible_vname' =>  optional($bible->vernacularTranslation)->name,
                     'book_name' => optional($bible->books->where('book_id', $book_id)->first())->name
                 ];
@@ -665,5 +671,27 @@ class PlaylistItems extends Model implements Sortable
                 'order_column'  => $this['order_column']
             ]
         );
+    }
+
+    /**
+     * Get records that they are not related with the tag
+     *
+     * @param Builder $query
+     * @param Array $tags_exclude
+     *
+     * @return Builder
+     */
+    public function scopeConditionTagExcludeFileset(Builder $query, Array $tags_exclude)
+    {
+        $query->whereNotExists(function ($sub_query) {
+            $dbp_prod = config('database.connections.dbp.database');
+
+            return $sub_query
+                ->select(\DB::raw(1))
+                ->from($dbp_prod . '.bible_filesets as bf')
+                ->join($dbp_prod . '.bible_fileset_tags as bft', 'bft.hash_id', 'bf.hash_id')
+                ->whereColumn('bf.id', '=', 'playlist_items.fileset_id')
+                ->whereIn($dbp_prod . '.bft.description', ['opus', 'webm']);
+        });
     }
 }

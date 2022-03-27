@@ -120,11 +120,10 @@ class LanguagesController extends APIController
                 ->includeExtraLanguageTranslations($include_translations)
                 ->includeCountryPopulation($country)
                 ->includeOrderByCountryPopulation()
-                ->isContentAvailable($key)
                 ->filterableByCountry($country)
                 ->filterableByIsoCode($code)
                 ->filterableByName($name)
-                ->filterableByMedia($media)
+                ->isContentAvailableAndfilterableByMedia($key, $media)
                 ->filterableBySetTypeCode($set_type_code)
                 ->select([
                     'languages.id',

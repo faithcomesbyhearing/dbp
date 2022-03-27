@@ -93,7 +93,7 @@ class LibraryVolumeTransformer extends BaseTransformer
              *      @OA\Property(property="right_to_left",           @OA\Schema(type="string", example="rtl",enum={"rtl", "ltr"})),
              *      @OA\Property(property="num_art",                 @OA\Schema(type="integer",example=0)),
              *      @OA\Property(property="num_sample_audio",        @OA\Schema(type="integer",example=0)),
-             *      @OA\Property(property="sku",                     ref="#/components/schemas/BibleEquivalent/properties/equivalent_id"),
+             *      @OA\Property(property="sku"),
              *      @OA\Property(property="audio_zip_path",          @OA\Schema(type="string")),
              *      @OA\Property(property="artwork_url",             @OA\Schema(type="string")),
              *      @OA\Property(property="font",                    ref="#/components/schemas/AlphabetFont"),

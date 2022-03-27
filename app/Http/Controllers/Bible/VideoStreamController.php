@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Bible;
 
+use Spatie\Fractalistic\ArraySerializer;
 use App\Http\Controllers\APIController;
 use App\Traits\ArclightConnection;
 use App\Models\Bible\Book;
 use App\Models\Language\LanguageCode;
 use Exception;
+use App\Services\Arclight\ArclightService;
+use App\Transformers\JesusFilmChapterTransformer;
 
 class VideoStreamController extends APIController
 {
@@ -24,60 +27,128 @@ class VideoStreamController extends APIController
         }
 
         $languages = cacheRemember('arclight_languages', [$iso], now()->addDay(), function () use ($iso) {
-            $languages = collect(optional($this->fetchArclight('media-languages', false, false, 'iso3=' . $iso))->mediaLanguages);
-            $languages = $languages->where('counts.speakerCount.value', $languages->max('counts.speakerCount.value'))->keyBy('iso3')->map(function ($item) {
-                return $item->languageId;
-            });
+            $languages = collect(
+                optional($this->fetchArclight('media-languages', false, false, 'iso3=' . $iso))->mediaLanguages
+            );
+
+            $languages = $languages
+                ->where('counts.speakerCount.value', $languages->max('counts.speakerCount.value'))
+                ->keyBy('iso3')
+                ->map(function ($item) {
+                    return $item->languageId;
+                });
             return $languages;
         });
         $has_language = $languages->contains(function ($value, $key) use ($iso) {
             return $key === $iso;
         });
+
         if (!$has_language) {
             return $this->setStatusCode(404)->replyWithError('No language could be found for the iso code specified');
         }
 
         $arclight_id = $languages[$iso];
-        $media_languages = cacheRemember('arclight_chapters_language_tag', [$arclight_id], now()->addDay(), function () use ($arclight_id) {
-            $media_languages = $this->fetchArclight('media-languages/' . $arclight_id);
-            return $media_languages;
-        });
-        $metadataLanguageTag = isset($media_languages->bcp47) ? $media_languages->bcp47 : '';
+        $media_languages = cacheRemember(
+            'arclight_chapters_language_tag',
+            [$arclight_id],
+            now()->addDay(),
+            function () use ($arclight_id) {
+                return $this->fetchArclight('media-languages/' . $arclight_id);
+            }
+        );
+        $metadata_language_tag = isset($media_languages->bcp47) ? $media_languages->bcp47 : '';
               
-        // We don't cache this portion because streaming url session can expire
-        $films = [];
         $verses = $this->getIdReferences();
+
+        $arclight_service = new ArclightService();
+        $streaming_component_responses = [];
+        $verse_keys = [];
+
         foreach ($verses as $verse_key => $verse) {
             if ($verse && isset($verse[$book->id_osis][$chapter])) {
-                // the media component has the descriptions and images for the initial content
-                $media_component = $this->fetchArclight('media-components/' . $verse_key , $arclight_id, false, 'metadataLanguageTags=' . $metadataLanguageTag . ',en');
-                if (isset($media_component->original['error'])) {
-                  $arclight_error = $media_component->original['error'];
-                  return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
-                } 
-                // streaming component returns the video and http urls
-                $streaming_component = $this->fetchArclight('media-components/' . $verse_key . '/languages/' . $arclight_id, $arclight_id, false);
-                if (isset($streaming_component->original['error'])) {
-                  $arclight_error = $streaming_component->original['error'];
-                  return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
+                $verse_keys[] = $verse_key;
+            }
+        }
+
+        $media_components_response = $arclight_service->doRequest(
+            'media-components',
+            $arclight_id,
+            false,
+            'metadataLanguageTags=' . $metadata_language_tag . ',en&ids='.join(',', $verse_keys)
+        );
+
+        // We don't cache this portion because streaming url session can expire
+        foreach ($verses as $verse_key => $verse) {
+            if ($verse && isset($verse[$book->id_osis][$chapter])) {
+                $streaming_component_responses[$verse_key] = $arclight_service->doRequest(
+                    'media-components/' . $verse_key . '/languages/' . $arclight_id,
+                    $arclight_id,
+                    false
+                );
+            }
+        }
+
+        try {
+            $media_components = $arclight_service->getContent($media_components_response);
+        } catch (Exception $e) {
+            return strpos($e, 'timed out') !== false
+                ? $this->setStatusCode(408)->replyWithError('Request timeout')
+                : $this->setStatusCode(500)->replyWithError('Internal server error');
+        }
+
+        $films = $this->getJesusFilmsFromMediaComponents($media_components, $verses, $book->id_osis, $chapter);
+
+        foreach ($streaming_component_responses as $verse_key => $response) {
+            if (isset($films[$verse_key])) {
+                try {
+                    $streaming_component = $arclight_service->getContent($response);
+                } catch (Exception $e) {
+                    return strpos($e, 'timed out') !== false
+                        ? $this->setStatusCode(408)->replyWithError('Request timeout')
+                        : $this->setStatusCode(500)->replyWithError('Internal server error');
                 }
-                
-                $films[] = (object) [
-                    'component_id' => $verse_key, 
-                    'verses' => $verse[$book->id_osis][$chapter],
+
+                $films[$verse_key]['meta']['file_name'] = $streaming_component->streamingUrls->m3u8[0]->url;
+            }
+        }
+
+        return $this->reply(fractal($films, new JesusFilmChapterTransformer, new ArraySerializer()));
+    }
+    
+    /**
+     * Get the jesus films array according media components. It will be indexed by verse_key (mediaComponentId)
+     * @param $media_components
+     * @param Array $verses
+     * @param string $book_id_osis
+     * @param string $chapter
+     *
+     * @return Array
+     */
+    private function getJesusFilmsFromMediaComponents(
+        $media_components,
+        Array $verses,
+        string $book_id_osis,
+        string $chapter
+    ) : Array {
+        $films = [];
+
+        foreach ($media_components->mediaComponents as $media_component) {
+            if (isset($verses[$media_component->mediaComponentId][$book_id_osis][$chapter])) {
+                $films[$media_component->mediaComponentId] = [
+                    'component_id' => $media_component->mediaComponentId,
+                    'verses' => $verses[$media_component->mediaComponentId][$book_id_osis][$chapter],
                     'meta' => [
                         'thumbnail' => $media_component->imageUrls->thumbnail,
                         'thumbnail_high' => $media_component->imageUrls->mobileCinematicHigh,
                         'title' => $media_component->title,
                         'shortDescription' => $media_component->shortDescription,
                         'longDescription' => $media_component->longDescription,
-                        'file_name' => $streaming_component->streamingUrls->m3u8[0]->url,
-                    ],
+                    ]
                 ];
             }
         }
 
-        return $this->reply($films);
+        return $films;
     }
 
     /**

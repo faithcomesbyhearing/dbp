@@ -106,4 +106,9 @@ class Key extends Model
     {
         return $this->belongsToMany(AccessGroup::class, config('database.connections.dbp_users.database').'.access_group_api_keys');
     }
+
+    public static function getIdByKey(string $key) : ?int
+    {
+        return optional(Key::select(['id'])->where('key', $key)->first())->id;
+    }
 }

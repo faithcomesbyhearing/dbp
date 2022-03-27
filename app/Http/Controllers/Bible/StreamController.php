@@ -172,7 +172,12 @@ class StreamController extends APIController
         if (sizeof($parts) === 1) {
             return BibleFile::with([
                     'streamBandwidth' => function ($query_stream) {
-                        $query_stream->with(['transportStreamTS', 'transportStreamBytes']);
+                        $query_stream->with([
+                            'transportStreamTS',
+                            'transportStreamBytes',
+                            'transportStreamBytes.timestamp',
+                            'transportStreamBytes.timestamp.bibleFile'
+                        ]);
                     }
                 ])
                 ->where('hash_id', $fileset->hash_id)
@@ -192,7 +197,12 @@ class StreamController extends APIController
 
         return BibleFile::with([
                 'streamBandwidth' => function ($query_stream) {
-                    $query_stream->with(['transportStreamTS', 'transportStreamBytes']);
+                    $query_stream->with([
+                        'transportStreamTS',
+                        'transportStreamBytes',
+                        'transportStreamBytes.timestamp',
+                        'transportStreamBytes.timestamp.bibleFile'
+                    ]);
                 }
             ])
             ->where('hash_id', $fileset->hash_id)
@@ -212,11 +222,24 @@ class StreamController extends APIController
             return $this->setStatusCode(404)->replyWithError('No Audio fileset found for the provided params');
         }
 
-        $bible_files = BibleFile::where([
-            'hash_id' => $audio_fileset->hash_id,
-            'book_id' => $parts[0],
-            'chapter_start' => $parts[1]
-        ])->get();
+        // The implementation of the new download endpoint has caused a route collision on
+        // route: /api/bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start?}-{verse_end?}/playlist.m3u8.
+        // Route name: v4_media_stream
+        // Example: http://APP_ROOT_PATH/api/bible/filesets/SVCWBTS2DA/MAT---/playlist.m3u8
+        // The existing route has a required chapter identifier, which is not present when called by the download route.
+        // This logic will return all mp3 files if no chapter is provided.
+        if ($parts[1]) {
+            $bible_files = BibleFile::where([
+                'hash_id' => $audio_fileset->hash_id,
+                'book_id' => $parts[0],
+                'chapter_start' => $parts[1]
+            ])->get();
+        } else {
+            $bible_files = BibleFile::where([
+                'hash_id' => $audio_fileset->hash_id,
+                'book_id' => $parts[0],
+            ])->whereNull('chapter_start')->get();
+        }
 
         $transaction_id = random_int(0, 10000000);
         $current_file = "#EXTM3U\n";

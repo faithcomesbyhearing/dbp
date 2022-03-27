@@ -9,6 +9,7 @@ use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleFileTimestamp;
+use App\Models\Bible\BibleFilesetConnection;
 use App\Models\Language\Language;
 use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
@@ -18,12 +19,14 @@ use App\Models\Bible\BibleVerse;
 use App\Traits\CallsBucketsTrait;
 use App\Traits\CheckProjectMembership;
 use App\Transformers\PlaylistTransformer;
+use App\Transformers\PlaylistItemsTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Services\Plans\PlaylistService;
 
 class PlaylistsController extends APIController
@@ -111,7 +114,9 @@ class PlaylistsController extends APIController
 
         // Validate Project / User Connection
         if (!empty($user) && !$this->compareProjects($user->id, $this->key)) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(Response::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $sort_by    = checkParam('sort_by') ?? 'name';
@@ -136,18 +141,77 @@ class PlaylistsController extends APIController
         
         if ($featured) {
             $cache_params = [$show_details, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id];
-            $playlists = cacheRemember('v4_playlist_index', $cache_params, now()->addDay(), function () use ($show_details, $user, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id) {
-                return $this->getPlaylists($show_details, $user, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id);
-            });
-            return $this->reply($playlists);
+            $playlists = cacheRemember(
+                'v4_playlist_index',
+                $cache_params,
+                now()->addDay(),
+                function () use (
+                    $show_details,
+                    $user,
+                    $featured,
+                    $sort_by,
+                    $sort_dir,
+                    $limit,
+                    $show_text,
+                    $language_id
+                ) {
+                    return $this->getPlaylists(
+                        $show_details,
+                        $user,
+                        $featured,
+                        $sort_by,
+                        $sort_dir,
+                        $limit,
+                        $show_text,
+                        $language_id
+                    );
+                }
+            );
+            return $this->reply(fractal(
+                $playlists->getCollection(),
+                new PlaylistTransformer(
+                    [
+                        'user' => $user,
+                        'v' => $this->v,
+                        'key' => $this->key,
+                    ]
+                )
+            )->paginateWith(new IlluminatePaginatorAdapter($playlists)));
         }
 
+        $playlists = $this->getPlaylists(
+            $show_details,
+            $user,
+            $featured,
+            $sort_by,
+            $sort_dir,
+            $limit,
+            $show_text,
+            $language_id
+        );
 
-        return $this->reply($this->getPlaylists($show_details, $user, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id));
+        return $this->reply(fractal(
+            $playlists->getCollection(),
+            new PlaylistTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key,
+                ]
+            )
+        )->paginateWith(new IlluminatePaginatorAdapter($playlists)));
     }
 
-    private function getPlaylists($show_details, $user, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id)
-    {
+    private function getPlaylists(
+        $show_details,
+        $user,
+        $featured,
+        $sort_by,
+        $sort_dir,
+        $limit,
+        $show_text,
+        $language_id
+    ) {
         $has_user = !empty($user);
         $featured = $featured || !$has_user;
 
@@ -167,8 +231,10 @@ class PlaylistsController extends APIController
                         $query_items->withPlaylistItemCompleted($user->id);
                     }
                     $query_items->with(['fileset' => function ($query_fileset) {
-                        $query_fileset->with('bible');
-                    }]);
+                        $query_fileset->with(['bible' => function ($query_bible) {
+                            $query_bible->with(['translations', 'books.book']);
+                        }]);
+                    }])->conditionTagExclude(['opus', 'webm']);
                 }]);
             })
             ->when($language_id, function ($q) use ($language_id) {
@@ -188,22 +254,29 @@ class PlaylistsController extends APIController
             $following_playlists = $following_playlists->pluck('playlist_id', 'playlist_id');
         }
 
+        $playlist_ids = [];
+
         foreach ($playlists->getCollection() as $playlist) {
-            if ($show_details) {
-                $playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $playlist->id, 'v' => $this->v, 'key' => $this->key]);
-            }
             if ($show_text && isset($playlist->items)) {
                 foreach ($playlist->items as $item) {
                     $item->verse_text = $item->getVerseText();
                 }
+            }
 
-                foreach ($playlist->items as $item) {
-                    unset($item->fileset);
+            $playlist->following = $following_playlists[$playlist->id] ?? false;
+            $playlist_ids[] = $playlist->id;
+        }
+
+        if (!empty($playlist_ids)) {
+            $duration_by_playlist = $this->playlist_service->getDurationByIds($playlist_ids);
+
+            foreach ($playlists->getCollection() as $playlist) {
+                if (isset($duration_by_playlist[$playlist->id])) {
+                    $playlist->total_duration = $duration_by_playlist[$playlist->id]->duration;
                 }
             }
-            $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
-            $playlist->following = $following_playlists[$playlist->id] ?? false;
         }
+
         return $playlists;
     }
 
@@ -273,35 +346,13 @@ class PlaylistsController extends APIController
             $playlist_items = array_slice($playlist_items, 0, $allowed_size);
         }
 
-        $playlist_items_to_create = [];
-        $order = 1;
+        $playlist_items_object = [];
 
         foreach ($playlist_items as $playlist_item) {
-            $playlist_item = (object) $playlist_item;
-            $playlist_item_data = [
-                'playlist_id'       => $playlist->id,
-                'fileset_id'        => $playlist_item->fileset_id,
-                'book_id'           => $playlist_item->book_id,
-                'chapter_start'     => $playlist_item->chapter_start,
-                'chapter_end'       => $playlist_item->chapter_end,
-                'verse_start'       => $playlist_item->verse_start ?? null,
-                'verse_end'         => $playlist_item->verse_end ?? null,
-                'verses'            => $playlist_items->verses ?? 0,
-                'order_column'      => $order
-            ];
-            $playlist_items_to_create[] = $playlist_item_data;
-            $order += 1;
+            $playlist_items_object[] = (object) $playlist_item;
         }
-        PlaylistItems::insert($playlist_items_to_create);
-        $created_playlist_items = PlaylistItems::where('playlist_id', $playlist->id)->orderBy('order_column')->get();
 
-        $this->playlist_service->calculateDuration($created_playlist_items);
-        $this->playlist_service->calculateVerses($created_playlist_items);
-
-        foreach ($created_playlist_items as $playlist_item) {
-            $playlist_item->save();
-        }
-        return $created_playlist_items;
+        return $this->playlist_service->createPlaylistItems($playlist->id, $playlist_items_object);
     }
 
     /**
@@ -682,18 +733,31 @@ class PlaylistsController extends APIController
         $playlist_items = json_decode($request->getContent());
         $single_item = checkParam('fileset_id');
 
-        if ($single_item) {
+        if ($single_item && !is_array($playlist_items)) {
             $playlist_items = [$playlist_items];
         }
+
         $created_playlist_items = $this->createPlaylistItems($playlist, $playlist_items);
 
-        return $this->reply($single_item ? $created_playlist_items[0] : $created_playlist_items);
+        $final_response = fractal(
+            $created_playlist_items,
+            new PlaylistItemsTransformer(),
+            new ArraySerializer()
+        );
+
+        if ($single_item) {
+            $final_response_array = $final_response->toArray();
+
+            if (!empty($final_response_array)) {
+                return $final_response_array[0];
+            }
+        }
+
+        return $final_response;
     }
 
     private function createPlaylistItems($playlist, $playlist_items)
     {
-        $created_playlist_items = [];
-
         $current_items_size = sizeof($playlist->items);
         $new_items_size = sizeof($playlist_items);
 
@@ -702,28 +766,7 @@ class PlaylistsController extends APIController
             $playlist_items = array_slice($playlist_items, 0, $allowed_size);
         }
 
-        foreach ($playlist_items as $playlist_item) {
-            $verses = $playlist_items->verses ?? 0;
-            $playlist_item = (object) $playlist_item;
-            $created_playlist_item = PlaylistItems::create([
-                'playlist_id'       => $playlist->id,
-                'fileset_id'        => $playlist_item->fileset_id,
-                'book_id'           => $playlist_item->book_id,
-                'chapter_start'     => $playlist_item->chapter_start,
-                'chapter_end'       => $playlist_item->chapter_end,
-                'verse_start'       => $playlist_item->verse_start ?? null,
-                'verse_end'         => $playlist_item->verse_end ?? null,
-                'verses'            => $verses
-            ]);
-            $created_playlist_item->calculateDuration();
-            if (!$verses) {
-                $created_playlist_item->calculateVerses();
-            }
-            $created_playlist_item->save();
-            $created_playlist_items[] = $created_playlist_item;
-        }
-
-        return $created_playlist_items;
+        return $this->playlist_service->createPlaylistItems($playlist->id, $playlist_items);
     }
 
     public function createTranslatedPlaylistItems($playlist, $playlist_items)
@@ -1269,6 +1312,7 @@ class PlaylistsController extends APIController
         }
 
         $playlist_item = new PlaylistItems();
+        $playlist_item->setRelation('fileset', $fileset);
         $playlist_item->setAttribute('id', rand());
         $playlist_item->setAttribute('fileset_id', $fileset_id);
         $playlist_item->setAttribute('book_id', $book_id);

@@ -18,7 +18,6 @@ use App\Models\Language\Language;
  * @property-read \App\Models\Bible\BibleBook[] $books
  * @property-read BibleFile[] $files
  * @property-read BibleFileset[] $filesets
- * @property-read BibleEquivalent[] $hasType
  * @property-read \App\Models\Language\Language $language
  * @property-read BibleLink[] $links
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Organization\Organization[] $organizations
@@ -231,21 +230,6 @@ class Bible extends Model
     public function books()
     {
         return $this->hasMany(BibleBook::class);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Equivalents
-    |--------------------------------------------------------------------------
-    |
-    | All of these relationships are focused upon the bible equivalents table
-    | they handle external bible API connections to our different partners
-    | like the Digital Bible Platform and the Digital Bible Library ect
-    |
-    */
-    public function equivalents()
-    {
-        return $this->hasMany(BibleEquivalent::class);
     }
 
     public function filesetConnections()

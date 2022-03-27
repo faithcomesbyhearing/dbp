@@ -153,7 +153,6 @@ Route::name('v4_timestamps.verse')->get(
     'Bible\AudioController@timestampsByReference'
 );
 
-
 // VERSION 4 | Stream
 Route::name('v4_media_stream')->get(
     'bible/filesets/{fileset_id}/{file_id}/playlist.m3u8',
@@ -431,11 +430,6 @@ Route::middleware('APIToken:check')->group(function () {
 Route::name('v4_internal_lexicon_index')->get(
     'lexicons',
     'Bible\Study\LexiconController@index'
-);
-// Bible Equivalents will be updated at some point in the future. Not to be removed
-Route::name('v4_internal_bible_equivalents.all')->get(
-    'bible/equivalents',
-    'Bible\BibleEquivalentsController@index'
 );
 
 // Joshua Project -- is this current? this endpoint is not used by bible.is
