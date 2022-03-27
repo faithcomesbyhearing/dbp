@@ -26,11 +26,6 @@ class DocsController extends APIController
         return view('docs.routes.bibles');
     }
 
-    public function bibleEquivalents()
-    {
-        return view('docs.routes.bibleEquivalents');
-    }
-
     public function books()
     {
         return view('docs.routes.books');

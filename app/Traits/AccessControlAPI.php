@@ -158,6 +158,18 @@ trait AccessControlAPI
         );
     }
 
+    /**
+     * Validate if an api key belongs to the Bible.is client
+     *
+     * @param string $api_key
+     *
+     * @return string
+     */
+    private function doesApiKeyBelongToBibleis(string $api_key) : bool
+    {
+        return config('auth.compat_users.api_keys.bibleis') === $api_key;
+    }
+
     public function blockedByAccessControl($fileset)
     {
         $access_control = $this->accessControl($this->key);
@@ -178,8 +190,12 @@ trait AccessControlAPI
 
     public function allowedForDownload($fileset)
     {
-        $download_access_group_list = config('settings.download_access_group_list');
-        $download_access_group_array_ids = explode(',', $download_access_group_list);
+        if ($this->doesApiKeyBelongToBibleis($this->key)) {
+            $download_access_group_array_ids = AccessGroupKey::getAccessGroupIdsByApiKey($this->key)->toArray();
+        } else {
+            $download_access_group_array_ids = explode(',', config('settings.download_access_group_list'));
+        }
+
         $allowed_fileset_for_download = $this->genericAccessControl(
             $this->key,
             $fileset->hash_id,

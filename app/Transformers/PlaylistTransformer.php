@@ -20,8 +20,7 @@ class PlaylistTransformer extends PlanTransformerBase
             "updated_at" => $playlist->updated_at,
             "external_content" => $playlist->external_content,
             "following" => $playlist->following,
-            "items" => $playlist->items->map(function ($item) {
-
+            "items" => $playlist->relationLoaded('items') ? $playlist->items->map(function ($item) {
                 $bible = optional(optional($item->fileset)->bible)->first();
                 $book_name = $bible
                     ? $this->getBookNameFromItem($bible, $item->book_id)
@@ -62,7 +61,7 @@ class PlaylistTransformer extends PlanTransformerBase
                 }
 
                 return $result_item;
-            }),
+            }) : [],
             "path" => route(
                 'v4_internal_playlists.hls',
                 [
@@ -86,6 +85,10 @@ class PlaylistTransformer extends PlanTransformerBase
 
         if (isset($playlist->translated_percentage) && !empty($playlist->translated_percentage)) {
             $result["translated_percentage"] = $playlist->translated_percentage;
+        }
+
+        if (!$playlist->relationLoaded('items')) {
+            unset($result["items"]);
         }
 
         return $result;

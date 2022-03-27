@@ -52,7 +52,7 @@ class BibleManagementController extends Controller
         ]);
 
         $bible = \DB::transaction(function () use ($id) {
-            $bible = Bible::with('translations', 'organizations', 'equivalents', 'links')->find($id);
+            $bible = Bible::with('translations', 'organizations', 'links')->find($id);
             $bible->update(request()->only(['id', 'date', 'script', 'portions', 'copyright', 'derived', 'in_progress', 'notes', 'iso']));
 
             if (request()->translations) {
@@ -68,17 +68,6 @@ class BibleManagementController extends Controller
 
             if (request()->organizations) {
                 $bible->organizations()->sync(request()->organizations);
-            }
-
-            if (request()->equivalents) {
-                foreach ($bible->equivalents as $equivalent) {
-                    $equivalent->delete();
-                }
-                foreach (request()->equivalents as $equivalent) {
-                    if ($equivalent['equivalent_id']) {
-                        $bible->equivalents()->create($equivalent);
-                    }
-                }
             }
 
             if (request()->links) {
@@ -132,7 +121,6 @@ class BibleManagementController extends Controller
             $bible = $bible->create(request()->only(['id', 'date', 'script', 'portions', 'copyright', 'derived', 'in_progress', 'notes', 'iso']));
             $bible->translations()->createMany(request()->translations);
             $bible->organizations()->attach(request()->organizations);
-            $bible->equivalents()->createMany(request()->equivalents);
             $bible->links()->createMany(request()->links);
             return $bible;
         });

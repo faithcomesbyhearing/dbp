@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bible;
 
+use Symfony\Component\HttpFoundation\Response;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
 use App\Models\Bible\BibleFilesetType;
@@ -128,7 +129,7 @@ class BiblesController extends APIController
             $media_type_exists = $media_types->where('set_type_code', $media);
             if ($media_type_exists->isEmpty()) {
                 return $this
-                    ->setStatusCode(404)
+                    ->setStatusCode(Response::HTTP_NOT_FOUND)
                     ->replyWithError(
                         'media type not found. must be one of ' . $media_types->pluck('set_type_code')->implode(',')
                     );
@@ -322,7 +323,9 @@ class BiblesController extends APIController
         $bible = Bible::whereId($id)->isContentAvailable($key)->count();
 
         if (!$bible) {
-            return $this->setStatusCode(404)->replyWithError(trans($key_error_404, ['bible_id' => $id]));
+            return $this
+                ->setStatusCode(Response::HTTP_NOT_FOUND)
+                ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
         $cache_params = [$id, $key, $include_font];
@@ -339,7 +342,6 @@ class BiblesController extends APIController
                     'organizations.logoIcon',
                     'organizations.translations',
                     'alphabet.primaryFont',
-                    'equivalents',
                     'filesets' => function ($query) use ($key, $include_font) {
                         $query->isContentAvailable($key);
                         $query->when($include_font, function ($sub_query) {
@@ -351,7 +353,9 @@ class BiblesController extends APIController
         );
 
         if (!$bible || !sizeof($bible->filesets)) {
-            return $this->setStatusCode(404)->replyWithError(trans($key_error_404, ['bible_id' => $id]));
+            return $this
+                ->setStatusCode(Response::HTTP_NOT_FOUND)
+                ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
         return $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
@@ -414,7 +418,9 @@ class BiblesController extends APIController
 
 
         if (!$bible) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.bibles_errors_404', ['bible_id' => $bible_id]));
+            return $this
+                ->setStatusCode(Response::HTTP_NOT_FOUND)
+                ->replyWithError(trans('api.bibles_errors_404', ['bible_id' => $bible_id]));
         }
 
         $cache_params = [$bible_id, $book_id];
@@ -423,6 +429,7 @@ class BiblesController extends APIController
                 ->when($book_id, function ($query) use ($book_id) {
                     $query->where('book_id', $book_id);
                 })
+                ->with('book')
                 ->get()->sortBy('book.' . $bible->versification . '_order')
                 ->filter(function ($item) {
                     return $item->book;
@@ -586,7 +593,7 @@ class BiblesController extends APIController
     {
         $bible = Bible::whereId($bible_id)->first();
         if (!$bible) {
-            return $this->setStatusCode(404)->replyWithError('Bible not found');
+            return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError('Bible not found');
         }
 
         $iso = checkParam('iso') ?? 'eng';
@@ -594,14 +601,17 @@ class BiblesController extends APIController
         $cache_params = [$bible_id, $iso];
         $copyrights = cacheRemember('bible_copyrights', $cache_params, now()->addDay(), function () use ($bible, $iso) {
             $language_id = optional(Language::where('iso', $iso)->select('id')->first())->id;
-            return $bible->filesets->map(function ($fileset) use ($language_id) {
-                return BibleFileset::where('hash_id', $fileset->hash_id)->with([
-                    'copyright.organizations.logos',
-                    'copyright.organizations.translations' => function ($q) use ($language_id) {
-                        $q->where('language_id', $language_id);
-                    }
-                ])->select(['hash_id', 'id', 'set_type_code as type', 'set_size_code as size'])->first();
-            });
+            $filesets_hash_ids = $bible->filesets->pluck('hash_id')->toArray();
+            return empty($filesets_hash_ids)
+                ? []
+                : BibleFileset::select(['hash_id', 'id', 'set_type_code as type', 'set_size_code as size'])
+                    ->whereIn('hash_id', $filesets_hash_ids)->with([
+                        'copyright.organizations.logos',
+                        'copyright.organizations.translations' => function ($q) use ($language_id) {
+                            $q->where('language_id', $language_id);
+                        }
+                    ])
+                    ->get();
         });
 
         return $this->reply($copyrights);
@@ -750,7 +760,7 @@ class BiblesController extends APIController
     {
         // Make that only bibleis and gideons can access this endpoint
         if (!isBackwardCompatible($this->key)) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.errors_404'));
+            return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError(trans('api.errors_404'));
         }
 
         $bible = cacheRemember('v4_chapter_bible', [$bible_id], now()->addDay(), function () use ($bible_id) {
@@ -762,7 +772,7 @@ class BiblesController extends APIController
             ])->whereId($bible_id)->first();
         });
         if (!$bible) {
-            return $this->setStatusCode(404)->replyWithError('Bible not found');
+            return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError('Bible not found');
         }
 
         $user = $request->user();
@@ -790,7 +800,7 @@ class BiblesController extends APIController
         });
 
         if (!$book) {
-            return $this->setStatusCode(404)->replyWithError('Book not found');
+            return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError('Book not found');
         }
 
         $result = (object) [];
@@ -1163,7 +1173,7 @@ class BiblesController extends APIController
     {
         $bible = Bible::whereId($bible_id)->first();
         if (!$bible) {
-            return $this->setStatusCode(404)->replyWithError('Bible not found');
+            return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError('Bible not found');
         }
 
         $user = $request->user();
@@ -1182,7 +1192,7 @@ class BiblesController extends APIController
         if ($book_id) {
             $book = Book::whereId($book_id)->first();
             if (!$book) {
-                return $this->setStatusCode(404)->replyWithError('Book not found');
+                return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError('Book not found');
             }
         }
 
@@ -1190,8 +1200,8 @@ class BiblesController extends APIController
         $highlights_controller = new HighlightsController();
         $bookmarks_controller = new BookmarksController();
         $notes_controller = new NotesController();
-        $request->request->add(['bible_id' => $bible_id]);
-        $request->request->add(['limit' => $limit]);
+
+        $request->merge(['bible_id' => $bible_id, 'limit' => $limit]);
         $result->highlights = $highlights_controller->index($request, $user->id)->original['data'];
         $result->bookmarks = $bookmarks_controller->index($request, $user->id)->original['data'];
         $result->notes = $notes_controller->index($request, $user->id)->original['data'];

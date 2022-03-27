@@ -3,11 +3,11 @@
 namespace App\Traits;
 
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
-use Illuminate\Support\Str;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileSecondary;
 use App\Models\Bible\BibleVerse;
 use App\Models\Organization\Asset;
+use App\Models\Bible\BibleFileset;
 use App\Transformers\FileSetTransformer;
 use App\Transformers\TextTransformer;
 use DB;
@@ -61,6 +61,7 @@ trait BibleFileSetsTrait
             'bible_files.verse_start',
             'bible_files.verse_end',
             'bible_files.file_name',
+            'bible_files.file_size',
             'bible_books.name as book_name',
             'books.protestant_order as book_order',
         ]);
@@ -249,10 +250,9 @@ trait BibleFileSetsTrait
         $client
     ) {
         $is_stream =
-            $fileset->set_type_code === 'video_stream' ||
-            $fileset->set_type_code === 'audio_stream' ||
-            $fileset->set_type_code === 'audio_drama_stream';
-        $is_video = Str::contains($fileset->set_type_code, 'video');
+            $fileset->set_type_code === BibleFileset::TYPE_VIDEO_STREAM ||
+            $fileset->set_type_code === BibleFileset::TYPE_AUDIO_STREAM ||
+            $fileset->set_type_code === BibleFileset::TYPE_AUDIO_DRAMA_STREAM;
 
         if ($is_stream) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
@@ -272,16 +272,31 @@ trait BibleFileSetsTrait
             }
         } else {
             // Multiple files per chapter
-            $hasMultiMp3Chapter = $this->hasMultipleMp3Chapters($fileset_chapters);
-            if (sizeof($fileset_chapters) > 1 && !$is_video && $hasMultiMp3Chapter) {
-                $fileset_chapters[0]->file_name = route(
-                    'v4_media_stream',
-                    [
-                        'fileset_id' => $fileset->id,
-                        'book_id' => $fileset_chapters[0]->book_id,
-                        'chapter' => $fileset_chapters[0]->chapter_start,
-                    ]
-                );
+            $hasMultiMp3Chapter = $fileset->isAudio() &&
+                sizeof($fileset_chapters) > 1 &&
+                $this->hasMultipleMp3Chapters($fileset_chapters);
+
+            if ($hasMultiMp3Chapter) {
+                if ($fileset_chapters[0]->chapter_start) {
+                    $fileset_chapters[0]->file_name = route(
+                        'v4_media_stream',
+                        [
+                            'fileset_id' => $fileset->id,
+                            'book_id' => $fileset_chapters[0]->book_id,
+                            'chapter' => $fileset_chapters[0]->chapter_start,
+                        ]
+                    );
+                } else {
+                    $fileset_chapters[0]->file_name = sprintf(
+                        '%s/bible/filesets/%s/%s-%s-%s-%s/playlist.m3u8',
+                        config('app.api_url'),
+                        $fileset->id,
+                        $fileset_chapters[0]->book_id,
+                        $fileset_chapters[0]->chapter_start,
+                        '',
+                        ''
+                    );
+                }
                 if (!empty($fileset_chapters) > 0 && $fileset_chapters->last() instanceof \App\Models\Bible\BibleFile) {
                     $collection = $fileset_chapters;
                 } else {
@@ -306,7 +321,7 @@ trait BibleFileSetsTrait
             }
         }
 
-        if ($is_video) {
+        if ($fileset->isVideo()) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
                 $fileset_chapters[$key]->thumbnail = $this->signedUrlUsingClient(
                     $client,
