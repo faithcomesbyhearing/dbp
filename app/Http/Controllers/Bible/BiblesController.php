@@ -261,8 +261,8 @@ class BiblesController extends APIController
         $limit          = (int) (checkParam('limit') ?? 15);
         $limit          = min($limit, 50);
         $page           = checkParam('page') ?? 1;
-        $formatted_search_cache = str_replace(' ', '', $search_text);
         $formatted_search = $this->transformQuerySearchText($search_text);
+        $formatted_search_cache = str_replace(' ', '', $search_text);
 
         if ($formatted_search_cache === '' || !$formatted_search_cache || empty($formatted_search)) {
             return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
