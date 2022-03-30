@@ -193,8 +193,8 @@ class LanguagesController extends APIController
         $limit = min($limit, 50);
         $set_type_code = checkParam('set_type_code');
         $media = checkParam('media');
-        $formatted_search_cache = str_replace(' ', '', $search_text);
         $formatted_search = $this->transformQuerySearchText($search_text);
+        $formatted_search_cache = str_replace(' ', '', $search_text);
 
         if ($formatted_search_cache === '' || !$formatted_search_cache || empty($formatted_search)) {
             return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
