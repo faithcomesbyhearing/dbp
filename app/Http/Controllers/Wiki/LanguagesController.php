@@ -201,8 +201,7 @@ class LanguagesController extends APIController
         }
 
         $key = $this->key;
-        $cache_params = $this->removeSpaceFromCacheParameters(
-            [
+        $cache_params = [
                 $this->v,
                 $formatted_search_cache,
                 $limit,
@@ -212,10 +211,11 @@ class LanguagesController extends APIController
                 $media,
                 $set_type_code
             ]
-        );
-        $languages = cacheRemember(
-            'languages_search',
-            $cache_params,
+        ;
+        $cache_key = generateCacheSafeKey('languages_search', $cache_params);
+
+        $languages = cacheRememberByKey(
+            $cache_key,
             now()->addDay(),
             function () use ($formatted_search, $limit, $key, $set_type_code, $media) {
                 $languages = Language::filterableByNameAndKey($formatted_search, $key, $set_type_code, $media)

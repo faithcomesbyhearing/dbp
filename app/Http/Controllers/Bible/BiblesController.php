@@ -269,10 +269,10 @@ class BiblesController extends APIController
         }
 
         $key = $this->key;
-        $cache_params = $this->removeSpaceFromCacheParameters(
-            [$limit, $page, $formatted_search_cache, $key]
-        );
-        $bibles = cacheRemember('bibles_search', $cache_params, now()->addDay(), function () use ($key, $limit, $formatted_search) {
+        $cache_params = [$limit, $page, $formatted_search_cache, $key];
+        $cache_key = generateCacheSafeKey('countries', $cache_params);
+        
+        $bibles = cacheRememberByKey($cache_key, now()->addDay(), function () use ($key, $limit, $formatted_search) {
             $bibles = Bible::isContentAvailable($key)
             ->matchByFulltextSearch($formatted_search)
             ->paginate($limit);
