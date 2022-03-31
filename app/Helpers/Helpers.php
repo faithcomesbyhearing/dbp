@@ -182,14 +182,14 @@ function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
         }
     } else {
         try {
-            // couldn't get the lock, another is executing the callback. block for up to 45 seconds waiting for lock
+            // couldn't get the lock, another is executing the callback. block waiting for lock
             // or until the lock is released by the lock timeout
             $lock->block($lock_timeout + 1);
             // Lock acquired, which should mean the cache is set
             $value = Cache::get($key);
             if (is_null($value)) {
                 // !!! **** my assumption about when the cache value will be available is not valid
-                throw new Exception;
+                throw new Exception("Exception when the cache value is null for key [".$key."]");
             }
             return $value ;
         } catch (LockTimeoutException $e) {
@@ -200,7 +200,7 @@ function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
             optional($lock)->release();
         }
 
-        throw new \Exception('Undefined Error');
+        throw new \UnexpectedValueException("Undefined Error for key [".$key."]");
     }
 }
 
