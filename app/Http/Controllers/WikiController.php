@@ -13,7 +13,7 @@ class WikiController extends Controller
 
     public function bible($id)
     {
-        $bible = Bible::where('id', $id)->with('translations', 'books.book', 'links', 'organizations.logo', 'organizations.logoIcon', 'organizations.translations', 'alphabet.primaryFont', 'equivalents', 'filesets')->first();
+        $bible = Bible::where('id', $id)->with('translations', 'books.book', 'links', 'organizations.logo', 'organizations.logoIcon', 'organizations.translations', 'alphabet.primaryFont', 'filesets')->first();
         return view('bibles.show', compact('bible'));
     }
 }

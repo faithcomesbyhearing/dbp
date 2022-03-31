@@ -128,10 +128,10 @@ class CountriesController extends APIController
             return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
 
-        $cache_params = $this->removeSpaceFromCacheParameters(
-            [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search_cache]
-        );
-        $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($limit, $page, $formatted_search) {
+        $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search_cache];
+        $cache_key = generateCacheSafeKey('countries', $cache_params);
+
+        $countries = cacheRememberByKey($cache_key, now()->addDay(), function () use ($limit, $formatted_search) {
             $countries = Country::with('currentTranslation')
                 ->filterableByNameOrIso($formatted_search)
                 ->whereHas('languages.bibles.filesets')

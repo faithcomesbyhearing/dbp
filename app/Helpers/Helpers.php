@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Carbon;
 
 /**
  * Get param from request object and check that the param is set if param is required
@@ -123,13 +125,35 @@ function createCacheLock($cache_key, $lock_timeout = 10)
     return Cache::lock($cache_key . '_lock', $lock_timeout);
 }
 
+/**
+ * Set and get the result of callback into cache storage. The key will create from the cache_args array
+ *
+ * @param string $key
+ * @param Array $cache_args
+ * @param Carbon $ttl
+ * @param Closure $callback
+ * @return mixed
+ */
 function cacheRemember($cache_key, $cache_args, $ttl, $callback)
 {
     $key = generateCacheString($cache_key, $cache_args);
+    return cacheRememberByKey($key, $ttl, $callback);
+}
+
+/**
+ * Set and get the result of callback into cache storage usign a given key
+ *
+ * @param string $key
+ * @param Carbon $ttl
+ * @param Closure $callback
+ * @return mixed
+ */
+function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
+{
     // if something fails on the callback, release the lock
-    // 45 seconds was selected to allow for the longest query to complete.
+    // 20 seconds was selected to allow for the longest query to complete.
     // This is not based on any empirical evidence.
-    $lock_timeout = 45;
+    $lock_timeout = 20;
     $value = Cache::get($key);
 
     if (!is_null($value)) {
@@ -152,27 +176,48 @@ function cacheRemember($cache_key, $cache_args, $ttl, $callback)
             return $value;
         } catch (Exception $exception) {
             $lock->release();
+            Log::error("Exception trying to acquire lock for key [".$key."]");
             Log::error($exception);
             throw $exception;
         }
     } else {
         try {
-            // couldn't get the lock, another is executing the callback. block for up to 45 seconds waiting for lock
+            // couldn't get the lock, another is executing the callback. block waiting for lock
             // or until the lock is released by the lock timeout
             $lock->block($lock_timeout + 1);
             // Lock acquired, which should mean the cache is set
             $value = Cache::get($key);
             if (is_null($value)) {
                 // !!! **** my assumption about when the cache value will be available is not valid
-                throw new Exception;
+                throw new Exception("Exception when the cache value is null for key [".$key."]");
             }
             return $value ;
         } catch (LockTimeoutException $e) {
             // Unable to acquire lock...
+            Log::error("Lock Timeout Exception for key [".$key."]");
+            Log::error($e);
         } finally {
             optional($lock)->release();
         }
+
+        throw new \UnexpectedValueException("Undefined Error for key [".$key."]");
     }
+}
+
+/**
+ * Remove special characters and all spaces. If the phrase has two or more words,
+ * it will leave a space between each word.
+ *
+ * @param string $search_text
+ *
+ * @return string
+ */
+function transformQuerySearchText(string $search_text): string
+{
+    $formatted_search = urldecode($search_text);
+    $formatted_search = preg_replace('/[+\-><\(\)~*\"@%]+/', ' ', $formatted_search);
+    $formatted_search = preg_replace('!\s+!', ' ', $formatted_search);
+    return trim($formatted_search);
 }
 
 function cacheRememberForever($cache_key, $callback)
@@ -180,6 +225,34 @@ function cacheRememberForever($cache_key, $callback)
     return Cache::rememberForever($cache_key, $callback);
 }
 
+/**
+ * Get a valid formed cache key
+ *
+ * @param string $key
+ * @param string $args
+ *
+ * @return string
+ */
+function generateCacheSafeKey(string $key, Array $args = []) : string
+{
+    $new_args = removeSpaceAndCntrlFromCacheParameters($args);
+    $cache_string =  strtolower(array_reduce($new_args, function ($carry, $item) {
+        return $carry .= ':' . $item;
+    }, $key));
+
+    $key_cache_string = base64_encode($cache_string);
+
+    $key_string_length = strlen($key_cache_string);
+
+    // cache key max out at 230 bytes, so we use sha512 to avoid it from maxing out
+    // in lock we add 5-10 more characters so we max out at 230
+    if ($key_string_length > 230) {
+        // we try to avoid hash collisions using sha512 hash algorithm and additionally using the key length
+        return hash("sha512", $key_cache_string).$key_string_length;
+    }
+
+    return $key_cache_string;
+}
 
 function generateCacheString($key, $args = [])
 {
@@ -187,11 +260,13 @@ function generateCacheString($key, $args = [])
     $cache_string =  strtolower(array_reduce($new_args, function ($carry, $item) {
         return $carry .= ':' . $item;
     }, $key));
-    // cache key max out at 250 bytes, so we use md5 to avoid it from maxing out
-    // in lock we add 5-10 more characters so we max out at 240
-    if (strlen($cache_string) > 240) {
+
+    // cache key max out at 230 bytes, so we use sha512 to avoid it from maxing out
+    // in lock we add 5-10 more characters so we max out at 230
+    if (strlen($cache_string) > 230) {
         $cache_string = md5($cache_string);
     }
+
     return $cache_string;
 }
 
