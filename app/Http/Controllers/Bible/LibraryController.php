@@ -268,10 +268,10 @@ class LibraryController extends APIController
         $name = checkParam('name');
         $sort = checkParam('sort_by');
 
-        $cache_params = $this->removeSpaceFromCacheParameters([$code, $name, $sort]);
-        $versions = cacheRemember(
-            'v2_library_version',
-            $cache_params,
+        $cache_params = [$code, $name, $sort];
+        $cache_key = generateCacheSafeKey('v2_library_version', $cache_params);
+        $versions = cacheRememberByKey(
+            $cache_key,
             now()->addDay(),
             function () use ($code, $sort, $name) {
                 $english_id = Language::where('iso', 'eng')->first()->id ?? '6414';

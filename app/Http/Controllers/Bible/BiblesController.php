@@ -270,7 +270,7 @@ class BiblesController extends APIController
 
         $key = $this->key;
         $cache_params = [$limit, $page, $formatted_search_cache, $key];
-        $cache_key = generateCacheSafeKey('countries', $cache_params);
+        $cache_key = generateCacheSafeKey('bibles_search', $cache_params);
         
         $bibles = cacheRememberByKey($cache_key, now()->addDay(), function () use ($key, $limit, $formatted_search) {
             $bibles = Bible::isContentAvailable($key)
