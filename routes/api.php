@@ -10,8 +10,8 @@ Route::name('v4_countries.one')->get(
     'Wiki\CountriesController@show'
 );
 Route::name('v4_countries.search')->get(
-  'countries/search/{search_text}',
-  'Wiki\CountriesController@search'
+    'countries/search/{search_text}',
+    'Wiki\CountriesController@search'
 );
 
 // VERSION 4 | Languages
@@ -65,8 +65,8 @@ Route::name('v4_bible.one')->get(
     'Bible\BiblesController@show'
 ); // see note in Postman. the content is suspect
 Route::name('v4_bible.search')->get(
-  'bibles/search/{search_text}',
-  'Bible\BiblesController@search'
+    'bibles/search/{search_text}',
+    'Bible\BiblesController@search'
 );
 Route::name('v4_bible.all')
     ->get('bibles', 'Bible\BiblesController@index'); // used
@@ -98,7 +98,7 @@ Route::name('v4_internal_filesets.checkTypes')->post(
 // DEPRECATED. not used by bible.is after 3.0.x. But needs to remain in the API for backward compatibility until 3.0.x and older are gone
 Route::name('v4_internal_bible_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
 
-// DEPRECATED. Prefer instead v4_filesets.chapter. Reasons: It takes book and chapter as query parameters. 
+// DEPRECATED. Prefer instead v4_filesets.chapter. Reasons: It takes book and chapter as query parameters.
 Route::name('v4_internal_filesets.show')->get(
     'bibles/filesets/{fileset_id?}',
     'Bible\BibleFileSetsController@show'
@@ -112,12 +112,12 @@ Route::name('v4_filesets.books')->get(
 
 // the order of these next two routes matters, the most general (bibles/filesets/bulk) must go before /bibles/filesets/{fileset_id}
 Route::name('v4_filesets.bulk')->get(
-  'bibles/filesets/bulk/{fileset_id}/{book?}',
-  'Bible\BibleFileSetsController@showBulk'
+    'bibles/filesets/bulk/{fileset_id}/{book?}',
+    'Bible\BibleFileSetsController@showBulk'
 );
 Route::name('v4_filesets.chapter')->get(
-  'bibles/filesets/{fileset_id}/{book}/{chapter}',
-  'Bible\BibleFileSetsController@showChapter'
+    'bibles/filesets/{fileset_id}/{book}/{chapter}',
+    'Bible\BibleFileSetsController@showChapter'
 );
 
 // BibleFileSet download version 4
@@ -186,8 +186,8 @@ Route::name('v4_video_jesus_film_file')->get(
     'Bible\VideoStreamController@jesusFilmFile'
 );// used by bible.is
 Route::name('v4_video_jesus_film_chapter')->get(
-  'jesus-film/{language_iso}/{book}/{chapter}',
-  'Bible\VideoStreamController@jesusFilmGetChapter'
+    'jesus-film/{language_iso}/{book}/{chapter}',
+    'Bible\VideoStreamController@jesusFilmGetChapter'
 );// used by bible.is
 
 
@@ -293,13 +293,22 @@ Route::name('v4_internal_playlists_items.complete')
         'Playlist\PlaylistsController@completeItem'
     );
 Route::name('v4_internal_playlists.translate')
-    ->middleware('APIToken:check')->get('playlists/{playlist_id}/translate',        'Playlist\PlaylistsController@translate');
-Route::name('v4_internal_playlists.hls')->get('playlists/{playlist_id}/hls',                 'Playlist\PlaylistsController@hls');
-Route::name('v4_internal_playlists_item.hls')->get('playlists/{fileset_id}-{book_id}-{chapter}-{verse_start}-{verse_end}/item-hls',  'Playlist\PlaylistsController@itemHls');
-Route::name('v4_internal_playlists_item.hls')->get('playlists/{playlist_item_id}/item-hls',  'Playlist\PlaylistsController@itemHls');
+    ->middleware('APIToken:check')
+    ->get('playlists/{playlist_id}/translate', 'Playlist\PlaylistsController@translate');
+Route::name('v4_internal_playlists.hls')
+    ->get('playlists/{playlist_id}/hls', 'Playlist\PlaylistsController@hls');
+Route::name('v4_internal_playlists_item.hls')
+    ->get(
+        'playlists/{fileset_id}-{book_id}-{chapter}-{verse_start}-{verse_end}/item-hls',
+        'Playlist\PlaylistsController@itemHls'
+    );
+Route::name('v4_internal_playlists_item.hls')
+    ->get('playlists/{playlist_item_id}/item-hls', 'Playlist\PlaylistsController@itemHls');
 Route::name('v4_internal_playlists.draft')
-    ->middleware('APIToken:check')->post('playlists/{playlist_id}/draft',           'Playlist\PlaylistsController@draft');
-Route::name('v4_internal_playlists_item.metadata')->get('playlists/item/metadata',  'Playlist\PlaylistsController@itemMetadata');
+    ->middleware('APIToken:check')
+    ->post('playlists/{playlist_id}/draft', 'Playlist\PlaylistsController@draft');
+Route::name('v4_internal_playlists_item.metadata')
+    ->get('playlists/item/metadata', 'Playlist\PlaylistsController@itemMetadata');
 
 // VERSION 4 | Plans (bible.is private)
 Route::name('v4_internal_plans.index')
