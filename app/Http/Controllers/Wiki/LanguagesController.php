@@ -193,16 +193,15 @@ class LanguagesController extends APIController
         $limit = min($limit, 50);
         $set_type_code = checkParam('set_type_code');
         $media = checkParam('media');
-        $formatted_search_cache = str_replace(' ', '', $search_text);
         $formatted_search = $this->transformQuerySearchText($search_text);
+        $formatted_search_cache = str_replace(' ', '', $search_text);
 
         if ($formatted_search_cache === '' || !$formatted_search_cache || empty($formatted_search)) {
             return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
 
         $key = $this->key;
-        $cache_params = $this->removeSpaceFromCacheParameters(
-            [
+        $cache_params = [
                 $this->v,
                 $formatted_search_cache,
                 $limit,
@@ -212,10 +211,11 @@ class LanguagesController extends APIController
                 $media,
                 $set_type_code
             ]
-        );
-        $languages = cacheRemember(
-            'languages_search',
-            $cache_params,
+        ;
+        $cache_key = generateCacheSafeKey('languages_search', $cache_params);
+
+        $languages = cacheRememberByKey(
+            $cache_key,
             now()->addDay(),
             function () use ($formatted_search, $limit, $key, $set_type_code, $media) {
                 $languages = Language::filterableByNameAndKey($formatted_search, $key, $set_type_code, $media)

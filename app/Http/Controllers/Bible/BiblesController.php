@@ -261,18 +261,18 @@ class BiblesController extends APIController
         $limit          = (int) (checkParam('limit') ?? 15);
         $limit          = min($limit, 50);
         $page           = checkParam('page') ?? 1;
-        $formatted_search_cache = str_replace(' ', '', $search_text);
         $formatted_search = $this->transformQuerySearchText($search_text);
+        $formatted_search_cache = str_replace(' ', '', $search_text);
 
         if ($formatted_search_cache === '' || !$formatted_search_cache || empty($formatted_search)) {
             return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
 
         $key = $this->key;
-        $cache_params = $this->removeSpaceFromCacheParameters(
-            [$limit, $page, $formatted_search_cache, $key]
-        );
-        $bibles = cacheRemember('bibles_search', $cache_params, now()->addDay(), function () use ($key, $limit, $formatted_search) {
+        $cache_params = [$limit, $page, $formatted_search_cache, $key];
+        $cache_key = generateCacheSafeKey('bibles_search', $cache_params);
+        
+        $bibles = cacheRememberByKey($cache_key, now()->addDay(), function () use ($key, $limit, $formatted_search) {
             $bibles = Bible::isContentAvailable($key)
             ->matchByFulltextSearch($formatted_search)
             ->paginate($limit);
