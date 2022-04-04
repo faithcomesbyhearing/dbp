@@ -9,11 +9,12 @@
 namespace App\Transformers;
 
 use League\Fractal\TransformerAbstract;
+use League\Fractal\Scope;
 use Route;
 
 class BaseTransformer extends TransformerAbstract
 {
-    protected $currentScope = [];
+    protected ?Scope $currentScope;
 
     protected $version;
     protected $route;

@@ -18,7 +18,7 @@ use App\Transformers\Factbook\TransportationTransformer;
 
 class CountryTransformer extends BaseTransformer
 {
-    protected $availableIncludes = [
+    protected array $availableIncludes = [
         'communications',
         'economy',
         'energy',
