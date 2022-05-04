@@ -8,9 +8,10 @@ trait TextControllerTrait
 {
     public function getVerses($cache_params, $fileset, $bible, $book, $chapter, $verse_start, $verse_end)
     {
-        return cacheRemember(
-            'bible_text',
-            $cache_params,
+        $cache_key = generateCacheSafeKey('bible_text', $cache_params);
+
+        return cacheRememberByKey(
+            $cache_key,
             now()->addDay(),
             function () use ($fileset, $bible, $book, $chapter, $verse_start, $verse_end) {
                 $select_columns = [

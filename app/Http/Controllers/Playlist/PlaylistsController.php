@@ -1059,13 +1059,21 @@ class PlaylistsController extends APIController
         foreach ($bible_files as $bible_file) {
             if (isset($bible_file->streamBandwidth) && isset($bible_file->fileset)) {
                 $currentBandwidth = $bible_file->streamBandwidth->first();
-                $transportStream = sizeof($currentBandwidth->transportStreamBytes) ? $currentBandwidth->transportStreamBytes : $currentBandwidth->transportStreamTS;
+                $transportStream = $currentBandwidth->transportStreamBytes &&
+                    sizeof($currentBandwidth->transportStreamBytes) > 0
+                    ? $currentBandwidth->transportStreamBytes
+                    : $currentBandwidth->transportStreamTS;
     
                 // Fix verse audio stream starting from different initial verses causing audio missmatch
                 if (isset($item->verse_end) && isset($item->verse_start)) {
                     if (isset($transportStream[0]->timestamp)) {
-                        $timestamps_count = BibleFileTimestamp::where('bible_file_id', $transportStream[0]->timestamp->bible_file_id)->count();
-                        if ($timestamps_count === $transportStream->count() && $transportStream[0]->timestamp->verse_start !== 0) {
+                        $timestamps_count = BibleFileTimestamp::where(
+                            'bible_file_id',
+                            $transportStream[0]->timestamp->bible_file_id
+                        )->count();
+                        if ($timestamps_count === $transportStream->count() &&
+                            $transportStream[0]->timestamp->verse_start !== 0
+                        ) {
                             $transportStream->prepend((object)[]);
                         }
                     }

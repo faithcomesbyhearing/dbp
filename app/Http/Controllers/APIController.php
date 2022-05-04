@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Symfony\Component\HttpFoundation\Response;
 use App\Models\Language\Language;
 use App\Models\User\Key;
 
@@ -160,16 +161,16 @@ class APIController extends Controller
             // If is an api call require the v parameter
             $this->v   = (int) checkParam('v', true, $this->preset_v);
             $this->key = checkParam('key', true);
-
-            $cache_params = [$this->key];
+            $cache_params = $this->removeSpaceFromCacheParameters([$this->key]);
             $keyExists = cacheRemember('keys', $cache_params, now()->addDay(), function () {
-                return Key::with('user')->where('key', $this->key)->first();
+                $user = Key::with('user')->where('key', $this->key)->first();
+                return $user ?? false;
             });
             $this->user = $keyExists->user ?? null;
 
             if (!$this->user) {
                 abort(
-                    401,
+                    Response::HTTP_UNAUTHORIZED,
                     'You need to provide a valid API key. To request an api key please email support@digitalbibleplatform.com'
                 );
             }
