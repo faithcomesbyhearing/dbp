@@ -403,7 +403,7 @@ class BiblesController extends APIController
         $verse_count = checkBoolean('verse_count');
 
         $key = $this->key;
-        $cache_params = [$bible_id, $key, $verify_content];
+        $cache_params = [$bible_id, $key, $verify_content, $verse_count];
         $bible = cacheRemember('bible_books_bible', $cache_params, now()->addDay(), function () use ($bible_id, $verify_content, $key) {
             if (!$verify_content) {
                 return Bible::find($bible_id);
