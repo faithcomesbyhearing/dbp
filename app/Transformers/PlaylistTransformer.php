@@ -73,8 +73,8 @@ class PlaylistTransformer extends PlanTransformerBase
             "total_duration" => $playlist->total_duration,
             "verses" => $playlist->verses,
             "user" => [
-                "id" => $playlist->user->id,
-                "name" => $playlist->user->name
+                "id" => $playlist->user ? $playlist->user->id : null,
+                "name" => $playlist->user ? $playlist->user->name : null
             ],
 
         ];

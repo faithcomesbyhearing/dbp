@@ -128,11 +128,6 @@ Route::group(['middleware' => ['web']], function () {
 // ------------------------------  attic. Will likely be removed, but needs research -----------------------------------------------------
 //Localization::localizedRoutesGroup(function () {
 
-    // About
-    Route::get('/about/contact', 'User\ContactController@create')->name(
-        'contact.create'
-    );
-
     Route::get(
         '/organizations',
         'Organization\OrganizationsController@index'
@@ -198,24 +193,8 @@ Route::group(['middleware' => ['web']], function () {
             'guides/getting-started',
             'User\DocsController@start'
         );
-        Route::name('docs_bible_books')->get(
-            'docs/bibles/books',
-            'User\DocsController@books'
-        );
-        Route::name('docs_bibles')->get(
-            'docs/bibles',
-            'User\DocsController@bibles'
-        );
-        Route::name('docs_language_create')->get(
-            'docs/language/create',
-            'User\DocsController@languages'
-        );
         Route::name('docs_language_update')->get(
             'docs/language/update',
-            'User\DocsController@languages'
-        );
-        Route::name('docs_languages')->get(
-            'docs/languages',
             'User\DocsController@languages'
         );
         Route::name('docs_countries')->get(
