@@ -136,9 +136,11 @@ class AudioController extends APIController
                 ->get();
             foreach ($bible_files as $bible_file) {
                 $currentBandwidth = $bible_file->streamBandwidth->first();
-                foreach ($currentBandwidth->transportStreamBytes as $stream) {
-                    if ($stream->timestamp) {
-                        $audioTimestamps[] = $stream->timestamp;
+                if ($currentBandwidth && $currentBandwidth->transportStreamBytes) {
+                    foreach ($currentBandwidth->transportStreamBytes as $stream) {
+                        if ($stream->timestamp) {
+                            $audioTimestamps[] = $stream->timestamp;
+                        }
                     }
                 }
             }
