@@ -43,7 +43,7 @@ class PlanTranslateTransformer extends PlanTransformerBase
                 "name" => $this->params['user']->name,
             ],
             "translation_data" => array_map(function ($item_translations) {
-                return $this->parseTranslationData($item_translations, false);
+                return $this->parseTranslationData($item_translations, false, false);
             }, $plan->translation_data),
             "translated_percentage" => $plan->translated_percentage
         ];
