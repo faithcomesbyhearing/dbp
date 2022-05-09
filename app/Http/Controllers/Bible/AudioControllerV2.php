@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bible;
 
+use Symfony\Component\HttpFoundation\Response;
 use App\Http\Controllers\APIController;
 
 use App\Models\Bible\Book;
@@ -78,28 +79,38 @@ class AudioControllerV2 extends APIController
         $chapter_id = checkParam('chapter_id');
 
         $cache_params = [$fileset_id, $book_id, $chapter_id];
+        $cache_key = generateCacheSafeKey('audio_index', $cache_params);
 
-        $audioChapters = cacheRemember('audio_index', $cache_params, now()->addDay(), function () use ($fileset_id, $book_id, $chapter_id) {
-            // Account for various book ids
+        $audioChapters = cacheRememberByKey(
+            $cache_key,
+            now()->addDay(),
+            function () use ($fileset_id, $book_id, $chapter_id) {
+                // Account for various book ids
 
-            $book_id = optional(Book::where('id_osis', $book_id)->first())->id;
+                $book_id = optional(Book::where('id_osis', $book_id)->first())->id;
 
-            // Fetch the Fileset
-            $hash_id = optional(BibleFileset::uniqueFileset($fileset_id, 'audio', true)->select('hash_id')->first())->hash_id;
-            if (!$hash_id) {
-                return $this->setStatusCode(404)->replyWithError('No Audio Fileset could be found for: ' . $hash_id);
+                // Fetch the Fileset
+                $hash_id = optional(
+                    BibleFileset::uniqueFileset($fileset_id, 'audio', true)->select('hash_id')->first()
+                )->hash_id;
+
+                if (!$hash_id) {
+                    return $this
+                        ->setStatusCode(Response::HTTP_NOT_FOUND)
+                        ->replyWithError('No Audio Fileset could be found for: ' . $hash_id);
+                }
+
+                // Fetch The files
+                $response = BibleFile::with('book', 'bible')->where('hash_id', $hash_id)
+                    ->when($chapter_id, function ($query) use ($chapter_id) {
+                        return $query->where('chapter_start', $chapter_id);
+                    })->when($book_id, function ($query) use ($book_id) {
+                        return $query->where('book_id', $book_id);
+                    })->orderBy('file_name');
+
+                return $response->get();
             }
-
-            // Fetch The files
-            $response = BibleFile::with('book', 'bible')->where('hash_id', $hash_id)
-                ->when($chapter_id, function ($query) use ($chapter_id) {
-                    return $query->where('chapter_start', $chapter_id);
-                })->when($book_id, function ($query) use ($book_id) {
-                    return $query->where('book_id', $book_id);
-                })->orderBy('file_name');
-
-            return $response->get();
-        });
+        );
 
         foreach ($audioChapters as $key => $audio_chapter) {
             $audioChapters[$key]->file_name = $fileset_id . '/' . $audio_chapter->file_name;
