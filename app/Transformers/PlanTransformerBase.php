@@ -6,6 +6,7 @@ use Illuminate\Support\Collection;
 use App\Models\Playlist\PlaylistItems;
 use App\Models\Playlist\Playlist;
 use App\Models\Bible\BibleFileset;
+use App\Models\Bible\Bible;
 
 class PlanTransformerBase extends BaseTransformer
 {
@@ -28,7 +29,7 @@ class PlanTransformerBase extends BaseTransformer
      *
      * @return string
      */
-    protected function getBookNameFromItem($bible, $item_book_id)
+    protected function getBookNameFromItem(Bible $bible, string $item_book_id) : ?string
     {
         if (isset($this->book_name_indexed_by_id[$bible->id][$item_book_id]) &&
             !is_null($this->book_name_indexed_by_id[$bible->id][$item_book_id])
@@ -71,26 +72,13 @@ class PlanTransformerBase extends BaseTransformer
      * @param Array $item_translations
      * @return Array
      */
-    protected function parseTranslationData(Array $item_translations, bool $render_bible_id = true) : Array
-    {
-        return array_map(function (PlaylistItems $item_translation) use ($render_bible_id) {
+    protected function parseTranslationData(
+        Array $item_translations,
+        bool $render_bible_id = true,
+        bool $render_metadata = true
+    ) : Array {
+        return array_map(function (PlaylistItems $item_translation) use ($render_bible_id, $render_metadata) {
             $bible = optional($item_translation->fileset->bible)->first();
-            $book_name = $bible
-                ? $this->getBookNameFromItem($bible, $item_translation->book_id)
-                : null;
-
-            $bible_translation_item = null;
-            $book_name_translation_item = null;
-            if (isset($item_translation->translation_item)) {
-                $bible_translation_item = optional($item_translation->translation_item->fileset->bible)
-                    ->first();
-                $book_name_translation_item = $bible_translation_item
-                    ? $this->getBookNameFromItem(
-                        $bible_translation_item,
-                        $item_translation->translation_item->book_id
-                    )
-                    : null;
-            }
 
             $result = [
                 "id" => $item_translation->id,
@@ -117,30 +105,11 @@ class PlanTransformerBase extends BaseTransformer
                     $item_translation->translation_item->duration,
                     "completed" => $item_translation->translation_item->completed,
                     "full_chapter" => $item_translation->translation_item->full_chapter,
-                    "path" => $item_translation->translation_item->path,
-                    "metadata" => [
-                        "bible_id" => $bible_translation_item->id,
-                        "bible_name" => optional(
-                            $bible_translation_item->translations->where(
-                                'language_id',
-                                $GLOBALS['i18n_id']
-                            )->first()
-                        )->name,
-                        "bible_vname" => optional($bible_translation_item->vernacularTranslation)->name,
-                        "book_name" => $book_name_translation_item
-                    ]
+                    "path" => $item_translation->translation_item->path
                 ] : [],
                 "completed" => $item_translation->completed,
                 "full_chapter" => $item_translation->full_chapter,
-                "path" => $item_translation->path,
-                "metadata" => [
-                    "bible_id" => $bible->id,
-                    "bible_name" => optional(
-                        $bible->translations->where('language_id', $GLOBALS['i18n_id'])->first()
-                    )->name,
-                    "bible_vname" => optional($bible->vernacularTranslation)->name,
-                    "book_name" => $book_name
-                ]
+                "path" => $item_translation->path
             ];
 
             if ($render_bible_id === false) {
@@ -149,6 +118,20 @@ class PlanTransformerBase extends BaseTransformer
 
             if (!isset($item_translation->translation_item) || empty($item_translation->translation_item)) {
                 unset($result["translation_item"]);
+            }
+
+            if ($render_metadata === true) {
+                if (isset($item_translation->translation_item)) {
+                    $bible_translation_item = optional($item_translation->translation_item->fileset->bible)
+                        ->first();
+
+                    $result["translation_item"]["metadata"] = $this->getMetaDataInfo(
+                        $bible_translation_item,
+                        $item_translation->translation_item->book_id
+                    );
+                }
+
+                $result["metadata"] = $this->getMetaDataInfo($bible, $item_translation->book_id);
             }
 
             return $result;
@@ -204,9 +187,6 @@ class PlanTransformerBase extends BaseTransformer
 
         return $playlist_items->map(function ($item) {
             $bible = optional(optional($item->fileset)->bible)->first();
-            $book_name = $bible
-                ? $this->getBookNameFromItem($bible, $item->book_id)
-                : null;
 
             return [
                 "id"            => $item->id,
@@ -223,15 +203,33 @@ class PlanTransformerBase extends BaseTransformer
                 "completed"     => $item->completed,
                 "full_chapter"  => $item->full_chapter,
                 "path"          => $item->path,
-                "metadata"      => $bible ? [
-                    "bible_id"   => $bible->id,
-                    "bible_name" => optional(
-                        $bible->translations->where('language_id', $GLOBALS['i18n_id'])->first()
-                    )->name,
-                    "bible_vname" => optional($bible->vernacularTranslation)->name,
-                    "book_name"   => $book_name
-                ] : [],
+                "metadata"      => $bible ? $this->getMetaDataInfo($bible, $item->book_id) : []
             ];
         });
+    }
+
+    /**
+     * Get the metadata info according to bible and book ID given.
+     *
+     * @param Bible $bible
+     * @param string $item_book_id
+     *
+     * @return Array
+     */
+    protected function getMetaDataInfo(Bible $bible, string $book_id) : Array
+    {
+        $book_name = $this->getBookNameFromItem($bible, $book_id);
+
+        return [
+            "bible_id" => $bible->id,
+            "bible_name" => optional(
+                $bible->translations->where(
+                    'language_id',
+                    $GLOBALS['i18n_id']
+                )->first()
+            )->name,
+            "bible_vname" => optional($bible->vernacularTranslation)->name,
+            "book_name" => $book_name
+        ];
     }
 }
