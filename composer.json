@@ -28,7 +28,7 @@
         "laravel/slack-notification-channel": "2.4.0",
         "laravel/socialite": "5.5.2",
         "laravel/tinker": "2.7.2",
-        "maennchen/zipstream-php": "2.1.0",
+        "maennchen/zipstream-php": "2.2.1",
         "mattkingshott/quest": "2.0.2",
         "sentry/sentry-laravel": "2.12.0",
         "socialiteproviders/generators": "dev-php-8",
@@ -42,7 +42,7 @@
         "symfony/yaml": "6.0.3",
         "torann/geoip": "3.0.4",
         "yosymfony/toml": "1.0.4",
-        "zircote/swagger-php": "3.3.4"
+        "zircote/swagger-php": "3.3.5"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "3.6.7",
