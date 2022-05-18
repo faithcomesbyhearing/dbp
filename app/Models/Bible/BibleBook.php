@@ -150,38 +150,31 @@ class BibleBook extends Model
      */
     public static function getAllSortedByBookSeqOrVersification(
         string $bible_id,
-        ?string $book_id = null,
-        ?string $bible_versification = null
+        string $bible_versification,
+        ?string $book_id = null
     ) : Collection {
-        $select_columns = [
+        return BibleBook::select(
             'bible_books.bible_id',
             'bible_books.book_id',
             'bible_books.name',
             'bible_books.name_short',
             'bible_books.chapters',
-            'bible_books.book_seq'
-        ];
-
-        if ($bible_versification) {
-            $select_columns[] = \DB::raw(
+            'bible_books.book_seq',
+            \DB::raw(
                 'CASE
                     WHEN bible_books.book_seq IS NOT NULL THEN bible_books.book_seq
                     WHEN books.'.$bible_versification.'_order IS NOT NULL THEN books.'.$bible_versification.'_order
                     ELSE bible_books.book_id
                 END AS book_by_order'
-            );
-        }
-
-        return BibleBook::select($select_columns)
+            )
+        )
             ->where('bible_id', $bible_id)
             ->when($book_id, function ($query) use ($book_id) {
                 $query->where('book_id', $book_id);
             })
             ->join('books', 'books.id', 'bible_books.book_id')
             ->with('book')
-            ->when($bible_versification, function ($order_by_query) {
-                $order_by_query->orderBy('book_by_order');
-            })
+            ->orderBy('book_by_order')
             ->get()
             ->flatten();
     }
