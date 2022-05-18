@@ -429,7 +429,7 @@ class BiblesController extends APIController
             $cache_params,
             now()->addDay(),
             function () use ($bible_id, $book_id, $bible) {
-                return BibleBook::getAllSortedByBookSeqOrVersification($bible_id, $book_id, $bible->versification);
+                return BibleBook::getAllSortedByBookSeqOrVersification($bible_id, $bible->versification, $book_id);
             }
         );
 
