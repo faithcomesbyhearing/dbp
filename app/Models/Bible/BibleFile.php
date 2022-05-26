@@ -6,6 +6,8 @@ use DB;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Language\Language;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Bible\BibleBook;
+use App\Models\Bible\Bible;
 
 /**
  * App\Models\Bible\BibleFile
@@ -203,7 +205,14 @@ class BibleFile extends Model
 
     public function book()
     {
-        return $this->belongsTo(Book::class, 'book_id', 'id')->orderBy('protestant_order');
+        if ((int) checkParam('v', false) < 4) {
+            return $this->belongsTo(Book::class, 'book_id', 'id')->orderBy('protestant_order');
+        }
+
+        $versification = optional($this->bible()->first())->versification;
+        return $this->belongsTo(Book::class, 'book_id', 'id')
+            ->join('bible_books', 'bible_books.book_id', 'books.id')
+            ->orderByRaw(BibleBook::getBookOrderExpressionRaw($versification));
     }
 
     public function testament()
@@ -290,10 +299,12 @@ class BibleFile extends Model
     public function scopeByHashIdJoinBooks(
         Builder $query,
         string $fileset_hash_id,
-        string $bible_id,
+        Bible $bible,
         ?string $chapter_id,
         ?string $book_id
-    ) {
+    ) : Builder {
+        $bible_id = optional($bible)->id;
+
         $select_columns = [
             'bible_files.duration',
             'bible_files.hash_id',
@@ -306,7 +317,7 @@ class BibleFile extends Model
             'bible_files.file_name',
             'bible_files.file_size',
             'bible_books.name as book_name',
-            'books.protestant_order as book_order',
+            BibleBook::getBookOrderSelectColumnExpressionRaw($bible->versification, 'book_order'),
             'bible_file_tags.value as bible_tag_value',
         ];
 
