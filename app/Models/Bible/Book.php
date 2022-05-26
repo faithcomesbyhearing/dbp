@@ -309,11 +309,27 @@ class Book extends Model
         return $this->hasMany(BibleBook::class);
     }
 
+    /**
+     * Validate if the Book entity has a given column
+     *
+     * @param string $versification
+     *
+     * @return bool
+     */
     public static function hasVersificationColumn(string $versification) : bool
     {
         return \Schema::connection('dbp')->hasColumn('books', $versification . '_order');
     }
 
+    /**
+     * Get the Book records from a given fileset object
+     *
+     * @param BibleFileset $fileset
+     * @param string $versification
+     * @param string $fileset_type
+     *
+     * @return Collection
+     */
     public static function getActiveBooksFromFileset(
         BibleFileset $fileset,
         string $versification,
@@ -339,9 +355,11 @@ class Book extends Model
             ->when($fileset_type, function ($q) use ($fileset_type) {
                 $q->where('set_type_code', $fileset_type);
             })
-            ->when($is_plain_text, function ($query) use ($fileset) {
-                $query = self::compareFilesetToSophiaBooks($query, $fileset->hash_id);
-            }, function ($query) use ($fileset) {
+            ->join($dbp_database . '.bible_books', function ($join) {
+                $join->on('bible_books.bible_id', 'bibles.id');
+            })
+            ->rightJoin($dbp_database . '.books', 'books.id', 'bible_books.book_id')
+            ->when(!$is_plain_text, function ($query) use ($fileset) {
                 $query = self::compareFilesetToFileTableBooks($query, $fileset->hash_id);
             })
             ->select([
@@ -364,24 +382,6 @@ class Book extends Model
     /**
      *
      * @param $query
-     * @param $id
-     */
-    public static function compareFilesetToSophiaBooks(Builder $query, string $hash_id) : Builder
-    {
-        // If the fileset references sophia.*_vpl than fetch the existing books from that database
-        $dbp_database = config('database.connections.dbp.database');
-        $sophia_books = BibleVerse::where('hash_id', $hash_id)->select('book_id')->distinct()->get();
-
-        // Join the books for the books returned from Sophia
-        return $query->join($dbp_database . '.bible_books', function ($join) use ($sophia_books) {
-                $join->on('bible_books.bible_id', 'bibles.id')
-                    ->whereIn('bible_books.book_id', $sophia_books->pluck('book_id'));
-        })->rightJoin($dbp_database . '.books', 'books.id', 'bible_books.book_id');
-    }
-
-    /**
-     *
-     * @param $query
      * @param $hashId
      */
     public static function compareFilesetToFileTableBooks(Builder $query, string $hashId) : Builder
@@ -396,10 +396,6 @@ class Book extends Model
             ->get()
             ->pluck('book_id');
 
-        // Join the books for the books returned from bible_files
-        return $query->join($dbp_database . '.bible_books', function ($join) use ($fileset_book_ids) {
-            $join->on('bible_books.bible_id', 'bibles.id')
-                ->whereIn('bible_books.book_id', $fileset_book_ids);
-        })->rightJoin($dbp_database . '.books', 'books.id', 'bible_books.book_id');
+        return $query->whereIn($dbp_database . '.bible_books.book_id', $fileset_book_ids);
     }
 }
