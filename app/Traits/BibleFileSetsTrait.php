@@ -9,6 +9,7 @@ use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileSecondary;
 use App\Models\Bible\BibleVerse;
 use App\Models\Bible\BibleFileTag;
+use App\Models\Bible\BibleBook;
 use App\Models\Organization\Asset;
 use App\Models\Bible\BibleFileset;
 use App\Transformers\FileSetTransformer;
@@ -29,7 +30,7 @@ trait BibleFileSetsTrait
     ) {
         $query = BibleFile::byHashIdJoinBooks(
             $fileset->hash_id,
-            $bible->id,
+            $bible,
             $chapter_id,
             $book ? $book->id : null
         );
@@ -99,7 +100,7 @@ trait BibleFileSetsTrait
         $select_columns = [
             'bible_verses.book_id as book_id',
             'books.name as book_name',
-            'books.protestant_order as book_order',
+            BibleBook::getBookOrderSelectColumnExpressionRaw($bible->versification, 'book_order'),
             'bible_books.name as book_vernacular_name',
             'bible_verses.chapter',
             'bible_verses.verse_start',

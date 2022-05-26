@@ -3,6 +3,11 @@
 namespace App\Models\Bible;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Collection;
+use App\Models\Bible\BibleVerse;
+use App\Models\Bible\BibleFileset;
+use App\Models\Bible\BibleBook;
 
 /**
  * App\Models\Bible\Book
@@ -24,26 +29,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $id_osis
  * @method static Book whereProtestantOrder($value)
  * @property int $protestant_order
- * @method static Book whereLutherOrder($value)
- * @property int $luther_order
- * @method static Book whereSynodalOrder($value)
- * @property int $synodal_order
- * @method static Book whereGermanOrder($value)
- * @property int $german_order
- * @method static Book whereKjvaOrder($value)
- * @property int $kjva_order
- * @method static Book whereVulgateOrder($value)
- * @property int $vulgate_order
- * @method static Book whereLxxOrder($value)
- * @property int $lxx_order
- * @method static Book whereOrthodoxOrder($value)
- * @property int $orthodox_order
- * @method static Book whereNrsvaOrder($value)
- * @property int $nrsva_order
- * @method static Book whereCatholicOrder($value)
- * @property int $catholic_order
- * @method static Book whereFinnishOrder($value)
- * @property int $finnish_order
  * @method static Book whereBookOrder($value)
  * @property int $testament_order
  * @method static Book whereBookTestament($value)
@@ -135,136 +120,6 @@ class Book extends Model
      *
      */
     protected $protestant_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="luther_order",
-     *   type="integer",
-     *   description="The standard book order for the `luther_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $luther_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="synodal_order",
-     *   type="integer",
-     *   description="The standard book order for the `synodal_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $synodal_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="german_order",
-     *   type="integer",
-     *   description="The standard book order for the `german_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $german_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="kjva_order",
-     *   type="integer",
-     *   description="The standard book order for the `kjva_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $kjva_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="vulgate_order",
-     *   type="integer",
-     *   description="The standard book order for the `vulgate_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $vulgate_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="lxx_order",
-     *   type="integer",
-     *   description="The standard book order for the `lxx_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $lxx_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="orthodox_order",
-     *   type="integer",
-     *   description="The standard book order for the `orthodox_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $orthodox_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="nrsva_order",
-     *   type="integer",
-     *   description="The standard book order for the `nrsva_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $nrsva_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="catholic_order",
-     *   type="integer",
-     *   description="The standard book order for the `catholic_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $catholic_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="finnish_order",
-     *   type="integer",
-     *   description="The standard book order for the `finnish_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $finnish_order;
 
     /**
      *
@@ -452,5 +307,99 @@ class Book extends Model
     public function bibleBooks()
     {
         return $this->hasMany(BibleBook::class);
+    }
+
+    public static function hasVersificationColumn(string $versification) : bool
+    {
+        return \Schema::connection('dbp')->hasColumn('books', $versification . '_order');
+    }
+
+    public static function getActiveBooksFromFileset(
+        BibleFileset $fileset,
+        string $versification,
+        string $fileset_type = null
+    ) : Collection {
+        $book_order_column = self::hasVersificationColumn($versification)
+            ? $versification
+            : 'protestant';
+
+        $dbp_database = config('database.connections.dbp.database');
+
+        $is_plain_text = BibleVerse::where('hash_id', $fileset->hash_id)->exists();
+
+        return \DB::connection('dbp')
+            ->table($dbp_database . '.bible_filesets as fileset')
+            ->where('fileset.id', $fileset->id)
+            ->leftJoin(
+                $dbp_database . '.bible_fileset_connections as connection',
+                'connection.hash_id',
+                'fileset.hash_id'
+            )
+            ->leftJoin($dbp_database . '.bibles', 'bibles.id', 'connection.bible_id')
+            ->when($fileset_type, function ($q) use ($fileset_type) {
+                $q->where('set_type_code', $fileset_type);
+            })
+            ->when($is_plain_text, function ($query) use ($fileset) {
+                $query = self::compareFilesetToSophiaBooks($query, $fileset->hash_id);
+            }, function ($query) use ($fileset) {
+                $query = self::compareFilesetToFileTableBooks($query, $fileset->hash_id);
+            })
+            ->select([
+                'books.id',
+                'books.id_usfx',
+                'books.id_osis',
+                'books.book_testament',
+                'books.testament_order',
+                'books.book_group',
+                'bible_books.chapters',
+                'bible_books.name',
+                'bible_books.name_short',
+                'books.protestant_order',
+                BibleBook::getBookOrderSelectColumnExpressionRaw($book_order_column)
+            ])
+            ->orderBy(BibleBook::BOOK_ORDER_COLUMN)
+            ->get();
+    }
+
+    /**
+     *
+     * @param $query
+     * @param $id
+     */
+    public static function compareFilesetToSophiaBooks(Builder $query, string $hash_id) : Builder
+    {
+        // If the fileset references sophia.*_vpl than fetch the existing books from that database
+        $dbp_database = config('database.connections.dbp.database');
+        $sophia_books = BibleVerse::where('hash_id', $hash_id)->select('book_id')->distinct()->get();
+
+        // Join the books for the books returned from Sophia
+        return $query->join($dbp_database . '.bible_books', function ($join) use ($sophia_books) {
+                $join->on('bible_books.bible_id', 'bibles.id')
+                    ->whereIn('bible_books.book_id', $sophia_books->pluck('book_id'));
+        })->rightJoin($dbp_database . '.books', 'books.id', 'bible_books.book_id');
+    }
+
+    /**
+     *
+     * @param $query
+     * @param $hashId
+     */
+    public static function compareFilesetToFileTableBooks(Builder $query, string $hashId) : Builder
+    {
+        // If the fileset referencesade dbp.bible_files from that table
+        $dbp_database = config('database.connections.dbp.database');
+        $fileset_book_ids = \DB::connection('dbp')
+            ->table('bible_files')
+            ->where('hash_id', $hashId)
+            ->select(['book_id'])
+            ->distinct()
+            ->get()
+            ->pluck('book_id');
+
+        // Join the books for the books returned from bible_files
+        return $query->join($dbp_database . '.bible_books', function ($join) use ($fileset_book_ids) {
+            $join->on('bible_books.bible_id', 'bibles.id')
+                ->whereIn('bible_books.book_id', $fileset_book_ids);
+        })->rightJoin($dbp_database . '.books', 'books.id', 'bible_books.book_id');
     }
 }
