@@ -178,6 +178,7 @@ class BibleTransformer extends BaseTransformer
                     'language'          => $bible->language_current ?? null,
                     'autonym'           => $bible->language_autonym ?? null,
                     'language_id'       => $bible->language_id,
+                    'language_rolv_code'=> $bible->language_rolv_code,
                     'iso'               => $bible->iso ?? null,
                     'date'              => $bible->date
                 ];
@@ -267,6 +268,7 @@ class BibleTransformer extends BaseTransformer
                     'language'      => optional($bible->language)->name,
                     'language_id'   => optional($bible->language)->id,
                     'iso'           => optional($bible->language)->iso,
+                    'language_rolv_code' => optional($bible->language)->rolv_code,
                     'date'          => $bible->date,
                     'country'       => $bible->language->primaryCountry->name ?? '',
                     'books'         => $bible->books->sortBy('book.' . $bible->versification . '_order')->each(function ($book) {

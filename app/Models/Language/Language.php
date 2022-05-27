@@ -55,6 +55,7 @@ use App\Models\Resource\Resource;
  * @property string $longitude
  * @property string $status
  * @property string $country_id
+ * @property string $rolv_code
  *
  * @method static Language whereId($value)
  * @method static Language whereGlottoId($value)
@@ -75,6 +76,7 @@ use App\Models\Resource\Resource;
  * @method static whereLongitude($value)
  * @method static whereStatus($value)
  * @method static whereCountryId($value)
+ * @method static whereRolvCode($value)
  *
  * @OA\Schema (
  *     type="object",
@@ -116,7 +118,8 @@ class Language extends Model
         'status_id',
         'status_notes',
         'country_id',
-        'scope'
+        'scope',
+        'rolv_code',
     ];
 
     /**
@@ -371,6 +374,17 @@ class Language extends Model
      *
      */
     protected $country_id;
+
+    /**
+     * @OA\Property(
+     *     title="rolv_code",
+     *     description="",
+     *     type="string",
+     *     example=""
+     * )
+     *
+     */
+    protected $rolv_code;
 
     public function scopeIncludeAutonymTranslation($query)
     {
