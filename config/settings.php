@@ -133,5 +133,7 @@ return [
         'bibleis' => env('BIBLEIS_COMPATIBILITY_APP_NAME', 'Bible.is'),
         'gideons' => env('GIDEONS_COMPATIBILITY_APP_NAME', 'Gideon Bible App'),
       ]
-  ]
+  ],
+
+  'youtube_url' => env('YOUTUBE_URL', 'https://www.youtube.com/')
 ];

@@ -28,6 +28,8 @@ use Illuminate\Database\Eloquent\Collection;
 class BibleFileTag extends Model
 {
     const TAG_THUMBNAIL = 'thumbnail';
+    const TAG_YOUTUBE_VIDEO = 'youtube_video_id';
+    const TAG_YOUTUBE_PLAYLIST = 'youtube_playlist_id';
 
     protected $connection = 'dbp';
     public $table = 'bible_file_tags';

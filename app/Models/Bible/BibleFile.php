@@ -5,6 +5,7 @@ namespace App\Models\Bible;
 use DB;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Language\Language;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * App\Models\Bible\BibleFile
@@ -239,5 +240,106 @@ class BibleFile extends Model
                 $join->on('timestamps_counts.bible_file_id', '=', 'bible_files.id');
             }
         );
+    }
+
+    /**
+     * Add join related to the bible_file_tags entity
+     *
+     * @param Builder $query
+     * @param string $book_id
+     *
+     * @return Builder
+     */
+    public function scopeJoinFileTag(Builder $query) : Builder
+    {
+        return $query->leftJoin('bible_file_tags', function ($left_query) {
+            $left_query
+                ->on('bible_file_tags.file_id', 'bible_files.id')
+                ->where('bible_file_tags.tag', BibleFileTag::TAG_YOUTUBE_VIDEO);
+        });
+    }
+
+    /**
+     * Add join related to the bible_fileset_tags entity
+     *
+     * @param Builder $query
+     * @param string $book_id
+     *
+     * @return Builder
+     */
+    public function scopeJoinFilesetTags(Builder $query, string $book_id) : Builder
+    {
+        return $query->leftJoin('bible_fileset_tags', function ($left_query) use ($book_id) {
+            $left_query
+                ->on('bible_fileset_tags.hash_id', 'bible_files.hash_id')
+                ->where('bible_fileset_tags.name', BibleFileTag::TAG_YOUTUBE_PLAYLIST.':'.$book_id);
+        });
+    }
+
+    /**
+     * Add join related to the bible_books entity
+     *
+     * @param Builder $query
+     * @param string $fileset_hash_id
+     * @param string $bible_id
+     * @param string|null $chapter_id
+     * @param string|null $book_id
+     *
+     * @return Builder
+     */
+    public function scopeByHashIdJoinBooks(
+        Builder $query,
+        string $fileset_hash_id,
+        string $bible_id,
+        ?string $chapter_id,
+        ?string $book_id
+    ) {
+        return $query
+            ->where('bible_files.hash_id', $fileset_hash_id)
+            ->join(
+                config('database.connections.dbp.database') .
+                    '.bible_books',
+                function ($q) use ($bible_id) {
+                    $q
+                        ->on(
+                            'bible_books.book_id',
+                            'bible_files.book_id'
+                        )
+                        ->where('bible_books.bible_id', $bible_id);
+                }
+            )
+            ->join(
+                config('database.connections.dbp.database') . '.books',
+                'books.id',
+                'bible_files.book_id'
+            )
+            ->joinFileTag($book_id)
+            ->when(!is_null($chapter_id), function ($query) use ($chapter_id) {
+                return $query->where(
+                    'bible_files.chapter_start',
+                    (int) $chapter_id
+                );
+            })
+            ->when($book_id, function ($query) use ($book_id) {
+                return $query
+                    ->where('bible_files.book_id', $book_id)
+                    ->joinFilesetTags($book_id);
+            })
+            ->select([
+                'bible_files.duration',
+                'bible_files.hash_id',
+                'bible_files.id',
+                'bible_files.book_id',
+                'bible_files.chapter_start',
+                'bible_files.chapter_end',
+                'bible_files.verse_start',
+                'bible_files.verse_end',
+                'bible_files.file_name',
+                'bible_files.file_size',
+                'bible_books.name as book_name',
+                'books.protestant_order as book_order',
+                'bible_file_tags.value as bible_tag_value',
+                'bible_fileset_tags.description as bible_fileset_tag_value',
+            ]);
     }
 }
