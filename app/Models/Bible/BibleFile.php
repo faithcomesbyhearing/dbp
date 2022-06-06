@@ -294,6 +294,26 @@ class BibleFile extends Model
         ?string $chapter_id,
         ?string $book_id
     ) {
+        $select_columns = [
+            'bible_files.duration',
+            'bible_files.hash_id',
+            'bible_files.id',
+            'bible_files.book_id',
+            'bible_files.chapter_start',
+            'bible_files.chapter_end',
+            'bible_files.verse_start',
+            'bible_files.verse_end',
+            'bible_files.file_name',
+            'bible_files.file_size',
+            'bible_books.name as book_name',
+            'books.protestant_order as book_order',
+            'bible_file_tags.value as bible_tag_value',
+        ];
+
+        if ($book_id) {
+            $select_columns[] = 'bible_fileset_tags.description as bible_fileset_tag_value';
+        }
+
         return $query
             ->where('bible_files.hash_id', $fileset_hash_id)
             ->join(
@@ -313,7 +333,7 @@ class BibleFile extends Model
                 'books.id',
                 'bible_files.book_id'
             )
-            ->joinFileTag($book_id)
+            ->joinFileTag()
             ->when(!is_null($chapter_id), function ($query) use ($chapter_id) {
                 return $query->where(
                     'bible_files.chapter_start',
@@ -325,21 +345,6 @@ class BibleFile extends Model
                     ->where('bible_files.book_id', $book_id)
                     ->joinFilesetTags($book_id);
             })
-            ->select([
-                'bible_files.duration',
-                'bible_files.hash_id',
-                'bible_files.id',
-                'bible_files.book_id',
-                'bible_files.chapter_start',
-                'bible_files.chapter_end',
-                'bible_files.verse_start',
-                'bible_files.verse_end',
-                'bible_files.file_name',
-                'bible_files.file_size',
-                'bible_books.name as book_name',
-                'books.protestant_order as book_order',
-                'bible_file_tags.value as bible_tag_value',
-                'bible_fileset_tags.description as bible_fileset_tag_value',
-            ]);
+            ->select($select_columns);
     }
 }
