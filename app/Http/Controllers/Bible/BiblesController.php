@@ -215,6 +215,7 @@ class BiblesController extends APIController
                     MIN(bibles.date) as date,
                     MIN(language_autonym.name) as language_autonym,
                     MIN(language_current.name) as language_current,
+                    MIN(languages.rolv_code) as language_rolv_code,
                     MIN(bibles.priority) as priority,
                     MIN(bibles.id) as id'
                 )

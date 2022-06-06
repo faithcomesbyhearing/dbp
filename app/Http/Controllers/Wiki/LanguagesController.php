@@ -132,6 +132,7 @@ class LanguagesController extends APIController
                     'languages.name as backup_name',
                     'current_translation.name as name',
                     'autonym.name as autonym',
+                    'languages.rolv_code',
                     \DB::raw($select_country_population . ' as country_population')
                 ])
                 ->with(['bibles' => function ($query) {
@@ -226,6 +227,7 @@ class LanguagesController extends APIController
                         'languages.name as backup_name',
                         'current_translation.name as name',
                         'autonym.name as autonym',
+                        'languages.rolv_code',
                     ])
                     ->with('bibles');
                 $languages = $languages->paginate($limit);
