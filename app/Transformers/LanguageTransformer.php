@@ -46,7 +46,8 @@ class LanguageTransformer extends BaseTransformer
                     'language_family_iso_1'     => ($language->parent ? $language->parent->iso1 : $language->iso1) ?? '',
                     'media'                     => ['text'],
                     'delivery'                  => ['mobile', 'web', 'subsplash'],
-                    'resolution'                => []
+                    'resolution'                => [],
+                    'language_rolv_code'        => $language->rolv_code
                 ];
 
             default:
@@ -60,6 +61,7 @@ class LanguageTransformer extends BaseTransformer
                     'language_iso_1'       => $language->iso1,
                     'language_iso_name'    => $language->name,
                     'language_family_code' => $language->iso,
+                    'language_rolv_code'   => $language->rolv_code
                 ];
         }
     }
@@ -100,7 +102,8 @@ class LanguageTransformer extends BaseTransformer
                     'dialects'             => $language->dialects->pluck('name') ?? '',
                     'classifications'      => $language->classifications->pluck('name', 'classification_id') ?? '',
                     'bibles'               => $language->bibles,
-                    'resources'            => $language->resources
+                    'resources'            => $language->resources,
+                    'rolv_code'            => $language->rolv_code
                 ];
 
                 /**
@@ -121,6 +124,7 @@ class LanguageTransformer extends BaseTransformer
                     'name'       => $language->name ?? $language->backup_name,
                     'autonym'    => $language->autonym,
                     'bibles'     => $language->bibles->count(),
+                    'rolv_code'  => $language->rolv_code
                 ];
             default:
             case 'v4_languages.all':
@@ -133,6 +137,7 @@ class LanguageTransformer extends BaseTransformer
                     'autonym'    => $language->autonym,
                     'bibles'     => $show_bibles ? $language->bibles : $language->bibles->count(),
                     'filesets'   => $language->filesets_count,
+                    'rolv_code'  => $language->rolv_code
                 ];
                 
                 if ($language->country_population) {
