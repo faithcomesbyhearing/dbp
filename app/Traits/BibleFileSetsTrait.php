@@ -27,47 +27,12 @@ trait BibleFileSetsTrait
         $book = null,
         $chapter_id = null
     ) {
-        $query = BibleFile::where('bible_files.hash_id', $fileset->hash_id)
-        ->join(
-            config('database.connections.dbp.database') .
-                '.bible_books',
-            function ($q) use ($bible) {
-                $q
-                    ->on(
-                        'bible_books.book_id',
-                        'bible_files.book_id'
-                    )
-                    ->where('bible_books.bible_id', $bible->id);
-            }
-        )
-        ->join(
-            config('database.connections.dbp.database') . '.books',
-            'books.id',
-            'bible_files.book_id'
-        )
-        ->when(!is_null($chapter_id), function ($query) use ($chapter_id) {
-            return $query->where(
-                'bible_files.chapter_start',
-                (int) $chapter_id
-            );
-        })
-        ->when($book, function ($query) use ($book) {
-            return $query->where('bible_files.book_id', $book->id);
-        })
-        ->select([
-            'bible_files.duration',
-            'bible_files.hash_id',
-            'bible_files.id',
-            'bible_files.book_id',
-            'bible_files.chapter_start',
-            'bible_files.chapter_end',
-            'bible_files.verse_start',
-            'bible_files.verse_end',
-            'bible_files.file_name',
-            'bible_files.file_size',
-            'bible_books.name as book_name',
-            'books.protestant_order as book_order',
-        ]);
+        $query = BibleFile::byHashIdJoinBooks(
+            $fileset->hash_id,
+            $bible->id,
+            $chapter_id,
+            $book ? $book->id : null
+        );
 
         if ($type === 'video_stream') {
             $query

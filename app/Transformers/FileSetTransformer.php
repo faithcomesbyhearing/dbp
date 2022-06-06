@@ -180,6 +180,9 @@ class FileSetTransformer extends BaseTransformer
                     'duration'          => $fileset->duration,
                     'thumbnail'         => $fileset->thumbnail,
                     'filesize_in_bytes' => $fileset->file_size,
+                    'youtube_url'       => $fileset->bible_tag_value
+                        ? getYoutubePlaylistURL($fileset->bible_tag_value, $fileset->bible_fileset_tag_value)
+                        : null,
                 ];
 
                 if ($fileset->multiple_mp3) {
