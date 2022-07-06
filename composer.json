@@ -14,7 +14,7 @@
         "php": "^8.0",
         "algolia/algoliasearch-client-php": "3.2.0",
         "appstract/laravel-opcache": "4.0.2",
-        "aws/aws-sdk-php": "3.230.0",
+        "aws/aws-sdk-php": "3.229.0",
         "biscolab/laravel-recaptcha": "5.4.0",
         "bugsnag/bugsnag-laravel": "2.24.0",
         "curl/curl": "2.3.3",
@@ -45,7 +45,7 @@
         "zircote/swagger-php": "3.3.6"
     },
     "require-dev": {
-        "barryvdh/laravel-debugbar": "3.6.8",
+        "barryvdh/laravel-debugbar": "3.6.7",
         "barryvdh/laravel-ide-helper": "2.12.3",
         "fakerphp/faker": "1.19.0",
         "filp/whoops": "2.14.5",
