@@ -709,3 +709,15 @@ if (!function_exists('getYoutubePlaylistURL')) {
             : sprintf('%swatch?v=%s', config('settings.youtube_url'), $file_tag);
     }
 }
+
+/**
+ * Get Download AccessGroup list
+ *
+ * @return array
+ */
+if (!function_exists('getDownloadAccessGroupList')) {
+    function getDownloadAccessGroupList(): array
+    {
+        return array_map('intval', explode(',', config('settings.download_access_group_list')));
+    }
+}
