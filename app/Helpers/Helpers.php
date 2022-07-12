@@ -6,6 +6,7 @@ use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 use App\Support\AccessGroupsCollection;
 use App\Models\Bible\BibleFilesetSize;
+use Illuminate\Contracts\Cache\Lock;
 
 function getAccessGroups() : AccessGroupsCollection
 {
@@ -138,9 +139,13 @@ function cacheGet($cache_key)
     return Cache::get($cache_key);
 }
 
-function createCacheLock($cache_key, $lock_timeout = 10)
+function createCacheLock(string $cache_key, int $lock_timeout = null) : Lock
 {
-    return Cache::lock($cache_key . '_lock', $lock_timeout);
+    if (!is_null($lock_timeout)) {
+        return Cache::lock($cache_key . '_lock', $lock_timeout);
+    }
+
+    return Cache::lock($cache_key . '_lock');
 }
 
 /**
@@ -181,7 +186,7 @@ function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
 
     // cache not set. try to acquire lock to gain access to the callback
     $lock = createCacheLock($key);
-    if ($lock->acquire()) {
+    if ($lock->get()) {
         try {
             // lock acquired. access resource via callback
             $value = $callback();
