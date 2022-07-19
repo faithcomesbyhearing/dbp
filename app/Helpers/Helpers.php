@@ -692,3 +692,32 @@ if (!function_exists('removeSpaceAndCntrlParameter')) {
             : $param;
     }
 }
+
+/**
+ * Get the full Youtube URL given segment and playlist values
+ *
+ * @param string $file_tag
+ * @param string|null $playlist_id
+ *
+ * @return string
+ */
+if (!function_exists('getYoutubePlaylistURL')) {
+    function getYoutubePlaylistURL(string $file_tag, ?string $playlist_id): string
+    {
+        return $playlist_id
+            ? sprintf('%swatch?v=%s&list=%s', config('settings.youtube_url'), $file_tag, $playlist_id)
+            : sprintf('%swatch?v=%s', config('settings.youtube_url'), $file_tag);
+    }
+}
+
+/**
+ * Get Download AccessGroup list
+ *
+ * @return array
+ */
+if (!function_exists('getDownloadAccessGroupList')) {
+    function getDownloadAccessGroupList(): array
+    {
+        return array_map('intval', explode(',', config('settings.download_access_group_list')));
+    }
+}

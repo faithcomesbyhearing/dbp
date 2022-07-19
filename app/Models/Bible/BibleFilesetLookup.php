@@ -158,8 +158,7 @@ class BibleFilesetLookup extends Model
         $dbp_users = config('database.connections.dbp_users.database');
         $dbp_prod = config('database.connections.dbp.database');
 
-        $download_access_group_list = config('settings.download_access_group_list');
-        $download_access_group_array_ids = explode(',', $download_access_group_list);
+        $download_access_group_array_ids = getDownloadAccessGroupList();
 
         $user_key_id = Key::getIdByKey($key);
 

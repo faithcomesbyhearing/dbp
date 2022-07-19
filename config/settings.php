@@ -126,12 +126,14 @@ return [
   /*
    * Download access group list allowed
    */
-  'download_access_group_list' => env('DOWNLOAD_ACCESS_GROUP_LIST', '12,181,183,185,191,193'),
+  'download_access_group_list' =>env('DOWNLOAD _ACCESS_GROUP_LIST', '12,181,183,185,191,193,141,143,145'),
 
   'backward_compatibility' => [
       'app_name' => [
         'bibleis' => env('BIBLEIS_COMPATIBILITY_APP_NAME', 'Bible.is'),
         'gideons' => env('GIDEONS_COMPATIBILITY_APP_NAME', 'Gideon Bible App'),
       ]
-  ]
+  ],
+
+  'youtube_url' => env('YOUTUBE_URL', 'https://www.youtube.com/')
 ];
