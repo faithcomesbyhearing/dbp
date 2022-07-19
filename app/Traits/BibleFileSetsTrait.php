@@ -2,10 +2,14 @@
 
 namespace App\Traits;
 
+use Illuminate\Database\Eloquent\Collection;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
+use Aws\CloudFront\CloudFrontClient;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileSecondary;
 use App\Models\Bible\BibleVerse;
+use App\Models\Bible\BibleFileTag;
+use App\Models\Bible\BibleBook;
 use App\Models\Organization\Asset;
 use App\Models\Bible\BibleFileset;
 use App\Transformers\FileSetTransformer;
@@ -24,47 +28,12 @@ trait BibleFileSetsTrait
         $book = null,
         $chapter_id = null
     ) {
-        $query = BibleFile::where('bible_files.hash_id', $fileset->hash_id)
-        ->join(
-            config('database.connections.dbp.database') .
-                '.bible_books',
-            function ($q) use ($bible) {
-                $q
-                    ->on(
-                        'bible_books.book_id',
-                        'bible_files.book_id'
-                    )
-                    ->where('bible_books.bible_id', $bible->id);
-            }
-        )
-        ->join(
-            config('database.connections.dbp.database') . '.books',
-            'books.id',
-            'bible_files.book_id'
-        )
-        ->when(!is_null($chapter_id), function ($query) use ($chapter_id) {
-            return $query->where(
-                'bible_files.chapter_start',
-                (int) $chapter_id
-            );
-        })
-        ->when($book, function ($query) use ($book) {
-            return $query->where('bible_files.book_id', $book->id);
-        })
-        ->select([
-            'bible_files.duration',
-            'bible_files.hash_id',
-            'bible_files.id',
-            'bible_files.book_id',
-            'bible_files.chapter_start',
-            'bible_files.chapter_end',
-            'bible_files.verse_start',
-            'bible_files.verse_end',
-            'bible_files.file_name',
-            'bible_files.file_size',
-            'bible_books.name as book_name',
-            'books.protestant_order as book_order',
-        ]);
+        $query = BibleFile::byHashIdJoinBooks(
+            $fileset->hash_id,
+            $bible,
+            $chapter_id,
+            $book ? $book->id : null
+        );
 
         if ($type === 'video_stream') {
             $query
@@ -131,7 +100,7 @@ trait BibleFileSetsTrait
         $select_columns = [
             'bible_verses.book_id as book_id',
             'books.name as book_name',
-            'books.protestant_order as book_order',
+            BibleBook::getBookOrderSelectColumnExpressionRaw($bible->versification, 'book_order'),
             'bible_books.name as book_vernacular_name',
             'bible_verses.chapter',
             'bible_verses.verse_start',
@@ -322,25 +291,93 @@ trait BibleFileSetsTrait
         }
 
         if ($fileset->isVideo()) {
-            foreach ($fileset_chapters as $key => $fileset_chapter) {
-                $fileset_chapters[$key]->thumbnail = $this->signedUrlUsingClient(
-                    $client,
-                    'video/thumbnails/' .
-                        $fileset_chapters[$key]->book_id .
-                        '_' .
-                        str_pad(
-                            $fileset_chapter->chapter_start,
-                            2,
-                            '0',
-                            STR_PAD_LEFT
-                        ) .
-                        '.jpg',
-                    random_int(0, 10000000)
-                );
-            }
+            $this->setThumbnailForEachFilesetChapter($fileset_chapters, $client);
         }
 
         return $fileset_chapters;
+    }
+
+    /**
+     * Update each Fileset and it adds the thumbnail property according values stored into Bible File Tags
+     *
+     * @param Collection $fileset_chapters
+     * @param CloudFrontClient $client
+     *
+     * @return void
+     */
+    private function setThumbnailForEachFilesetChapter(Collection $fileset_chapters, CloudFrontClient $client): void
+    {
+        $file_tags_indexed = $this->getBibleFileTagsFromFilesetChapters($fileset_chapters);
+
+        foreach ($fileset_chapters as $fileset_chapter) {
+            $thumbnail_url = 'video/thumbnails/';
+
+            if (isset(
+                $file_tags_indexed[$fileset_chapter->hash_id]
+                [$fileset_chapter->book_id]
+                [$fileset_chapter->chapter_start]
+                [$fileset_chapter->verse_start]
+            )) {
+                $thumbnail_url .= $file_tags_indexed[$fileset_chapter->hash_id][$fileset_chapter->book_id]
+                    [$fileset_chapter->chapter_start][$fileset_chapter->verse_start];
+            } else {
+                $thumbnail_url .= $fileset_chapter->book_id .
+                    '_' .
+                    str_pad(
+                        $fileset_chapter->chapter_start,
+                        2,
+                        '0',
+                        STR_PAD_LEFT
+                    ) .
+                    '.jpg';
+            }
+
+            $fileset_chapter->thumbnail = $this->signedUrlUsingClient(
+                $client,
+                $thumbnail_url,
+                random_int(0, 10000000)
+            );
+        }
+    }
+
+    /**
+     * Return an array indexed by hash_id, book, chapter and verse related for each fileset
+     * and a thumbnail file if it exists.
+     *
+     * @param Collection $fileset_chapters
+     *
+     * @return Array
+     */
+    private function getBibleFileTagsFromFilesetChapters(Collection $fileset_chapters): Array
+    {
+        $hash_ids = [];
+        $chapters = [];
+        $verses = [];
+
+        foreach ($fileset_chapters as $fileset_chapter) {
+            $hash_ids[$fileset_chapter->hash_id] = true;
+            $chapters[$fileset_chapter->chapter_start] = true;
+            $verses[$fileset_chapter->verse_start] = true;
+        }
+
+        $file_tags = BibleFileTag::getThumbnailsByHashChapterAnVerse(
+            array_keys($hash_ids),
+            array_keys($chapters),
+            array_keys($verses)
+        );
+
+        $file_tags_indexed = [];
+        foreach ($file_tags as $tag) {
+            if ($tag->hash_id &&
+                $tag->chapter_start &&
+                $tag->verse_start &&
+                $tag->book_id
+            ) {
+                $file_tags_indexed[$tag->hash_id][$tag->book_id][$tag->chapter_start][$tag->verse_start] = $tag->value;
+            }
+        }
+
+        return $file_tags_indexed;
     }
 
     private function hasMultipleMp3Chapters($fileset_chapters)

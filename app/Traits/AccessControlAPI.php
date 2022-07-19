@@ -193,7 +193,7 @@ trait AccessControlAPI
         if ($this->doesApiKeyBelongToBibleis($this->key)) {
             $download_access_group_array_ids = AccessGroupKey::getAccessGroupIdsByApiKey($this->key)->toArray();
         } else {
-            $download_access_group_array_ids = explode(',', config('settings.download_access_group_list'));
+            $download_access_group_array_ids = getDownloadAccessGroupList();
         }
 
         $allowed_fileset_for_download = $this->genericAccessControl(

@@ -215,6 +215,7 @@ class BiblesController extends APIController
                     MIN(bibles.date) as date,
                     MIN(language_autonym.name) as language_autonym,
                     MIN(language_current.name) as language_current,
+                    MIN(languages.rolv_code) as language_rolv_code,
                     MIN(bibles.priority) as priority,
                     MIN(bibles.id) as id'
                 )
@@ -424,17 +425,14 @@ class BiblesController extends APIController
         }
 
         $cache_params = [$bible_id, $book_id];
-        $books = cacheRemember('bible_books_books', $cache_params, now()->addDay(), function () use ($bible_id, $book_id, $bible) {
-            return BibleBook::where('bible_id', $bible_id)
-                ->when($book_id, function ($query) use ($book_id) {
-                    $query->where('book_id', $book_id);
-                })
-                ->with('book')
-                ->get()->sortBy('book.' . $bible->versification . '_order')
-                ->filter(function ($item) {
-                    return $item->book;
-                })->flatten();
-        });
+        $books = cacheRemember(
+            'bible_books_books',
+            $cache_params,
+            now()->addDay(),
+            function () use ($bible_id, $book_id, $bible) {
+                return BibleBook::getAllSortedByBookSeqOrVersification($bible_id, $bible->versification, $book_id);
+            }
+        );
 
         if ($verify_content) {
             $cache_params = [$bible_id, $key, $verify_content, $book_id];
