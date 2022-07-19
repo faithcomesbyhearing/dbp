@@ -4,6 +4,7 @@ namespace App\Models\Bible;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Expression;
 use App\Models\Bible\Book;
 
 /**
@@ -21,6 +22,8 @@ use App\Models\Bible\Book;
  */
 class BibleBook extends Model
 {
+    public const BOOK_ORDER_COLUMN = 'book_order_column';
+
     protected $connection = 'dbp';
     protected $table = 'bible_books';
     public $incrementing = false;
@@ -160,13 +163,7 @@ class BibleBook extends Model
             'bible_books.name_short',
             'bible_books.chapters',
             'bible_books.book_seq',
-            \DB::raw(
-                'CASE
-                    WHEN bible_books.book_seq IS NOT NULL THEN bible_books.book_seq
-                    WHEN books.'.$bible_versification.'_order IS NOT NULL THEN books.'.$bible_versification.'_order
-                    ELSE bible_books.book_id
-                END AS book_by_order'
-            )
+            self::getBookOrderSelectColumnExpressionRaw($bible_versification)
         )
             ->where('bible_id', $bible_id)
             ->when($book_id, function ($query) use ($book_id) {
@@ -174,8 +171,57 @@ class BibleBook extends Model
             })
             ->join('books', 'books.id', 'bible_books.book_id')
             ->with('book')
-            ->orderBy('book_by_order')
+            ->orderBy(self::BOOK_ORDER_COLUMN)
             ->get()
             ->flatten();
+    }
+
+    /**
+     * Get the Expression to sort the bible book records WITH alias
+     *
+     * @param string $bible_versification
+     * @param string $alias
+     *
+     * @return Expression
+     */
+    public static function getBookOrderSelectColumnExpressionRaw(
+        string $bible_versification,
+        string $alias = self::BOOK_ORDER_COLUMN
+    ) : Expression {
+        $case_sql = self::getBookOrderSql($bible_versification);
+
+        return \DB::raw("$case_sql AS $alias");
+    }
+
+    /**
+     * Get the Expression to sort the bible book records without alias
+     *
+     * @param string $bible_versification
+     *
+     * @return Expression
+     */
+    public static function getBookOrderExpressionRaw(string $bible_versification) : Expression
+    {
+        return \DB::raw(self::getBookOrderSql($bible_versification));
+    }
+
+    /**
+     * Get the sql case string to sort the bible book records
+     *
+     * @param string $bible_versification
+     *
+     * @return string
+     */
+    public static function getBookOrderSql(string $bible_versification) : string
+    {
+        return \sprintf(
+            'CASE
+                WHEN bible_books.book_seq IS NOT NULL THEN bible_books.book_seq
+                WHEN books.%s_order IS NOT NULL THEN books.%s_order
+                ELSE bible_books.book_id
+            END',
+            $bible_versification,
+            $bible_versification
+        );
     }
 }
