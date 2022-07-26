@@ -44,8 +44,9 @@ trait BibleFileSetsTrait
                 ->orderBy('verse_start', 'ASC');
         }
         if ($limit !== null) {
-            $fileset_chapters = $query->paginate($limit);
-            $filesets_pagination = new IlluminatePaginatorAdapter($fileset_chapters);
+            $fileset_chapters_paginated = $query->paginate($limit);
+            $filesets_pagination = new IlluminatePaginatorAdapter($fileset_chapters_paginated);
+            $fileset_chapters = $fileset_chapters_paginated->getCollection();
         } else {
             $fileset_chapters = $query->get();
         }
