@@ -655,6 +655,50 @@ class PlaylistItems extends Model implements Sortable
             ->get();
     }
 
+    /**
+     * Get the last items of playlist give a ID and limit number
+     *
+     * @param int $playlist_id
+     * @param int $limit
+     *
+     * @return Collection
+     */
+    public static function getLastItemsByPlaylistId(
+        int $playlist_id,
+        int $limit = null
+    ) : Collection {
+        return PlaylistItems::select([
+            'id',
+            'fileset_id',
+            'book_id',
+            'chapter_start',
+            'chapter_end',
+            'playlist_id',
+            'verse_start',
+            'verse_end',
+            'order_column',
+            'verses',
+            'duration',
+            \DB::Raw('false as completed'),
+        ])
+            ->where('playlist_id', $playlist_id)
+            ->with(['fileset' => function ($query_fileset) {
+                $query_fileset->with(['bible' => function ($query_bible) {
+                    $query_bible->with([
+                        'translations',
+                        'vernacularTranslation',
+                        'books.book'
+                    ]);
+                }]);
+            }])
+            ->orderBy('id', 'DESC')
+            ->when($limit, function ($query_limit) use ($limit) {
+                $query_limit->limit($limit);
+            })
+            ->get()
+            ->reverse();
+    }
+
     public function generateUniqueKey() : string
     {
         return implode(

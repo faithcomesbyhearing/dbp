@@ -280,9 +280,14 @@ class PlaylistService
             $order += 1;
         }
 
-        PlaylistItems::insert($playlist_items_to_create);
+        $created_playlist_items = \DB::transaction(function () use ($playlist_items_to_create, $playlist_id) {
+            PlaylistItems::insert($playlist_items_to_create);
 
-        $created_playlist_items = PlaylistItems::findByIdsWithFilesetRelation([$playlist_id], 'order_column');
+            return PlaylistItems::getLastItemsByPlaylistId(
+                $playlist_id,
+                sizeof($playlist_items_to_create)
+            );
+        });
 
         $this->calculateDuration($created_playlist_items);
         $this->calculateVerses($created_playlist_items);
