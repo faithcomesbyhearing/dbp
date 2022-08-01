@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "919b0c1887e8f3cee0659d0a3d7348d7",
+    "content-hash": "d6ccaa04abaf08f5ae165e09d46bee5e",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -194,16 +194,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.231.15",
+            "version": "3.231.17",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "ba379285d24b609a997bd8b40933d3e0a3826dfb"
+                "reference": "d377e1b62b40a4d9e5d9c9387db7c539f28cb6df"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/ba379285d24b609a997bd8b40933d3e0a3826dfb",
-                "reference": "ba379285d24b609a997bd8b40933d3e0a3826dfb",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/d377e1b62b40a4d9e5d9c9387db7c539f28cb6df",
+                "reference": "d377e1b62b40a4d9e5d9c9387db7c539f28cb6df",
                 "shasum": ""
             },
             "require": {
@@ -280,9 +280,9 @@
             "support": {
                 "forum": "https://forums.aws.amazon.com/forum.jspa?forumID=80",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.231.15"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.231.17"
             },
-            "time": "2022-07-27T18:59:36+00:00"
+            "time": "2022-07-29T18:17:57+00:00"
         },
         {
             "name": "biscolab/laravel-recaptcha",
@@ -12590,5 +12590,5 @@
         "php": ">=8.0 <=8.0.21"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.1.0"
+    "plugin-api-version": "2.3.0"
 }
