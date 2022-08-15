@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3c0f4aa2a21fce6f54b9307c14a67d19",
+    "content-hash": "3ee7d03e9c530b4d46955c93042b8a5d",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -194,16 +194,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.233.0",
+            "version": "3.233.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "2aabbc276b61515ae1897f037fc34ad56028d744"
+                "reference": "c804eb974240ae04b4ae5381f45003f25bbed56c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/2aabbc276b61515ae1897f037fc34ad56028d744",
-                "reference": "2aabbc276b61515ae1897f037fc34ad56028d744",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/c804eb974240ae04b4ae5381f45003f25bbed56c",
+                "reference": "c804eb974240ae04b4ae5381f45003f25bbed56c",
                 "shasum": ""
             },
             "require": {
@@ -280,9 +280,9 @@
             "support": {
                 "forum": "https://forums.aws.amazon.com/forum.jspa?forumID=80",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.233.0"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.233.2"
             },
-            "time": "2022-08-11T18:15:54+00:00"
+            "time": "2022-08-15T18:16:30+00:00"
         },
         {
             "name": "biscolab/laravel-recaptcha",
@@ -10115,16 +10115,16 @@
         },
         {
             "name": "itsgoingd/clockwork",
-            "version": "v5.1.6",
+            "version": "v5.1.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/itsgoingd/clockwork.git",
-                "reference": "9df41432da1d8cb39c7fda383ddcc02231c83ff3"
+                "reference": "2cad6c75dc2b96cbfd48c0511bb035a4e328c17f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/itsgoingd/clockwork/zipball/9df41432da1d8cb39c7fda383ddcc02231c83ff3",
-                "reference": "9df41432da1d8cb39c7fda383ddcc02231c83ff3",
+                "url": "https://api.github.com/repos/itsgoingd/clockwork/zipball/2cad6c75dc2b96cbfd48c0511bb035a4e328c17f",
+                "reference": "2cad6c75dc2b96cbfd48c0511bb035a4e328c17f",
                 "shasum": ""
             },
             "require": {
@@ -10171,7 +10171,7 @@
             ],
             "support": {
                 "issues": "https://github.com/itsgoingd/clockwork/issues",
-                "source": "https://github.com/itsgoingd/clockwork/tree/v5.1.6"
+                "source": "https://github.com/itsgoingd/clockwork/tree/v5.1.7"
             },
             "funding": [
                 {
@@ -10179,7 +10179,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2022-04-12T21:35:47+00:00"
+            "time": "2022-08-14T21:23:22+00:00"
         },
         {
             "name": "laravel/legacy-factories",
