@@ -13,6 +13,6 @@ sudo pecl channel-update pecl.php.net
 sed -i 's/extension="memcached.so"/;extension="memcached.so"/g' /etc/php.ini
 sed -i 's/extension="igbinary.so"/;extension="igbinary.so"/g' /etc/php.ini
 
-set -e
+
 # this is a check for failure, in case set -e doesn't cause failure
 pecl list |grep "Unable to load"
