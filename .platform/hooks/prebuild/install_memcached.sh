@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x
+set -e
 cp .platform/files/etc/php.d/40-igbinary.ini /etc/php.d
 cp .platform/files/etc/php.d/50-memcached.ini /etc/php.d
 
@@ -12,3 +12,6 @@ sudo pecl channel-update pecl.php.net
 #ultimately, the two extensions are loaded and configured elsewhere
 sed -i 's/extension="memcached.so"/;extension="memcached.so"/g' /etc/php.ini
 sed -i 's/extension="igbinary.so"/;extension="igbinary.so"/g' /etc/php.ini
+
+# this is a check for failure, in case set -e doesn't cause failure
+#pecl list |grep "Unable to load"
