@@ -272,7 +272,7 @@ class PlansController extends APIController
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
-        $plan = $this->getPlan($plan_id, $user);
+        $plan = $this->getPlan((int) $plan_id, $user);
 
         if (!$plan) {
             return $this->setStatusCode(404)->replyWithError('Plan Not Found');
@@ -474,7 +474,7 @@ class PlansController extends APIController
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
-        $plan = Plan::where('id', $plan_id)->first();
+        $plan = Plan::where('id', (int) $plan_id)->first();
 
         if (!$plan) {
             return $this->setStatusCode(404)->replyWithError('Plan Not Found');

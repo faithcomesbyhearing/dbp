@@ -35,6 +35,7 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
 
                 return $day_result;
             }),
+            "total_users" => $plan->total_users,
             "user" => [
                 "id" => $plan->user->id,
                 "name" => $plan->user->name
