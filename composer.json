@@ -1,7 +1,10 @@
 {
     "name": "laravel/laravel",
     "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "keywords": [
+        "framework",
+        "laravel"
+    ],
     "license": "MIT",
     "type": "project",
     "repositories": [
@@ -38,9 +41,9 @@
         "spatie/eloquent-sortable": "4.0.1",
         "spatie/laravel-fractal": "6.0.3",
         "sunra/php-simple-html-dom-parser": "1.5.2",
-        "symfony/http-client": "6.0.20",
+        "symfony/http-client": "6.1.5",
         "symfony/psr-http-message-bridge": "2.2.0",
-        "symfony/yaml": "6.0.19",
+        "symfony/yaml": "6.1.4",
         "torann/geoip": "3.0.5",
         "yosymfony/toml": "1.0.4",
         "zircote/swagger-php": "4.7.10"
@@ -66,9 +69,9 @@
         "psr-4": {
             "App\\": "app/"
         },
-		"files": [
-			"app/Helpers/Helpers.php"
-		]
+        "files": [
+            "app/Helpers/Helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
@@ -77,20 +80,19 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": [
-            ]
+            "dont-discover": []
         }
     },
     "scripts": {
         "post-create-project-cmd": [
             "@php artisan key:generate"
         ],
-	  	"cs": [
-		  	"php-cs-fixer fix --dry-run"
-	  	],
-	  	"cs-fix": [
-		  	"php-cs-fixer fix"
-	  	]
+        "cs": [
+            "php-cs-fixer fix --dry-run"
+        ],
+        "cs-fix": [
+            "php-cs-fixer fix"
+        ]
     },
     "config": {
         "preferred-install": "dist",
