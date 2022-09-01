@@ -12,7 +12,3 @@ sed -i 's/extension="memcached.so"/;extension="memcached.so"/g' /etc/php.ini
 sed -i 's/extension="igbinary.so"/;extension="igbinary.so"/g' /etc/php.ini
 cp .platform/files/etc/php.d/45-igbinary.ini /etc/php.d
 cp .platform/files/etc/php.d/50-memcached.ini /etc/php.d
-
-
-# this is a check for failure, in case set -e doesn't cause failure
-# pecl list |grep "Unable to load"
