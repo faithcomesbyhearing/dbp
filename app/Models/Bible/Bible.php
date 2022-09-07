@@ -8,6 +8,7 @@ use App\Models\Language\Alphabet;
 use App\Models\Language\NumeralSystem;
 use App\Models\Organization\Organization;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use App\Models\Language\Language;
 
 /**
@@ -364,6 +365,29 @@ class Bible extends Model
             )->orderByRaw(
                 'match (ver_title.name) against (? IN BOOLEAN MODE) DESC',
                 [$formatted_search]
+            );
+    }
+
+     /**
+     * Add join related to the bible_translations and searching by ID
+     *
+     * @param Builder $query
+     * @param string $bible_id_query
+     *
+     * @return Builder
+     */
+    public function scopeMatchByBibleVersion(Builder $query, string $version)
+    {
+        $formatted_search = "%$version";
+
+        return $query
+            ->select(['ver_title.bible_id', 'ver_title.name', 'ver_title.language_id'])
+            ->join(
+                'bible_translations as ver_title',
+                function ($join) use ($formatted_search) {
+                    $join->on('ver_title.bible_id', '=', 'bibles.id')
+                        ->where('ver_title.bible_id', 'LIKE', $formatted_search);
+                }
             );
     }
 

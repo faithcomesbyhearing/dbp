@@ -60,6 +60,10 @@ Route::name('v4_bible.books')->get(
     'bibles/{bible_id}/book',
     'Bible\BiblesController@books'
 ); // used by bible.is, but book is not specified. suggest unifying on this one. (fixed)The signature looks wrong - the code doesn't accept book_id as a path param, only a query param
+Route::name('v4_bible_by_id.search')->get(
+    'bibles/search',
+    'Bible\BiblesController@searchByBibleVersion'
+);
 Route::name('v4_bible.one')->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'

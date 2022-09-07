@@ -102,7 +102,7 @@ class BibleBook extends Model
      * @OA\Property(
      *     title="book_seq",
      *     description="The ordering provided by the licensor in the USX file, this column
-     *                  would likely populated for audio and video where there is no text"
+     *                  would likely populated for audio and video where there is no text",
      *     type="string",
      *     example="B07",
      *     maxLength=4
