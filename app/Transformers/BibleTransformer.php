@@ -206,6 +206,7 @@ class BibleTransformer extends BaseTransformer
              * )
              */
             case 'v4_bible.search':
+            case 'v4_bible_by_id.search':
                 return [
                     'abbr'              => $bible->bible_id,
                     'name'              => $bible->name,

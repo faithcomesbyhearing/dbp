@@ -289,6 +289,59 @@ class BiblesController extends APIController
 
     /**
      * Description:
+     * Return the bible data by given Bible ID.
+     *
+     * @OA\Get(
+     *     path="/bibles/search",
+     *     tags={"Bibles"},
+     *     summary="Returns metadata for all bibles meeting the given version in it's Bible ID",
+     *     description="metadata for all bibles meeting the version in it's Bible ID",
+     *     operationId="v4_bible_by_id.search",
+     *     @OA\Parameter(name="version",in="query",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json",
+     *         @OA\Schema(ref="#/components/schemas/v4_bible.search"))
+     *     )
+     * )
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function searchByBibleVersion()
+    {
+        $limit          = (int) (checkParam('limit') ?? 15);
+        $limit          = min($limit, 50);
+        $page           = checkParam('page') ?? 1;
+        $version_query = checkParam('version', true);
+        $version_query = $this->transformQuerySearchText($version_query);
+        $version_query_cache = str_replace(' ', '', $version_query);
+
+        if ($version_query_cache === '' || !$version_query_cache || empty($version_query)) {
+            return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
+        }
+
+        $key = $this->key;
+        $cache_params = [$limit, $page, $version_query_cache, $key];
+        $cache_key = generateCacheSafeKey('bibles_by_id_search', $cache_params);
+
+        $bibles = cacheRememberByKey($cache_key, now()->addDay(), function () use ($key, $limit, $version_query) {
+            $bibles = Bible::isContentAvailable($key)
+            ->matchByBibleVersion($version_query)
+            ->paginate($limit);
+
+            return fractal(
+                $bibles->getCollection(),
+                BibleTransformer::class,
+                new DataArraySerializer()
+            )->paginateWith(new IlluminatePaginatorAdapter($bibles));
+        });
+
+        return $this->reply($bibles);
+    }
+
+    /**
+     * Description:
      * Display the bible meta data for the specified ID.
      *
      * @OA\Get(
