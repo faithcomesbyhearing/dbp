@@ -500,7 +500,6 @@ class Language extends Model
 
         return \DB::table('language_translations as lang_trans')
             ->select('lang_trans.language_source_id as id')
-            ->whereRaw('lang_trans.language_source_id = lang_trans.language_translation_id')
             ->whereRaw('MATCH (lang_trans.name) against (? IN BOOLEAN MODE)')
             ->whereExists(function ($query) use ($dbp_users, $dbp_prod, $key, $set_type_code, $media) {
                 return $query->select(\DB::raw(1))
@@ -515,7 +514,7 @@ class Language extends Model
                         $query->select(\DB::raw('MAX(`priority`)'))
                             ->from('language_translations as lang_trans_prior')
                             ->whereColumn('lang_trans_prior.language_source_id', '=', 'lang_trans.language_source_id')
-                            ->whereColumn('lang_trans_prior.language_source_id', '=', 'lang_trans_prior.language_translation_id')
+                            ->whereColumn('lang_trans_prior.language_translation_id', '=', 'lang_trans.language_translation_id')
                             ->limit(1);
                     })
                     ->when($set_type_code || $media, function ($query) use ($dbp_prod) {
