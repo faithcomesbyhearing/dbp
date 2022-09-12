@@ -280,6 +280,10 @@ class PlaylistService
             $order += 1;
         }
 
+        if (empty($playlist_items_to_create)) {
+            return null;
+        }
+
         $created_playlist_items = \DB::transaction(function () use ($playlist_items_to_create, $playlist_id) {
             PlaylistItems::insert($playlist_items_to_create);
 
