@@ -20,7 +20,6 @@ use App\Models\Organization\Asset;
 
 
 use App\Transformers\FileSetTransformer;
-use App\Transformers\TextTransformer;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
