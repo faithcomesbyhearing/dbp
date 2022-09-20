@@ -3,8 +3,10 @@
 namespace App\Models\Country;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 use App\Models\Language\Language;
+use App\Models\Bible\BibleFilesetConnection;
 use App\Models\Country\FactBook\CountryEthnicity;
 use App\Models\Country\FactBook\CountryCommunication;
 use App\Models\Country\FactBook\CountryEconomy;
@@ -168,12 +170,6 @@ class Country extends Model
     {
         return $this->hasOne(CountryTranslation::class, 'country_id', 'id')->where('language_id', $GLOBALS['i18n_id']);
     }
-    /*
-     *	public function vernacularTranslation()
-     *	{
-     *		return $this->HasOne(CountryTranslation::class,'country_id','id')->where('language_id', $this->primary_language_id);
-     *	}
-     */
     public function languages()
     {
         return $this->belongsToMany(Language::class)->distinct();
@@ -253,6 +249,35 @@ class Country extends Model
                 'match (countries.name, countries.iso_a3) against (? IN BOOLEAN MODE)',
                 [$formatted_name_iso]
             );
+        });
+    }
+    /**
+     * Filter the countries if the records have associated an language and the language has associated a fileset
+     *
+     * @param Builder $query
+     *
+     * @return Builder
+     */
+    public function scopeHasFilesetsAvailable(Builder $query) : Builder
+    {
+        return $query->whereExists(function ($sub_query) {
+            $fileset_connections_group = BibleFilesetConnection::select('bible_id')
+                ->groupBy('bible_id');
+
+            return $sub_query->select(\DB::raw(1))
+                ->from('bibles AS b')
+                ->joinSub(
+                    $fileset_connections_group,
+                    'fileset_connections_group',
+                    function ($fileset_connections_join) {
+                        $fileset_connections_join->on('b.id', '=', 'fileset_connections_group.bible_id');
+                    }
+                )
+                ->join('country_language AS cl', function ($country_language_query_join) {
+                    $country_language_query_join
+                        ->on('cl.language_id', '=', 'b.language_id')
+                        ->whereColumn('countries.id', 'cl.country_id');
+                });
         });
     }
 }
