@@ -32,6 +32,6 @@
         "babel-preset-stage-2": "^6.24.1",
         "bulma": "^0.9.3",
         "request": "2.88.2",
-        "vue-instantsearch": "^1.7.0"
+        "vue-instantsearch": "^4.5.0"
     }
 }

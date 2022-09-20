@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1c37caa0d07bfe948a58495ae3510154",
+    "content-hash": "708450becaf886bf45ecf0643ef98df6",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
-            "version": "3.3.1",
+            "version": "3.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/algolia/algoliasearch-client-php.git",
-                "reference": "29fca7a396657ce647f596b4e8ec6efacf6c7163"
+                "reference": "cbd07bc0bb7303ff71e238d2d6284ef8469e1d5a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/algolia/algoliasearch-client-php/zipball/29fca7a396657ce647f596b4e8ec6efacf6c7163",
-                "reference": "29fca7a396657ce647f596b4e8ec6efacf6c7163",
+                "url": "https://api.github.com/repos/algolia/algoliasearch-client-php/zipball/cbd07bc0bb7303ff71e238d2d6284ef8469e1d5a",
+                "reference": "cbd07bc0bb7303ff71e238d2d6284ef8469e1d5a",
                 "shasum": ""
             },
             "require": {
@@ -76,9 +76,9 @@
             ],
             "support": {
                 "issues": "https://github.com/algolia/algoliasearch-client-php/issues",
-                "source": "https://github.com/algolia/algoliasearch-client-php/tree/3.3.1"
+                "source": "https://github.com/algolia/algoliasearch-client-php/tree/3.3.2"
             },
-            "time": "2022-08-02T08:07:30+00:00"
+            "time": "2022-09-22T08:21:13+00:00"
         },
         {
             "name": "appstract/laravel-opcache",
@@ -194,16 +194,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.235.12",
+            "version": "3.236.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "e0ebecfb0284dc44dc99a172cd9c68c40739904c"
+                "reference": "bff1f1ade00c758ea27f498baee1fa16901e5bfd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/e0ebecfb0284dc44dc99a172cd9c68c40739904c",
-                "reference": "e0ebecfb0284dc44dc99a172cd9c68c40739904c",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/bff1f1ade00c758ea27f498baee1fa16901e5bfd",
+                "reference": "bff1f1ade00c758ea27f498baee1fa16901e5bfd",
                 "shasum": ""
             },
             "require": {
@@ -282,9 +282,9 @@
             "support": {
                 "forum": "https://forums.aws.amazon.com/forum.jspa?forumID=80",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.235.12"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.236.0"
             },
-            "time": "2022-09-20T18:18:07+00:00"
+            "time": "2022-09-26T18:13:07+00:00"
         },
         {
             "name": "biscolab/laravel-recaptcha",
@@ -1039,16 +1039,16 @@
         },
         {
             "name": "doctrine/dbal",
-            "version": "3.4.4",
+            "version": "3.4.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/dbal.git",
-                "reference": "4cbbe6e4b9ef6c69d5f4c968c637476f47bb54f5"
+                "reference": "a5a58773109c0abb13e658c8ccd92aeec8d07f9e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/dbal/zipball/4cbbe6e4b9ef6c69d5f4c968c637476f47bb54f5",
-                "reference": "4cbbe6e4b9ef6c69d5f4c968c637476f47bb54f5",
+                "url": "https://api.github.com/repos/doctrine/dbal/zipball/a5a58773109c0abb13e658c8ccd92aeec8d07f9e",
+                "reference": "a5a58773109c0abb13e658c8ccd92aeec8d07f9e",
                 "shasum": ""
             },
             "require": {
@@ -1130,7 +1130,7 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/dbal/issues",
-                "source": "https://github.com/doctrine/dbal/tree/3.4.4"
+                "source": "https://github.com/doctrine/dbal/tree/3.4.5"
             },
             "funding": [
                 {
@@ -1146,7 +1146,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-09-01T21:26:42+00:00"
+            "time": "2022-09-23T17:48:57+00:00"
         },
         {
             "name": "doctrine/deprecations",
@@ -3046,16 +3046,16 @@
         },
         {
             "name": "league/flysystem",
-            "version": "3.5.1",
+            "version": "3.5.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/flysystem.git",
-                "reference": "f14993c6e394450ac4649da35264df0544d0234e"
+                "reference": "c73c4eb31f2e883b3897ab5591aa2dbc48112433"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/flysystem/zipball/f14993c6e394450ac4649da35264df0544d0234e",
-                "reference": "f14993c6e394450ac4649da35264df0544d0234e",
+                "url": "https://api.github.com/repos/thephpleague/flysystem/zipball/c73c4eb31f2e883b3897ab5591aa2dbc48112433",
+                "reference": "c73c4eb31f2e883b3897ab5591aa2dbc48112433",
                 "shasum": ""
             },
             "require": {
@@ -3117,7 +3117,7 @@
             ],
             "support": {
                 "issues": "https://github.com/thephpleague/flysystem/issues",
-                "source": "https://github.com/thephpleague/flysystem/tree/3.5.1"
+                "source": "https://github.com/thephpleague/flysystem/tree/3.5.2"
             },
             "funding": [
                 {
@@ -3133,7 +3133,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-09-18T18:23:19+00:00"
+            "time": "2022-09-23T18:59:16+00:00"
         },
         {
             "name": "league/fractal",
@@ -3744,16 +3744,16 @@
         },
         {
             "name": "myclabs/php-enum",
-            "version": "1.8.3",
+            "version": "1.8.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/myclabs/php-enum.git",
-                "reference": "b942d263c641ddb5190929ff840c68f78713e937"
+                "reference": "a867478eae49c9f59ece437ae7f9506bfaa27483"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/myclabs/php-enum/zipball/b942d263c641ddb5190929ff840c68f78713e937",
-                "reference": "b942d263c641ddb5190929ff840c68f78713e937",
+                "url": "https://api.github.com/repos/myclabs/php-enum/zipball/a867478eae49c9f59ece437ae7f9506bfaa27483",
+                "reference": "a867478eae49c9f59ece437ae7f9506bfaa27483",
                 "shasum": ""
             },
             "require": {
@@ -3769,7 +3769,10 @@
             "autoload": {
                 "psr-4": {
                     "MyCLabs\\Enum\\": "src/"
-                }
+                },
+                "classmap": [
+                    "stubs/Stringable.php"
+                ]
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
@@ -3788,7 +3791,7 @@
             ],
             "support": {
                 "issues": "https://github.com/myclabs/php-enum/issues",
-                "source": "https://github.com/myclabs/php-enum/tree/1.8.3"
+                "source": "https://github.com/myclabs/php-enum/tree/1.8.4"
             },
             "funding": [
                 {
@@ -3800,7 +3803,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2021-07-05T08:18:36+00:00"
+            "time": "2022-08-04T09:53:51+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -5149,16 +5152,16 @@
         },
         {
             "name": "psy/psysh",
-            "version": "v0.11.7",
+            "version": "v0.11.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bobthecow/psysh.git",
-                "reference": "77fc7270031fbc28f9a7bea31385da5c4855cb7a"
+                "reference": "f455acf3645262ae389b10e9beba0c358aa6994e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bobthecow/psysh/zipball/77fc7270031fbc28f9a7bea31385da5c4855cb7a",
-                "reference": "77fc7270031fbc28f9a7bea31385da5c4855cb7a",
+                "url": "https://api.github.com/repos/bobthecow/psysh/zipball/f455acf3645262ae389b10e9beba0c358aa6994e",
+                "reference": "f455acf3645262ae389b10e9beba0c358aa6994e",
                 "shasum": ""
             },
             "require": {
@@ -5219,9 +5222,9 @@
             ],
             "support": {
                 "issues": "https://github.com/bobthecow/psysh/issues",
-                "source": "https://github.com/bobthecow/psysh/tree/v0.11.7"
+                "source": "https://github.com/bobthecow/psysh/tree/v0.11.8"
             },
-            "time": "2022-07-07T13:49:11+00:00"
+            "time": "2022-07-28T14:25:11+00:00"
         },
         {
             "name": "ralouphie/getallheaders",
@@ -5499,16 +5502,16 @@
         },
         {
             "name": "sentry/sentry",
-            "version": "3.7.0",
+            "version": "3.8.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/sentry-php.git",
-                "reference": "877bca3f0f0ac0fc8ec0a218c6070cccea266795"
+                "reference": "5150776a0a9835c4ea56ff0ecd94e0a109b6c163"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/877bca3f0f0ac0fc8ec0a218c6070cccea266795",
-                "reference": "877bca3f0f0ac0fc8ec0a218c6070cccea266795",
+                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/5150776a0a9835c4ea56ff0ecd94e0a109b6c163",
+                "reference": "5150776a0a9835c4ea56ff0ecd94e0a109b6c163",
                 "shasum": ""
             },
             "require": {
@@ -5527,8 +5530,7 @@
                 "psr/http-message-implementation": "^1.0",
                 "psr/log": "^1.0|^2.0|^3.0",
                 "symfony/options-resolver": "^3.4.43|^4.4.30|^5.0.11|^6.0",
-                "symfony/polyfill-php80": "^1.17",
-                "symfony/polyfill-uuid": "^1.13.1"
+                "symfony/polyfill-php80": "^1.17"
             },
             "conflict": {
                 "php-http/client-common": "1.8.0",
@@ -5554,7 +5556,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.7.x-dev"
+                    "dev-master": "3.8.x-dev"
                 }
             },
             "autoload": {
@@ -5588,7 +5590,7 @@
             ],
             "support": {
                 "issues": "https://github.com/getsentry/sentry-php/issues",
-                "source": "https://github.com/getsentry/sentry-php/tree/3.7.0"
+                "source": "https://github.com/getsentry/sentry-php/tree/3.8.1"
             },
             "funding": [
                 {
@@ -5600,7 +5602,7 @@
                     "type": "custom"
                 }
             ],
-            "time": "2022-07-18T07:55:36+00:00"
+            "time": "2022-09-21T11:01:17+00:00"
         },
         {
             "name": "sentry/sentry-laravel",
@@ -5785,22 +5787,22 @@
         },
         {
             "name": "socialiteproviders/manager",
-            "version": "v4.1.0",
+            "version": "v4.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/SocialiteProviders/Manager.git",
-                "reference": "4e63afbd26dc45ff263591de2a0970436a6a0bf9"
+                "reference": "738276dfbc2b68a9145db7b3df1588d53db528a1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/SocialiteProviders/Manager/zipball/4e63afbd26dc45ff263591de2a0970436a6a0bf9",
-                "reference": "4e63afbd26dc45ff263591de2a0970436a6a0bf9",
+                "url": "https://api.github.com/repos/SocialiteProviders/Manager/zipball/738276dfbc2b68a9145db7b3df1588d53db528a1",
+                "reference": "738276dfbc2b68a9145db7b3df1588d53db528a1",
                 "shasum": ""
             },
             "require": {
                 "illuminate/support": "^6.0 || ^7.0 || ^8.0 || ^9.0",
-                "laravel/socialite": "~4.0 || ~5.0",
-                "php": "^7.2 || ^8.0"
+                "laravel/socialite": "~5.0",
+                "php": "^7.4 || ^8.0"
             },
             "require-dev": {
                 "mockery/mockery": "^1.2",
@@ -5855,7 +5857,7 @@
                 "issues": "https://github.com/socialiteproviders/manager/issues",
                 "source": "https://github.com/socialiteproviders/manager"
             },
-            "time": "2022-01-23T22:40:23+00:00"
+            "time": "2022-09-02T10:20:10+00:00"
         },
         {
             "name": "spatie/array-to-xml",
@@ -6135,27 +6137,27 @@
         },
         {
             "name": "spatie/laravel-package-tools",
-            "version": "1.12.1",
+            "version": "1.13.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-package-tools.git",
-                "reference": "09f80fa240d44fafb1c70657c74ee44ffa929357"
+                "reference": "163ee3bc6c0a987535d8a99722a7dbcc5471a140"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-package-tools/zipball/09f80fa240d44fafb1c70657c74ee44ffa929357",
-                "reference": "09f80fa240d44fafb1c70657c74ee44ffa929357",
+                "url": "https://api.github.com/repos/spatie/laravel-package-tools/zipball/163ee3bc6c0a987535d8a99722a7dbcc5471a140",
+                "reference": "163ee3bc6c0a987535d8a99722a7dbcc5471a140",
                 "shasum": ""
             },
             "require": {
-                "illuminate/contracts": "^7.0|^8.0|^9.0",
-                "php": "^7.4|^8.0"
+                "illuminate/contracts": "^9.28",
+                "php": "^8.0"
             },
             "require-dev": {
-                "mockery/mockery": "^1.4",
-                "orchestra/testbench": "^5.0|^6.23|^7.0",
-                "phpunit/phpunit": "^9.4",
-                "spatie/test-time": "^1.2"
+                "mockery/mockery": "^1.5",
+                "orchestra/testbench": "^7.7",
+                "phpunit/phpunit": "^9.5.24",
+                "spatie/test-time": "^1.3"
             },
             "type": "library",
             "autoload": {
@@ -6182,7 +6184,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-package-tools/issues",
-                "source": "https://github.com/spatie/laravel-package-tools/tree/1.12.1"
+                "source": "https://github.com/spatie/laravel-package-tools/tree/1.13.5"
             },
             "funding": [
                 {
@@ -6190,7 +6192,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2022-06-28T14:29:26+00:00"
+            "time": "2022-09-07T14:31:31+00:00"
         },
         {
             "name": "sunra/php-simple-html-dom-parser",
@@ -9340,16 +9342,16 @@
         },
         {
             "name": "zircote/swagger-php",
-            "version": "3.3.6",
+            "version": "4.4.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/zircote/swagger-php.git",
-                "reference": "5016342f966fca29dda84455de066c5c90d37941"
+                "reference": "0c1cdd31e8cfeb7116c54696aafdab9c778070fd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/zircote/swagger-php/zipball/5016342f966fca29dda84455de066c5c90d37941",
-                "reference": "5016342f966fca29dda84455de066c5c90d37941",
+                "url": "https://api.github.com/repos/zircote/swagger-php/zipball/0c1cdd31e8cfeb7116c54696aafdab9c778070fd",
+                "reference": "0c1cdd31e8cfeb7116c54696aafdab9c778070fd",
                 "shasum": ""
             },
             "require": {
@@ -9361,18 +9363,22 @@
                 "symfony/yaml": ">=3.3"
             },
             "require-dev": {
-                "composer/package-versions-deprecated": "1.11.99.2",
+                "composer/package-versions-deprecated": "^1.11",
                 "friendsofphp/php-cs-fixer": "^2.17 || ^3.0",
-                "phpunit/phpunit": ">=8.5.14"
+                "phpstan/phpstan": "^1.6",
+                "phpunit/phpunit": ">=8",
+                "vimeo/psalm": "^4.23"
             },
             "bin": [
                 "bin/openapi"
             ],
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "4.x-dev"
+                }
+            },
             "autoload": {
-                "files": [
-                    "src/functions.php"
-                ],
                 "psr-4": {
                     "OpenApi\\": "src"
                 }
@@ -9407,9 +9413,9 @@
             ],
             "support": {
                 "issues": "https://github.com/zircote/swagger-php/issues",
-                "source": "https://github.com/zircote/swagger-php/tree/3.3.6"
+                "source": "https://github.com/zircote/swagger-php/tree/4.4.9"
             },
-            "time": "2022-05-21T01:52:14+00:00"
+            "time": "2022-09-11T20:51:43+00:00"
         }
     ],
     "packages-dev": [
@@ -10211,16 +10217,16 @@
         },
         {
             "name": "itsgoingd/clockwork",
-            "version": "v5.1.7",
+            "version": "v5.1.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/itsgoingd/clockwork.git",
-                "reference": "2cad6c75dc2b96cbfd48c0511bb035a4e328c17f"
+                "reference": "74ee05a61296aa7298164ef5346f0a568aa6106e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/itsgoingd/clockwork/zipball/2cad6c75dc2b96cbfd48c0511bb035a4e328c17f",
-                "reference": "2cad6c75dc2b96cbfd48c0511bb035a4e328c17f",
+                "url": "https://api.github.com/repos/itsgoingd/clockwork/zipball/74ee05a61296aa7298164ef5346f0a568aa6106e",
+                "reference": "74ee05a61296aa7298164ef5346f0a568aa6106e",
                 "shasum": ""
             },
             "require": {
@@ -10267,7 +10273,7 @@
             ],
             "support": {
                 "issues": "https://github.com/itsgoingd/clockwork/issues",
-                "source": "https://github.com/itsgoingd/clockwork/tree/v5.1.7"
+                "source": "https://github.com/itsgoingd/clockwork/tree/v5.1.8"
             },
             "funding": [
                 {
@@ -10275,7 +10281,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2022-08-14T21:23:22+00:00"
+            "time": "2022-09-25T20:21:14+00:00"
         },
         {
             "name": "laravel/legacy-factories",
@@ -10335,16 +10341,16 @@
         },
         {
             "name": "maximebf/debugbar",
-            "version": "v1.18.0",
+            "version": "v1.18.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/maximebf/php-debugbar.git",
-                "reference": "0d44b75f3b5d6d41ae83b79c7a4bceae7fbc78b6"
+                "reference": "ba0af68dd4316834701ecb30a00ce9604ced3ee9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/maximebf/php-debugbar/zipball/0d44b75f3b5d6d41ae83b79c7a4bceae7fbc78b6",
-                "reference": "0d44b75f3b5d6d41ae83b79c7a4bceae7fbc78b6",
+                "url": "https://api.github.com/repos/maximebf/php-debugbar/zipball/ba0af68dd4316834701ecb30a00ce9604ced3ee9",
+                "reference": "ba0af68dd4316834701ecb30a00ce9604ced3ee9",
                 "shasum": ""
             },
             "require": {
@@ -10364,7 +10370,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.17-dev"
+                    "dev-master": "1.18-dev"
                 }
             },
             "autoload": {
@@ -10395,9 +10401,9 @@
             ],
             "support": {
                 "issues": "https://github.com/maximebf/php-debugbar/issues",
-                "source": "https://github.com/maximebf/php-debugbar/tree/v1.18.0"
+                "source": "https://github.com/maximebf/php-debugbar/tree/v1.18.1"
             },
-            "time": "2021-12-27T18:49:48+00:00"
+            "time": "2022-03-31T14:55:54+00:00"
         },
         {
             "name": "mockery/mockery",
@@ -11064,16 +11070,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "9.5.24",
+            "version": "9.5.25",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "d0aa6097bef9fd42458a9b3c49da32c6ce6129c5"
+                "reference": "3e6f90ca7e3d02025b1d147bd8d4a89fd4ca8a1d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/d0aa6097bef9fd42458a9b3c49da32c6ce6129c5",
-                "reference": "d0aa6097bef9fd42458a9b3c49da32c6ce6129c5",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/3e6f90ca7e3d02025b1d147bd8d4a89fd4ca8a1d",
+                "reference": "3e6f90ca7e3d02025b1d147bd8d4a89fd4ca8a1d",
                 "shasum": ""
             },
             "require": {
@@ -11095,14 +11101,14 @@
                 "phpunit/php-timer": "^5.0.2",
                 "sebastian/cli-parser": "^1.0.1",
                 "sebastian/code-unit": "^1.0.6",
-                "sebastian/comparator": "^4.0.5",
+                "sebastian/comparator": "^4.0.8",
                 "sebastian/diff": "^4.0.3",
                 "sebastian/environment": "^5.1.3",
-                "sebastian/exporter": "^4.0.3",
+                "sebastian/exporter": "^4.0.5",
                 "sebastian/global-state": "^5.0.1",
                 "sebastian/object-enumerator": "^4.0.3",
                 "sebastian/resource-operations": "^3.0.3",
-                "sebastian/type": "^3.1",
+                "sebastian/type": "^3.2",
                 "sebastian/version": "^3.0.2"
             },
             "suggest": {
@@ -11146,7 +11152,7 @@
             ],
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/9.5.24"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/9.5.25"
             },
             "funding": [
                 {
@@ -11156,9 +11162,13 @@
                 {
                     "url": "https://github.com/sebastianbergmann",
                     "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/phpunit/phpunit",
+                    "type": "tidelift"
                 }
             ],
-            "time": "2022-08-30T07:42:16+00:00"
+            "time": "2022-09-25T03:44:45+00:00"
         },
         {
             "name": "sebastian/cli-parser",
@@ -11329,16 +11339,16 @@
         },
         {
             "name": "sebastian/comparator",
-            "version": "4.0.6",
+            "version": "4.0.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/comparator.git",
-                "reference": "55f4261989e546dc112258c7a75935a81a7ce382"
+                "reference": "fa0f136dd2334583309d32b62544682ee972b51a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/55f4261989e546dc112258c7a75935a81a7ce382",
-                "reference": "55f4261989e546dc112258c7a75935a81a7ce382",
+                "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/fa0f136dd2334583309d32b62544682ee972b51a",
+                "reference": "fa0f136dd2334583309d32b62544682ee972b51a",
                 "shasum": ""
             },
             "require": {
@@ -11391,7 +11401,7 @@
             ],
             "support": {
                 "issues": "https://github.com/sebastianbergmann/comparator/issues",
-                "source": "https://github.com/sebastianbergmann/comparator/tree/4.0.6"
+                "source": "https://github.com/sebastianbergmann/comparator/tree/4.0.8"
             },
             "funding": [
                 {
@@ -11399,7 +11409,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2020-10-26T15:49:45+00:00"
+            "time": "2022-09-14T12:41:17+00:00"
         },
         {
             "name": "sebastian/complexity",
@@ -11589,16 +11599,16 @@
         },
         {
             "name": "sebastian/exporter",
-            "version": "4.0.4",
+            "version": "4.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/exporter.git",
-                "reference": "65e8b7db476c5dd267e65eea9cab77584d3cfff9"
+                "reference": "ac230ed27f0f98f597c8a2b6eb7ac563af5e5b9d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/exporter/zipball/65e8b7db476c5dd267e65eea9cab77584d3cfff9",
-                "reference": "65e8b7db476c5dd267e65eea9cab77584d3cfff9",
+                "url": "https://api.github.com/repos/sebastianbergmann/exporter/zipball/ac230ed27f0f98f597c8a2b6eb7ac563af5e5b9d",
+                "reference": "ac230ed27f0f98f597c8a2b6eb7ac563af5e5b9d",
                 "shasum": ""
             },
             "require": {
@@ -11654,7 +11664,7 @@
             ],
             "support": {
                 "issues": "https://github.com/sebastianbergmann/exporter/issues",
-                "source": "https://github.com/sebastianbergmann/exporter/tree/4.0.4"
+                "source": "https://github.com/sebastianbergmann/exporter/tree/4.0.5"
             },
             "funding": [
                 {
@@ -11662,7 +11672,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2021-11-11T14:18:36+00:00"
+            "time": "2022-09-14T06:03:37+00:00"
         },
         {
             "name": "sebastian/global-state",
@@ -12017,16 +12027,16 @@
         },
         {
             "name": "sebastian/type",
-            "version": "3.1.0",
+            "version": "3.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/type.git",
-                "reference": "fb44e1cc6e557418387ad815780360057e40753e"
+                "reference": "fb3fe09c5f0bae6bc27ef3ce933a1e0ed9464b6e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/type/zipball/fb44e1cc6e557418387ad815780360057e40753e",
-                "reference": "fb44e1cc6e557418387ad815780360057e40753e",
+                "url": "https://api.github.com/repos/sebastianbergmann/type/zipball/fb3fe09c5f0bae6bc27ef3ce933a1e0ed9464b6e",
+                "reference": "fb3fe09c5f0bae6bc27ef3ce933a1e0ed9464b6e",
                 "shasum": ""
             },
             "require": {
@@ -12038,7 +12048,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.1-dev"
+                    "dev-master": "3.2-dev"
                 }
             },
             "autoload": {
@@ -12061,7 +12071,7 @@
             "homepage": "https://github.com/sebastianbergmann/type",
             "support": {
                 "issues": "https://github.com/sebastianbergmann/type/issues",
-                "source": "https://github.com/sebastianbergmann/type/tree/3.1.0"
+                "source": "https://github.com/sebastianbergmann/type/tree/3.2.0"
             },
             "funding": [
                 {
@@ -12069,7 +12079,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2022-08-29T06:55:37+00:00"
+            "time": "2022-09-12T14:47:03+00:00"
         },
         {
             "name": "sebastian/version",
@@ -12198,16 +12208,16 @@
         },
         {
             "name": "spatie/ssh",
-            "version": "1.7.2",
+            "version": "1.8.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/ssh.git",
-                "reference": "81c7aa039270dda63d8cf279655e3537c543ed49"
+                "reference": "76b09b8547b976cc5e07138293aa947b7ce5e15b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/ssh/zipball/81c7aa039270dda63d8cf279655e3537c543ed49",
-                "reference": "81c7aa039270dda63d8cf279655e3537c543ed49",
+                "url": "https://api.github.com/repos/spatie/ssh/zipball/76b09b8547b976cc5e07138293aa947b7ce5e15b",
+                "reference": "76b09b8547b976cc5e07138293aa947b7ce5e15b",
                 "shasum": ""
             },
             "require": {
@@ -12245,7 +12255,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/ssh/issues",
-                "source": "https://github.com/spatie/ssh/tree/1.7.2"
+                "source": "https://github.com/spatie/ssh/tree/1.8.0"
             },
             "funding": [
                 {
@@ -12253,7 +12263,7 @@
                     "type": "custom"
                 }
             ],
-            "time": "2021-12-21T10:21:54+00:00"
+            "time": "2022-09-07T10:01:01+00:00"
         },
         {
             "name": "squizlabs/php_codesniffer",
