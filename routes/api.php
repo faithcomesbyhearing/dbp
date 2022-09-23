@@ -124,6 +124,22 @@ Route::name('v4_filesets.chapter')->get(
     'Bible\BibleFileSetsController@showChapter'
 );
 
+Route::name('v4_bible_verses.verse_by_language')->get(
+    '/bibles/verses/{language_code}/{book_id}/{chapter_id}/{verse_number?}',
+    'Bible\BibleVersesController@showVerseByLanguage'
+)->whereAlphaNumeric('language_code')
+->whereAlphaNumeric('book_id')
+->whereNumber('chapter_id')
+->whereNumber('verse_number');
+
+Route::name('v4_bible_verses.verse_by_bible')->get(
+    '/bible/{bible_id}/verses/{book_id}/{chapter_id}/{verse_number?}',
+    'Bible\BibleVersesController@showVerseByBible'
+)->whereAlphaNumeric('bible_id')
+->whereAlphaNumeric('book_id')
+->whereNumber('chapter_id')
+->whereNumber('verse_number');
+
 // BibleFileSet download version 4
 
 Route::name('v4_bible_filesets_download.list')->get(
@@ -428,7 +444,7 @@ Route::middleware('APIToken')->group(function () {
     Route::name('v4_users_download_annotations.index')->get(
         'users/{user_id}/annotations/{bible_id}/{book?}/{chapter?}',
         'User\UsersDownloadAnnotations@index'
-    );
+    )->whereNumber('user_id');
 });
 
 Route::middleware('APIToken:check')->group(function () {
