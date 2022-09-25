@@ -4966,6 +4966,9 @@
                                 },
                                 "fileset_set_type_code": {
                                     "$ref": "#/components/schemas/Bible/properties/date"
+                                },
+                                "bible_filesets": {
+                                    "$ref": "#/components/schemas/BibleFileset"
                                 }
                             },
                             "type": "object"
