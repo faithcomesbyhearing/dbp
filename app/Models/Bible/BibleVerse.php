@@ -156,16 +156,27 @@ class BibleVerse extends Model
             ->join('bible_filesets', 'bible_filesets.hash_id', 'bible_verses.hash_id')
             ->join('bible_fileset_connections', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id')
             ->join('bibles', 'bibles.id', 'bible_fileset_connections.bible_id')
+            ->with(["fileset.bible.filesetsWithoutMeta" => function ($query) use ($book_id, $chapter_id) {
+                return $query->whereExists(function ($subquery) use ($book_id, $chapter_id) {
+                    return $subquery->select(\DB::raw(1))
+                        ->from('bible_files')
+                        ->where('bible_files.chapter_start', $chapter_id)
+                        ->where('bible_files.book_id', $book_id)
+                        ->whereColumn('bible_files.hash_id', '=', 'bible_filesets.hash_id');
+                });
+            }])
             ->select([
                 'bible_verses.verse_start',
                 'bible_verses.verse_end',
                 'bible_verses.chapter',
                 'bible_verses.book_id',
+                'bible_verses.verse_text',
+                'bible_verses.hash_id',
                 'bibles.language_id',
                 'bibles.id AS bible_id',
-                'bible_verses.verse_text',
                 'bible_filesets.id AS fileset_id',
                 'bible_filesets.set_type_code AS fileset_set_type_code',
+                'bible_filesets.set_size_code AS fileset_set_size_code',
             ]);
     }
 
