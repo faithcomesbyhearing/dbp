@@ -58,15 +58,18 @@ class CountriesController extends APIController
         $page      = checkParam('page') ?? 1;
 
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
-        $cache_params = [$GLOBALS['i18n_iso'], $languages, $limit, $page, $is_bibleis_gideons];
 
-        $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($languages, $limit, $page) {
+        $cache_params = [$GLOBALS['i18n_iso'], $languages, $limit, $page, $is_bibleis_gideons];
+        $cache_key = generateCacheSafeKey('countries_list', $cache_params);
+
+        $countries = cacheRememberByKey($cache_key, now()->addDay(), function () use ($languages, $limit) {
             $countries = Country::with('currentTranslation')
-            ->whereHas('languages.bibles.filesets')
+            ->hasFilesetsAvailable()
             ->paginate($limit);
+
             if ($languages) {
                 $countries->load([
-                    'languagesFiltered' => function ($query) use ($languages) {
+                    'languagesFiltered' => function ($query) {
                         $query->orderBy('country_language.population', 'desc');
                     },
                 ]);
