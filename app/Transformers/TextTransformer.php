@@ -17,27 +17,68 @@ class TextTransformer extends BaseTransformer
         }
     }
 
+    /**
+     * @OA\Schema (
+     *   type="array",
+     *   schema="v2_text_search",
+     *   description="The v2_text_search",
+     *   title="v2_text_search",
+     *   @OA\Xml(name="v2_text_search"),
+     *   @OA\Items(
+     *     @OA\Property(property="dam_id",     ref="#/components/schemas/Bible/properties/id"),
+     *     @OA\Property(property="book_name",  ref="#/components/schemas/Book/properties/name"),
+     *     @OA\Property(property="book_id",    ref="#/components/schemas/Book/properties/id_osis"),
+     *     @OA\Property(property="chapter_id", ref="#/components/schemas/BibleFile/properties/chapter_start"),
+     *     @OA\Property(property="verse_id",   ref="#/components/schemas/BibleFile/properties/verse_start"),
+     *     @OA\Property(property="verse_text", ref="#/components/schemas/BibleFile/properties/verse_text"),
+     *     @OA\Property(property="book_order", ref="#/components/schemas/Book/properties/protestant_order")
+     *     )
+     *   )
+     * )
+     *
+     * @OA\Schema (
+     *   type="array",
+     *   schema="v2_text_search_group",
+     *   description="The bible Search Group Response",
+     *   title="v2_text_search_group",
+     *   @OA\Xml(name="v2_text_search_group"),
+     *   @OA\Items(
+     *              @OA\Property(property="dam_id",     ref="#/components/schemas/Bible/properties/id"),
+     *              @OA\Property(property="book_name",  ref="#/components/schemas/Book/properties/name"),
+     *              @OA\Property(property="book_id",    ref="#/components/schemas/Book/properties/id_osis"),
+     *              @OA\Property(property="chapter_id", ref="#/components/schemas/BibleFile/properties/chapter_start"),
+     *              @OA\Property(property="verse_id",   ref="#/components/schemas/BibleFile/properties/verse_start"),
+     *              @OA\Property(property="verse_text", ref="#/components/schemas/BibleFile/properties/verse_text"),
+     *              @OA\Property(property="results",    type="integer",minimum=0,example=45),
+     *              @OA\Property(property="book_order", ref="#/components/schemas/Book/properties/protestant_order")
+     *     )
+     *   )
+     * )
+     *
+     * @OA\Schema (
+     *   type="array",
+     *   schema="v2_text_verse",
+     *   description="The bible Search Group Response",
+     *   title="v2_text_verse",
+     *   @OA\Xml(name="v2_text_verse"),
+     *   @OA\Items(
+     *              @OA\Property(property="book_name",         ref="#/components/schemas/Book/properties/name"),
+     *              @OA\Property(property="book_id",           ref="#/components/schemas/Book/properties/name"),
+     *              @OA\Property(property="book_order",           ref="#/components/schemas/Book/properties/protestant_order"),
+     *              @OA\Property(property="chapter_id",        ref="#/components/schemas/BibleFile/properties/chapter_start"),
+     *              @OA\Property(property="chapter_title",     type="string",example="Chapter 1"),
+     *              @OA\Property(property="verse_id",          ref="#/components/schemas/BibleFile/properties/verse_start"),
+     *              @OA\Property(property="verse_text",        ref="#/components/schemas/BibleFile/properties/verse_text"),
+     *              @OA\Property(property="paragraph_number",  type="string",example="2")
+     *     )
+     *   )
+     * )
+     */
     public function transformForV2($text)
     {
         switch ($this->route) {
             /**
-             * @OA\Schema (
-             *   type="array",
-             *   schema="v2_text_search",
-             *   description="The v2_text_search",
-             *   title="v2_text_search",
-             *   @OA\Xml(name="v2_text_search"),
-             *   @OA\Items(
-             *     @OA\Property(property="dam_id",     ref="#/components/schemas/Bible/properties/id"),
-             *     @OA\Property(property="book_name",  ref="#/components/schemas/Book/properties/name"),
-             *     @OA\Property(property="book_id",    ref="#/components/schemas/Book/properties/id_osis"),
-             *     @OA\Property(property="chapter_id", ref="#/components/schemas/BibleFile/properties/chapter_start"),
-             *     @OA\Property(property="verse_id",   ref="#/components/schemas/BibleFile/properties/verse_start"),
-             *     @OA\Property(property="verse_text", ref="#/components/schemas/BibleFile/properties/verse_text"),
-             *     @OA\Property(property="book_order", ref="#/components/schemas/Book/properties/protestant_order")
-             *     )
-             *   )
-             * )
+             * schema="v2_text_search"
              */
             case 'v2_text_search':
                 // This is a temporal fix while v2 transitions to v4
@@ -64,24 +105,7 @@ class TextTransformer extends BaseTransformer
                 ];
 
             /**
-             * @OA\Schema (
-             *   type="array",
-             *   schema="v2_text_search_group",
-             *   description="The bible Search Group Response",
-             *   title="v2_text_search_group",
-             *   @OA\Xml(name="v2_text_search_group"),
-             *   @OA\Items(
-             *              @OA\Property(property="dam_id",     ref="#/components/schemas/Bible/properties/id"),
-             *              @OA\Property(property="book_name",  ref="#/components/schemas/Book/properties/name"),
-             *              @OA\Property(property="book_id",    ref="#/components/schemas/Book/properties/id_osis"),
-             *              @OA\Property(property="chapter_id", ref="#/components/schemas/BibleFile/properties/chapter_start"),
-             *              @OA\Property(property="verse_id",   ref="#/components/schemas/BibleFile/properties/verse_start"),
-             *              @OA\Property(property="verse_text", ref="#/components/schemas/BibleFile/properties/verse_text"),
-             *              @OA\Property(property="results",    type="integer",minimum=0,example=45),
-             *              @OA\Property(property="book_order", ref="#/components/schemas/Book/properties/protestant_order")
-             *     )
-             *   )
-             * )
+             * schema="v2_text_search_group"
              */
             case 'v2_text_search_group':
                 return [
@@ -104,24 +128,7 @@ class TextTransformer extends BaseTransformer
                 ];
 
             /**
-             * @OA\Schema (
-             *   type="array",
-             *   schema="v2_text_verse",
-             *   description="The bible Search Group Response",
-             *   title="v2_text_verse",
-             *   @OA\Xml(name="v2_text_verse"),
-             *   @OA\Items(
-             *              @OA\Property(property="book_name",         ref="#/components/schemas/Book/properties/name"),
-             *              @OA\Property(property="book_id",           ref="#/components/schemas/Book/properties/name"),
-             *              @OA\Property(property="book_order",           ref="#/components/schemas/Book/properties/protestant_order"),
-             *              @OA\Property(property="chapter_id",        ref="#/components/schemas/BibleFile/properties/chapter_start"),
-             *              @OA\Property(property="chapter_title",     type="string",example="Chapter 1"),
-             *              @OA\Property(property="verse_id",          ref="#/components/schemas/BibleFile/properties/verse_start"),
-             *              @OA\Property(property="verse_text",        ref="#/components/schemas/BibleFile/properties/verse_text"),
-             *              @OA\Property(property="paragraph_number",  type="string",example="2")
-             *     )
-             *   )
-             * )
+             * schema="v2_text_verse"
              */
             default:
                 return [

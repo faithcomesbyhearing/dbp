@@ -2,6 +2,7 @@
 
 namespace App\Transformers\V2\LibraryCatalog;
 
+use App\Transformers\BaseTransformer;
 use App\Models\Language\Language;
 
 class VolumeLanguageListTransformer extends BaseTransformer

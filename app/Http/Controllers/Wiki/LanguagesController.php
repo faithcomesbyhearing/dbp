@@ -62,6 +62,8 @@ class LanguagesController extends APIController
      *
      * @OA\Schema(
      *   schema="v4_languages.all",
+     *   description= "Display a listing of the resource.
+     *                 Fetches the records from the database > passes them through fractal for transforming.",
      *   type="object",
      *   @OA\Property(property="data", type="array",
      *      @OA\Items(
@@ -163,7 +165,7 @@ class LanguagesController extends APIController
      *     tags={"Languages"},
      *     summary="Returns languages related to this search",
      *     description="Returns paginated languages that have search text in its name or country",
-     *     operationId="v4_languages.one",
+     *     operationId="v4_languages.search",
      *     @OA\Parameter(
      *          name="search_text",
      *          in="path",

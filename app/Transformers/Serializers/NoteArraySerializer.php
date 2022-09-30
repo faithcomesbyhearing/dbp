@@ -14,7 +14,7 @@ class NoteArraySerializer extends ArraySerializer
      *
      * @return array
      */
-    public function collection($resourceKey, array $data)
+    public function collection(?string $resourceKey, array $data) : array
     {
         return ['notes' => $data];
     }
@@ -27,7 +27,7 @@ class NoteArraySerializer extends ArraySerializer
      *
      * @return array
      */
-    public function item($resourceKey, array $data)
+    public function item(?string $resourceKey, array $data) : array
     {
         return ['notes' => $data];
     }
@@ -37,7 +37,7 @@ class NoteArraySerializer extends ArraySerializer
      *
      * @return array
      */
-    public function null()
+    public function null() : array
     {
         return ['notes' => []];
     }
