@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bible\Study;
 
+use App\Http\Controllers\APIController;
 use App\Models\Bible\Study\GlossaryPerson;
 
 class GlossaryController extends APIController
