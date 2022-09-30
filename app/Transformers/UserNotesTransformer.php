@@ -56,7 +56,8 @@ class UserNotesTransformer extends TransformerAbstract
       'verse_start' => (int) $note->verse_start,
       'verse_end' => (int) $note->verse_end,
       'verse_text' => (string) $note->verse_text,
-      'notes' => (string) $note->notes,
+      // 'notes' => (string) $note->notes,
+      'notes' => mb_convert_encoding((string) $note->notes, "UTF-8", "auto"),
       'created_at' => (string) $note->created_at,
       'updated_at' => (string) $note->updated_at,
       'tags' => $note->tags

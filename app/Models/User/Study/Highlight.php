@@ -8,6 +8,7 @@ use App\Models\Bible\BibleBook;
 use App\Models\Bible\BibleVerse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * App\Models\User\Highlight
@@ -233,5 +234,46 @@ class Highlight extends Model
         }
 
         return $color;
+    }
+
+    /**
+     * Get highlights related the playlist items that belong to playlist and a given book ID
+     *
+     * @param Illuminate\Database\Query\Builder $query
+     * @param int $playlist_id
+     * @param string $book_id
+     *
+     * @return Illuminate\Database\Query\Builder
+     */
+    public function scopeWhereBelongPlaylistAndBook(Builder $query, int $playlist_id, string $book_id) : Builder
+    {
+        $dbp_users = config('database.connections.dbp_users.database');
+        $dbp_prod = config('database.connections.dbp.database');
+
+        return $query
+            ->join($dbp_prod . '.bible_fileset_connections AS bfc', 'bfc.bible_id', 'user_highlights.bible_id')
+            ->join($dbp_prod . '.bible_filesets AS bf', 'bfc.hash_id', 'bf.hash_id')
+            ->join($dbp_users . '.playlist_items AS pli', function ($join) use ($book_id) {
+                $join
+                    ->on('bf.id', '=', 'pli.fileset_id')
+                    ->where('pli.book_id', $book_id)
+                    ->whereColumn('user_highlights.chapter', '=', 'pli.chapter_start')
+                    ->where(function ($wherequery) {
+                        $wherequery
+                        ->orWhereNull('pli.verse_start')
+                        ->orWhere(function ($verse_start_where) {
+                            $verse_start_where
+                                ->whereColumn('user_highlights.verse_start', '<=', 'pli.verse_end')
+                                ->whereColumn('user_highlights.verse_start', '>=', 'pli.verse_start');
+                        })
+                        ->orWhere(function ($verse_end_where) {
+                            $verse_end_where
+                                ->whereColumn('user_highlights.verse_end', '<=', 'pli.verse_end')
+                                ->whereColumn('user_highlights.verse_end', '>=', 'pli.verse_start');
+                        });
+                    });
+            })
+            ->where('pli.playlist_id', $playlist_id)
+            ->where('user_highlights.book_id', $book_id);
     }
 }
