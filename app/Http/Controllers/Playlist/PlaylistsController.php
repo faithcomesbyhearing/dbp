@@ -1416,7 +1416,10 @@ class PlaylistsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_notes"))
+     *         @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_notes")
+     *         )
      *     ),
      * )
      *
@@ -1487,7 +1490,10 @@ class PlaylistsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_highlights"))
+     *         @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_highlights")
+     *         )
      *     )
      * )
      *
@@ -1522,7 +1528,7 @@ class PlaylistsController extends APIController
         ])
         ->whereBelongPlaylistAndBook($playlist_id, $book_id)
         ->where('user_highlights.user_id', $user->id)
-        ->with('tags')
+        ->with(['tags', 'color'])
         ->get();
 
         return $this->reply(fractal(
@@ -1560,7 +1566,10 @@ class PlaylistsController extends APIController
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
-     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_bookmarks"))
+     *         @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_bookmarks")
+     *         )
      *     ),
      * )
      *
