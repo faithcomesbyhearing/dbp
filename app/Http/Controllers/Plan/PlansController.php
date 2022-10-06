@@ -914,7 +914,7 @@ class PlansController extends APIController
      *          @OA\Schema(type="boolean"),
      *          description="Save progress for the translated plan"
      *     ),
-     *     @OA\Response(response=200, ref="#/components/responses/plan")
+     *     @OA\Response(response=200, ref="#/components/schemas/v4_plan_translated_detail")
      * )
      *
      * @param $plan_id

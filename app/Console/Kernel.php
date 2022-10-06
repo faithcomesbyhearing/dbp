@@ -21,7 +21,7 @@ class Kernel extends ConsoleKernel
 
         Commands\StudyFormats\fetchTyndalePeople::class,
 
-        Commands\generateOpenApiDoc::class,
+        Commands\GenerateOpenApiDoc::class,
 
         Commands\TranslatePlan::class,
         Commands\TranslatePlaylist::class,

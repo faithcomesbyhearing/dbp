@@ -14,7 +14,7 @@
         "php": ">=8.0 <=8.0.21",
         "algolia/algoliasearch-client-php": "3.3.2",
         "appstract/laravel-opcache": "4.0.2",
-        "aws/aws-sdk-php": "3.236.0",
+        "aws/aws-sdk-php": "3.237.2",
         "biscolab/laravel-recaptcha": "5.4.0",
         "bugsnag/bugsnag-laravel": "2.24.0",
         "curl/curl": "2.4.0",
@@ -24,13 +24,13 @@
         "guzzlehttp/guzzle": "7.5.0",
         "intervention/image": "2.7.2",
         "josiasmontag/laravel-localization": "1.0.0",
-        "laravel/framework": "9.31.0",
+        "laravel/framework": "9.33.0",
         "laravel/slack-notification-channel": "2.4.0",
         "laravel/socialite": "5.5.5",
         "laravel/tinker": "2.7.2",
         "maennchen/zipstream-php": "2.2.1",
         "mattkingshott/quest": "2.0.2",
-        "sentry/sentry-laravel": "2.13.0",
+        "sentry/sentry-laravel": "2.14.0",
         "socialiteproviders/generators": "dev-php-8",
         "socialiteproviders/google": "4.1.0",
         "spatie/array-to-xml": "3.1.3",
@@ -42,7 +42,7 @@
         "symfony/yaml": "6.0.10",
         "torann/geoip": "3.0.4",
         "yosymfony/toml": "1.0.4",
-        "zircote/swagger-php": "3.3.6"
+        "zircote/swagger-php": "4.4.9"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "3.7.0",

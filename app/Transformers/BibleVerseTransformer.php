@@ -7,6 +7,31 @@ class BibleVerseTransformer extends BaseTransformer
     /**
      * A Fractal transformer.
      *
+     * @OA\Schema (
+     *   type="object",
+     *   schema="v4_bible_verses.all",
+     *   description="The bibles being returned",
+     *   title="v4_bible_verses.all",
+     *   @OA\Xml(name="v4_bible_verses.all"),
+     *   @OA\Property(
+     *    property="data",
+     *    type="array",
+     *    @OA\Items(
+     *      @OA\Property(property="verse_start",           ref="#/components/schemas/BibleFile/properties/verse_start"),
+     *      @OA\Property(property="verse_end",             ref="#/components/schemas/BibleFile/properties/verse_end"),
+     *      @OA\Property(property="chapter",               ref="#/components/schemas/BibleVerse/properties/chapter"),
+     *      @OA\Property(property="book_id",               ref="#/components/schemas/BibleVerse/properties/book_id"),
+     *      @OA\Property(property="language_id",           ref="#/components/schemas/Language/properties/id"),
+     *      @OA\Property(property="bible_id",              ref="#/components/schemas/Bible/properties/id"),
+     *      @OA\Property(property="verse_text",            ref="#/components/schemas/BibleVerse/properties/verse_text"),
+     *      @OA\Property(property="fileset_id",            ref="#/components/schemas/Language/properties/iso"),
+     *      @OA\Property(property="fileset_set_type_code", ref="#/components/schemas/Bible/properties/date"),
+     *    ),
+     *    @OA\Property(property="meta",ref="#/components/schemas/pagination")
+     *   )
+     * )
+     *
+     *
      * @param BibleVerse $bible
      *
      * @return array
@@ -14,29 +39,7 @@ class BibleVerseTransformer extends BaseTransformer
     public function transform($bible_verse)
     {
         /**
-         * @OA\Schema (
-         *   type="object",
-         *   schema="v4_bible_verses.all",
-         *   description="The bibles being returned",
-         *   title="v4_bible_verses.all",
-         *   @OA\Xml(name="v4_bible_verses.all"),
-         *   @OA\Property(
-         *    property="data",
-         *    type="array",
-         *    @OA\Items(
-         *      @OA\Property(property="verse_start",           ref="#/components/schemas/BibleFile/properties/verse_start"),
-         *      @OA\Property(property="verse_end",             ref="#/components/schemas/BibleFile/properties/verse_end"),
-         *      @OA\Property(property="chapter",               ref="#/components/schemas/BibleVerse/properties/chapter"),
-         *      @OA\Property(property="book_id",               ref="#/components/schemas/BibleVerse/properties/book_id"),
-         *      @OA\Property(property="language_id",           ref="#/components/schemas/Language/properties/id"),
-         *      @OA\Property(property="bible_id",              ref="#/components/schemas/Bible/properties/id"),
-         *      @OA\Property(property="verse_text",            ref="#/components/schemas/BibleVerse/properties/verse_text"),
-         *      @OA\Property(property="fileset_id",            ref="#/components/schemas/Language/properties/iso"),
-         *      @OA\Property(property="fileset_set_type_code", ref="#/components/schemas/Bible/properties/date"),
-         *    ),
-         *    @OA\Property(property="meta",ref="#/components/schemas/pagination")
-         *   )
-         * )
+         * schema=v4_bible_verses.all
          */
         return [
             'verse_start' => $bible_verse->verse_start,
