@@ -64,7 +64,7 @@ class UserHighlightsTransformer extends TransformerAbstract
         ];
     }
 
-    private function checkColorPreference($highlight)
+    protected function checkColorPreference($highlight)
     {
         $color_preference = checkParam('prefer_color') ?? 'rgba';
         $highlight->color = Highlight::checkAndReturnColorPreference($highlight, $color_preference);

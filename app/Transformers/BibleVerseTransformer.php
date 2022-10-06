@@ -2,10 +2,6 @@
 
 namespace App\Transformers;
 
-use App\Models\Bible\Bible;
-
-use Illuminate\Support\Arr;
-
 class BibleVerseTransformer extends BaseTransformer
 {
     /**

@@ -329,7 +329,21 @@ Route::name('v4_internal_playlists.draft')
     ->post('playlists/{playlist_id}/draft', 'Playlist\PlaylistsController@draft');
 Route::name('v4_internal_playlists_item.metadata')
     ->get('playlists/item/metadata', 'Playlist\PlaylistsController@itemMetadata');
-
+Route::name('v4_internal_playlists.notes')
+    ->middleware('APIToken:check')
+    ->get('playlists/{playlist_id}/{book_id}/notes', 'Playlist\PlaylistsController@notes')
+    ->whereNumber('playlist_id')
+    ->whereAlphaNumeric('book_id');
+Route::name('v4_internal_playlists.highlights')
+    ->middleware('APIToken:check')
+    ->get('playlists/{playlist_id}/{book_id}/highlights', 'Playlist\PlaylistsController@highlights')
+    ->whereNumber('playlist_id')
+    ->whereAlphaNumeric('book_id');
+Route::name('v4_internal_playlists.bookmarks')
+    ->middleware('APIToken:check')
+    ->get('playlists/{playlist_id}/{book_id}/bookmarks', 'Playlist\PlaylistsController@bookmarks')
+    ->whereNumber('playlist_id')
+    ->whereAlphaNumeric('book_id');
 // VERSION 4 | Plans (bible.is private)
 Route::name('v4_internal_plans.index')
     ->middleware('APIToken')

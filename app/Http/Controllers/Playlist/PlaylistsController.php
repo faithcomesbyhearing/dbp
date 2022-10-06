@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Playlist;
+
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Spatie\Fractalistic\ArraySerializer;
 use App\Traits\AccessControlAPI;
@@ -16,16 +17,23 @@ use App\Models\Playlist\Playlist;
 use App\Models\Playlist\PlaylistFollower;
 use App\Models\Playlist\PlaylistItems;
 use App\Models\Bible\BibleVerse;
+use App\Models\User\Study\Note;
+use App\Models\User\Study\Highlight;
+use App\Models\User\Study\Bookmark;
 use App\Traits\CallsBucketsTrait;
 use App\Traits\CheckProjectMembership;
 use App\Transformers\PlaylistTransformer;
 use App\Transformers\PlaylistItemsTransformer;
+use App\Transformers\PlaylistNotesTransformer;
+use App\Transformers\PlaylistHighlightsTransformer;
+use App\Transformers\PlaylistBookmarksTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Http\JsonResponse;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Services\Plans\PlaylistService;
 
@@ -234,7 +242,7 @@ class PlaylistsController extends APIController
                         $query_fileset->with(['bible' => function ($query_bible) {
                             $query_bible->with(['translations', 'books.book']);
                         }]);
-                    }])->conditionTagExclude(['opus', 'webm']);
+                    }])->conditionTagExcludeFileset(['opus', 'webm']);
                 }]);
             })
             ->when($language_id, function ($q) use ($language_id) {
@@ -1383,5 +1391,221 @@ class PlaylistsController extends APIController
             'duration' => $playlist_item->duration,
             'timestamps' => $playlist_item->getTimestamps(),
         ]);
+    }
+
+    /**
+     *
+     * @OA\Get(
+     *     path="/playlists/{playlist_id}/{book_id}/notes",
+     *     tags={"Playlists", "Notes"},
+     *     summary="Get Note records related to playlist and book",
+     *     operationId="v4_internal_playlists.notes",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(
+     *          name="playlist_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Playlist/properties/id")
+     *     ),
+     *     @OA\Parameter(
+     *          name="bookd_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_notes")
+     *         )
+     *     ),
+     * )
+     *
+     * @param Request $request
+     * @param int $playlist_id
+     * @param string $book_id
+     *
+     * @return JsonResponse
+     */
+    public function notes(Request $request, int $playlist_id, string $book_id) : JsonResponse
+    {
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $notes = Note::select([
+            'user_notes.id',
+            'user_notes.user_id',
+            'user_notes.bible_id',
+            'user_notes.book_id',
+            'user_notes.chapter',
+            'user_notes.verse_start',
+            'user_notes.verse_end',
+            'user_notes.notes',
+        ])
+        ->whereBelongPlaylistAndBook($playlist_id, $book_id)
+        ->where('user_notes.user_id', $user->id)
+        ->with('tags')
+        ->get();
+
+        return $this->reply(fractal(
+            $notes,
+            new PlaylistNotesTransformer(),
+        ));
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/playlists/{playlist_id}/{book_id}/highlights",
+     *     tags={"Playlists", "Highlights"},
+     *     summary="Get Highlight records related to playlist and book",
+     *     operationId="v4_internal_playlists.highlights",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(
+     *          name="playlist_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Playlist/properties/id")
+     *     ),
+     *     @OA\Parameter(
+     *          name="bookd_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
+     *     ),
+     *     @OA\Parameter(
+     *          name="prefer_color",
+     *          in="query",
+     *          @OA\Schema(type="string",default="rgba",enum={"hex","rgba","rgb","full"}),
+     *          description="Choose the format that highlighted colors will be returned in. If no color
+     *          is not specified than the default is a six letter hexadecimal color."
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_highlights")
+     *         )
+     *     )
+     * )
+     *
+     * @param Request $request
+     * @param int $playlist_id
+     * @param string $book_id
+     *
+     * @return JsonResponse
+     */
+    public function highlights(Request $request, int $playlist_id, string $book_id) : JsonResponse
+    {
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $notes = Highlight::select([
+            'user_highlights.id',
+            'user_highlights.user_id',
+            'user_highlights.bible_id',
+            'user_highlights.book_id',
+            'user_highlights.chapter',
+            'user_highlights.verse_start',
+            'user_highlights.verse_end',
+            'user_highlights.highlight_start',
+            'user_highlights.highlighted_words',
+            'user_highlights.highlighted_color',
+        ])
+        ->whereBelongPlaylistAndBook($playlist_id, $book_id)
+        ->where('user_highlights.user_id', $user->id)
+        ->with(['tags', 'color'])
+        ->get();
+
+        return $this->reply(fractal(
+            $notes,
+            new PlaylistHighlightsTransformer()
+        ));
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/playlists/{playlist_id}/{book_id}/bookmarks",
+     *     tags={"Playlists"},
+     *     summary="Get Bookmarks records related to playlist and book",
+     *     operationId="v4_internal_playlists.bookmarks",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(
+     *          name="playlist_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Playlist/properties/id")
+     *     ),
+     *     @OA\Parameter(
+     *          name="bookd_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
+     *     ),
+     *     @OA\Parameter(
+     *          name="prefer_color",
+     *          in="query",
+     *          @OA\Schema(type="string",default="rgba",enum={"hex","rgba","rgb","full"}),
+     *          description="Choose the format that highlighted colors will be returned in. If no color
+     *          is not specified than the default is a six letter hexadecimal color."
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_bookmarks")
+     *         )
+     *     ),
+     * )
+     *
+     * @param Request $request
+     * @param int $playlist_id
+     * @param string $book_id
+     *
+     * @return JsonResponse
+     */
+    public function bookmarks(Request $request, int $playlist_id, string $book_id) : JsonResponse
+    {
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $notes = Bookmark::select([
+            'user_bookmarks.id',
+            'user_bookmarks.user_id',
+            'user_bookmarks.bible_id',
+            'user_bookmarks.book_id',
+            'user_bookmarks.chapter',
+            'user_bookmarks.verse_start',
+        ])
+        ->whereBelongPlaylistAndBook($playlist_id, $book_id)
+        ->where('user_bookmarks.user_id', $user->id)
+        ->with('tags')
+        ->get();
+
+        return $this->reply(fractal(
+            $notes,
+            new PlaylistBookmarksTransformer()
+        ));
     }
 }
