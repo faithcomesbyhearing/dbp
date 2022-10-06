@@ -9,14 +9,14 @@ class UserNotesTransformer extends TransformerAbstract
 {
     /**
      * @OA\Schema (
-     *        type="object",
-     *        schema="v4_internal_notes_index",
-     *        description="The transformed user notes",
-     *        title="v4_user_notes",
-     *      @OA\Xml(name="v4_internal_notes_index"),
-     *      allOf={
-     *        @OA\Schema(ref="#/components/schemas/pagination"),
-     *      },
+     *   type="object",
+     *   schema="v4_internal_notes_index",
+     *   description="The transformed user notes",
+     *   title="v4_user_notes",
+     *   @OA\Xml(name="v4_internal_notes_index"),
+     *   allOf={
+     *      @OA\Schema(ref="#/components/schemas/pagination"),
+     *   },
      *   @OA\Property(property="data", type="array",
      *      @OA\Items(ref="#/components/schemas/v4_note")
      *    )

@@ -32,7 +32,7 @@ class UsersDownloadAnnotations extends APIController
      *     tags={"Annotations"},
      *     summary="Download annotations for specific user and bible fileset",
      *     description="For a given fileset return content (text, audio or video)",
-     *     operationId="v4_download",
+     *     operationId="v4_users_download",
      *     @OA\Parameter(name="user_id", in="path", description="The User ID", required=true,
      *          @OA\Schema(ref="#/components/schemas/User/properties/id")),
      *      @OA\Parameter(name="bible_id", in="path", description="Will filter the results by the given bible", required=true,
