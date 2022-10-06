@@ -2,6 +2,9 @@
 
 namespace App\Transformers;
 
+use App\Models\Bible\BibleFileset;
+use App\Models\Bible\BibleVerse;
+
 class BibleVerseTransformer extends BaseTransformer
 {
     /**
@@ -26,6 +29,7 @@ class BibleVerseTransformer extends BaseTransformer
      *      @OA\Property(property="verse_text",            ref="#/components/schemas/BibleVerse/properties/verse_text"),
      *      @OA\Property(property="fileset_id",            ref="#/components/schemas/Language/properties/iso"),
      *      @OA\Property(property="fileset_set_type_code", ref="#/components/schemas/Bible/properties/date"),
+     *      @OA\Property(property="bible_filesets",        ref="#/components/schemas/BibleFileset"),
      *    ),
      *    @OA\Property(property="meta",ref="#/components/schemas/pagination")
      *   )
@@ -36,7 +40,7 @@ class BibleVerseTransformer extends BaseTransformer
      *
      * @return array
      */
-    public function transform($bible_verse)
+    public function transform(BibleVerse $bible_verse)
     {
         /**
          * schema=v4_bible_verses.all
@@ -51,6 +55,17 @@ class BibleVerseTransformer extends BaseTransformer
             'verse_text'=> $bible_verse->verse_text,
             'fileset_id'=> $bible_verse->fileset_id,
             'fileset_set_type_code'=> $bible_verse->fileset_set_type_code,
+            'fileset_set_size_code'=> $bible_verse->fileset_set_size_code,
+            'bible_filesets' =>$bible_verse->fileset->bible->first()
+                ->filesetsWithoutMeta
+                ->map(function (BibleFileset $fileset) {
+                    return [
+                        'id' => $fileset->id,
+                        'asset_id' => $fileset->asset_id,
+                        'set_type_code' => $fileset->set_type_code,
+                        'set_size_code' => $fileset->set_size_code,
+                    ];
+                })
         ];
     }
 }
