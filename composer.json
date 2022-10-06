@@ -42,7 +42,7 @@
         "symfony/yaml": "6.0.10",
         "torann/geoip": "3.0.4",
         "yosymfony/toml": "1.0.4",
-        "zircote/swagger-php": "4.4.9"
+        "zircote/swagger-php": "3.3.6"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "3.7.0",

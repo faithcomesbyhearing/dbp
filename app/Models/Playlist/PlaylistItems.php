@@ -727,7 +727,7 @@ class PlaylistItems extends Model implements Sortable
      */
     public function scopeConditionTagExcludeFileset(Builder $query, Array $tags_exclude)
     {
-        $query->whereNotExists(function ($sub_query) {
+        $query->whereNotExists(function ($sub_query) use ($tags_exclude) {
             $dbp_prod = config('database.connections.dbp.database');
 
             return $sub_query
@@ -735,7 +735,7 @@ class PlaylistItems extends Model implements Sortable
                 ->from($dbp_prod . '.bible_filesets as bf')
                 ->join($dbp_prod . '.bible_fileset_tags as bft', 'bft.hash_id', 'bf.hash_id')
                 ->whereColumn('bf.id', '=', 'playlist_items.fileset_id')
-                ->whereIn($dbp_prod . '.bft.description', ['opus', 'webm']);
+                ->whereIn($dbp_prod . '.bft.description', $tags_exclude);
         });
     }
 }
