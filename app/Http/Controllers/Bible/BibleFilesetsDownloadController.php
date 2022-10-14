@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Bible;
 
+use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 use App\Traits\AccessControlAPI;
 use App\Traits\CallsBucketsTrait;
 use App\Traits\BibleFileSetsTrait;
@@ -57,8 +59,12 @@ class BibleFilesetsDownloadController extends APIController
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
      * @throws \Exception
      */
-    public function index($fileset_id, $book_id = null, $chapter = null, $cache_key = 'bible_filesets_download_index')
-    {
+    public function index(
+        string $fileset_id,
+        ?string $book_id = null,
+        ?string $chapter = null,
+        string $cache_key = 'bible_filesets_download_index'
+    ) {
         $type  = checkParam('type') ?? '';
         $limit = (int) (checkParam('limit') ?? 5000);
         $limit = max($limit, 5000);
@@ -73,7 +79,7 @@ class BibleFilesetsDownloadController extends APIController
             function () use ($fileset_id, $book_id, $chapter, $type, $limit) {
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 if (!$fileset_from_id) {
-                    return $this->setStatusCode(404)->replyWithError(
+                    return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError(
                         trans('api.bible_fileset_errors_404')
                     );
                 }
@@ -169,7 +175,7 @@ class BibleFilesetsDownloadController extends APIController
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
      * @throws \Exception
      */
-    public function list($cache_key = 'bible_filesets_download_list')
+    public function list(string $cache_key = 'bible_filesets_download_list') : JsonResponse
     {
         $limit = (int) (checkParam('limit') ?? 50);
         $page = (int) (checkParam('page') ?? 1);
