@@ -5,6 +5,7 @@ namespace App\Models\Bible;
 use App\Models\Organization\Asset;
 use App\Models\Organization\Organization;
 use App\Models\User\AccessGroupFileset;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -391,5 +392,25 @@ class BibleFileset extends Model
     public function isVideo() : bool
     {
         return Str::contains($this['set_type_code'], BibleFileset::VIDEO);
+    }
+
+    /**
+     * Check if the filetset records belong an access group list
+     *
+     * @param Builder $query
+     * @param Array $access_group_list
+     *
+     * @return Builder
+     */
+    public function scopeHasAccessGroup(Builder $query, Array $access_group_list) : Builder
+    {
+        return $query->whereExists(function (QueryBuilder $query_builder) use ($access_group_list) {
+            $access_group_fileset = AccessGroupFileset::select('hash_id')
+                ->whereIn('access_group_id', $access_group_list);
+
+            $query_builder->select(DB::raw(1))
+                    ->from($access_group_fileset, 'agfv')
+                    ->whereColumn('agfv.hash_id', 'bible_filesets.hash_id');
+        });
     }
 }
