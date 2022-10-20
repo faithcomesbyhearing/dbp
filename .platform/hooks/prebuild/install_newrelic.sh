@@ -28,11 +28,11 @@ amazon-linux-extras install -y  php8.0
 yum install -y php-devel
 
 cd /tmp
-git clone --depth 1 github.com/newrelic/newrelic-php-agent
+git clone --depth 1 https://github.com/newrelic/newrelic-php-agent
 cd newrelic-php-agent
 make all
 make agent-install
-mkdir /var/log/newrelic
+mkdir -p /var/log/newrelic 
 chmod 777 /var/log/newrelic
 cp bin/daemon /usr/bin/newrelic-daemon
 \cp agent/scripts/newrelic.ini.template /etc/php.d/newrelic.ini
