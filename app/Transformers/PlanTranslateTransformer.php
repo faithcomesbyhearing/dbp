@@ -7,6 +7,25 @@ use App\Models\Bible\BibleFileset;
 class PlanTranslateTransformer extends PlanTransformerBase
 {
     /**
+     * @OA\Schema (
+     *   type="object",
+     *   schema="v4_plan_translated_detail",
+     *   allOf={
+     *      @OA\Schema(ref="#/components/schemas/v4_plan_detail"),
+     *   },
+     *   @OA\Property(
+     *      property="translated_percentage",
+     *      type="integer",
+     *      description="The percentage completed of the plan translated"
+     *   ),
+     *   @OA\Property(
+     *      property="translation_data",
+     *      type="array",
+     *      @OA\Items(ref="#/components/schemas/BibleFileset")
+     *   )
+     * )
+     *
+     *
      * A Fractal transformer.
      *
      * @return array

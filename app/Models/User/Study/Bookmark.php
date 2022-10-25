@@ -40,17 +40,19 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Bookmark extends Model
 {
+    use UserAnnotationTrait;
+
     protected $connection = 'dbp_users';
     protected $table = 'user_bookmarks';
     protected $fillable = [
-    'id',
-    'bible_id',
-    'v2_id',
-    'user_id',
-    'book_id',
-    'chapter',
-    'verse_start'
-  ];
+        'id',
+        'bible_id',
+        'v2_id',
+        'user_id',
+        'book_id',
+        'chapter',
+        'verse_start'
+    ];
 
     /**
      *
@@ -126,9 +128,9 @@ class Bookmark extends Model
     public function book()
     {
         return $this->hasOne(BibleBook::class, 'book_id', 'book_id')->where(
-      'bible_id',
-      $this['bible_id']
-    );
+            'bible_id',
+            $this['bible_id']
+        );
     }
 
     public function bible()
@@ -151,25 +153,26 @@ class Bookmark extends Model
             return '';
         }
         $fileset = BibleFileset::join(
-      'bible_fileset_connections as connection',
-      'connection.hash_id',
-      'bible_filesets.hash_id'
-    )
-      ->where('bible_filesets.set_type_code', 'text_plain')
-      ->where('connection.bible_id', $bible->id)
-      ->first();
+            'bible_fileset_connections as connection',
+            'connection.hash_id',
+            'bible_filesets.hash_id'
+        )
+        ->where('bible_filesets.set_type_code', 'text_plain')
+        ->where('connection.bible_id', $bible->id)
+        ->first();
+
         if (!$fileset) {
             return '';
         }
         $verses = BibleVerse::withVernacularMetaData($bible)
-      ->where('hash_id', $fileset->hash_id)
-      ->where('bible_verses.book_id', $bookmark['book_id'])
-      ->where('verse_start', $verse_start)
-      ->where('chapter', $chapter)
-      ->orderBy('verse_start')
-      ->select(['bible_verses.verse_text'])
-      ->get()
-      ->pluck('verse_text');
+            ->where('hash_id', $fileset->hash_id)
+            ->where('bible_verses.book_id', $bookmark['book_id'])
+            ->where('verse_start', $verse_start)
+            ->where('chapter', $chapter)
+            ->orderBy('verse_start')
+            ->select(['bible_verses.verse_text'])
+            ->get()
+            ->pluck('verse_text');
         return implode(' ', $verses->toArray());
     }
 }

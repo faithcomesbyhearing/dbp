@@ -139,6 +139,7 @@ class Playlist extends Model
     /**
      *
      * @OA\Property(
+     *   property="verses",
      *   title="verses",
      *   type="integer",
      *   description="The playlist verses count"
