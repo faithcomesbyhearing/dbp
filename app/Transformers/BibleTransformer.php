@@ -97,38 +97,77 @@ class BibleTransformer extends BaseTransformer
         ];
     }
 
+    /**
+     * @OA\Schema (
+     *   type="object",
+     *   schema="v4_bible.all",
+     *   description="The bibles being returned",
+     *   title="v4_bible.all",
+     *   @OA\Xml(name="v4_bible.all"),
+     *   @OA\Property(
+     *    property="data",
+     *    type="array",
+     *    @OA\Items(
+     *              @OA\Property(property="abbr",              ref="#/components/schemas/Bible/properties/id"),
+     *              @OA\Property(property="name",              ref="#/components/schemas/BibleTranslation/properties/name"),
+     *              @OA\Property(property="vname",             ref="#/components/schemas/BibleTranslation/properties/name"),
+     *              @OA\Property(property="language",          ref="#/components/schemas/Language/properties/name"),
+     *              @OA\Property(property="language_autonym",  ref="#/components/schemas/LanguageTranslation/properties/name"),
+     *              @OA\Property(property="language_altNames", ref="#/components/schemas/LanguageTranslation/properties/name"),
+     *              @OA\Property(property="iso",               ref="#/components/schemas/Language/properties/iso"),
+     *              @OA\Property(property="date",              ref="#/components/schemas/Bible/properties/date"),
+     *              @OA\Property(property="filesets", type="object",
+     *                         @OA\Property(property="dbp-prod",type="array", @OA\Items(ref="#/components/schemas/BibleFileset"))
+     *              )
+     *     )
+     *    ),
+     *    @OA\Property(property="meta",ref="#/components/schemas/pagination")
+     *   )
+     * )
+     *
+     * @OA\Schema (
+     *   type="array",
+     *   schema="v4_bible.search",
+     *   description="The bible being returned",
+     *   title="v4_bible.search",
+     *   @OA\Xml(name="v4_bible.search"),
+     *   @OA\Items(
+     *       @OA\Property(property="abbr",          ref="#/components/schemas/Bible/properties/id"),
+     *       @OA\Property(property="name",          ref="#/components/schemas/BibleTranslation/properties/name"),
+     *       @OA\Property(property="language_id",   ref="#/components/schemas/Language/properties/id")
+     *   )
+     * )
+     *
+     * @OA\Schema (
+     *   type="array",
+     *   schema="v4_bible.one",
+     *   description="The bible being returned",
+     *   title="v4_bible.one",
+     *   @OA\Xml(name="v4_bible.one"),
+     *   @OA\Items(
+     *              @OA\Property(property="abbr",          ref="#/components/schemas/Bible/properties/id"),
+     *              @OA\Property(property="alphabet",      ref="#/components/schemas/Alphabet/properties/script"),
+     *              @OA\Property(property="mark",          ref="#/components/schemas/Bible/properties/copyright"),
+     *              @OA\Property(property="name",          ref="#/components/schemas/BibleTranslation/properties/name"),
+     *              @OA\Property(property="description",   ref="#/components/schemas/BibleTranslation/properties/description"),
+     *              @OA\Property(property="vname",         ref="#/components/schemas/BibleTranslation/properties/name"),
+     *              @OA\Property(property="vdescription",  ref="#/components/schemas/BibleTranslation/properties/description"),
+     *              @OA\Property(property="publishers",    ref="#/components/schemas/Organization"),
+     *              @OA\Property(property="providers",     ref="#/components/schemas/Organization"),
+     *              @OA\Property(property="language",      ref="#/components/schemas/Language/properties/name"),
+     *              @OA\Property(property="iso",           ref="#/components/schemas/Language/properties/iso"),
+     *              @OA\Property(property="date",          ref="#/components/schemas/Bible/properties/date"),
+     *              @OA\Property(property="country",       ref="#/components/schemas/Country/properties/name"),
+     *              @OA\Property(property="books",         ref="#/components/schemas/Book/properties/id"),
+     *              @OA\Property(property="links",         ref="#/components/schemas/BibleLink"),
+     *              @OA\Property(property="filesets",      ref="#/components/schemas/BibleFileset"),
+     *     )
+     *   )
+     * )
+     */
     public function transformForV4($bible)
     {
         switch ($this->route) {
-
-            /**
-             * @OA\Schema (
-             *   type="object",
-             *   schema="v4_bible.all",
-             *   description="The bibles being returned",
-             *   title="v4_bible.all",
-             *   @OA\Xml(name="v4_bible.all"),
-             *   @OA\Property(
-             *    property="data",
-             *    type="array",
-             *    @OA\Items(
-             *              @OA\Property(property="abbr",              ref="#/components/schemas/Bible/properties/id"),
-             *              @OA\Property(property="name",              ref="#/components/schemas/BibleTranslation/properties/name"),
-             *              @OA\Property(property="vname",             ref="#/components/schemas/BibleTranslation/properties/name"),
-             *              @OA\Property(property="language",          ref="#/components/schemas/Language/properties/name"),
-             *              @OA\Property(property="language_autonym",  ref="#/components/schemas/LanguageTranslation/properties/name"),
-             *              @OA\Property(property="language_altNames", ref="#/components/schemas/LanguageTranslation/properties/name"),
-             *              @OA\Property(property="iso",               ref="#/components/schemas/Language/properties/iso"),
-             *              @OA\Property(property="date",              ref="#/components/schemas/Bible/properties/date"),
-             *              @OA\Property(property="filesets", type="object",
-             *                         @OA\Property(property="dbp-prod",type="array", @OA\Items(ref="#/components/schemas/BibleFileset"))
-             *              )
-             *     )
-             *    ),
-             *    @OA\Property(property="meta",ref="#/components/schemas/pagination")
-             *   )
-             * )
-             */
             case 'v4_bible.archival':
                 $name = $bible->translations->where('language_id', $bible->english_language_id)->first();
                 $vName = ($bible->iso != 'eng') ? $bible->translations->where('language_id', $bible->language_id)->first() : false;
@@ -169,7 +208,9 @@ class BibleTransformer extends BaseTransformer
                     }
                 }
                 return $output;
-
+            /**
+             * schema="v4_bible.all"
+             */
             case 'v4_bible.all':
                 $output = [
                     'abbr'              => $bible->id,
@@ -190,56 +231,19 @@ class BibleTransformer extends BaseTransformer
                 }
 
                 return $output;
-
             /**
-             * @OA\Schema (
-             *   type="array",
-             *   schema="v4_bible.search",
-             *   description="The bible being returned",
-             *   title="v4_bible.search",
-             *   @OA\Xml(name="v4_bible.search"),
-             *   @OA\Items(
-             *       @OA\Property(property="abbr",          ref="#/components/schemas/Bible/properties/id"),
-             *       @OA\Property(property="name",          ref="#/components/schemas/BibleTranslation/properties/name"),
-             *       @OA\Property(property="language_id",   ref="#/components/schemas/Language/properties/id")
-             *   )
-             * )
+             * schema="v4_bible.search"
              */
             case 'v4_bible.search':
+            case 'v4_bible_by_id.search':
                 return [
                     'abbr'              => $bible->bible_id,
                     'name'              => $bible->name,
                     'language_id'       => $bible->language_id,
                 ];
-
-                /**
-                 * @OA\Schema (
-                 *   type="array",
-                 *   schema="v4_bible.one",
-                 *   description="The bible being returned",
-                 *   title="v4_bible.one",
-                 *   @OA\Xml(name="v4_bible.one"),
-                 *   @OA\Items(
-                 *              @OA\Property(property="abbr",          ref="#/components/schemas/Bible/properties/id"),
-                 *              @OA\Property(property="alphabet",      ref="#/components/schemas/Alphabet/properties/script"),
-                 *              @OA\Property(property="mark",          ref="#/components/schemas/Bible/properties/copyright"),
-                 *              @OA\Property(property="name",          ref="#/components/schemas/BibleTranslation/properties/name"),
-                 *              @OA\Property(property="description",   ref="#/components/schemas/BibleTranslation/properties/description"),
-                 *              @OA\Property(property="vname",         ref="#/components/schemas/BibleTranslation/properties/name"),
-                 *              @OA\Property(property="vdescription",  ref="#/components/schemas/BibleTranslation/properties/description"),
-                 *              @OA\Property(property="publishers",    ref="#/components/schemas/Organization"),
-                 *              @OA\Property(property="providers",     ref="#/components/schemas/Organization"),
-                 *              @OA\Property(property="language",      ref="#/components/schemas/Language/properties/name"),
-                 *              @OA\Property(property="iso",           ref="#/components/schemas/Language/properties/iso"),
-                 *              @OA\Property(property="date",          ref="#/components/schemas/Bible/properties/date"),
-                 *              @OA\Property(property="country",       ref="#/components/schemas/Country/properties/name"),
-                 *              @OA\Property(property="books",         ref="#/components/schemas/Book/properties/id"),
-                 *              @OA\Property(property="links",         ref="#/components/schemas/BibleLink"),
-                 *              @OA\Property(property="filesets",      ref="#/components/schemas/BibleFileset"),
-                 *     )
-                 *   )
-                 * )
-                 */
+            /**
+             * schema="v4_bible.one",
+             */
             case 'v4_bible.one':
                 $currentTranslation = optional($bible->translations->where('language_id', $GLOBALS['i18n_id']));
                 $fonts = $bible->filesets->reduce(function ($carry, $item) {

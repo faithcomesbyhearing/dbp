@@ -60,6 +60,10 @@ Route::name('v4_bible.books')->get(
     'bibles/{bible_id}/book',
     'Bible\BiblesController@books'
 ); // used by bible.is, but book is not specified. suggest unifying on this one. (fixed)The signature looks wrong - the code doesn't accept book_id as a path param, only a query param
+Route::name('v4_bible_by_id.search')->get(
+    'bibles/search',
+    'Bible\BiblesController@searchByBibleVersion'
+);
 Route::name('v4_bible.one')->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
@@ -119,6 +123,22 @@ Route::name('v4_filesets.chapter')->get(
     'bibles/filesets/{fileset_id}/{book}/{chapter}',
     'Bible\BibleFileSetsController@showChapter'
 );
+
+Route::name('v4_bible_verses.verse_by_language')->get(
+    '/bibles/verses/{language_code}/{book_id}/{chapter_id}/{verse_number?}',
+    'Bible\BibleVersesController@showVerseByLanguage'
+)->whereAlphaNumeric('language_code')
+->whereAlphaNumeric('book_id')
+->whereNumber('chapter_id')
+->whereNumber('verse_number');
+
+Route::name('v4_bible_verses.verse_by_bible')->get(
+    '/bible/{bible_id}/verses/{book_id}/{chapter_id}/{verse_number?}',
+    'Bible\BibleVersesController@showVerseByBible'
+)->whereAlphaNumeric('bible_id')
+->whereAlphaNumeric('book_id')
+->whereNumber('chapter_id')
+->whereNumber('verse_number');
 
 // BibleFileSet download version 4
 
@@ -309,7 +329,21 @@ Route::name('v4_internal_playlists.draft')
     ->post('playlists/{playlist_id}/draft', 'Playlist\PlaylistsController@draft');
 Route::name('v4_internal_playlists_item.metadata')
     ->get('playlists/item/metadata', 'Playlist\PlaylistsController@itemMetadata');
-
+Route::name('v4_internal_playlists.notes')
+    ->middleware('APIToken:check')
+    ->get('playlists/{playlist_id}/{book_id}/notes', 'Playlist\PlaylistsController@notes')
+    ->whereNumber('playlist_id')
+    ->whereAlphaNumeric('book_id');
+Route::name('v4_internal_playlists.highlights')
+    ->middleware('APIToken:check')
+    ->get('playlists/{playlist_id}/{book_id}/highlights', 'Playlist\PlaylistsController@highlights')
+    ->whereNumber('playlist_id')
+    ->whereAlphaNumeric('book_id');
+Route::name('v4_internal_playlists.bookmarks')
+    ->middleware('APIToken:check')
+    ->get('playlists/{playlist_id}/{book_id}/bookmarks', 'Playlist\PlaylistsController@bookmarks')
+    ->whereNumber('playlist_id')
+    ->whereAlphaNumeric('book_id');
 // VERSION 4 | Plans (bible.is private)
 Route::name('v4_internal_plans.index')
     ->middleware('APIToken')
@@ -424,7 +458,7 @@ Route::middleware('APIToken')->group(function () {
     Route::name('v4_users_download_annotations.index')->get(
         'users/{user_id}/annotations/{bible_id}/{book?}/{chapter?}',
         'User\UsersDownloadAnnotations@index'
-    );
+    )->whereNumber('user_id');
 });
 
 Route::middleware('APIToken:check')->group(function () {

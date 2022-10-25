@@ -37,6 +37,8 @@ use Illuminate\Support\Facades\Crypt;
  */
 class Note extends Model
 {
+    use UserAnnotationTrait;
+
     protected $connection = 'dbp_users';
     protected $table = 'user_notes';
     protected $hidden = ['user_id'];

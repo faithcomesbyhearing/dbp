@@ -245,4 +245,24 @@ class Plan extends Model
     {
         return Plan::where('id', $plan_id)->first();
     }
+
+    /**
+     * Get total users attached to the current plan
+     *
+     * @return int
+     */
+    public function getTotalUsersAttribute() : int
+    {
+        return $this->countUsers();
+    }
+
+    /**
+     * Get count user by plan ID
+     *
+     * @return int
+     */
+    public function countUsers() : int
+    {
+        return UserPlan::where('plan_id', $this['id'])->count();
+    }
 }

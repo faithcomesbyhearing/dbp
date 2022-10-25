@@ -1,21 +1,12 @@
 version: '3.7'
 services:
-  db:
-    image: mysql:5.7
-    environment:
-      - MYSQL_ALLOW_EMPTY_PASSWORD=1
-      - MYSQL_DATABASE=${DB_CONNECTION}
-    ports:
-      - '${DBP_PORT}:3306'
-    volumes:
-      - 'mysql_data:/var/lib/mysql'
   db8:
     image: mysql:8.0.28
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=1
       - MYSQL_DATABASE=${DB_CONNECTION}
     ports:
-      - '3307:3306'
+      - '${DBP_PORT}:3306'
     volumes:
       - 'mysql_data8:/var/lib/mysql'
   php:
@@ -27,7 +18,7 @@ services:
       - './:/opt/app'
       - ./docker/php/phpSettings.conf:/usr/local/etc/php-fpm.d/zzz-phpSettings.conf
     depends_on:
-      - db
+      - db8
   server:
     image: nginx:stable-alpine
     volumes:
@@ -44,6 +35,5 @@ services:
       - '${MEMCACHED_PORT}:11211'
 
 volumes:
-  mysql_data:
   mysql_data8:
   app_vendor:

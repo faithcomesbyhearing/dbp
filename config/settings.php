@@ -126,9 +126,10 @@ return [
   /*
    * Download access group list allowed
    */
-  'download_access_group_list' =>env('DOWNLOAD_ACCESS_GROUP_LIST', '12,15,16,17,18,19,20,141,143,145,181,183,185,191,193'),
-
-
+  'download_access_group_list' => env(
+      'DOWNLOAD_ACCESS_GROUP_LIST',
+      '12,15,16,17,18,19,20,141,143,145,181,183,185,191,193'
+  ),
   'backward_compatibility' => [
       'app_name' => [
         'bibleis' => env('BIBLEIS_COMPATIBILITY_APP_NAME', 'Bible.is'),

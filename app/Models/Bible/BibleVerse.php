@@ -3,6 +3,7 @@
 namespace App\Models\Bible;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  *
@@ -100,6 +101,105 @@ class BibleVerse extends Model
         })
         ->join('bible_books', function ($join) use ($bible) {
             $join->on('bible_verses.book_id', 'bible_books.book_id')->where('bible_books.bible_id', $bible->id);
+        });
+    }
+
+    /**
+     * @param Builder $query
+     * @param string $language_code
+     */
+    public function scopeFilterByLanguage(
+        Builder $query,
+        string $language_code,
+    ) : Builder {
+        return $query
+            ->join('languages', function ($query) use ($language_code) {
+                return $query
+                ->on('bibles.language_id', '=', 'languages.id')
+                ->where('languages.iso', $language_code);
+            });
+    }
+
+    /**
+     * @param Builder $query
+     * @param string $bible_id
+     */
+    public function scopeFilterByBible(
+        Builder $query,
+        string $bible_id,
+    ) : Builder {
+        return $query
+            ->where('bibles.id', $bible_id);
+    }
+
+
+    /**
+     * @param Builder $query
+     * @param string $book_id
+     * @param string $chapter_id
+     * @param int $verse_number
+     */
+    public function scopeWithBibleFilesets(
+        Builder $query,
+        string $book_id,
+        string $chapter_id,
+        int $verse_number = null,
+    ) : Builder {
+        return $query->where('book_id', $book_id)
+            ->where('chapter', $chapter_id)
+            ->when($verse_number, function ($query) use ($verse_number) {
+                return $query->where('verse_start', $verse_number);
+            })
+            ->when(empty($verse_number), function ($query) {
+                return $query->orderBy('verse_start');
+            })
+            ->join('bible_filesets', 'bible_filesets.hash_id', 'bible_verses.hash_id')
+            ->join('bible_fileset_connections', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id')
+            ->join('bibles', 'bibles.id', 'bible_fileset_connections.bible_id')
+            ->with(["fileset.bible.filesetsWithoutMeta" => function ($query) use ($book_id, $chapter_id) {
+                return $query->whereExists(function ($subquery) use ($book_id, $chapter_id) {
+                    return $subquery->select(\DB::raw(1))
+                        ->from('bible_files')
+                        ->where('bible_files.chapter_start', $chapter_id)
+                        ->where('bible_files.book_id', $book_id)
+                        ->whereColumn('bible_files.hash_id', '=', 'bible_filesets.hash_id');
+                });
+            }])
+            ->select([
+                'bible_verses.verse_start',
+                'bible_verses.verse_end',
+                'bible_verses.chapter',
+                'bible_verses.book_id',
+                'bible_verses.verse_text',
+                'bible_verses.hash_id',
+                'bibles.language_id',
+                'bibles.id AS bible_id',
+                'bible_filesets.id AS fileset_id',
+                'bible_filesets.set_type_code AS fileset_set_type_code',
+                'bible_filesets.set_size_code AS fileset_set_size_code',
+            ]);
+    }
+
+    /**
+     * @param Builder $query
+     * @param string $key
+     */
+    public function scopeIsContentAvailable(Builder $query, string $key) : Builder
+    {
+        $dbp_users = config('database.connections.dbp_users.database');
+        $dbp_prod = config('database.connections.dbp.database');
+
+        return $query->whereExists(function ($sub_query) use ($key, $dbp_users, $dbp_prod) {
+            return $sub_query->select(\DB::raw(1))
+                ->from($dbp_users . '.user_keys AS uk')
+                ->join($dbp_users . '.access_group_api_keys AS agak', 'agak.key_id', 'uk.id')
+                ->join(
+                    $dbp_prod . '.access_group_filesets AS agf',
+                    'agf.access_group_id',
+                    'agak.access_group_id',
+                )
+                ->where('uk.key', $key)
+                ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id');
         });
     }
 }

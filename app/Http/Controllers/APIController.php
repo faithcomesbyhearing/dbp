@@ -17,86 +17,78 @@ use Log;
 use Symfony\Component\Yaml\Yaml;
 use Yosymfony\Toml\TomlBuilder;
 
+// Top Level Swagger Docs
+
+/**
+ * @OA\Info(
+ *     description="Fast, easy, and free API access to video, audio, and text Bibles.",
+ *     version="4.0.0-beta",
+ *     title="Digital Bible Platform",
+ *     termsOfService="http://digitalbibleplatform/terms/",
+ *     @OA\Contact(email="support@digitalbibleplatform.com"),
+ *     @OA\License(name="Apache 2.0",url="http://www.apache.org/licenses/LICENSE-2.0.html"),
+ *     @OA\Attachable()
+ * )
+ *
+ * @OA\OpenApi(
+ *   security={{"dbp_key": {}}},
+ *   @OA\ExternalDocumentation(
+ *     description="find more info here",
+ *     url="https://www.biblebrain.com"
+ *   )
+ * )
+ *
+ * @OA\Server(
+ *     url=API_URL_DOCS,
+ *     description="Production Server",
+ *     @OA\ServerVariable( serverVariable="schema", enum={"https"}, default="https")
+ * )
+ *
+ * @OA\SecurityScheme(
+ *   securityScheme="dbp_key",
+ *   type="apiKey",
+ *   description="The key granted to the API developer upon sign up",
+ *   name="key",
+ *   in="query"
+ * )
+ * @OA\SecurityScheme(
+ *   securityScheme="dbp_user_token",
+ *   type="apiKey",
+ *   description="The token granted to an authenticated end user upon login",
+ *   name="api_token",
+ *   in="query"
+ * )
+ *
+ * Pagination
+ * @OA\Schema (
+ *   type="object",
+ *   schema="pagination",
+ *   title="Pagination",
+ *   description="The new pagination meta response.",
+ *   @OA\Xml(name="pagination"),
+ *   @OA\Property(property="pagination", type="object",
+ *      @OA\Property(property="total", type="integer", example=1801),
+ *      @OA\Property(property="count", type="integer", example=25),
+ *      @OA\Property(property="per_page", type="integer", example=25),
+ *      @OA\Property(property="current_page", type="integer", example=1),
+ *      @OA\Property(property="total_pages", type="integer", example=73),
+ *   )
+ * )
+ *
+ * @OA\Parameter(parameter="version_number",name="v",in="query",description="The Version Number",required=true,@OA\Schema(type="integer",enum={4,2},example=4))
+ * @OA\Parameter(parameter="key",name="key",in="query",description="The key granted to the API developer upon sign up",required=true,@OA\Schema(type="string",example="f4cdf23a-22c3-66c9-cc4f-05dc711b41c6"))
+ * @OA\Parameter(parameter="limit", name="limit",  in="query", description="The number of search results to return", @OA\Schema(type="integer",default=25))
+ * @OA\Parameter(parameter="page", name="page",  in="query", description="The current page of the results", @OA\Schema(type="integer",default=1))
+ * @OA\Parameter(parameter="sort_by", name="sort_by", in="query", description="The field to sort by", @OA\Schema(type="string"))
+ * @OA\Parameter(parameter="sort_dir", name="sort_dir", in="query", description="The direction to sort by", @OA\Schema(type="string",enum={"asc","desc"}))
+ * @OA\Parameter(name="l10n", in="query", description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route",
+ *      @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
+ *
+ */
 class APIController extends Controller
 {
-    // Top Level Swagger Docs
-
     /**
-     * @OA\OpenApi(
-     *   security={{"dbp_key": {}}},
-     *   @OA\Info(
-     *     description="Fast, easy, and free API access to video, audio, and text Bibles.",
-     *     version="4.0.0-beta",
-     *     title="Digital Bible Platform",
-     *     termsOfService="http://digitalbibleplatform/terms/",
-     *     @OA\Contact(email="support@digitalbibleplatform.com"),
-     *     @OA\License(name="Apache 2.0",url="http://www.apache.org/licenses/LICENSE-2.0.html")
-     *   ),
-     *   @OA\ExternalDocumentation(
-     *     description="find more info here",
-     *     url="https://www.biblebrain.com"
-     *   )
-     * )
      *
-
-     *
-     * @OA\Server(
-     *     url=API_URL_DOCS,
-     *     description="Production Server",
-     *     @OA\ServerVariable( serverVariable="schema", enum={"https"}, default="https")
-     * )
-     *
-     *
-     * @OA\SecurityScheme(
-     *   securityScheme="dbp_key",
-     *   type="apiKey",
-     *   description="The key granted to the API developer upon sign up",
-     *   name="key",
-     *   in="query"
-     * )
-     * @OA\SecurityScheme(
-     *   securityScheme="dbp_user_token",
-     *   type="apiKey",
-     *   description="The token granted to an authenticated end user upon login",
-     *   name="api_token",
-     *   in="query"
-     * )
-     *
-     * @OA\Parameter(parameter="version_number",name="v",in="query",description="The Version Number",required=true,@OA\Schema(type="integer",enum={4,2},example=4))
-     * @OA\Parameter(parameter="key",name="key",in="query",description="The key granted to the API developer upon sign up",required=true,@OA\Schema(type="string",example="f4cdf23a-22c3-66c9-cc4f-05dc711b41c6"))
-     * @OA\Parameter(parameter="limit", name="limit",  in="query", description="The number of search results to return", @OA\Schema(type="integer",default=25))
-     * @OA\Parameter(parameter="page", name="page",  in="query", description="The current page of the results", @OA\Schema(type="integer",default=1))
-     * @OA\Parameter(parameter="sort_by", name="sort_by", in="query", description="The field to sort by", @OA\Schema(type="string"))
-     * @OA\Parameter(parameter="sort_dir", name="sort_dir", in="query", description="The direction to sort by", @OA\Schema(type="string",enum={"asc","desc"}))
-     * @OA\Parameter(name="l10n", in="query", description="When set to a valid three letter language iso, the returning results will be localized in the language matching that iso. (If an applicable translation exists). For a complete list see the `iso` field in the `/languages` route",
-     *      @OA\Schema(ref="#/components/schemas/Language/properties/iso")),
-     *
-     *
-     */
-     
-    /**
-      * Pagination
-      * @OA\Schema (
-      *   type="object",
-      *   schema="pagination",
-      *   title="Pagination",
-      *   description="The new pagination meta response.",
-      *   @OA\Xml(name="pagination"),
-      *   @OA\Property(property="pagination", type="object",
-      *      @OA\Property(property="total", type="integer", example=1801),
-      *      @OA\Property(property="count", type="integer", example=25),
-      *      @OA\Property(property="per_page", type="integer", example=25),
-      *      @OA\Property(property="current_page", type="integer", example=1),
-      *      @OA\Property(property="total_pages", type="integer", example=73),
-      *    )
-      *    )
-      *   )
-      * )
-      */
-
-
-
-    /**
      * Version 2 Tags
      *
      * @OA\Tag(name="Library Audio",    description="v2 These methods retrieve all the information needed to build and retrieve audio information for each chapter/book/or volume.")
@@ -106,9 +98,8 @@ class APIController extends Controller
      * @OA\Tag(name="Country Language", description="v2 These calls provide all information pertaining to country languages.")
      * @OA\Tag(name="Study Programs",   description="v2 These calls provide all information pertaining to Bible study programs.")
      *
-     */
-
-    /**
+     *
+     *
      * Version 4 Tags
      *
      * @OA\Tag(name="Languages",
@@ -131,9 +122,7 @@ class APIController extends Controller
      * @OA\Tag(name="Playlists",       description="v4_internal Routes for obtaining Playlists Data")
      * @OA\Tag(name="Plans",           description="v4_internal Routes for obtaining Plans Data")
      *
-     */
-
-    /**
+     *
      * The statusCode is a http status code. Every variation of this
      * must also be a http status code. There is a full list here
      * https://en.wikipedia.org/wiki/List_of_HTTP_status_codes

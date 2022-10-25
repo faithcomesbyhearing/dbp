@@ -30,28 +30,29 @@ class OrganizationTransformer extends BaseTransformer
         }
     }
 
+    /**
+     * @OA\Schema (
+     *  type="array",
+     *  schema="v2_volume_organization_list",
+     *  description="The volume organization list",
+     *  title="v2_volume_organization_list",
+     *  @OA\Xml(name="v2_volume_organization_list"),
+     *  @OA\Items(
+     *          @OA\Property(property="organization_id",   ref="#/components/schemas/Organization/properties/id"),
+     *          @OA\Property(property="organization_name", ref="#/components/schemas/OrganizationTranslation/properties/name"),
+     *          @OA\Property(property="number_volumes",    type="string", description="Number of Bible Volumes")
+     *     )
+     *   )
+     * )
+     */
     public function transformForV2(Organization $organization)
     {
         switch ($this->route) {
-
             /**
              *
              * @see Controller: \App\Http\Controllers\Organization\OrganizationsController::index
              *
-             * @OA\Schema (
-             *  type="array",
-             *  schema="v2_volume_organization_list",
-             *  description="The volume organization list",
-             *  title="v2_volume_organization_list",
-             *  @OA\Xml(name="v2_volume_organization_list"),
-             *  @OA\Items(
-             *          @OA\Property(property="organization_id",   ref="#/components/schemas/Organization/properties/id"),
-             *          @OA\Property(property="organization_name", ref="#/components/schemas/OrganizationTranslation/properties/name"),
-             *          @OA\Property(property="number_volumes",    type="string", description="Number of Bible Volumes")
-             *     )
-             *   )
-             * )
-             *
+             * schema="v2_volume_organization_list"
              */
             case 'v2_volume_organization_list':
                 return [

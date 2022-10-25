@@ -9,14 +9,14 @@ class UserNotesTransformer extends TransformerAbstract
 {
     /**
      * @OA\Schema (
-     *        type="object",
-     *        schema="v4_internal_notes_index",
-     *        description="The transformed user notes",
-     *        title="v4_user_notes",
-     *      @OA\Xml(name="v4_internal_notes_index"),
-     *      allOf={
-     *        @OA\Schema(ref="#/components/schemas/pagination"),
-     *      },
+     *   type="object",
+     *   schema="v4_internal_notes_index",
+     *   description="The transformed user notes",
+     *   title="v4_user_notes",
+     *   @OA\Xml(name="v4_internal_notes_index"),
+     *   allOf={
+     *      @OA\Schema(ref="#/components/schemas/pagination"),
+     *   },
      *   @OA\Property(property="data", type="array",
      *      @OA\Items(ref="#/components/schemas/v4_note")
      *    )
@@ -47,19 +47,19 @@ class UserNotesTransformer extends TransformerAbstract
     public function transform(Note $note)
     {
         return [
-      'id' => (int) $note->id,
-      'bible_id' => (string) $note->bible_id,
-      'bible_name' => (string) $note->bible_name,
-      'book_id' => (string) $note->book_id,
-      'book_name' => (string) optional($note->book)->name,
-      'chapter' => (int) $note->chapter,
-      'verse_start' => (int) $note->verse_start,
-      'verse_end' => (int) $note->verse_end,
-      'verse_text' => (string) $note->verse_text,
-      'notes' => (string) $note->notes,
-      'created_at' => (string) $note->created_at,
-      'updated_at' => (string) $note->updated_at,
-      'tags' => $note->tags
-    ];
+            'id' => (int) $note->id,
+            'bible_id' => (string) $note->bible_id,
+            'bible_name' => (string) $note->bible_name,
+            'book_id' => (string) $note->book_id,
+            'book_name' => (string) optional($note->book)->name,
+            'chapter' => (int) $note->chapter,
+            'verse_start' => (int) $note->verse_start,
+            'verse_end' => (int) $note->verse_end,
+            'verse_text' => (string) $note->verse_text,
+            'notes' => (string) $note->notes,
+            'created_at' => (string) $note->created_at,
+            'updated_at' => (string) $note->updated_at,
+            'tags' => $note->tags
+        ];
     }
 }
