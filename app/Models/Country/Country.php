@@ -275,9 +275,8 @@ class Country extends Model
                 )
                 ->join('country_language AS cl', function ($country_language_query_join) {
                     $country_language_query_join
-                        ->on('cl.language_id', '=', 'b.language_id')
-                        ->whereColumn('countries.id', 'cl.country_id');
-                });
+                        ->on('cl.language_id', '=', 'b.language_id');
+                })->whereColumn('countries.id', 'cl.country_id');
         });
     }
 }
