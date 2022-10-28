@@ -161,8 +161,10 @@ class UserPlan extends Model
      */
     public static function removePlanDaysCompleteByPlanId(int $plan_id, int $user_id) : void
     {
-        $playlist_ids_by_plan = PlanDay::getPlanDayIdsByPlanAndUser($plan_id, $user_id);
-        PlaylistItemsComplete::removeItemsByPlayListsAndUser($playlist_ids_by_plan, $user_id);
-        PlanDayComplete::removeDaysByPlanAndUser($plan_id, $user_id);
+        \DB::transaction(function () use ($plan_id, $user_id) {
+            $playlist_ids_by_plan = PlanDay::getPlaylistIdsByPlanAndUser($plan_id, $user_id);
+            PlaylistItemsComplete::removeItemsByPlayListsAndUser($playlist_ids_by_plan, $user_id);
+            PlanDayComplete::removeDaysByPlanAndUser($plan_id, $user_id);
+        });
     }
 }
