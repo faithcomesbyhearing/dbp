@@ -68,7 +68,7 @@ class PlaylistItemsComplete extends Model
     {
         return self::whereExists(function ($sub_query) use ($playlist_ids) {
             return $sub_query->select(\DB::raw(1))
-                ->from('playlist_items as pli', 'pli.playlist_id', 'pld.playlist_id')
+                ->from('playlist_items as pli')
                 ->whereIn('pli.playlist_id', $playlist_ids)
                 ->whereColumn('pli.id', '=', 'playlist_items_completed.playlist_item_id');
         })
