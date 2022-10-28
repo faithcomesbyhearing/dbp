@@ -240,32 +240,54 @@ class PlaylistService
     }
 
     /**
+     * Check a given playlist items if each items has a valid filset ID and return a valid playlist items array
+     *
+     * @param array $playlist_items
+     * @return array
+     */
+    public function getValidPlaylistItems(array $playlist_items) : array
+    {
+        $playlist_items_filtered = [];
+        $fileset_ids = [];
+
+        foreach ($playlist_items as $playlist_item) {
+            if (optional($playlist_item)->fileset_id) {
+                $fileset_ids[$playlist_item->fileset_id] = $playlist_item->fileset_id;
+                $playlist_items_filtered[] = $playlist_item;
+            }
+        }
+
+        if (empty($playlist_items_filtered)) {
+            return [];
+        }
+
+        $filesets_validated = BibleFileset::getConditionTagExcludeByIds($fileset_ids, ['opus', 'webm']);
+
+        if (empty($filesets_validated)) {
+            return [];
+        }
+
+        return array_filter($playlist_items_filtered, function ($playlist_item) use ($filesets_validated) {
+            return isset($filesets_validated[$playlist_item->fileset_id]);
+        });
+    }
+
+    /**
      * Create play list items according given playlist ID and the playlist items Data
      *
      * @param int $playlist_id
      * @param Array $playlist_items
      * @return Collection
      */
-    public function createPlaylistItems(int $playlist_id, Array $playlist_items) : ?Collection
+    public function createPlaylistItems(int $playlist_id, array $playlist_items) : ?Collection
     {
         $playlist_items_to_create = [];
         $order = 1;
 
-        $fileset_ids = [];
-        foreach ($playlist_items as $playlist_item) {
-            $fileset_ids[] = $playlist_item->fileset_id;
-        }
+        $valid_playlist_items = $this->getValidPlaylistItems($playlist_items);
 
-        $filesets_validated = !empty($fileset_ids)
-            ? BibleFileset::getConditionTagExcludeByIds($fileset_ids, ['opus', 'webm'])
-            : [];
-
-        foreach ($playlist_items as $playlist_item) {
-            if (!isset($filesets_validated[$playlist_item->fileset_id])) {
-                continue;
-            }
-
-            $playlist_item_data = [
+        foreach ($valid_playlist_items as $playlist_item) {
+            $playlist_items_to_create[] = [
                 'playlist_id'       => $playlist_id,
                 'fileset_id'        => $playlist_item->fileset_id,
                 'book_id'           => $playlist_item->book_id,
@@ -273,10 +295,9 @@ class PlaylistService
                 'chapter_end'       => $playlist_item->chapter_end,
                 'verse_start'       => $playlist_item->verse_start ?? null,
                 'verse_end'         => $playlist_item->verse_end ?? null,
-                'verses'            => $playlist_items->verses ?? 0,
+                'verses'            => $playlist_item->verses ?? 0,
                 'order_column'      => $order
             ];
-            $playlist_items_to_create[] = $playlist_item_data;
             $order += 1;
         }
 
