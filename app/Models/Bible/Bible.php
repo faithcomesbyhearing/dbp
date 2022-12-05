@@ -240,10 +240,15 @@ class Bible extends Model
 
     public function filesets()
     {
-        return $this->hasManyThrough(BibleFileset::class, BibleFilesetConnection::class, 'bible_id', 'hash_id', 'id', 'hash_id')
-        ->with(['meta' => function ($subQuery) {
-            $subQuery->where('admin_only', 0);
-        }]);
+        return $this->hasManyThrough(
+            BibleFileset::class,
+            BibleFilesetConnection::class,
+            'bible_id',
+            'hash_id',
+            'id',
+            'hash_id'
+        )
+        ->with('meta');
     }
 
     public function filesetsWithoutMeta()
