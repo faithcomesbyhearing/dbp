@@ -626,6 +626,9 @@ if (!function_exists('formatFilesetMeta')) {
                     $fileset[$metadata['name']] = $metadata['description'];
                 }
             }
+            // December 2022, this is temporary to support older versions of 5fish applications.
+            // Revisit in one year after discussing with James Thomas mailto:jamesthomas@globalrecordings.net
+            $fileset['stock_no'] = null;
         }
         return $fileset;
     }
