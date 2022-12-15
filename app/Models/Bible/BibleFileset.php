@@ -147,7 +147,7 @@ class BibleFileset extends Model
 
     public function meta()
     {
-        return $this->hasMany(BibleFilesetTag::class, 'hash_id', 'hash_id');
+        return $this->hasMany(BibleFilesetTag::class, 'hash_id', 'hash_id')->where('admin_only', '<>', 1);
     }
 
     public function fonts()
@@ -320,7 +320,8 @@ class BibleFileset extends Model
                 $result = [
                     'text_format',
                     'text_plain',
-                    'text_usx'
+                    'text_usx',
+                    'text_json'
                 ];
                 break;
             default:

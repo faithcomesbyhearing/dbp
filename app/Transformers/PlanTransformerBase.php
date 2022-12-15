@@ -59,7 +59,6 @@ class PlanTransformerBase extends BaseTransformer
             "bitrate" => $fileset->bitrate,
             "codec" => $fileset->codec,
             "container" => $fileset->container,
-            "stock_no" => $fileset->stock_no,
             "timing_est_err" => $fileset->timing_est_err,
             "volume" => $fileset->volume,
             "meta" => $fileset->meta
