@@ -67,28 +67,4 @@ class PlanTranslateTransformer extends PlanTransformerBase
             "translated_percentage" => $plan->translated_percentage
         ];
     }
-
-    /**
-     * Override method to customize the way to render the fileset object that belongs to
-     * the translation_data property.
-     *
-     * @param BibleFileset fileset
-     * @return array
-     */
-    public function parseTranslationDataFileset(?BibleFileset $fileset) : Array
-    {
-        return [
-            "id" => $fileset->id,
-            "asset_id" => $fileset->asset_id,
-            "set_type_code" => $fileset->set_type_code,
-            "set_size_code" => $fileset->set_size_code,
-            "bitrate" => $fileset->bitrate,
-            "codec" => $fileset->codec,
-            "container" => $fileset->container,
-            "stock_no" => $fileset->stock_no,
-            "timing_est_err" => $fileset->timing_est_err,
-            "volume" => $fileset->volume,
-            "meta" => $fileset->meta
-        ];
-    }
 }

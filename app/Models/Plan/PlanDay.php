@@ -307,12 +307,13 @@ class PlanDay extends Model implements Sortable
      *
      * @return Array
      */
-    public static function getPlanDayIdsByPlanAndUser(int $plan_id, int $user_id) : Array
+    public static function getPlaylistIdsByPlanAndUser(int $plan_id, int $user_id) : Array
     {
-        return PlanDay::select('playlist_id')
-            ->join('plan_days_completed as pdc', 'pdc.plan_day_id', 'plan_days.id')
+        return PlanDay::select('pli.playlist_id')
+            ->join('playlist_items as pli', 'pli.playlist_id', 'plan_days.playlist_id')
+            ->join('playlist_items_completed as pldc', 'pldc.playlist_item_id', '=', 'pli.id')
             ->where('plan_days.plan_id', $plan_id)
-            ->where('pdc.user_id', $user_id)
+            ->where('pldc.user_id', $user_id)
             ->get()
             ->pluck('playlist_id')
             ->all();
