@@ -617,22 +617,7 @@ if (!function_exists('arrayToCommaSeparatedValues')) {
     }
 }
 
-if (!function_exists('formatFilesetMeta')) {
-    function formatFilesetMeta($fileset)
-    {
-        if (isset($fileset->meta)) {
-            foreach ($fileset->meta as $metadata) {
-                if (isset($metadata['name'], $metadata['description'])) {
-                    $fileset[$metadata['name']] = $metadata['description'];
-                }
-            }
-            // December 2022, this is temporary to support older versions of 5fish applications.
-            // Revisit in one year after discussing with James Thomas mailto:jamesthomas@globalrecordings.net
-            $fileset['stock_no'] = null;
-        }
-        return $fileset;
-    }
-}
+
 if (!function_exists('getTestamentString')) {
     function getTestamentString($id)
     {
