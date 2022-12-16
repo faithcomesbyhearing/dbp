@@ -25,6 +25,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class BibleFilesetTag extends Model
 {
+    public const STOCK_NO_TAG = 'stock_no';
+
     protected $connection = 'dbp';
     public $table = 'bible_fileset_tags';
     public $primaryKey = 'set_id';
