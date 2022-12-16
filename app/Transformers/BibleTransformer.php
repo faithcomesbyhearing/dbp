@@ -3,6 +3,7 @@
 namespace App\Transformers;
 
 use App\Models\Bible\Bible;
+use App\Models\Bible\BibleFileset;
 
 use Illuminate\Support\Arr;
 
@@ -302,20 +303,27 @@ class BibleTransformer extends BaseTransformer
         }
     }
 
-    private function filesetWithMeta($fileset)
+    /**
+     * Transform the fileset object to array with the selected values to display
+     *
+     * @param BibleFileset $fileset
+     *
+     * @return array
+     */
+    private function filesetWithMeta(BibleFileset $fileset) : array
     {
         $fileset_data = [
             'id' => $fileset['id'],
             'type' => $fileset->set_type_code,
             'size' => $fileset->set_size_code,
         ];
-        if (isset($fileset->meta)) {
-            foreach ($fileset->meta as $metadata) {
-                if (isset($metadata['name'], $metadata['description'])) {
-                    $fileset_data[$metadata['name']] = $metadata['description'];
-                }
-            }
+
+        $meta_records_indexed = $fileset->getMetaTagsIndexedByName();
+
+        if (!empty($meta_records_indexed)) {
+            return $fileset_data + $meta_records_indexed;
         }
+
         return $fileset_data;
     }
 }

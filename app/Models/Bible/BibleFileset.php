@@ -414,4 +414,54 @@ class BibleFileset extends Model
                     ->whereColumn('agfv.hash_id', 'bible_filesets.hash_id');
         });
     }
+
+    /**
+     * Add the meta records as attributes of BibleFileset instance
+     *
+     * @return BibleFileset
+     */
+    public function addMetaRecordsAsAttributes() : BibleFileset
+    {
+        $meta_tags_indexed = $this->getMetaTagsIndexedByName();
+
+        if (!empty($meta_tags_indexed)) {
+            foreach ($meta_tags_indexed as $name => $description) {
+                $this[$name] = $description;
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get the meta records indexed by name attached to the current instance
+     *
+     * @return array
+     */
+    public function getMetaTagsIndexedByName() : array
+    {
+        if (isset($this->meta)) {
+            $meta_tags_indexed = self::getDefaultMetaTags();
+            foreach ($this->meta as $metadata) {
+                if (isset($metadata['name'], $metadata['description'])) {
+                    $meta_tags_indexed[$metadata['name']] = $metadata['description'];
+                }
+            }
+            return $meta_tags_indexed;
+        }
+
+        return [];
+    }
+
+
+    public static function getDefaultMetaTags() : array
+    {
+        // December 2022, this is temporary to support older versions of 5fish applications.
+        // Revisit in one year after discussing with James Thomas mailto:jamesthomas@globalrecordings.net
+        //
+        // When it is no longer necessary, it should return an empty array
+        return [
+            BibleFilesetTag::STOCK_NO_TAG => null
+        ];
+    }
 }
