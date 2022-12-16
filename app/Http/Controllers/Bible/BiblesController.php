@@ -1011,7 +1011,7 @@ class BiblesController extends APIController
     {
         $available_filesets = [];
         foreach ($filesets as $fileset) {
-            $fileset = formatFilesetMeta($fileset);
+            $fileset->addMetaRecordsAsAttributes();
         }
 
         $completeFileset = $filesets->filter(function ($fileset) use ($type) {
@@ -1099,7 +1099,7 @@ class BiblesController extends APIController
                 'set_type_code' => $fileset->set_type_code,
                 'set_size_code' => $fileset->set_size_code,
             ])->first();
-            $fileset = formatFilesetMeta($fileset);
+            $fileset->addMetaRecordsAsAttributes();
             unset($fileset->meta);
             // Get fileset
             $fileset_result = !empty($fileset->id)

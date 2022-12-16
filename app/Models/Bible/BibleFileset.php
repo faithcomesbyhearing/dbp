@@ -414,4 +414,24 @@ class BibleFileset extends Model
                     ->whereColumn('agfv.hash_id', 'bible_filesets.hash_id');
         });
     }
+
+    /**
+     * Add the meta records as attributes of BibleFileset instance
+     *
+     * @return BibleFileset
+     */
+    public function addMetaRecordsAsAttributes() : BibleFileset
+    {
+        if (isset($this->meta)) {
+            foreach ($this->meta as $metadata) {
+                if (isset($metadata['name'], $metadata['description'])) {
+                    $this[$metadata['name']] = $metadata['description'];
+                }
+            }
+            // December 2022, this is temporary to support older versions of 5fish applications.
+            // Revisit in one year after discussing with James Thomas mailto:jamesthomas@globalrecordings.net
+            $this['stock_no'] = null;
+        }
+        return $this;
+    }
 }
