@@ -266,7 +266,9 @@ class BiblesController extends APIController
         $formatted_search_cache = str_replace(' ', '', $search_text);
 
         if ($formatted_search_cache === '' || !$formatted_search_cache || empty($formatted_search)) {
-            return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
+            return $this
+                ->setStatusCode(Response::HTTP_BAD_REQUEST)
+                ->replyWithError(trans('api.search_errors_400'));
         }
 
         $key = $this->key;
@@ -318,7 +320,9 @@ class BiblesController extends APIController
         $version_query_cache = str_replace(' ', '', $version_query);
 
         if ($version_query_cache === '' || !$version_query_cache || empty($version_query)) {
-            return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
+            return $this
+                ->setStatusCode(Response::HTTP_BAD_REQUEST)
+                ->replyWithError(trans('api.search_errors_400'));
         }
 
         $key = $this->key;
@@ -397,10 +401,10 @@ class BiblesController extends APIController
                     'organizations.translations',
                     'alphabet.primaryFont',
                     'filesets' => function ($query) use ($key, $include_font) {
-                        $query->isContentAvailable($key);
-                        $query->when($include_font, function ($sub_query) {
-                            $sub_query->with('fonts');
-                        });
+                        $query->isContentAvailable($key)
+                            ->when($include_font, function ($sub_query) {
+                                $sub_query->with('fonts');
+                            })->conditionToExcludeOldTextFormat();
                     }
                 ])->find($id);
             }
