@@ -50,6 +50,9 @@ class BibleFileset extends Model
     public const TYPE_TEXT_PLAIN = 'text_plain';
     public const TYPE_TEXT_USX = 'text_usx';
 
+    public const NEW_TEXT_PLAIN_FILESET_LENGTH = 10;
+    public const OLD_TEXT_PLAIN_FILESET_LENGTH = 6;
+
     protected $connection = 'dbp';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -463,5 +466,31 @@ class BibleFileset extends Model
         return [
             BibleFilesetTag::STOCK_NO_TAG => null
         ];
+    }
+
+    /**
+     * Filter bible fileset records to avoid pulling the old six character text_plain fileset
+     * when a ten character fileset id exists.
+     *
+     * @param Builder $query
+     */
+    public function scopeConditionToExcludeOldTextFormat(Builder $query) : Builder
+    {
+        $dbp_prod = config('database.connections.dbp.database');
+
+        return $query
+            ->whereNotExists(function (QueryBuilder $subquery) use ($dbp_prod) {
+                return $subquery->select(\DB::raw(1))
+                    ->from($dbp_prod . '.bible_filesets AS bfctext')
+                    ->where('bfctext.set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
+                    ->whereColumn('bfctext.set_type_code', '=', 'bible_filesets.set_type_code')
+                    ->where(DB::raw('CHAR_LENGTH(bible_filesets.id)'), '=', self::OLD_TEXT_PLAIN_FILESET_LENGTH)
+                    ->where(DB::raw('CHAR_LENGTH(bfctext.id)'), '=', self::NEW_TEXT_PLAIN_FILESET_LENGTH)
+                    ->whereColumn(
+                        DB::raw(\sprintf('SUBSTRING(bfctext.id, %d, %d)', 1, self::OLD_TEXT_PLAIN_FILESET_LENGTH)),
+                        '=',
+                        'bible_filesets.id'
+                    );
+            });
     }
 }
