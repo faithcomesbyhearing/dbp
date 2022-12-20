@@ -9,6 +9,7 @@ use App\Models\Language\NumeralSystem;
 use App\Models\Organization\Organization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use App\Models\Language\Language;
 
 /**
@@ -326,7 +327,13 @@ class Bible extends Model
         });
     }
 
-    public function scopeWithRequiredFilesets($query, $type_filters)
+    /**
+     * Filter bible records according if they has filesets attached
+     *
+     * @param Builder $query
+     * @param array $type_filters
+     */
+    public function scopeWithRequiredFilesets(Builder $query, array $type_filters) : Builder
     {
         return $query->whereHas('filesets', function ($q) use ($type_filters) {
             if ($type_filters['media']) {
@@ -341,7 +348,8 @@ class Bible extends Model
             $q->with(['meta' => function ($subQuery) {
                 $subQuery->where('admin_only', 0);
             }]);
-            $q->isContentAvailable($type_filters['key']);
+            $q->isContentAvailable($type_filters['key'])
+                ->conditionToExcludeOldTextFormat();
             $this->setConditionFilesets($q, $type_filters);
             $this->setConditionTagExclude($q, $type_filters);
         }]);
