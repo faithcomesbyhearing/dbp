@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Exception;
 
 trait ArclightConnection
@@ -31,8 +32,8 @@ trait ArclightConnection
             $results = json_decode(file_get_contents($path, false, $ctx));
         } catch (Exception $e) {
             return strpos($e, 'timed out') !== false
-                ? $this->setStatusCode(408)->replyWithError('Request timeout')
-                : $this->setStatusCode(500)->replyWithError('Internal server error');
+                ? $this->setStatusCode(HttpResponse::HTTP_REQUEST_TIMEOUT)->replyWithError('Request timeout')
+                : $this->setStatusCode(HttpResponse::HTTP_CONFLICT)->replyWithError('Conflict');
         }
 
         if (isset($results->_embedded)) {
