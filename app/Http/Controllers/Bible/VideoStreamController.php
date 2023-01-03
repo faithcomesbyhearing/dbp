@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bible;
 
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Spatie\Fractalistic\ArraySerializer;
 use App\Http\Controllers\APIController;
 use App\Traits\ArclightConnection;
@@ -23,7 +24,9 @@ class VideoStreamController extends APIController
     ) {
         $book = Book::where('id', $book_id)->select('id_osis')->first();
         if (!$book) {
-            return $this->setStatusCode(404)->replyWithError('Book not found');
+            return $this
+                ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                ->replyWithError('Book not found');
         }
 
         $languages = cacheRemember('arclight_languages', [$iso], now()->addDay(), function () use ($iso) {
@@ -44,7 +47,9 @@ class VideoStreamController extends APIController
         });
 
         if (!$has_language) {
-            return $this->setStatusCode(404)->replyWithError('No language could be found for the iso code specified');
+            return $this
+                ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                ->replyWithError('No language could be found for the iso code specified');
         }
 
         $arclight_id = $languages[$iso];
@@ -92,8 +97,8 @@ class VideoStreamController extends APIController
             $media_components = $arclight_service->getContent($media_components_response);
         } catch (Exception $e) {
             return strpos($e, 'timed out') !== false
-                ? $this->setStatusCode(408)->replyWithError('Request timeout')
-                : $this->setStatusCode(500)->replyWithError('Internal server error');
+                ? $this->setStatusCode(HttpResponse::HTTP_REQUEST_TIMEOUT)->replyWithError('Request timeout')
+                : $this->setStatusCode(HttpResponse::HTTP_CONFLICT)->replyWithError('Conflict');
         }
 
         $films = $this->getJesusFilmsFromMediaComponents($media_components, $verses, $book->id_osis, $chapter);
@@ -104,8 +109,8 @@ class VideoStreamController extends APIController
                     $streaming_component = $arclight_service->getContent($response);
                 } catch (Exception $e) {
                     return strpos($e, 'timed out') !== false
-                        ? $this->setStatusCode(408)->replyWithError('Request timeout')
-                        : $this->setStatusCode(500)->replyWithError('Internal server error');
+                        ? $this->setStatusCode(HttpResponse::HTTP_REQUEST_TIMEOUT)->replyWithError('Request timeout')
+                        : $this->setStatusCode(HttpResponse::HTTP_CONFLICT)->replyWithError('Internal server error');
                 }
 
                 $films[$verse_key]['meta']['file_name'] = $streaming_component->streamingUrls->m3u8[0]->url;
@@ -193,7 +198,9 @@ class VideoStreamController extends APIController
                 )->code;
 
                 if (!$language_code) {
-                    return $this->setStatusCode(404)->replyWithError(trans('api.languages_errors_404'));
+                    return $this
+                        ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                        ->replyWithError(trans('api.languages_errors_404'));
                 }
             }
 
@@ -263,7 +270,9 @@ class VideoStreamController extends APIController
                 });
 
                 if (!$has_language) {
-                    return $this->setStatusCode(404)->replyWithError('No language could be found for the iso code specified');
+                    return $this
+                        ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                        ->replyWithError('No language could be found for the iso code specified');
                 }
                 $arclight_id = $languages[$iso];
             } else {
@@ -276,7 +285,9 @@ class VideoStreamController extends APIController
             });
 
             if (!$component) {
-                return $this->setStatusCode(404)->replyWithError('Jesus Film component not found');
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                    ->replyWithError('Jesus Film component not found');
             }
 
             $media_languages = cacheRemember('arclight_chapters_language_tag', [$arclight_id], now()->addDay(), function () use ($arclight_id) {
@@ -287,7 +298,12 @@ class VideoStreamController extends APIController
             $metadataLanguageTag = isset($media_languages->bcp47) ? $media_languages->bcp47 : '';
             $cache_params =  [$arclight_id, $metadataLanguageTag];
             
-            $media_components = $this->fetchArclight('media-components', $arclight_id, true, 'metadataLanguageTags=' . $metadataLanguageTag . ',en');
+            $media_components = $this->fetchArclight(
+                'media-components',
+                $arclight_id,
+                true,
+                'metadataLanguageTags=' . $metadataLanguageTag . ',en'
+            );
             if (isset($media_components->original, $media_components->original['error'])) {
                 $arclight_error = $media_components->original['error'];
                 return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
@@ -340,7 +356,11 @@ class VideoStreamController extends APIController
             $language_id  = checkParam('arclight_id', true);
             $chapter_id   = checkParam('chapter_id') ?? '1_jf-0-0';
 
-            $media_components = $this->fetchArclight('media-components/' . $chapter_id . '/languages/' . $language_id, $language_id, false);
+            $media_components = $this->fetchArclight(
+                'media-components/' . $chapter_id . '/languages/' . $language_id,
+                $language_id,
+                false
+            );
             if (isset($media_components->original, $media_components->original['error'])) {
                 $arclight_error = $media_components->original['error'];
                 return $this->setStatusCode($arclight_error['status_code'])->replyWithError($arclight_error['message']);
@@ -351,7 +371,7 @@ class VideoStreamController extends APIController
             $stream_file = '';
         }
 
-        return response($stream_file, 200, [
+        return response($stream_file, HttpResponse::HTTP_OK, [
             'Content-Disposition' => 'attachment',
             'Content-Type'        => 'application/x-mpegURL'
         ]);
