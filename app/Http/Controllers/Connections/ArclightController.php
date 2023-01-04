@@ -39,13 +39,18 @@ class ArclightController extends APIController
 
             $components = $this->fetchArclight('media-components/', $language_id, true);
 
-            if (!isset($components->mediaComponents)) {
-                return  $this
-                    ->setStatusCode($this->statusCode)
-                    ->replyWithError('Internal server error');
-            }
+            // if (!isset($components->mediaComponents)) {
+            //     return  $this
+            //         ->setStatusCode($this->statusCode)
+            //         ->replyWithError('Internal server error');
+            // }
 
-            $components = $components->mediaComponents;
+            // $components = optional($components)->mediaComponents;
+            $components = optional($components)->mediaComponents;
+
+            if (empty($components)) {
+                return [];
+            }
 
             foreach ($components as $component) {
                 $component->language_id = $language_id;
@@ -78,6 +83,11 @@ class ArclightController extends APIController
                     $language_id,
                     false
                 );
+
+                if (empty($media_components) || !isset($media_components->streamingUrls)) {
+                    return [];
+                }
+
                 return file_get_contents($media_components->streamingUrls->m3u8[0]->url);
             }
         );
