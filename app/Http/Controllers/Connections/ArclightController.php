@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Connections;
 
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Http\Controllers\APIController;
 use App\Models\Language\Language;
 use App\Models\Language\LanguageCode;
@@ -31,13 +32,27 @@ class ArclightController extends APIController
                 $query->where('iso', $iso);
             })->where('source', 'arclight')->select('code')->first())->code;
             if (!$language_id) {
-                return $this->setStatusCode(404)->replyWithError(trans('api.languages_errors_404'));
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                    ->replyWithError(trans('api.languages_errors_404'));
             }
 
             $components = $this->fetchArclight('media-components/', $language_id, true);
-            $components = $components->mediaComponents;
 
-            foreach ($components as $key => $component) {
+            // if (!isset($components->mediaComponents)) {
+            //     return  $this
+            //         ->setStatusCode($this->statusCode)
+            //         ->replyWithError('Internal server error');
+            // }
+
+            // $components = optional($components)->mediaComponents;
+            $components = optional($components)->mediaComponents;
+
+            if (empty($components)) {
+                return [];
+            }
+
+            foreach ($components as $component) {
                 $component->language_id = $language_id;
                 $component->verses = $this->getIdReferences()[$component->mediaComponentId];
                 $component->file_name = route('v2_api_jesusFilm_stream', [
@@ -58,12 +73,26 @@ class ArclightController extends APIController
         $language_id  = checkParam('language_id', true);
 
         $cache_params = [$chapter_id, $language_id];
-        $stream_file  = cacheRemember('arclight_media_components', $cache_params, now()->addDay(), function () use ($chapter_id, $language_id) {
-            $media_components = $this->fetchArclight('media-components/' . $chapter_id . '/languages/' . $language_id, $language_id, false);
-            return file_get_contents($media_components->streamingUrls->m3u8[0]->url);
-        });
+        $stream_file  = cacheRemember(
+            'arclight_media_components',
+            $cache_params,
+            now()->addDay(),
+            function () use ($chapter_id, $language_id) {
+                $media_components = $this->fetchArclight(
+                    'media-components/' . $chapter_id . '/languages/' . $language_id,
+                    $language_id,
+                    false
+                );
 
-        return response($stream_file, 200, [
+                if (empty($media_components) || !isset($media_components->streamingUrls)) {
+                    return [];
+                }
+
+                return file_get_contents($media_components->streamingUrls->m3u8[0]->url);
+            }
+        );
+
+        return response($stream_file, HttpResponse::HTTP_OK, [
             'Content-Disposition' => 'attachment',
             'Content-Type'        => 'application/x-mpegURL'
         ]);
@@ -75,7 +104,9 @@ class ArclightController extends APIController
         $dam_id_param = checkParam('dam_id|fcbh_id');
         $cache_params =   [$iso, $dam_id_param];
         return cacheRemember('media-languages', $cache_params, now()->addWeek(), function () use ($iso, $dam_id_param) {
-            $languages = collect(optional($this->fetchArclight('media-languages'))->mediaLanguages)->pluck('languageId', 'iso3')->toArray();
+            $languages = collect(
+                optional($this->fetchArclight('media-languages'))->mediaLanguages
+            )->pluck('languageId', 'iso3')->toArray();
             if ($iso) {
                 if (!isset($languages[$iso])) {
                     return [];
