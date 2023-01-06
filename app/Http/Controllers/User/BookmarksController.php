@@ -164,7 +164,10 @@ class BookmarksController extends APIController
             return $this->setStatusCode(422)->replyWithError($invalidBookmark);
         }
 
-        $bookmark_id = Bookmark::create($request->all())->id;
+        $new_bookmark = $request->all();
+        $new_bookmark['verse_sequence'] = $request->verse_sequence ?? (int) $request->verse_start;
+
+        $bookmark_id = Bookmark::create($new_bookmark)->id;
         $bookmark = Bookmark::where('id', $bookmark_id)->first();
 
         $this->handleTags($bookmark);
@@ -222,7 +225,9 @@ class BookmarksController extends APIController
         if (!$bookmark) {
             return $this->setStatusCode(404)->replyWithError('Bookmark not found');
         }
-        $bookmark->fill($request->all());
+        $current_bookmark = $request->all();
+        $current_bookmark['verse_sequence'] = $request->verse_sequence ?? (int) $request->verse_start;
+        $bookmark->fill($current_bookmark);
         $bookmark->save();
 
         $this->handleTags($bookmark);
@@ -282,7 +287,7 @@ class BookmarksController extends APIController
             'user_id'     => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp_users.users,id',
             'book_id'     => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.books,id',
             'chapter'     => ((request()->method() === 'POST') ? 'required|' : '') . 'max:150|min:1|integer',
-            'verse_start' => ((request()->method() === 'POST') ? 'required|' : '') . 'max:177|min:1|integer'
+            'verse_start' => ((request()->method() === 'POST') ? 'required|' : '') . 'max:10|min:1'
         ]);
         if ($validator->fails()) {
             return ['errors' => $validator->errors()];
