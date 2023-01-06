@@ -42,14 +42,14 @@ class BibleFileTimestamp extends Model
      *
      * @OA\Property(
      *   title="verse_start",
-     *   type="integer",
+     *   type="string",
      *   description="The starting verse for the file timestamp",
-     *   example=1,
+     *   example="1a",
      *   minimum=1
      * )
      *
      * @method static BibleFileTimestamp whereVerseStart($value)
-     * @property int|null $verse_start
+     * @property string|null $verse_start
      *
      */
     protected $verse_start;
@@ -69,6 +69,22 @@ class BibleFileTimestamp extends Model
      *
      */
     protected $verse_end;
+
+    /**
+     *
+     * @OA\Property(
+     *   title="verse_sequence",
+     *   type="integer",
+     *   example=10,
+     *   description="The starting verse for the bible file but with format = integer",
+     *   minimum=1
+     * )
+     *
+     * @method static BibleFileTimestamp whereVerseSequence($value)
+     * @property int|null $verse_sequence
+     *
+     */
+    protected $verse_sequence;
 
     /**
      *
