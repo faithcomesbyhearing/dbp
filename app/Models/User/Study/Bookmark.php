@@ -17,7 +17,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property string $book_id
  * @property int $chapter
- * @property int $verse_start
+ * @property string $verse_start
+ * @property int $verse_sequence
  * @property string $user_id
  * @property string $bible_id
  * @property Carbon $created_at
@@ -51,7 +52,8 @@ class Bookmark extends Model
         'user_id',
         'book_id',
         'chapter',
-        'verse_start'
+        'verse_start',
+        'verse_sequence'
     ];
 
     /**
@@ -82,6 +84,12 @@ class Bookmark extends Model
      * @OA\Property(ref="#/components/schemas/BibleFile/properties/verse_start")
      */
     protected $verse_start;
+
+    /**
+     *
+     * @OA\Property(ref="#/components/schemas/BibleFile/properties/verse_sequence")
+     */
+    protected $verse_sequence;
 
     /**
      *
@@ -169,7 +177,7 @@ class Bookmark extends Model
             ->where('bible_verses.book_id', $bookmark['book_id'])
             ->where('verse_start', $verse_start)
             ->where('chapter', $chapter)
-            ->orderBy('verse_start')
+            ->orderBy('verse_sequence')
             ->select(['bible_verses.verse_text'])
             ->get()
             ->pluck('verse_text');
