@@ -475,7 +475,7 @@ class HighlightsController extends APIController
             'user_id'           => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp_users.users,id',
             'book_id'           => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.books,id',
             'chapter'           => ((request()->method() === 'POST') ? 'required|' : '') . 'max:150|min:1|integer',
-            'verse_start'       => ((request()->method() === 'POST') ? 'required|' : '') . 'max:177|min:1|integer',
+            'verse_start'       => ((request()->method() === 'POST') ? 'required|' : '') . 'max:10|min:1',
             'verse_end'         => ((request()->method() === 'POST') ? 'required|' : '') . 'max:177|min:1|integer',
             'reference'         => 'string',
             'highlight_start'   => ((request()->method() === 'POST') ? 'required|' : '') . 'min:0|integer',
