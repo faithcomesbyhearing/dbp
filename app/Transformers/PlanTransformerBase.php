@@ -194,6 +194,7 @@ class PlanTransformerBase extends BaseTransformer
                 "chapter_start" => $item->chapter_start,
                 "chapter_end"   => $item->chapter_end,
                 "verse_start"   => $item->verse_start,
+                "verse_sequence"=> $item->verse_sequence,
                 "verse_end"     => $item->verse_end,
                 "verses"        => $item->verses,
                 "duration"      => $item->duration,

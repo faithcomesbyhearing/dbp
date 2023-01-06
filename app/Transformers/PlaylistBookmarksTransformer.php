@@ -16,12 +16,13 @@ class PlaylistBookmarksTransformer extends TransformerAbstract
      *      @OA\Xml(name="v4_internal_playlist_user_bookmarks"),
      *   @OA\Property(property="data", type="array",
      *      @OA\Items(
-     *          @OA\Property(property="id",       type="integer"),
-     *          @OA\Property(property="bible_id", ref="#/components/schemas/Bible/properties/id"),
-     *          @OA\Property(property="book_id",  ref="#/components/schemas/Book/properties/id"),
-     *          @OA\Property(property="chapter",  ref="#/components/schemas/Bookmark/properties/chapter"),
-     *          @OA\Property(property="verse",    ref="#/components/schemas/Bookmark/properties/verse_start"),
-     *          @OA\Property(property="tags",     ref="#/components/schemas/AnnotationTag")
+     *          @OA\Property(property="id",             type="integer"),
+     *          @OA\Property(property="bible_id",       ref="#/components/schemas/Bible/properties/id"),
+     *          @OA\Property(property="book_id",        ref="#/components/schemas/Book/properties/id"),
+     *          @OA\Property(property="chapter",        ref="#/components/schemas/Bookmark/properties/chapter"),
+     *          @OA\Property(property="verse",          ref="#/components/schemas/Bookmark/properties/verse_start"),
+     *          @OA\Property(property="verse_sequence", ref="#/components/schemas/Bookmark/properties/verse_sequence"),
+     *          @OA\Property(property="tags",           ref="#/components/schemas/AnnotationTag")
      *      )
      *   )
      *)
@@ -32,12 +33,13 @@ class PlaylistBookmarksTransformer extends TransformerAbstract
     public function transform(Bookmark $bookmark)
     {
         return [
-            'id'        => (int) $bookmark->id,
-            'bible_id'  => (string) $bookmark->bible_id,
-            'book_id'   => (string) $bookmark->book_id,
-            'chapter'   => (int) $bookmark->chapter,
-            'verse'     => (int) $bookmark->verse_start,
-            'tags'      => $bookmark->tags
+            'id'             => (int) $bookmark->id,
+            'bible_id'       => (string) $bookmark->bible_id,
+            'book_id'        => (string) $bookmark->book_id,
+            'chapter'        => (int) $bookmark->chapter,
+            'verse'          => (string) $bookmark->verse_start,
+            'verse_sequence' => (int) $bookmark->verse_sequence,
+            'tags'           => $bookmark->tags
         ];
     }
 }

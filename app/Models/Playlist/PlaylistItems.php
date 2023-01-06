@@ -405,7 +405,7 @@ class PlaylistItems extends Model implements Sortable
             } else {
                 // Fetch Timestamps
                 $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))
-                ->orderBy('verse_start')
+                ->orderBy('verse_sequence')
                 ->get();
             }
 
@@ -421,8 +421,8 @@ class PlaylistItems extends Model implements Sortable
                 $timestamps = sizeof($bible_files_ids) > 0
                     ? DB::connection('dbp')->select(
                         'select t.* from bible_file_stream_bandwidths as b
-                        join bible_file_stream_bytes as s 
-                        on s.stream_bandwidth_id = b.id 
+                        join bible_file_stream_bytes as s
+                        on s.stream_bandwidth_id = b.id
                         join bible_file_timestamps as t
                         on t.id = s.timestamp_id
                         where b.bible_file_id IN (?) and  s.timestamp_id IS NOT NULL',

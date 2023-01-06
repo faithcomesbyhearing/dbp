@@ -18,7 +18,8 @@ use Illuminate\Support\Facades\Crypt;
  * @property int $id
  * @property string $book_id
  * @property int $chapter
- * @property int $verse_start
+ * @property string $verse_start
+ * @property int $verse_sequence
  * @property int|null $verse_end
  * @property string $user_id
  * @property string $bible_id
@@ -51,6 +52,7 @@ class Note extends Model
         'chapter',
         'verse_start',
         'verse_end',
+        'verse_sequence',
         'notes',
         'created_at',
         'updated_at'
@@ -83,6 +85,13 @@ class Note extends Model
      * @method static Note whereChapter($value)
      */
     protected $chapter;
+
+    /**
+     *
+     * @OA\Property(ref="#/components/schemas/BibleFile/properties/verse_sequence")
+     * @method static Note whereVerseSequence($value)
+     */
+    protected $verse_sequence;
 
     /**
      *
@@ -235,7 +244,7 @@ class Note extends Model
         ->where('verse_start', '>=', $verse_start)
         ->where('verse_end', '<=', $verse_end)
         ->where('chapter', $chapter)
-        ->orderBy('verse_start')
+        ->orderBy('verse_sequence')
         ->select(['bible_verses.verse_text'])
         ->get()
         ->pluck('verse_text');
