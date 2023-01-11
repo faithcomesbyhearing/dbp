@@ -57,8 +57,9 @@ class AudioTransformer extends BaseTransformer
              */
             case 'v2_audio_timestamps':
                 return [
-                    'verse_id'    => $audio->verse_start,
-                    'verse_start' => $audio->timestamp
+                    'verse_id'    => (int) $audio->verse_sequence,
+                    'verse_id_alt' => $audio->verse_start,
+                    'verse_start' => $audio->timestamp,
                 ];
 
             /**
@@ -126,7 +127,8 @@ class AudioTransformer extends BaseTransformer
                 return [
                     'book'           => (string) $audio->bibleFile->book_id,
                     'chapter'        => (string) $audio->bibleFile->chapter_start,
-                    'verse_start'    => (string) $audio->verse_start,
+                    'verse_start'    => (int) $audio->verse_sequence,
+                    'verse_start_alt'=> (string) $audio->verse_start,
                     'timestamp'      => $audio->timestamp
                 ];
             case 'v4_internal_bible.chapter':
@@ -144,6 +146,8 @@ class AudioTransformer extends BaseTransformer
                     'chapter_start' => (string)$audio->chapter_start,
                     'chapter_end'   => (string)$audio->chapter_end,
                     'verse_start'   => (string)$audio->verse_start,
+                    'verse_start'   => (int)$audio->verse_sequence,
+                    'verse_start_alt' => (int)$audio->verse_start,
                     'verse_end'     => (string)$audio->verse_end,
                     'timestamp'     => $audio->timestamps,
                     'path'          => $audio->file_name
