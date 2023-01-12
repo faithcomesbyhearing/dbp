@@ -117,7 +117,7 @@ class AudioController extends APIController
             $bible_files->pluck('id')
         )
         ->with('bibleFile')
-        ->orderBy('verse_sequence')
+        ->orderBy('verse_start')
         ->get();
 
 

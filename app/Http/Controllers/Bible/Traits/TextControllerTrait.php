@@ -23,7 +23,6 @@ trait TextControllerTrait
                     'bible_verses.verse_start',
                     'bible_verses.verse_end',
                     'bible_verses.verse_text',
-                    'bible_verses.verse_sequence',
                 ];
 
                 if ($bible && $bible->numeral_system_id) {
@@ -51,7 +50,7 @@ trait TextControllerTrait
                         return $query->where('verse_end', '<=', $verse_end);
                     })
                     ->orderBy('chapter')
-                    ->orderBy('verse_sequence')
+                    ->orderBy('verse_start')
                     ->select($select_columns)->get();
             }
         );

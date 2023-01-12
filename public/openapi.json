@@ -2168,13 +2168,6 @@
                         "type": "string",
                         "example": "4"
                     },
-                    "verse_sequence": {
-                        "title": "verse_sequence",
-                        "description": "The starting verse for the bible file but with format = integer",
-                        "type": "integer",
-                        "minimum": 1,
-                        "example": 10
-                    },
                     "chapter_end": {
                         "title": "chapter_end",
                         "description": "If the Bible File spans multiple chapters this field indicates the last chapter of the selection",
@@ -2241,20 +2234,13 @@
                     "verse_start": {
                         "title": "verse_start",
                         "description": "The starting verse for the file timestamp",
-                        "type": "string",
+                        "type": "integer",
                         "minimum": 1,
-                        "example": "1a"
+                        "example": 1
                     },
                     "verse_end": {
                         "title": "verse_end",
                         "description": "The ending verse for the file timestamp",
-                        "type": "integer",
-                        "minimum": 1,
-                        "example": 10
-                    },
-                    "verse_sequence": {
-                        "title": "verse_sequence",
-                        "description": "The starting verse for the bible file but with format = integer",
                         "type": "integer",
                         "minimum": 1,
                         "example": 10
@@ -4480,9 +4466,6 @@
                     "verse_start": {
                         "$ref": "#/components/schemas/BibleFile/properties/verse_start"
                     },
-                    "verse_sequence": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_sequence"
-                    },
                     "user_id": {
                         "$ref": "#/components/schemas/User/properties/id"
                     },
@@ -4539,9 +4522,6 @@
                     "verse_start": {
                         "$ref": "#/components/schemas/BibleFile/properties/verse_start"
                     },
-                    "verse_sequence": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_sequence"
-                    },
                     "verse_end": {
                         "$ref": "#/components/schemas/BibleFile/properties/verse_end"
                     },
@@ -4593,9 +4573,6 @@
                     },
                     "chapter": {
                         "$ref": "#/components/schemas/BibleFile/properties/chapter_start"
-                    },
-                    "verse_sequence": {
-                        "$ref": "#/components/schemas/BibleFile/properties/verse_sequence"
                     },
                     "verse_start": {
                         "$ref": "#/components/schemas/BibleFile/properties/verse_start"
@@ -4969,9 +4946,6 @@
                                 "verse_end": {
                                     "$ref": "#/components/schemas/BibleFile/properties/verse_end"
                                 },
-                                "verse_sequence": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_sequence"
-                                },
                                 "chapter": {
                                     "$ref": "#/components/schemas/BibleVerse/properties/chapter"
                                 },
@@ -5121,9 +5095,6 @@
                                 "verse_start": {
                                     "$ref": "#/components/schemas/BibleFile/properties/verse_start"
                                 },
-                                "verse_sequence": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_sequence"
-                                },
                                 "verse_end": {
                                     "$ref": "#/components/schemas/BibleFile/properties/verse_end"
                                 },
@@ -5216,9 +5187,6 @@
                                 "verse_start": {
                                     "$ref": "#/components/schemas/BibleFile/properties/verse_start"
                                 },
-                                "verse_sequence": {
-                                    "$ref": "#/components/schemas/BibleFile/properties/verse_sequence"
-                                },
                                 "verse_start_alt": {
                                     "$ref": "#/components/schemas/BibleFile/properties/verse_start"
                                 },
@@ -5260,9 +5228,6 @@
                     },
                     "verse_start": {
                         "$ref": "#/components/schemas/Note/properties/verse_start"
-                    },
-                    "verse_sequence": {
-                        "$ref": "#/components/schemas/Note/properties/verse_sequence"
                     },
                     "verse_end": {
                         "$ref": "#/components/schemas/Note/properties/verse_end"
