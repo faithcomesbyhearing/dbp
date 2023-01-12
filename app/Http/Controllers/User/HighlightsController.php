@@ -140,9 +140,7 @@ class HighlightsController extends APIController
         $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
 
         $sort_by_book = $sort_by === 'book';
-        $order_by = $sort_by_book
-            ? DB::raw('book_order, user_highlights.chapter, user_highlights.verse_sequence')
-            : 'user_highlights.' . $sort_by;
+        $order_by = $sort_by_book ? DB::raw('book_order, user_highlights.chapter, user_highlights.verse_start') : 'user_highlights.' . $sort_by;
 
         $select_fields = [
             'user_highlights.id',
@@ -151,7 +149,6 @@ class HighlightsController extends APIController
             'user_highlights.chapter',
             'user_highlights.verse_start',
             'user_highlights.verse_end',
-            'user_highlights.verse_sequence',
             'user_highlights.highlight_start',
             'user_highlights.highlighted_words',
             'user_highlights.highlighted_color',
@@ -286,7 +283,6 @@ class HighlightsController extends APIController
             'book_id'           => $request->book_id,
             'chapter'           => $request->chapter,
             'verse_start'       => $request->verse_start,
-            'verse_sequence'    => $request->verse_sequence ?? (int) $request->verse_start,
             'verse_end'         => $request->verse_end,
             'highlight_start'   => $request->highlight_start,
             'highlighted_words' => $request->highlighted_words,
@@ -356,17 +352,9 @@ class HighlightsController extends APIController
 
         if ($request->highlighted_color) {
             $color = $this->selectColor($request->highlighted_color);
-            $current_highlight = Arr::add(
-                $request->except('highlighted_color', 'project_id'),
-                'highlighted_color',
-                $color
-            );
-            $current_highlight['verse_sequence'] = $request->verse_sequence ?? (int) $request->verse_start;
-            $highlight->fill($current_highlight)->save();
+            $highlight->fill(Arr::add($request->except('highlighted_color', 'project_id'), 'highlighted_color', $color))->save();
         } else {
-            $current_highligh = $request->except(['project_id']);
-            $current_highlight['verse_sequence'] = $request->verse_sequence ?? (int) $request->verse_start;
-            $highlight->fill($current_highligh)->save();
+            $highlight->fill($request->except(['project_id']))->save();
         }
 
         $this->handleTags($highlight);
@@ -475,7 +463,7 @@ class HighlightsController extends APIController
             'user_id'           => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp_users.users,id',
             'book_id'           => ((request()->method() === 'POST') ? 'required|' : '') . 'exists:dbp.books,id',
             'chapter'           => ((request()->method() === 'POST') ? 'required|' : '') . 'max:150|min:1|integer',
-            'verse_start'       => ((request()->method() === 'POST') ? 'required|' : '') . 'max:10|min:1',
+            'verse_start'       => ((request()->method() === 'POST') ? 'required|' : '') . 'max:177|min:1|integer',
             'verse_end'         => ((request()->method() === 'POST') ? 'required|' : '') . 'max:177|min:1|integer',
             'reference'         => 'string',
             'highlight_start'   => ((request()->method() === 'POST') ? 'required|' : '') . 'min:0|integer',

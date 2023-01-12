@@ -68,7 +68,7 @@ class BibleVersesController extends APIController
         string $language_code,
         string $book_id,
         string $chapter_id,
-        string $verse_number = null,
+        int $verse_number = null,
     ) {
         $limit          = (int) (checkParam('limit') ?? 15);
         $limit          = min($limit, 50);
@@ -142,7 +142,7 @@ class BibleVersesController extends APIController
      * )
      * @return mixed
      */
-    public function showVerseByBible(string $bible_id, string $book_id, string $chapter_id, string $verse_number = null)
+    public function showVerseByBible(string $bible_id, string $book_id, string $chapter_id, int $verse_number = null)
     {
         $limit          = (int) (checkParam('limit') ?? 15);
         $limit          = min($limit, 50);

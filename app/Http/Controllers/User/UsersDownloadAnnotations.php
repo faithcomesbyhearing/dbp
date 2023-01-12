@@ -147,7 +147,6 @@ class UsersDownloadAnnotations extends APIController
      *       @OA\Property(property="book_id",           ref="#/components/schemas/Book/properties/id"),
      *       @OA\Property(property="chapter",           ref="#/components/schemas/BibleFile/properties/chapter_start"),
      *       @OA\Property(property="verse_start",       ref="#/components/schemas/BibleFile/properties/verse_start"),
-     *       @OA\Property(property="verse_sequence",    ref="#/components/schemas/BibleFile/properties/verse_sequence"),
      *       @OA\Property(property="verse_end",         ref="#/components/schemas/BibleFile/properties/verse_end"),
      *       @OA\Property(property="notes",             ref="#/components/schemas/Note/properties/notes")
      *     ),
@@ -174,7 +173,6 @@ class UsersDownloadAnnotations extends APIController
                 'user_notes.chapter',
                 'user_notes.verse_start',
                 'user_notes.verse_end',
-                'user_notes.verse_sequence',
                 'user_notes.notes',
             ])
             ->where('user_notes.user_id', $user_id)
@@ -212,7 +210,6 @@ class UsersDownloadAnnotations extends APIController
      *       @OA\Property(property="book_id",           ref="#/components/schemas/Book/properties/id"),
      *       @OA\Property(property="chapter",           ref="#/components/schemas/BibleFile/properties/chapter_start"),
      *       @OA\Property(property="verse_start",       ref="#/components/schemas/BibleFile/properties/verse_start"),
-     *       @OA\Property(property="verse_sequence",    ref="#/components/schemas/BibleFile/properties/verse_sequence"),
      *     ),
      *   )
      * )
@@ -236,7 +233,6 @@ class UsersDownloadAnnotations extends APIController
                 'user_bookmarks.book_id',
                 'user_bookmarks.chapter',
                 'user_bookmarks.verse_start',
-                'user_bookmarks.verse_sequence',
             ])
             ->where('user_bookmarks.user_id', $user_id)
             ->when($bible_id, function ($query_bible) use ($bible_id) {
@@ -273,7 +269,6 @@ class UsersDownloadAnnotations extends APIController
      *       @OA\Property(property="book_id",           ref="#/components/schemas/Book/properties/id"),
      *       @OA\Property(property="chapter",           ref="#/components/schemas/BibleFile/properties/chapter_start"),
      *       @OA\Property(property="verse_start",       ref="#/components/schemas/BibleFile/properties/verse_start"),
-     *       @OA\Property(property="verse_sequence",    ref="#/components/schemas/BibleFile/properties/verse_sequence"),
      *       @OA\Property(property="verse_end",         ref="#/components/schemas/BibleFile/properties/verse_end"),
      *       @OA\Property(property="highlighted_color", ref="#/components/schemas/Highlight/properties/highlighted_color")
      *     ),
@@ -299,7 +294,6 @@ class UsersDownloadAnnotations extends APIController
             'user_highlights.book_id',
             'user_highlights.chapter',
             'user_highlights.verse_start',
-            'user_highlights.verse_sequence',
             'user_highlights.verse_end',
             'user_highlights.highlighted_color',
         ];

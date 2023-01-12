@@ -168,9 +168,7 @@ class AudioControllerV2 extends APIController
             })->get();
 
         // Fetch Timestamps
-        $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))
-        ->orderBy('verse_sequence')
-        ->get();
+        $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))->orderBy('verse_start')->get();
 
 
         if ($audioTimestamps->isEmpty() && ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream')) {

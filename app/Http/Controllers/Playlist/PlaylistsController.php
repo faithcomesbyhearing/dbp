@@ -1447,7 +1447,6 @@ class PlaylistsController extends APIController
             'user_notes.book_id',
             'user_notes.chapter',
             'user_notes.verse_start',
-            'user_notes.verse_sequence',
             'user_notes.verse_end',
             'user_notes.notes',
         ])
@@ -1522,7 +1521,6 @@ class PlaylistsController extends APIController
             'user_highlights.book_id',
             'user_highlights.chapter',
             'user_highlights.verse_start',
-            'user_highlights.verse_sequence',
             'user_highlights.verse_end',
             'user_highlights.highlight_start',
             'user_highlights.highlighted_words',
@@ -1599,7 +1597,6 @@ class PlaylistsController extends APIController
             'user_bookmarks.book_id',
             'user_bookmarks.chapter',
             'user_bookmarks.verse_start',
-            'user_bookmarks.verse_sequence',
         ])
         ->whereBelongPlaylistAndBook($playlist_id, $book_id)
         ->where('user_bookmarks.user_id', $user->id)
