@@ -130,7 +130,7 @@ Route::name('v4_bible_verses.verse_by_language')->get(
 )->whereAlphaNumeric('language_code')
 ->whereAlphaNumeric('book_id')
 ->whereNumber('chapter_id')
-->whereAlphaNumeric('verse_number');
+->whereNumber('verse_number');
 
 Route::name('v4_bible_verses.verse_by_bible')->get(
     '/bible/{bible_id}/verses/{book_id}/{chapter_id}/{verse_number?}',
@@ -138,7 +138,7 @@ Route::name('v4_bible_verses.verse_by_bible')->get(
 )->whereAlphaNumeric('bible_id')
 ->whereAlphaNumeric('book_id')
 ->whereNumber('chapter_id')
-->whereAlphaNumeric('verse_number');
+->whereNumber('verse_number');
 
 // BibleFileSet download version 4
 

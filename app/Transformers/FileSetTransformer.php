@@ -59,7 +59,6 @@ class FileSetTransformer extends BaseTransformer
      *          @OA\Property(property="chapter_start",  ref="#/components/schemas/BibleFile/properties/chapter_start"),
      *          @OA\Property(property="chapter_end",    ref="#/components/schemas/BibleFile/properties/chapter_end"),
      *          @OA\Property(property="verse_start",    ref="#/components/schemas/BibleFile/properties/verse_start"),
-     *          @OA\Property(property="verse_sequence", ref="#/components/schemas/BibleFile/properties/verse_sequence"),
      *          @OA\Property(property="verse_end",      ref="#/components/schemas/BibleFile/properties/verse_end"),
      *          @OA\Property(property="thumbnail",      type="string", description="The image url", maxLength=191),
      *          @OA\Property(property="timestamp",      ref="#/components/schemas/BibleFileTimestamp/properties/timestamp"),
@@ -155,7 +154,6 @@ class FileSetTransformer extends BaseTransformer
                     'chapter_end'   => $fileset->chapter_end,
                     'verse_start'   => $fileset->verse_start,
                     'verse_end'     => $fileset->verse_end,
-                    'verse_sequence'=> $fileset->verse_sequence,
                     'timestamp'     => $fileset->timestamp,
                     'path'          => $fileset->file_name,
                     'duration'      => $fileset->duration
@@ -180,7 +178,6 @@ class FileSetTransformer extends BaseTransformer
                     'chapter_end'       => $fileset->chapter_end,
                     'verse_start'       => $fileset->verse_start,
                     'verse_end'         => $fileset->verse_end,
-                    'verse_sequence'    => $fileset->verse_sequence,
                     'timestamp'         => $fileset->timestamp,
                     'path'              => $fileset->file_name,
                     'duration'          => $fileset->duration,

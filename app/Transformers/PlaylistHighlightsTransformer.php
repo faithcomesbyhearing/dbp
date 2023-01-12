@@ -25,10 +25,6 @@ class PlaylistHighlightsTransformer extends UserHighlightsTransformer
      *              ref="#/components/schemas/Highlight/properties/verse_start"
      *          ),
      *          @OA\Property(
-     *              property="verse_sequence",
-     *              ref="#/components/schemas/Highlight/properties/verse_sequence"
-     *          ),
-     *          @OA\Property(
      *              property="verse_end",
      *              ref="#/components/schemas/Highlight/properties/verse_end"
      *          ),
@@ -61,8 +57,7 @@ class PlaylistHighlightsTransformer extends UserHighlightsTransformer
             'bible_id'          => (string) $highlight->bible_id,
             'book_id'           => (string) $highlight->book_id,
             'chapter'           => (int) $highlight->chapter,
-            'verse_start'       => (string) $highlight->verse_start,
-            'verse_sequence'     => (int) $highlight->verse_sequence,
+            'verse_start'       => (int) $highlight->verse_start,
             'verse_end'         => (int) $highlight->verse_end,
             'highlight_start'   => (int) $highlight->highlight_start,
             'highlighted_words' => $highlight->highlighted_words,
