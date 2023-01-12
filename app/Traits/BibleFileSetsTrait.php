@@ -41,7 +41,7 @@ trait BibleFileSetsTrait
                     "FIELD(bible_files.book_id, 'MAT', 'MRK', 'LUK', 'JHN') ASC"
                 )
                 ->orderBy('chapter_start', 'ASC')
-                ->orderBy('verse_sequence', 'ASC');
+                ->orderBy('verse_start', 'ASC');
         }
         if ($limit !== null) {
             $fileset_chapters_paginated = $query->paginate($limit);
@@ -106,7 +106,6 @@ trait BibleFileSetsTrait
             'bible_verses.chapter',
             'bible_verses.verse_start',
             'bible_verses.verse_end',
-            'bible_verses.verse_sequence',
             'bible_verses.verse_text',
         ];
         $text_query = BibleVerse::withVernacularMetaData($bible)
@@ -123,7 +122,7 @@ trait BibleFileSetsTrait
         ->when($verse_end, function ($query) use ($verse_end) {
             return $query->where('verse_end', '<=', $verse_end);
         })
-        ->orderBy('verse_sequence')
+        ->orderBy('verse_start')
         ->orderBy('books.name', 'ASC')
         ->orderBy('bible_verses.chapter');
 

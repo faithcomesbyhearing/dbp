@@ -22,7 +22,6 @@ class PlaylistNotesTransformer extends TransformerAbstract
      *          @OA\Property(property="book_id",        ref="#/components/schemas/Book/properties/id"),
      *          @OA\Property(property="chapter",        ref="#/components/schemas/Note/properties/chapter"),
      *          @OA\Property(property="verse_start",    ref="#/components/schemas/Note/properties/verse_start"),
-     *          @OA\Property(property="verse_sequence", ref="#/components/schemas/Note/properties/verse_sequence"),
      *          @OA\Property(property="verse_end",      ref="#/components/schemas/Note/properties/verse_end"),
      *          @OA\Property(property="tags",           ref="#/components/schemas/AnnotationTag")
      *      )
@@ -41,8 +40,7 @@ class PlaylistNotesTransformer extends TransformerAbstract
             "bible_id"      => (string) $note->bible_id,
             "book_id"       => (string) $note->book_id,
             "chapter"       => (int) $note->chapter,
-            "verse_start"   => (string) $note->verse_start,
-            "verse_sequence"=> (int) $note->verse_sequence,
+            "verse_start"   => (int) $note->verse_start,
             "verse_end"     => (int) $note->verse_end,
             'tags'          => $note->tags,
         ];
