@@ -36,8 +36,8 @@ class PlaylistBookmarksTransformer extends TransformerAbstract
             'bible_id'       => (string) $bookmark->bible_id,
             'book_id'        => (string) $bookmark->book_id,
             'chapter'        => (int) $bookmark->chapter,
-            'verse'          => (int) $bookmark->verse_sequence,
-            'verse_start_alt'=> (string) $bookmark->verse_start,
+            'verse'          => $bookmark->verse_sequence,
+            'verse_start_alt'=> $bookmark->verse_start,
             'tags'           => $bookmark->tags
         ];
     }

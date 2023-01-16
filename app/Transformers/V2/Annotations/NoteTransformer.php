@@ -27,8 +27,8 @@ class NoteTransformer extends TransformerAbstract
             'dam_id'               => $dam_id,
             'book_id'              => (string) $note->book->id_osis,
             'chapter_id'           => (string) $note->chapter,
-            'verse_id'             => (int) $note->verse_sequence,
-            'verse_start_alt'      => (string) $note->verse_start,
+            'verse_id'             => $note->verse_sequence,
+            'verse_start_alt'      => $note->verse_start,
             'note'                 => (string) $note->notes,
             'created'              => (string) $note->created_at,
             'updated'              => (string) $note->updated_at,
@@ -38,8 +38,8 @@ class NoteTransformer extends TransformerAbstract
                 'book_order'       => (string) $note->protestant_order,
                 'chapter_id'       => (string) $note->chapter,
                 'chapter_title'    => 'Chapter '.$note->chapter,
-                'verse_id'         => (int) $note->verse_sequence,
-                'verse_start_alt'  => (string) $note->verse_start,
+                'verse_id'         => $note->verse_sequence,
+                'verse_start_alt'  => $note->verse_start,
                 'verse_text'       => '',
                 'paragraph_number' => '1'
             ]]

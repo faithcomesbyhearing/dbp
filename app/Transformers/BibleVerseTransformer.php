@@ -22,6 +22,7 @@ class BibleVerseTransformer extends BaseTransformer
      *    @OA\Items(
      *      @OA\Property(property="verse_start",           ref="#/components/schemas/BibleFile/properties/verse_sequence"),
      *      @OA\Property(property="verse_end",             ref="#/components/schemas/BibleFile/properties/verse_end"),
+     *      @OA\Property(property="verse_sequence",        ref="#/components/schemas/BibleFile/properties/verse_sequence"),
      *      @OA\Property(property="verse_start_alt",        ref="#/components/schemas/BibleFile/properties/verse_start"),
      *      @OA\Property(property="chapter",               ref="#/components/schemas/BibleVerse/properties/chapter"),
      *      @OA\Property(property="book_id",               ref="#/components/schemas/BibleVerse/properties/book_id"),
@@ -48,8 +49,10 @@ class BibleVerseTransformer extends BaseTransformer
          */
         return [
             'verse_start' => $bible_verse->verse_sequence,
-            'verse_end'=> (int) $bible_verse->verse_end,
             'verse_start_alt'=> $bible_verse->verse_start,
+            'verse_end'=> (int) $bible_verse->verse_end,
+            'verse_end_alt'=> $bible_verse->verse_end,
+            'verse_sequence'=> $bible_verse->verse_sequence,
             'chapter'=> $bible_verse->chapter,
             'book_id'=> $bible_verse->book_id,
             'language_id'=> $bible_verse->language_id,
