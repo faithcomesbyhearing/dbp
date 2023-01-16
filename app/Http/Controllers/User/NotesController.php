@@ -195,6 +195,7 @@ class NotesController extends APIController
             'chapter'     => $request->chapter,
             'verse_start' => $request->verse_start,
             'verse_end'   => $request->verse_end ?? $request->verse_start,
+            'verse_sequence' => $request->verse_sequence ?? (int) $request->verse_start,
             'notes'       =>  encrypt(isset($request->notes) ? $request->notes : ''),
         ])->id;
         $note = Note::where('id', $note_id)->first();

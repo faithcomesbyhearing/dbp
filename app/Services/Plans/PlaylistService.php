@@ -288,14 +288,22 @@ class PlaylistService
         $valid_playlist_items = $this->getValidPlaylistItems($playlist_items);
 
         foreach ($valid_playlist_items as $playlist_item) {
+            $verse_start = $playlist_item->verse_start ?? null;
+            $verse_sequence = $playlist_item->verse_sequence ?? null;
+
+            if (!$verse_sequence && $verse_start) {
+                $verse_sequence = (int) $verse_start;
+            }
+
             $playlist_items_to_create[] = [
                 'playlist_id'       => $playlist_id,
                 'fileset_id'        => $playlist_item->fileset_id,
                 'book_id'           => $playlist_item->book_id,
                 'chapter_start'     => $playlist_item->chapter_start,
                 'chapter_end'       => $playlist_item->chapter_end,
-                'verse_start'       => $playlist_item->verse_start ?? null,
+                'verse_start'       => $verse_start,
                 'verse_end'         => $playlist_item->verse_end ?? null,
+                'verse_sequence'    => $verse_sequence,
                 'verses'            => $playlist_item->verses ?? 0,
                 'order_column'      => $order
             ];

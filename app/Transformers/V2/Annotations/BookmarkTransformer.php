@@ -26,7 +26,7 @@ class BookmarkTransformer extends TransformerAbstract
             'dam_id'               => $bookmark->bible_id.substr($bookmark->book->book_testament, 0, 1).'2ET',
             'book_id'              => (string) $bookmark->book->id_osis ? $bookmark->book->id_osis : $bookmark->book_id,
             'chapter_id'           => (string) $bookmark->chapter,
-            'verse_id'             => (int) $bookmark->verse_sequence,
+            'verse_id'             => $bookmark->verse_sequence,
             'verse_start_alt'      => (string) $bookmark->verse_start,
             'created'              => (string) $bookmark->created_at,
             'updated'              => (string) $bookmark->updated_at,
@@ -36,8 +36,8 @@ class BookmarkTransformer extends TransformerAbstract
                 'book_order'       => (string) $bookmark->book->protestant_order,
                 'chapter_id'       => (string) $bookmark->chapter,
                 'chapter_title'    => trans('api.chapter_title_prefix').' '.$bookmark->chapter,
-                'verse_id'         => (int) $bookmark->verse_sequence,
-                'verse_start_alt'  => (string) $bookmark->verse_start,
+                'verse_id'         => $bookmark->verse_sequence,
+                'verse_start_alt'  => $bookmark->verse_start,
                 'verse_text'       => (string) $bookmark->verse_text,
                 'paragraph_number' => '1'
             ]]

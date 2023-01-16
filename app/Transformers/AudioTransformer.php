@@ -57,9 +57,9 @@ class AudioTransformer extends BaseTransformer
              */
             case 'v2_audio_timestamps':
                 return [
-                    'verse_id'    => (int) $audio->verse_sequence,
+                    'verse_id'     => $audio->verse_sequence,
                     'verse_id_alt' => $audio->verse_start,
-                    'verse_start' => $audio->timestamp,
+                    'verse_start'  => $audio->timestamp,
                 ];
 
             /**
@@ -111,6 +111,7 @@ class AudioTransformer extends BaseTransformer
      *       @OA\Property(property="chapter_end",   ref="#/components/schemas/BibleFile/properties/chapter_end"),
      *       @OA\Property(property="verse_start",   ref="#/components/schemas/BibleFile/properties/verse_start"),
      *       @OA\Property(property="verse_end",     ref="#/components/schemas/BibleFile/properties/verse_end"),
+     *       @OA\Property(property="verse_end_alt", ref="#/components/schemas/BibleFile/properties/verse_end"),
      *       @OA\Property(property="timestamp",     ref="#/components/schemas/BibleFileTimestamp/properties/timestamp"),
      *       @OA\Property(property="path",          ref="#/components/schemas/BibleFile/properties/file_name")
      *      )
@@ -127,8 +128,8 @@ class AudioTransformer extends BaseTransformer
                 return [
                     'book'           => (string) $audio->bibleFile->book_id,
                     'chapter'        => (string) $audio->bibleFile->chapter_start,
-                    'verse_start'    => (int) $audio->verse_sequence,
-                    'verse_start_alt'=> (string) $audio->verse_start,
+                    'verse_start'    => (string) $audio->verse_sequence,
+                    'verse_start_alt'=> $audio->verse_start,
                     'timestamp'      => $audio->timestamp
                 ];
             case 'v4_internal_bible.chapter':
@@ -146,9 +147,10 @@ class AudioTransformer extends BaseTransformer
                     'chapter_start' => (string)$audio->chapter_start,
                     'chapter_end'   => (string)$audio->chapter_end,
                     'verse_start'   => (string)$audio->verse_start,
-                    'verse_start'   => (int)$audio->verse_sequence,
-                    'verse_start_alt' => (int)$audio->verse_start,
-                    'verse_end'     => (string)$audio->verse_end,
+                    'verse_start'   => (string) $audio->verse_sequence,
+                    'verse_start_alt' => $audio->verse_start,
+                    'verse_end'     => $audio->verse_end ? (int)$audio->verse_end : null,
+                    'verse_end_alt' => $audio->verse_end,
                     'timestamp'     => $audio->timestamps,
                     'path'          => $audio->file_name
                 ];

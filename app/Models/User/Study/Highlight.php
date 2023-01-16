@@ -19,8 +19,9 @@ use Illuminate\Support\Str;
  * @property string $book_id
  * @property int $chapter
  * @property string|null $highlighted_color
- * @property int $verse_start
+ * @property string $verse_start
  * @property int $verse_end
+ * @property int $verse_sequence
  * @property string|null $project_id
  * @property int $highlight_start
  * @property int $highlighted_words
@@ -50,7 +51,20 @@ class Highlight extends Model
 
     protected $connection = 'dbp_users';
     public $table = 'user_highlights';
-    protected $fillable = ['user_id', 'v2_id', 'bible_id', 'book_id', 'project_id', 'chapter', 'verse_start', 'verse_end', 'highlight_start', 'highlighted_words', 'highlighted_color'];
+    protected $fillable = [
+        'user_id',
+        'v2_id',
+        'bible_id',
+        'book_id',
+        'project_id',
+        'chapter',
+        'verse_start',
+        'verse_end',
+        'verse_sequence',
+        'highlight_start',
+        'highlighted_words',
+        'highlighted_color'
+    ];
     protected $hidden = ['user_id', 'project_id'];
 
     /**
@@ -105,6 +119,12 @@ class Highlight extends Model
      * @OA\Property(ref="#/components/schemas/BibleFile/properties/verse_start")
      */
     protected $verse_start;
+
+    /**
+     *
+     * @OA\Property(ref="#/components/schemas/BibleFile/properties/verse_sequence")
+     */
+    protected $verse_sequence;
 
     /**
      *
@@ -210,7 +230,7 @@ class Highlight extends Model
                 ->where('verse_start', '>=', $verse_start)
                 ->where('verse_end', '<=', $verse_end)
                 ->where('chapter', $chapter)
-                ->orderBy('verse_start')
+                ->orderBy('verse_sequence')
                 ->select([
                     'bible_verses.verse_text',
                 ])->get()->pluck('verse_text');
