@@ -321,12 +321,12 @@ class PlaylistItems extends Model implements Sortable
         : [];
         $verses_middle = 0;
         foreach ($bible_files as $bible_file) {
-            $verses_middle += ($bible_file->verse_start - 1) + $bible_file->verse_end;
+            $verses_middle += ((int)$bible_file->verse_start - 1) + (int)$bible_file->verse_end;
         }
         if (!$this['verse_start'] && !$this['verse_end']) {
             $verses = $verses_middle;
         } else {
-            $verses = $verses_middle - ($this['verse_start'] - 1) + $this['verse_end'];
+            $verses = $verses_middle - ((int)$this['verse_start'] - 1) + (int)$this['verse_end'];
         }
 
         // Try to get the verse count from the bible_verses table

@@ -39,13 +39,6 @@ class ArclightController extends APIController
 
             $components = $this->fetchArclight('media-components/', $language_id, true);
 
-            // if (!isset($components->mediaComponents)) {
-            //     return  $this
-            //         ->setStatusCode($this->statusCode)
-            //         ->replyWithError('Internal server error');
-            // }
-
-            // $components = optional($components)->mediaComponents;
             $components = optional($components)->mediaComponents;
 
             if (empty($components)) {

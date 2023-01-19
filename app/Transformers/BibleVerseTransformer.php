@@ -50,7 +50,7 @@ class BibleVerseTransformer extends BaseTransformer
         return [
             'verse_start' => $bible_verse->verse_sequence,
             'verse_start_alt'=> $bible_verse->verse_start,
-            'verse_end'=> (int) $bible_verse->verse_end,
+            'verse_end'=> $bible_verse->verse_end ? (int) $bible_verse->verse_end : null,
             'verse_end_alt'=> $bible_verse->verse_end,
             'verse_sequence'=> $bible_verse->verse_sequence,
             'chapter'=> $bible_verse->chapter,
