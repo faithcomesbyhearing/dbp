@@ -65,12 +65,14 @@ class UsersDownloadAnnotationsTransFormer extends BaseTransformer
     private function note(Note $note) : Array
     {
         return [
-            'bible_id'    => (string) $note->bible_id,
-            'book_id'     => (string) $note->book_id,
-            'chapter'     => (int) $note->chapter,
-            'verse_start' => (int) $note->verse_start,
-            'verse_end'   => (int) $note->verse_end,
-            'notes'       => (string) $note->notes
+            'bible_id'        => (string) $note->bible_id,
+            'book_id'         => (string) $note->book_id,
+            'chapter'         => (int) $note->chapter,
+            'verse_start'     => $note->verse_sequence,
+            'verse_start_alt' => $note->verse_start,
+            'verse_end'       => (int) $note->verse_end,
+            'verse_end_alt'   => $note->verse_end,
+            'notes'           => (string) $note->notes
         ];
     }
 
@@ -80,7 +82,8 @@ class UsersDownloadAnnotationsTransFormer extends BaseTransformer
             'bible_id'   => (string) $bookmark->bible_id,
             'book_id'    => (string) $bookmark->book_id,
             'chapter'    => (int) $bookmark->chapter,
-            'verse'      => (int) $bookmark->verse_start
+            'verse'           => $bookmark->verse_sequence,
+            'verse_start_alt' => $bookmark->verse_start
         ];
     }
 
@@ -92,8 +95,10 @@ class UsersDownloadAnnotationsTransFormer extends BaseTransformer
             'bible_id'          => (string) $highlight->bible_id,
             'book_id'           => (string) $highlight->book_id,
             'chapter'           => (int) $highlight->chapter,
-            'verse_start'       => (int) $highlight->verse_start,
+            'verse_start'       => $highlight->verse_sequence,
+            'verse_start_alt'   => $highlight->verse_sequence,
             'verse_end'         => (int) $highlight->verse_end,
+            'verse_end_alt'     => $highlight->verse_end,
             'highlighted_color' => $highlight->color
         ];
     }

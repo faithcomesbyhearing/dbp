@@ -32,12 +32,13 @@ class PlaylistBookmarksTransformer extends TransformerAbstract
     public function transform(Bookmark $bookmark)
     {
         return [
-            'id'        => (int) $bookmark->id,
-            'bible_id'  => (string) $bookmark->bible_id,
-            'book_id'   => (string) $bookmark->book_id,
-            'chapter'   => (int) $bookmark->chapter,
-            'verse'     => (int) $bookmark->verse_start,
-            'tags'      => $bookmark->tags
+            'id'             => (int) $bookmark->id,
+            'bible_id'       => (string) $bookmark->bible_id,
+            'book_id'        => (string) $bookmark->book_id,
+            'chapter'        => (int) $bookmark->chapter,
+            'verse'          => $bookmark->verse_sequence,
+            'verse_start_alt'=> $bookmark->verse_start,
+            'tags'           => $bookmark->tags
         ];
     }
 }

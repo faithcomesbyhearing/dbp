@@ -93,10 +93,16 @@ class ReaderController extends APIController
      */
     public function chapter($bible_id, $book_id, $chapter)
     {
-        $fileset = BibleFileset::with('bible')->where('id', $bible_id)->where('asset_id', 'dbp-prod')->where('set_type_code', 'text_plain')->firstOrFail();
+        $fileset = BibleFileset::with('bible')
+            ->where('id', $bible_id)
+            ->where('asset_id', 'dbp-prod')
+            ->where('set_type_code', 'text_plain')
+            ->firstOrFail();
 
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)->where('book_id', $book_id)
-            ->where('chapter', $chapter)->orderBy('verse_start')->get();
+            ->where('chapter', $chapter)
+            ->orderBy('verse_sequence')
+            ->get();
         return view('bibles.reader.verses', compact('verses'));
     }
 }
