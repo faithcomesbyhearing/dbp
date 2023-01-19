@@ -356,7 +356,6 @@ class HighlightsController extends APIController
 
         if ($request->highlighted_color) {
             $color = $this->selectColor($request->highlighted_color);
-            //$highlight->fill(Arr::add($request->except('highlighted_color', 'project_id'), 'highlighted_color', $color))->save();
             $current_highlight = Arr::add(
                 $request->except('highlighted_color', 'project_id'),
                 'highlighted_color',
@@ -365,7 +364,6 @@ class HighlightsController extends APIController
             $current_highlight['verse_sequence'] = $request->verse_sequence ?? (int) $request->verse_start;
             $highlight->fill($current_highlight)->save();
         } else {
-            // $highlight->fill($request->except(['project_id']))->save();
             $current_highligh = $request->except(['project_id']);
             $current_highlight['verse_sequence'] = $request->verse_sequence ?? (int) $request->verse_start;
             $highlight->fill($current_highligh)->save();
