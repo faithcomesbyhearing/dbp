@@ -44,7 +44,7 @@ class PlaylistNotesTransformer extends TransformerAbstract
             "chapter"       => (int) $note->chapter,
             "verse_start"   => $note->verse_sequence,
             "verse_start_alt"=> $note->verse_start,
-            "verse_end"     => (int) $note->verse_end,
+            "verse_end"     => $note->verse_end ? (int) $note->verse_end : null,
             "verse_end_alt" => $note->verse_end,
             'tags'          => $note->tags,
         ];

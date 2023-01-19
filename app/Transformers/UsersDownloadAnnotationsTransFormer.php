@@ -70,7 +70,7 @@ class UsersDownloadAnnotationsTransFormer extends BaseTransformer
             'chapter'         => (int) $note->chapter,
             'verse_start'     => $note->verse_sequence,
             'verse_start_alt' => $note->verse_start,
-            'verse_end'       => (int) $note->verse_end,
+            'verse_end'       => $note->verse_end ? (int) $note->verse_end : null,
             'verse_end_alt'   => $note->verse_end,
             'notes'           => (string) $note->notes
         ];
@@ -97,7 +97,7 @@ class UsersDownloadAnnotationsTransFormer extends BaseTransformer
             'chapter'           => (int) $highlight->chapter,
             'verse_start'       => $highlight->verse_sequence,
             'verse_start_alt'   => $highlight->verse_sequence,
-            'verse_end'         => (int) $highlight->verse_end,
+            'verse_end'         => $highlight->verse_end ? (int) $highlight->verse_end : null,
             'verse_end_alt'     => $highlight->verse_end,
             'highlighted_color' => $highlight->color
         ];

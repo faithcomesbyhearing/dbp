@@ -34,7 +34,7 @@ class PlaylistTransformer extends PlanTransformerBase
                     "chapter_end" => $item->chapter_end,
                     "verse_start" => $item->verse_sequence,
                     "verse_start_alt" => $item->verse_start,
-                    "verse_end" => (int) $item->verse_end,
+                    "verse_end" => $item->verse_end ? (int)$item->verse_end : null,
                     "verse_end_alt" => $item->verse_end,
                     "verses" => $item->verses,
                     "duration" => $item->duration,
