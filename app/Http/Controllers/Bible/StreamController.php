@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bible;
 
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Http\Controllers\APIController;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
@@ -32,7 +33,9 @@ class StreamController extends APIController
         $current_file = cacheRemember('stream_master_index', $cache_params, now()->addHours(12), function () use ($id, $file_id_location) {
             $fileset = BibleFileset::uniqueFileset($id)->select('hash_id', 'id', 'asset_id')->first();
             if (!$fileset) {
-                return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                    ->replyWithError('No fileset found for the provided params');
             }
 
             $is_multiple_mp3 = $this->isMultipleMp3($file_id_location);
@@ -44,7 +47,9 @@ class StreamController extends APIController
             $file = $this->getFileFromLocation($fileset, $file_id_location);
 
             if (!$file) {
-                return $this->replyWithError(trans('api.bible_file_errors_404', ['id' => $file_id_location]));
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                    ->replyWithError(trans('api.bible_file_errors_404', ['id' => $file_id_location]));
             }
             $asset_id = $fileset->asset_id;
             $current_file = '#EXTM3U';
