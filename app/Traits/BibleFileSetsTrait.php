@@ -41,7 +41,7 @@ trait BibleFileSetsTrait
                     "FIELD(bible_files.book_id, 'MAT', 'MRK', 'LUK', 'JHN') ASC"
                 )
                 ->orderBy('chapter_start', 'ASC')
-                ->orderBy('verse_start', 'ASC');
+                ->orderBy('verse_sequence', 'ASC');
         }
         if ($limit !== null) {
             $fileset_chapters_paginated = $query->paginate($limit);
@@ -106,6 +106,7 @@ trait BibleFileSetsTrait
             'bible_verses.chapter',
             'bible_verses.verse_start',
             'bible_verses.verse_end',
+            'bible_verses.verse_sequence',
             'bible_verses.verse_text',
         ];
         $text_query = BibleVerse::withVernacularMetaData($bible)
@@ -122,7 +123,7 @@ trait BibleFileSetsTrait
         ->when($verse_end, function ($query) use ($verse_end) {
             return $query->where('verse_end', '<=', $verse_end);
         })
-        ->orderBy('verse_start')
+        ->orderBy('verse_sequence')
         ->orderBy('books.name', 'ASC')
         ->orderBy('bible_verses.chapter');
 
@@ -230,8 +231,9 @@ trait BibleFileSetsTrait
                     'fileset_id' => $fileset->id,
                     'book_id' => $fileset_chapter->book_id,
                     'chapter' => $fileset_chapter->chapter_start,
-                    'verse_start' => $fileset_chapter->verse_start,
-                    'verse_end' => $fileset_chapter->verse_end
+                    'verse_start' => $fileset_chapter->verse_sequence,
+                    'verse_start_alt' => $fileset_chapter->verse_start,
+                    'verse_end' => (int) $fileset_chapter->verse_end
                 ];
                 $fileset_chapters[$key]->file_name = route('v4_media_stream', array_filter(
                     $routeParameters,

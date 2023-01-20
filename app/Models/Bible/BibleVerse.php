@@ -50,6 +50,11 @@ class BibleVerse extends Model
     protected $verse_number;
 
     /**
+     * @OA\Property(ref="#/components/schemas/BibleFile/properties/verse_sequence")
+     */
+    protected $verse_sequence;
+
+    /**
      * @OA\Property(
      *   title="verse_text",
      *   type="string",
@@ -137,13 +142,13 @@ class BibleVerse extends Model
      * @param Builder $query
      * @param string $book_id
      * @param string $chapter_id
-     * @param int $verse_number
+     * @param string $verse_number
      */
     public function scopeWithBibleFilesets(
         Builder $query,
         string $book_id,
         string $chapter_id,
-        int $verse_number = null,
+        string $verse_number = null,
     ) : Builder {
         return $query->where('book_id', $book_id)
             ->where('chapter', $chapter_id)
@@ -151,7 +156,7 @@ class BibleVerse extends Model
                 return $query->where('verse_start', $verse_number);
             })
             ->when(empty($verse_number), function ($query) {
-                return $query->orderBy('verse_start');
+                return $query->orderBy('verse_sequence');
             })
             ->join('bible_filesets', 'bible_filesets.hash_id', 'bible_verses.hash_id')
             ->join('bible_fileset_connections', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id')
@@ -171,6 +176,7 @@ class BibleVerse extends Model
                 'bible_verses.chapter',
                 'bible_verses.book_id',
                 'bible_verses.verse_text',
+                'bible_verses.verse_sequence',
                 'bible_verses.hash_id',
                 'bibles.language_id',
                 'bibles.id AS bible_id',
