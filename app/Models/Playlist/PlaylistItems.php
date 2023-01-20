@@ -378,6 +378,7 @@ class PlaylistItems extends Model implements Sortable
             $verses =  cacheRemember('playlist_item_text', $cache_params, now()->addDay(), function () use ($text_fileset, $where) {
                 return BibleVerse::where('hash_id', $text_fileset->hash_id)
                     ->where($where)
+                    ->orderBy('verse_sequence')
                     ->get()
                     ->pluck('verse_text');
             });
