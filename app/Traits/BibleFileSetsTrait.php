@@ -232,8 +232,7 @@ trait BibleFileSetsTrait
                     'book_id' => $fileset_chapter->book_id,
                     'chapter' => $fileset_chapter->chapter_start,
                     'verse_start' => $fileset_chapter->verse_sequence,
-                    'verse_start_alt' => $fileset_chapter->verse_start,
-                    'verse_end' => (int) $fileset_chapter->verse_end
+                    'verse_end' => $fileset_chapter->verse_end ? (int) $fileset_chapter->verse_end : null
                 ];
                 $fileset_chapters[$key]->file_name = route('v4_media_stream', array_filter(
                     $routeParameters,
