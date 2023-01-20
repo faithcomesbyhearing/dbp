@@ -98,6 +98,21 @@ class BibleFile extends Model
     /**
      *
      * @OA\Property(
+     *   title="verse_sequence",
+     *   type="integer",
+     *   example=10,
+     *   description="The starting verse for the bible file but with format = integer",
+     *   minimum=1
+     * )
+     *
+     * @method static BibleFileTimestamp whereVerseSequence($value)
+     * @property int|null $verse_sequence
+     *
+     */
+    protected $verse_sequence;
+    /**
+     *
+     * @OA\Property(
      *   title="chapter_end",
      *   type="string",
      *   description="If the Bible File spans multiple chapters this field indicates the last chapter of the selection",
@@ -314,6 +329,7 @@ class BibleFile extends Model
             'bible_files.chapter_end',
             'bible_files.verse_start',
             'bible_files.verse_end',
+            'bible_files.verse_sequence',
             'bible_files.file_name',
             'bible_files.file_size',
             'bible_books.name as book_name',

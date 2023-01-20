@@ -158,7 +158,7 @@ class TextTransformer extends BaseTransformer
      *              @OA\Property(property="book_name_alt",     ref="#/components/schemas/BookTranslation/properties/name"),
      *              @OA\Property(property="chapter",           ref="#/components/schemas/BibleFile/properties/chapter_start"),
      *              @OA\Property(property="chapter_alt",       ref="#/components/schemas/BibleFile/properties/chapter_start"),
-     *              @OA\Property(property="verse_start",       ref="#/components/schemas/BibleFile/properties/verse_start"),
+     *              @OA\Property(property="verse_start",       ref="#/components/schemas/BibleFile/properties/verse_sequence"),
      *              @OA\Property(property="verse_start_alt",   ref="#/components/schemas/BibleFile/properties/verse_start"),
      *              @OA\Property(property="verse_end",         ref="#/components/schemas/BibleFile/properties/verse_end"),
      *              @OA\Property(property="verse_end_alt",     ref="#/components/schemas/BibleFile/properties/verse_end"),
@@ -174,16 +174,16 @@ class TextTransformer extends BaseTransformer
     public function transformForV4($text)
     {
         return [
-            'book_id' => $text->book_id ?? '',
-            'book_name' => $text->book_name ?? '',
-            'book_name_alt' => $text->book_vernacular_name ?? '',
-            'chapter' => (int) $text->chapter,
-            'chapter_alt' => (string) $text->chapter_vernacular,
-            'verse_start' => (int) $text->verse_start,
-            'verse_start_alt' => (string) $text->verse_start_vernacular,
-            'verse_end' => (int) $text->verse_end,
-            'verse_end_alt' => (string) $text->verse_end_vernacular,
-            'verse_text' => (string) $text->verse_text
+            'book_id'         => $text->book_id ?? '',
+            'book_name'       => $text->book_name ?? '',
+            'book_name_alt'   => $text->book_vernacular_name ?? '',
+            'chapter'         => (int) $text->chapter,
+            'chapter_alt'     => (string) $text->chapter_vernacular,
+            'verse_start'     => $text->verse_sequence,
+            'verse_start_alt' => $text->verse_start,
+            'verse_end'       => $text->verse_end ? (int) $text->verse_end : null,
+            'verse_end_alt'   => (string) $text->verse_end,
+            'verse_text'      => (string) $text->verse_text
         ];
     }
 }

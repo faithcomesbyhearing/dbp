@@ -48,7 +48,18 @@ class PlaylistItems extends Model implements Sortable
 
     protected $connection = 'dbp_users';
     public $table         = 'playlist_items';
-    protected $fillable   = ['playlist_id', 'fileset_id', 'book_id', 'chapter_start', 'chapter_end', 'verse_start', 'verse_end', 'duration', 'verses'];
+    protected $fillable   = [
+        'playlist_id',
+        'fileset_id',
+        'book_id',
+        'chapter_start',
+        'chapter_end',
+        'verse_start',
+        'verse_end',
+        'verse_sequence',
+        'duration',
+        'verses'
+    ];
     protected $hidden     = ['playlist_id', 'created_at', 'updated_at', 'order_column'];
 
     /**
@@ -124,7 +135,7 @@ class PlaylistItems extends Model implements Sortable
      *
      * @OA\Property(
      *   title="verse_start",
-     *   type="integer",
+     *   type="string",
      *   description="The starting verse at which the BibleFile reference begins",
      *   minimum=1,
      *   maximum=176,
@@ -133,7 +144,19 @@ class PlaylistItems extends Model implements Sortable
      *
      */
     protected $verse_start;
-
+    /**
+     *
+     * @OA\Property(
+     *   title="verse_sequence",
+     *   type="integer",
+     *   description="The starting verse at which the BibleFile reference begins",
+     *   minimum=1,
+     *   maximum=176,
+     *   example=5
+     * )
+     *
+     */
+    protected $verse_sequence;
     /**
      *
      * @OA\Property(
@@ -298,12 +321,12 @@ class PlaylistItems extends Model implements Sortable
         : [];
         $verses_middle = 0;
         foreach ($bible_files as $bible_file) {
-            $verses_middle += ($bible_file->verse_start - 1) + $bible_file->verse_end;
+            $verses_middle += ((int)$bible_file->verse_start - 1) + (int)$bible_file->verse_end;
         }
         if (!$this['verse_start'] && !$this['verse_end']) {
             $verses = $verses_middle;
         } else {
-            $verses = $verses_middle - ($this['verse_start'] - 1) + $this['verse_end'];
+            $verses = $verses_middle - ((int)$this['verse_start'] - 1) + (int)$this['verse_end'];
         }
 
         // Try to get the verse count from the bible_verses table
@@ -405,7 +428,7 @@ class PlaylistItems extends Model implements Sortable
             } else {
                 // Fetch Timestamps
                 $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))
-                ->orderBy('verse_start')
+                ->orderBy('verse_sequence')
                 ->get();
             }
 
@@ -421,8 +444,8 @@ class PlaylistItems extends Model implements Sortable
                 $timestamps = sizeof($bible_files_ids) > 0
                     ? DB::connection('dbp')->select(
                         'select t.* from bible_file_stream_bandwidths as b
-                        join bible_file_stream_bytes as s 
-                        on s.stream_bandwidth_id = b.id 
+                        join bible_file_stream_bytes as s
+                        on s.stream_bandwidth_id = b.id
                         join bible_file_timestamps as t
                         on t.id = s.timestamp_id
                         where b.bible_file_id IN (?) and  s.timestamp_id IS NOT NULL',
@@ -589,6 +612,7 @@ class PlaylistItems extends Model implements Sortable
             'playlist_id',
             'verse_start',
             'verse_end',
+            'verse_sequence',
             'verses',
             'duration',
             \DB::Raw('IF(playlist_items_completed.playlist_item_id, true, false) as completed'),
@@ -676,6 +700,7 @@ class PlaylistItems extends Model implements Sortable
             'playlist_id',
             'verse_start',
             'verse_end',
+            'verse_sequence',
             'order_column',
             'verses',
             'duration',
