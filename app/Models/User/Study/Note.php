@@ -241,8 +241,12 @@ class Note extends Model
         $verses = BibleVerse::withVernacularMetaData($bible)
         ->where('hash_id', $fileset->hash_id)
         ->where('bible_verses.book_id', $this['book_id'])
-        ->where('verse_start', '>=', $verse_start)
-        ->where('verse_end', '<=', $verse_end)
+        ->when($verse_start, function ($subquery) use ($verse_start) {
+            return $subquery->where('verse_sequence', '>=', (int) $verse_start);
+        })
+        ->when($verse_end, function ($subquery) use ($verse_end) {
+            return $subquery->where('verse_sequence', '>=', (int) $verse_end);
+        })
         ->where('chapter', $chapter)
         ->orderBy('verse_sequence')
         ->select(['bible_verses.verse_text'])
