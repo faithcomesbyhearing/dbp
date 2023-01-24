@@ -215,9 +215,11 @@ class Highlight extends Model
         $audio_filesets = $filesets->filter(function ($fs) {
             return Str::contains($fs->set_type_code, 'audio');
         });
-        $available_filesets = $fileset_types->map(function ($fileset) use ($audio_filesets, $testament, $bibles_controller) {
-            return $bibles_controller->getFileset($audio_filesets, $fileset, $testament);
-        })->filter(function ($item) {
+        $available_filesets = $fileset_types->map(
+            function ($fileset) use ($audio_filesets, $testament, $bibles_controller) {
+                return $bibles_controller->getFileset($audio_filesets, $fileset, $testament);
+            }
+        )->filter(function ($item) {
             return $item;
         })->toArray();
 
@@ -227,8 +229,12 @@ class Highlight extends Model
             $verses = BibleVerse::withVernacularMetaData($bible)
                 ->where('hash_id', $text_fileset->hash_id)
                 ->where('bible_verses.book_id', $highlight['book_id'])
-                ->where('verse_start', '>=', $verse_start)
-                ->where('verse_end', '<=', $verse_end)
+                ->when($verse_start, function ($query) use ($verse_start) {
+                    return $query->where('verse_sequence', '>=', (int) $verse_start);
+                })
+                ->when($verse_end, function ($query) use ($verse_end) {
+                    return $query->where('verse_sequence', '<=', (int) $verse_end);
+                })
                 ->where('chapter', $chapter)
                 ->orderBy('verse_sequence')
                 ->select([

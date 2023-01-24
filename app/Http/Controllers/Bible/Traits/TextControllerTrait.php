@@ -42,13 +42,13 @@ trait TextControllerTrait
                         return $query->where('bible_verses.book_id', $book->id);
                     })
                     ->when($verse_start, function ($query) use ($verse_start) {
-                        return $query->where('verse_end', '>=', $verse_start);
+                        return $query->where('verse_sequence', '>=', (int) $verse_start);
                     })
                     ->when($chapter, function ($query) use ($chapter) {
                         return $query->where('chapter', $chapter);
                     })
                     ->when($verse_end, function ($query) use ($verse_end) {
-                        return $query->where('verse_end', '<=', $verse_end);
+                        return $query->where('verse_sequence', '<=', (int) $verse_end);
                     })
                     ->orderBy('chapter')
                     ->orderBy('verse_sequence')
