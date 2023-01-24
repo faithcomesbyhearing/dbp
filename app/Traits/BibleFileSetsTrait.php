@@ -118,10 +118,10 @@ trait BibleFileSetsTrait
             return $query->where('chapter', (int) $chapter_id);
         })
         ->when($verse_start, function ($query) use ($verse_start) {
-            return $query->where('verse_end', '>=', $verse_start);
+            return $query->where('verse_sequence', '>=', (int) $verse_start);
         })
         ->when($verse_end, function ($query) use ($verse_end) {
-            return $query->where('verse_end', '<=', $verse_end);
+            return $query->where('verse_sequence', '<=', (int) $verse_end);
         })
         ->orderBy('verse_sequence')
         ->orderBy('books.name', 'ASC')
