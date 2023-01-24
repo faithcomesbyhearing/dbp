@@ -371,17 +371,29 @@ class PlaylistItems extends Model implements Sortable
                 ['chapter', '<=', $this['chapter_end']],
             ];
             if ($this['verse_start'] && $this['verse_end']) {
-                $where[] = ['verse_start', '>=', $this['verse_start']];
-                $where[] = ['verse_end', '<=', $this['verse_end']];
+                $where[] = ['verse_sequence', '>=', (int) $this['verse_start']];
+                $where[] = ['verse_sequence', '<=', (int) $this['verse_end']];
             }
-            $cache_params = [$text_fileset->hash_id, $this['book_id'], $this['chapter_start'], $this['chapter_end'], $this['verse_start'], $this['verse_end']];
-            $verses =  cacheRemember('playlist_item_text', $cache_params, now()->addDay(), function () use ($text_fileset, $where) {
-                return BibleVerse::where('hash_id', $text_fileset->hash_id)
-                    ->where($where)
-                    ->orderBy('verse_sequence')
-                    ->get()
-                    ->pluck('verse_text');
-            });
+            $cache_params = [
+                $text_fileset->hash_id,
+                $this['book_id'],
+                $this['chapter_start'],
+                $this['chapter_end'],
+                $this['verse_start'],
+                $this['verse_end']
+            ];
+            $verses =  cacheRemember(
+                'playlist_item_text',
+                $cache_params,
+                now()->addDay(),
+                function () use ($text_fileset, $where) {
+                    return BibleVerse::where('hash_id', $text_fileset->hash_id)
+                        ->where($where)
+                        ->orderBy('verse_sequence')
+                        ->get()
+                        ->pluck('verse_text');
+                }
+            );
         }
 
         return $verses;
@@ -425,7 +437,7 @@ class PlaylistItems extends Model implements Sortable
                     ->filter(function ($timestamp) {
                         return !empty($timestamp) && !$timestamp->isEmpty();
                     })
-                    ->sortBy('verse_start');
+                    ->sortBy('verse_sequence');
             } else {
                 // Fetch Timestamps
                 $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))
@@ -460,7 +472,7 @@ class PlaylistItems extends Model implements Sortable
 
             if ($verse_start && $verse_end) {
                 $audioTimestamps =  Arr::where($audioTimestamps, function ($timestamp) use ($verse_start, $verse_end) {
-                    return $timestamp->verse_start >= $verse_start && $timestamp->verse_start <= $verse_end;
+                    return (int)$timestamp->verse_start >= (int)$verse_start && (int)$timestamp->verse_start <= (int)$verse_end;
                 });
             }
 
