@@ -1124,7 +1124,7 @@ class PlaylistsController extends APIController
                             $transportStream[0]->timestamp->bible_file_id
                         )->count();
                         if ($timestamps_count === $transportStream->count() &&
-                            $transportStream[0]->timestamp->verse_start !== 0
+                            (int) $transportStream[0]->timestamp->verse_start !== 0
                         ) {
                             $transportStream->prepend((object)[]);
                         }
@@ -1194,15 +1194,15 @@ class PlaylistsController extends APIController
     {
         if ($item->chapter_end  === $item->chapter_start) {
             $transportStream = $transportStream->splice(1, $item->verse_end)->all();
-            return collect($transportStream)->slice($item->verse_start - 1)->all();
+            return collect($transportStream)->slice((int)$item->verse_start - 1)->all();
         }
 
         $transportStream = $transportStream->splice(1)->all();
         if ($bible_file->chapter_start === $item->chapter_start) {
-            return collect($transportStream)->slice($item->verse_start - 1)->all();
+            return collect($transportStream)->slice((int)$item->verse_start - 1)->all();
         }
         if ($bible_file->chapter_start === $item->chapter_end) {
-            return collect($transportStream)->splice(0, $item->verse_end)->all();
+            return collect($transportStream)->splice(0, (int)$item->verse_end)->all();
         }
 
         return $transportStream;
