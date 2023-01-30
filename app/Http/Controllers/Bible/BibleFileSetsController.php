@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Bible;
 
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Illuminate\Support\Str;
 use App\Traits\AccessControlAPI;
 use App\Traits\CallsBucketsTrait;
@@ -175,21 +176,35 @@ class BibleFileSetsController extends APIController
         $type         = checkParam('type') ?? '';
         $chapter_id   = getAndCheckParam('chapter_id|chapter', true, $chapter_url_param);
 
-        $cache_params = $this->removeSpaceFromCacheParameters(
-            [
-                $this->v,
-                $fileset_id,
-                $book_id,
-                $chapter_id,
-                $verse_start,
-                $verse_end,
-                $type
-            ]
-        );
+        $validator = Validator::make([
+            'verse_start' => $verse_start,
+            'verse_end'   => $verse_end,
+            'chapter_id'  => $chapter_id,
+        ], [
+            'verse_start'=> 'alpha_num',
+            'verse_end'  => 'nullable|alpha_num',
+            'chapter_id' => 'integer',
+        ]);
 
-        $fileset_chapters = cacheRemember(
-            $cache_key,
-            $cache_params,
+        if ($validator->fails()) {
+            $errorMsg = \implode(" ", $validator->errors()->all());
+            return $this->setStatusCode(HttpResponse::HTTP_BAD_REQUEST)->replyWithError($errorMsg);
+        }
+
+        $cache_params =[
+            $this->v,
+            $fileset_id,
+            $book_id,
+            $chapter_id,
+            $verse_start,
+            $verse_end,
+            $type
+        ];
+
+        $cache_safe_key = generateCacheSafeKey($cache_key, $cache_params);
+
+        $fileset_chapters = cacheRememberByKey(
+            $cache_safe_key,
             now()->addHours(12),
             function () use ($fileset_id, $book_id, $chapter_id, $verse_start, $verse_end, $type) {
                 $book = Book::where('id', $book_id)
@@ -198,7 +213,7 @@ class BibleFileSetsController extends APIController
                     ->first();
                 $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
                 if (!$fileset_from_id) {
-                    return $this->setStatusCode(404)->replyWithError(
+                    return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
                         trans('api.bible_fileset_errors_404')
                     );
                 }
@@ -210,7 +225,7 @@ class BibleFileSetsController extends APIController
                     ->uniqueFileset($fileset_id, $fileset_type)
                     ->first();
                 if (!$fileset) {
-                    return $this->setStatusCode(404)->replyWithError(
+                    return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
                         trans('api.bible_fileset_errors_404')
                     );
                 }
@@ -246,7 +261,7 @@ class BibleFileSetsController extends APIController
             }
         );
 
-        return $this->reply($fileset_chapters, [], $transaction_id ?? '');
+        return $this->reply($fileset_chapters, [], '');
     }
 
     /**
