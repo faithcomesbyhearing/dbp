@@ -94,9 +94,9 @@ trait BibleFileSetsTrait
         $bible,
         $fileset,
         $book = null,
-        $chapter_id = null,
-        $verse_start = null,
-        $verse_end = null
+        ?int $chapter_id = null,
+        ?string $verse_start = null,
+        ?string $verse_end = null
     ) {
         $select_columns = [
             'bible_verses.book_id as book_id',
