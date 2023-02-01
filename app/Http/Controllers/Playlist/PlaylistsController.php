@@ -34,7 +34,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Database\Eloquent\Collection;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Services\Plans\PlaylistService;
 
@@ -1090,16 +1089,13 @@ class PlaylistsController extends APIController
         $download = checkBoolean('download');
         $playlist = Playlist::with('items')->find($playlist_id);
         if (!$playlist) {
-            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Not Found');
+            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
         }
 
         $hls_playlist = $this->getHlsPlaylist($response, $playlist->items, $download);
 
         if ($download) {
-            return $this->reply([
-                'hls' => $hls_playlist['file_content'],
-                'signed_files' => $hls_playlist['signed_files']
-            ]);
+            return $this->reply(['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]);
         }
 
         return response($hls_playlist['file_content'], 200, [
@@ -1133,7 +1129,7 @@ class PlaylistsController extends APIController
                             $transportStream->prepend((object)[]);
                         }
                     }
-
+    
                     $transportStream = $this->processVersesOnTransportStream($item, $transportStream, $bible_file);
                 }
     
@@ -1194,49 +1190,19 @@ class PlaylistsController extends APIController
         return (object) ['hls_items' => $hls_items, 'signed_files' => $signed_files, 'durations' => $durations];
     }
 
-    private function processVersesOnTransportStream(
-        $item,
-        Collection $transportStream,
-        BibleFile $bible_file
-    ) : Array {
+    private function processVersesOnTransportStream($item, $transportStream, $bible_file)
+    {
         if ($item->chapter_end  === $item->chapter_start) {
-            $newStreamCollection = [];
-            foreach ($transportStream as $testTransportStream) {
-                $timestamp = optional($testTransportStream)->timestamp;
-                if ($timestamp &&
-                    (int) $timestamp->verse_sequence >= (int)$item->verse_start &&
-                    (int) $timestamp->verse_sequence <= (int)$item->verse_end
-                ) {
-                    $newStreamCollection[] = $testTransportStream;
-                }
-            }
-            return $newStreamCollection;
+            $transportStream = $transportStream->splice(1, $item->verse_end)->all();
+            return collect($transportStream)->slice((int)$item->verse_start - 1)->all();
         }
 
         $transportStream = $transportStream->splice(1)->all();
-        if ((int)$bible_file->chapter_start === (int)$item->chapter_start) {
-            $newStreamCollection = [];
-            foreach ($transportStream as $testTransportStream) {
-                $timestamp = optional($testTransportStream)->timestamp;
-                if ($timestamp &&
-                    (int) $timestamp->verse_sequence >= (int)$item->verse_start
-                ) {
-                    $newStreamCollection[] = $testTransportStream;
-                }
-            }
-            return $newStreamCollection;
+        if ($bible_file->chapter_start === $item->chapter_start) {
+            return collect($transportStream)->slice((int)$item->verse_start - 1)->all();
         }
-        if ((int)$bible_file->chapter_start === (int)$item->chapter_end) {
-            $newStreamCollection = [];
-            foreach ($transportStream as $testTransportStream) {
-                $timestamp = optional($testTransportStream)->timestamp;
-                if ($timestamp &&
-                    (int) $timestamp->verse_sequence <= (int)$item->verse_end
-                ) {
-                    $newStreamCollection[] = $testTransportStream;
-                }
-            }
-            return $newStreamCollection;
+        if ($bible_file->chapter_start === $item->chapter_end) {
+            return collect($transportStream)->splice(0, (int)$item->verse_end)->all();
         }
 
         return $transportStream;
