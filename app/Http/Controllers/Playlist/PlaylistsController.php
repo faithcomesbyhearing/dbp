@@ -1140,7 +1140,8 @@ class PlaylistsController extends APIController
                     $hls_items .= "\n#EXTINF:$stream->runtime," . $item->id;
                     if (isset($stream->timestamp)) {
                         $hls_items .= "\n#EXT-X-BYTERANGE:$stream->bytes@$stream->offset";
-                        // FIXME: break the link so that timestamp does not give the bibleFile
+                        // FIXME: break the link so that timestamp does not give the bibleFile.
+                        // ******* is the data wrong going from transportstream to timestamp, or from timestamp to bibleid? *****
                         // FIXME: this is incorrect due to bad data. Retrieving bibleFile from timestamp can return DA when we expect SA. 
                         // The original bibleFile is different from what is returned by stream.timestamp.bibleFile
                         // We can just comment it out since we already have the fileset from bible_file, from above
