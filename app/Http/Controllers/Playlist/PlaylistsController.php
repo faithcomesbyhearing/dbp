@@ -1140,6 +1140,7 @@ class PlaylistsController extends APIController
                     $hls_items .= "\n#EXTINF:$stream->runtime," . $item->id;
                     if (isset($stream->timestamp)) {
                         $hls_items .= "\n#EXT-X-BYTERANGE:$stream->bytes@$stream->offset";
+                        // FIXME: break the link so that timestamp does not give the bibleFile
                         // FIXME: this is incorrect due to bad data. Retrieving bibleFile from timestamp can return DA when we expect SA. 
                         // The original bibleFile is different from what is returned by stream.timestamp.bibleFile
                         // We can just comment it out since we already have the fileset from bible_file, from above
@@ -1233,7 +1234,7 @@ class PlaylistsController extends APIController
                     continue;
                 }
                 $bible_files = BibleFile::with('streamBandwidth.transportStreamTS')
-                ->with('streamBandwidth.transportStreamBytes.timestamp.bibleFile') // FIXME: this is incorrect due to data issues. The bible_file.id from timestamp can be different (eg DA) from what was intended (eg SA)
+                //->with('streamBandwidth.transportStreamBytes.timestamp.bibleFile') // FIXME: this is incorrect due to data issues. The bible_file.id from timestamp can be different (eg DA) from what was intended (eg SA)
                 ->where([
                     'hash_id' => $fileset->hash_id,
                     'book_id' => $item->book_id,
