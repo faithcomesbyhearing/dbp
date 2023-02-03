@@ -22,6 +22,6 @@ class StreamBandwidth extends Model
 
     public function transportStreamBytes()
     {
-        return $this->hasMany(StreamBytes::class);
+        return $this->hasMany(StreamBytes::class)->orderBy('offset');
     }
 }
