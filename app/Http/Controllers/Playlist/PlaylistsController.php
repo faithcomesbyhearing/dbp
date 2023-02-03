@@ -1140,15 +1140,8 @@ class PlaylistsController extends APIController
                     $hls_items .= "\n#EXTINF:$stream->runtime," . $item->id;
                     if (isset($stream->timestamp)) {
                         $hls_items .= "\n#EXT-X-BYTERANGE:$stream->bytes@$stream->offset";
-                        // FIXME: break the link so that timestamp does not give the bibleFile.
-                        // ******* is the data wrong going from transportstream to timestamp, or from timestamp to bibleid? *****
-                        // FIXME: this is incorrect due to bad data. Retrieving bibleFile from timestamp can return DA when we expect SA. 
-                        // The original bibleFile is different from what is returned by stream.timestamp.bibleFile
-                        // We can just comment it out since we already have the fileset from bible_file, from above
-                        //$fileset = $stream->timestamp->bibleFile->fileset; 
-                        // this is wrong also. It should be bible_file.file_name... don't retrieve bibleFile from the stream.timestamp
-                        //$stream->file_name = $stream->timestamp->bibleFile->file_name;
-                        $stream->file_name = bibleFile->file_name;
+                        $fileset = $stream->timestamp->bibleFile->fileset;
+                        $stream->file_name = $stream->timestamp->bibleFile->file_name;
                     }
                     $bible_path = $bible_file->fileset->bible->first()->id;
                     $file_path = 'audio/' . $bible_path . '/' . $fileset->id . '/' . $stream->file_name;
@@ -1200,10 +1193,6 @@ class PlaylistsController extends APIController
     private function processVersesOnTransportStream($item, $transportStream, $bible_file)
     {
         if ($item->chapter_end  === $item->chapter_start) {
-        // FIXME: this logic makes an incorrect assumption.
-        // It assumes that each verse has it's own row in transport_stream. We need to make it more general, so that it works if one row of transport_stream contains a range of verses
-        // Currently, this logic breaks ENGGIDN2SA
-        // It needs to be fixed for ENGESVO2DA to work.
             $transportStream = $transportStream->splice(1, $item->verse_end)->all();
             return collect($transportStream)->slice((int)$item->verse_start - 1)->all();
         }
@@ -1235,7 +1224,7 @@ class PlaylistsController extends APIController
                     continue;
                 }
                 $bible_files = BibleFile::with('streamBandwidth.transportStreamTS')
-                //->with('streamBandwidth.transportStreamBytes.timestamp.bibleFile') // FIXME: this is incorrect due to data issues. The bible_file.id from timestamp can be different (eg DA) from what was intended (eg SA)
+                ->with('streamBandwidth.transportStreamBytes.timestamp.bibleFile')
                 ->where([
                     'hash_id' => $fileset->hash_id,
                     'book_id' => $item->book_id,
