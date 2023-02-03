@@ -34,7 +34,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Services\Plans\PlaylistService;
 
@@ -1090,16 +1090,13 @@ class PlaylistsController extends APIController
         $download = checkBoolean('download');
         $playlist = Playlist::with('items')->find($playlist_id);
         if (!$playlist) {
-            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Not Found');
+            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
         }
 
         $hls_playlist = $this->getHlsPlaylist($response, $playlist->items, $download);
 
         if ($download) {
-            return $this->reply([
-                'hls' => $hls_playlist['file_content'],
-                'signed_files' => $hls_playlist['signed_files']
-            ]);
+            return $this->reply(['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]);
         }
 
         return response($hls_playlist['file_content'], 200, [
@@ -1134,6 +1131,10 @@ class PlaylistsController extends APIController
                         }
                     }
 
+                    if ($this->hasTransportStreamVerseRange($transportStream)) {
+                        $transportStream = $this->fillVerseRangeOnTransportStream($transportStream);
+                    }
+
                     $transportStream = $this->processVersesOnTransportStream($item, $transportStream, $bible_file);
                 }
     
@@ -1147,7 +1148,7 @@ class PlaylistsController extends APIController
                         $fileset = $stream->timestamp->bibleFile->fileset;
                         $stream->file_name = $stream->timestamp->bibleFile->file_name;
                     }
-                    $bible_path = $bible_file->fileset->bible->first()->id;
+                    $bible_path = $fileset->bible->first()->id;
                     $file_path = 'audio/' . $bible_path . '/' . $fileset->id . '/' . $stream->file_name;
                     if (!isset($signed_files[$file_path])) {
                         $signed_files[$file_path] = $this->signedUrl($file_path, $fileset->asset_id, $transaction_id);
@@ -1194,49 +1195,65 @@ class PlaylistsController extends APIController
         return (object) ['hls_items' => $hls_items, 'signed_files' => $signed_files, 'durations' => $durations];
     }
 
-    private function processVersesOnTransportStream(
-        $item,
-        Collection $transportStream,
-        BibleFile $bible_file
-    ) : Array {
-        if ($item->chapter_end  === $item->chapter_start) {
-            $newStreamCollection = [];
-            foreach ($transportStream as $testTransportStream) {
-                $timestamp = optional($testTransportStream)->timestamp;
-                if ($timestamp &&
-                    (int) $timestamp->verse_sequence >= (int)$item->verse_start &&
-                    (int) $timestamp->verse_sequence <= (int)$item->verse_end
-                ) {
-                    $newStreamCollection[] = $testTransportStream;
+    /**
+     * The function returns the result of a comparison between the "verse_start" and "verse_end" properties of
+     * the "timestamp" that belongs to a transport_stream record. If they are not equal, the function returns
+     * true, indicating that the transport stream has a range of verses. If they are equal, the function returns
+     * false, indicating that the transport stream has a single verse.
+     *
+     * @param Collection $transport_stream
+     *
+     * @return bool
+     */
+    private function hasTransportStreamVerseRange(Collection $transport_stream) : bool
+    {
+        return $transport_stream->search(function ($stream) {
+            $timestamp = $stream->timestamp;
+            return $timestamp && (int)$timestamp->verse_start !== (int)$timestamp->verse_end;
+        });
+    }
+
+    private function fillVerseRangeOnTransportStream(Collection $transport_stream) : Collection
+    {
+        $new_transport_stream = collect();
+
+        foreach ($transport_stream as $stream_idx => $stream) {
+            $new_transport_stream->push($stream);
+            $timestamp = $stream->timestamp;
+            $next_timestamp = optional($transport_stream->get($stream_idx + 1))->timestamp;
+
+            if ($timestamp && $next_timestamp) {
+                $current_verse_start = (int)$timestamp->verse_start;
+                $next_timestamp_verse_start = (int)$next_timestamp->verse_start;
+                $diff_between_verses = $next_timestamp_verse_start - $current_verse_start;
+
+                if ($diff_between_verses > 1) {
+                    for ($idx = 1; $idx < $diff_between_verses; $idx++) {
+                        // To fill the gap, it will utilize the current transport_stream record
+                        // as it is likely that the transport_stream for the current timestamp
+                        // includes both the audio of the current and missed timestamps
+                        $new_transport_stream->push($stream);
+                    }
                 }
             }
-            return $newStreamCollection;
+        }
+
+        return $new_transport_stream;
+    }
+
+    private function processVersesOnTransportStream($item, $transportStream, $bible_file)
+    {
+        if ($item->chapter_end  === $item->chapter_start) {
+            $transportStream = $transportStream->splice(1, $item->verse_end);
+            return $transportStream->slice((int)$item->verse_start - 1)->all();
         }
 
         $transportStream = $transportStream->splice(1)->all();
-        if ((int)$bible_file->chapter_start === (int)$item->chapter_start) {
-            $newStreamCollection = [];
-            foreach ($transportStream as $testTransportStream) {
-                $timestamp = optional($testTransportStream)->timestamp;
-                if ($timestamp &&
-                    (int) $timestamp->verse_sequence >= (int)$item->verse_start
-                ) {
-                    $newStreamCollection[] = $testTransportStream;
-                }
-            }
-            return $newStreamCollection;
+        if ($bible_file->chapter_start === $item->chapter_start) {
+            return collect($transportStream)->slice((int)$item->verse_start - 1)->all();
         }
-        if ((int)$bible_file->chapter_start === (int)$item->chapter_end) {
-            $newStreamCollection = [];
-            foreach ($transportStream as $testTransportStream) {
-                $timestamp = optional($testTransportStream)->timestamp;
-                if ($timestamp &&
-                    (int) $timestamp->verse_sequence <= (int)$item->verse_end
-                ) {
-                    $newStreamCollection[] = $testTransportStream;
-                }
-            }
-            return $newStreamCollection;
+        if ($bible_file->chapter_start === $item->chapter_end) {
+            return collect($transportStream)->splice(0, (int)$item->verse_end)->all();
         }
 
         return $transportStream;
