@@ -1209,7 +1209,9 @@ class PlaylistsController extends APIController
     {
         return $transport_stream->search(function ($stream) {
             $timestamp = $stream->timestamp;
-            return $timestamp && (int)$timestamp->verse_start !== (int)$timestamp->verse_end;
+            return $timestamp &&
+                !is_null($timestamp->verse_end) &&
+                (int)$timestamp->verse_start !== (int)$timestamp->verse_end;
         });
     }
 
