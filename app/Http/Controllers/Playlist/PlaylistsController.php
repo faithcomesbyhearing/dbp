@@ -1208,7 +1208,11 @@ class PlaylistsController extends APIController
     private function hasTransportStreamVerseRange(Collection $transport_stream) : bool
     {
         return $transport_stream->search(function ($stream) {
-            $timestamp = $stream->timestamp;
+            // To ensure accurate processing, it is important to validate the
+            // stream object as it may be an empty object that has been included
+            // to imitate a transport stream linked with a timestamp with
+            // verse_start set to 0
+            $timestamp = optional($stream)->timestamp;
             return $timestamp &&
                 !is_null($timestamp->verse_end) &&
                 (int)$timestamp->verse_start !== (int)$timestamp->verse_end;
@@ -1221,7 +1225,7 @@ class PlaylistsController extends APIController
 
         foreach ($transport_stream as $stream_idx => $stream) {
             $new_transport_stream->push($stream);
-            $timestamp = $stream->timestamp;
+            $timestamp = optional($stream)->timestamp;
             $next_timestamp = optional($transport_stream->get($stream_idx + 1))->timestamp;
 
             if ($timestamp && $next_timestamp) {
