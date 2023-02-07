@@ -308,7 +308,7 @@ class BibleFileset extends Model
     {
         $result = [];
         switch ($media) {
-            case 'audio':
+            case self::AUDIO:
                 $result = [
                     'audio_drama',
                     'audio',
@@ -316,10 +316,10 @@ class BibleFileset extends Model
                     'audio_drama_stream'
                 ];
                 break;
-            case 'video':
+            case self::VIDEO:
                 $result = ['video_stream'];
                 break;
-            case 'text':
+            case self::TEXT:
                 $result = [
                     'text_format',
                     'text_plain',
