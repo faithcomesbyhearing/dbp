@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Bible;
 
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use App\Traits\AccessControlAPI;
 use App\Traits\CallsBucketsTrait;
 use App\Traits\BibleFileSetsTrait;
 use App\Http\Controllers\APIController;
+use App\Models\User\UserDownload;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\Book;
 use App\Models\Bible\BibleFilesetLookup;
@@ -60,15 +62,44 @@ class BibleFilesetsDownloadController extends APIController
      * @throws \Exception
      */
     public function index(
+        Request $request,
         string $fileset_id,
         ?string $book_id = null,
         ?string $chapter = null,
         string $cache_key = 'bible_filesets_download_index'
-    ) {
+    ) : JsonResponse {
         $type  = checkParam('type') ?? '';
         $limit = (int) (checkParam('limit') ?? 5000);
         $limit = max($limit, 5000);
         $key = $this->getKey();
+        $user = $request->user();
+
+        $fileset_cache_params = $this->removeSpaceFromCacheParameters([$fileset_id, $type]);
+
+        $fileset = cacheRemember(
+            'single_bible_fileset_download_index',
+            $fileset_cache_params,
+            now()->addHours(12),
+            function () use ($fileset_id, $type) {
+                $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
+                if (!$fileset_from_id) {
+                    return null;
+                }
+
+                $fileset_type = $fileset_from_id['set_type_code'];
+                // fixes data issue where text filesets use the same filesetID
+                $fileset_type = $this->getCorrectFilesetType($fileset_type, $type);
+                return BibleFileset::with('bible')
+                    ->uniqueFileset($fileset_id, $fileset_type)
+                    ->first();
+            }
+        );
+
+        if (!$fileset) {
+            return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError(
+                trans('api.bible_fileset_errors_404')
+            );
+        }
 
         $cache_params = $this->removeSpaceFromCacheParameters([$fileset_id, $book_id, $chapter, $key, $limit, $type]);
 
@@ -76,25 +107,7 @@ class BibleFilesetsDownloadController extends APIController
             $cache_key,
             $cache_params,
             now()->addHours(12),
-            function () use ($fileset_id, $book_id, $chapter, $type, $limit) {
-                $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
-                if (!$fileset_from_id) {
-                    return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError(
-                        trans('api.bible_fileset_errors_404')
-                    );
-                }
-
-                $fileset_type = $fileset_from_id['set_type_code'];
-                // fixes data issue where text filesets use the same filesetID
-                $fileset_type = $this->getCorrectFilesetType($fileset_type, $type);
-                $fileset = BibleFileset::with('bible')
-                    ->uniqueFileset($fileset_id, $fileset_type)
-                    ->first();
-                if (!$fileset) {
-                    return $this->setStatusCode(404)->replyWithError(
-                        trans('api.bible_fileset_errors_404')
-                    );
-                }
+            function () use ($fileset, $book_id, $chapter, $limit) {
 
                 $bulk_access_control = $this->allowedForDownload($fileset);
   
@@ -112,7 +125,7 @@ class BibleFilesetsDownloadController extends APIController
                         ->first()
                     : null;
 
-                if ($fileset_type === 'text_plain') {
+                if ($fileset->set_type_code === BibleFileset::TYPE_TEXT_PLAIN) {
                     return $this->showTextFilesetChapter(
                         $limit,
                         $bible,
@@ -126,13 +139,27 @@ class BibleFilesetsDownloadController extends APIController
                         $bible,
                         $fileset,
                         $asset_id,
-                        $fileset_type,
+                        $fileset->set_type_code,
                         $book,
                         $chapter
                     );
                 }
             }
         );
+
+        if (!empty($user) && !empty($fileset_chapters) && $fileset->isAudio()) {
+            cacheRemember(
+                'v4_user_download',
+                [$user->id, $fileset_id],
+                now()->addDay(),
+                function () use ($user, $fileset_id) {
+                    return UserDownload::create([
+                        'user_id'        => $user->id,
+                        'fileset_id'     => $fileset_id,
+                    ]);
+                }
+            );
+        }
 
         return $this->reply($fileset_chapters, [], '');
     }
