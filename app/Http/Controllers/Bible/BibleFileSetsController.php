@@ -180,10 +180,14 @@ class BibleFileSetsController extends APIController
             'verse_start' => $verse_start,
             'verse_end'   => $verse_end,
             'chapter_id'  => $chapter_id,
+            'book_id'  => $book_id,
+            'fileset_id'  => $fileset_id,
         ], [
             'verse_start'=> 'alpha_num',
             'verse_end'  => 'nullable|alpha_num',
             'chapter_id' => 'integer',
+            'book_id' => 'alpha_num|regex:/^[a-zA-Z0-9]*$/', // allow alpha num format but without accent
+            'fileset_id' => 'alpha_dash', // allow alpha num format + (-) and (_)
         ]);
 
         if ($validator->fails()) {
