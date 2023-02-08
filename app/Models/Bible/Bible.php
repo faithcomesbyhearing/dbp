@@ -421,13 +421,14 @@ class Bible extends Model
         $dbp_users = config('database.connections.dbp_users.database');
         $dbp_prod = config('database.connections.dbp.database');
 
+        // return true if access_groups
+
         return $query->whereRaw(
             'EXISTS (select 1
-                    from ' . $dbp_users . '.user_keys uk
-                    join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                    
                     join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
                     join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                    where uk.key = ? and bibles.id = bfc.bible_id
+                    where bibles.id = bfc.bible_id and agf contains access_groups
             )',
             [$key]
         );
