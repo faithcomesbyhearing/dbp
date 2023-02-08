@@ -3,7 +3,22 @@
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
-use App\Models\User\User;
+use Symfony\Component\HttpFoundation\Response;
+
+function getAccessGroups() : \Illuminate\Support\Collection
+{
+    $group_ids = request()->input('middleware_access_group_ids');
+
+    if (empty($group_ids)) {
+        \Log::channel('errorlog')->error(["Missing access group ids", Response::HTTP_UNPROCESSABLE_ENTITY]);
+        abort(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            "Missing parameter access group ids."
+        );
+    }
+
+    return $group_ids;
+}
 
 /**
  * Get param from request object and check that the param is set if param is required

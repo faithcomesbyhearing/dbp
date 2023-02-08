@@ -21,26 +21,25 @@ trait AccessControlAPI
      */
     public function accessControl($api_key, $control_table = 'filesets')
     {
-        return cacheRemember('access_control:', [$control_table, $api_key], now()->addDay(), function () use ($api_key, $control_table) {
-            $user_location = geoip(request()->ip());
-            $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
-            $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
+        return cacheRemember(
+            'access_control:',
+            [$control_table, $api_key],
+            now()->addDay(),
+            function () use ($api_key, $control_table) {
+                $user_location = geoip(request()->ip());
+                $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
+                $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
 
-            // Defaults to type 'api' because that's the only access type; needs modification once there are multiple
-            $access_type = AccessType::where('name', 'api')
-                ->where(function ($query) use ($country_code) {
-                    $query->where('country_id', $country_code);
-                })
-                ->where(function ($query) use ($continent) {
-                    $query->where('continent_id', $continent);
-                })
-                ->first();
-            if (!$access_type) {
-                return (object) ['identifiers' => [], 'string' => ''];
-            }
+                // Defaults to type 'api' because that's the only access type; needs modification once
+                // there are multiple
+                $access_type = AccessType::findOneByCountryCodeAndContinent($country_code, $continent);
 
-            $key = Key::select('id')->where('key', $api_key)->first();
-            $accessGroups = AccessGroupKey::where('key_id', $key->id)
+                if (!$access_type) {
+                    return (object) ['identifiers' => [], 'string' => ''];
+                }
+
+                $key = Key::select('id')->where('key', $api_key)->first();
+                $accessGroups = AccessGroupKey::where('key_id', $key->id)
                 ->with([
                     'access' => function ($query) {
                         $query->where('name', '!=', 'RESTRICTED');
@@ -58,55 +57,46 @@ trait AccessControlAPI
                     return !empty($access) && isset($access['id']);
                 });
 
-            // Access Control has historically been tied to fileset hashes.
-            // As the number of filesets grows, this has been affected query
-            // performance for endpoints such as Languages (and similarly for  Bibles),
-            // which return a list of Languages associated with any fileset
-            // content associated with the API key. For this case, the query has been optimized,
-            // and returns a list of language ids instead of a list of fileset hashes
-            $dbp_users = config('database.connections.dbp_users.database');
-            $dbp_prod = config('database.connections.dbp.database');
-            switch ($control_table) {
-                case 'languages':
-                    $identifiers = DB::select(
-                        DB::raw(
-                            'select distinct l.id identifier
-                            from ' . $dbp_users . '.user_keys uk
-                            join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                            join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                            join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                            join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
-                            join ' . $dbp_prod . '.languages l on l.id = b.language_id
-                            where uk.id = ?'
-                        ),
-                        [$key->id]
-                    );
-                    break;
-                case 'bibles':
-                    $identifiers = DB::select(
-                        DB::raw(
-                            'select distinct bfc.bible_id identifier
-                            from ' . $dbp_users . '.user_keys uk
-                            join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                            join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                            join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                            where uk.id = ?'
-                        ),
-                        [$key->id]
-                    );
-                    break;
-                default:
-                    // Use Eloquent everywhere except for this giant request
-                    $identifiers = AccessGroupFileset::select('hash_id as identifier')
-                        ->whereIn('access_group_id', $accessGroups->pluck('id'))->distinct()->get();
-                    break;
-            }
+                // Access Control has historically been tied to fileset hashes.
+                // As the number of filesets grows, this has been affected query
+                // performance for endpoints such as Languages (and similarly for  Bibles),
+                // which return a list of Languages associated with any fileset
+                // content associated with the API key. For this case, the query has been optimized,
+                // and returns a list of language ids instead of a list of fileset hashes
+                $access_group_ids = getAccessGroups();
 
-            return (object) [
-                'identifiers' => collect($identifiers)->pluck('identifier')->toArray(),
-                'string' => $accessGroups->pluck('name')->implode('-'),
-            ];
-        });
+                switch ($control_table) {
+                    case 'languages':
+                        $identifiers = \DB::table('access_group_filesets as agf')
+                            ->select(DB::raw('distinct l.id AS identifier'))
+                            ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                            ->join('bibles as b', 'bfc.bible_id', 'b.id')
+                            ->join('languages as l', 'l.id', 'b.language_id')
+                            ->whereIn('agf.access_group_id', $access_group_ids)
+                            ->get()
+                            ->pluck('identifier');
+                        break;
+                    case 'bibles':
+                        $identifiers = \DB::table('access_group_filesets as agf')
+                            ->select(DB::raw('distinct bfc.bible_id identifier'))
+                            ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                            ->whereIn('agf.access_group_id', $access_group_ids)
+                            ->get()
+                            ->pluck('identifier');
+                        break;
+                    default:
+                        // Use Eloquent everywhere except for this giant request
+                        $identifiers = AccessGroupFileset::select('hash_id as identifier')
+                            ->whereIn('access_group_id', $accessGroups->pluck('id'))->distinct()->get();
+                        break;
+                }
+
+                return (object) [
+                    'identifiers' => collect($identifiers)->pluck('identifier')->toArray(),
+                    'string' => $accessGroups->pluck('name')->implode('-'),
+                ];
+            }
+        );
     }
 
     private function genericAccessControl($api_key, $fileset_hash, $access_group_ids = [])
@@ -124,15 +114,7 @@ trait AccessControlAPI
 
                 // Defaults to type 'api' because that's the only access type;
                 // needs modification once there are multiple
-                $access_type = AccessType::where('name', 'api')
-                    ->where(function ($query) use ($country_code) {
-                        $query->where('country_id', $country_code);
-                    })
-                    ->where(function ($query) use ($continent) {
-                        $query->where('continent_id', $continent);
-                    })
-                    ->select('id', 'name')
-                    ->first();
+                $access_type = AccessType::findOneByCountryCodeAndContinent($country_code, $continent);
 
                 if (!$access_type) {
                     return (object) ['identifiers' => [], 'string' => ''];
