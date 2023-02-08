@@ -73,17 +73,17 @@ class BibleVersesController extends APIController
         $limit          = (int) (checkParam('limit') ?? 15);
         $limit          = min($limit, 50);
         $page           = checkParam('page') ?? 1;
-        $key = $this->key;
 
-        $cache_params = [$limit, $page, $language_code, $key, $book_id, $chapter_id, $verse_number];
+        $access_group_ids = getAccessGroups();
+        $cache_params = [$limit, $page, $language_code, $this->key, $book_id, $chapter_id, $verse_number];
         $cache_key = generateCacheSafeKey('bible_verses_by_language', $cache_params);
         $verses = cacheRememberByKey(
             $cache_key,
             now()->addDay(),
-            function () use ($key, $limit, $language_code, $verse_number, $book_id, $chapter_id) {
+            function () use ($access_group_ids, $limit, $language_code, $verse_number, $book_id, $chapter_id) {
                 return BibleVerse::withBibleFilesets($book_id, $chapter_id, $verse_number)
                     ->filterByLanguage($language_code)
-                    ->isContentAvailable($key)
+                    ->isContentAvailable($access_group_ids)
                     ->paginate($limit);
             }
         );
@@ -147,17 +147,17 @@ class BibleVersesController extends APIController
         $limit          = (int) (checkParam('limit') ?? 15);
         $limit          = min($limit, 50);
         $page           = checkParam('page') ?? 1;
-        $key = $this->key;
+        $access_group_ids = getAccessGroups();
 
-        $cache_params = [$limit, $page, $bible_id, $key, $book_id, $chapter_id, $verse_number];
+        $cache_params = [$limit, $page, $bible_id, $this->key, $book_id, $chapter_id, $verse_number];
         $cache_key = generateCacheSafeKey('bible_verses_by_bible', $cache_params);
         $verses = cacheRememberByKey(
             $cache_key,
             now()->addDay(),
-            function () use ($key, $limit, $bible_id, $verse_number, $book_id, $chapter_id) {
+            function () use ($access_group_ids, $limit, $bible_id, $verse_number, $book_id, $chapter_id) {
                 return BibleVerse::withBibleFilesets($book_id, $chapter_id, $verse_number)
                     ->filterByBible($bible_id)
-                    ->isContentAvailable($key)
+                    ->isContentAvailable($access_group_ids)
                     ->paginate($limit);
             }
         );
