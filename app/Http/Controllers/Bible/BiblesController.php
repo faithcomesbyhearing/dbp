@@ -264,7 +264,9 @@ class BiblesController extends APIController
         $page           = checkParam('page') ?? 1;
         $formatted_search = $this->transformQuerySearchText($search_text);
         $formatted_search_cache = str_replace(' ', '', $search_text);
-
+        $access_group_ids = checkParam('middleware_access_group_ids', true);
+        // var_dump($access_group_ids);
+        // exit();
         if ($formatted_search_cache === '' || !$formatted_search_cache || empty($formatted_search)) {
             return $this
                 ->setStatusCode(Response::HTTP_BAD_REQUEST)
@@ -275,10 +277,12 @@ class BiblesController extends APIController
         $cache_params = [$limit, $page, $formatted_search_cache, $key];
         $cache_key = generateCacheSafeKey('bibles_search', $cache_params);
         
-        $bibles = cacheRememberByKey($cache_key, now()->addDay(), function () use ($key, $limit, $formatted_search) {
-            $bibles = Bible::isContentAvailable($key)
-            ->matchByFulltextSearch($formatted_search)
-            ->paginate($limit);
+        // $bibles = cacheRememberByKey($cache_key, now()->addDay(), function () use ($key, $limit, $formatted_search) {
+        $bibles = cacheRememberByKey($cache_key, now()->addDay(), function () use ($limit, $formatted_search, $access_group_ids) {
+            // $bibles = Bible::isContentAvailable($key)
+            $bibles = Bible::isContentAvailable($access_group_ids)
+                ->matchByFulltextSearch($formatted_search)
+                ->paginate($limit);
 
             return fractal(
                 $bibles->getCollection(),

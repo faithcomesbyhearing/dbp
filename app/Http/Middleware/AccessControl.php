@@ -4,29 +4,12 @@ namespace App\Http\Middleware;
 
 use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Auth\AuthenticationException;
+use App\Models\User\AccessGroupKey;
 
 use Closure;
 
 class AccessControl
 {
-    /**
-     * The authentication factory instance.
-     *
-     * @var \Illuminate\Contracts\Auth\Factory
-     */
-    protected $auth;
-
-    /**
-     * Create a new middleware instance.
-     *
-     * @param  \Illuminate\Contracts\Auth\Factory  $auth
-     * @return void
-     */
-    public function __construct(Auth $auth)
-    {
-        $this->auth = $auth;
-    }
-
     /**
      * Handle an incoming request.
      *
@@ -40,7 +23,23 @@ class AccessControl
     public function handle($request, Closure $next, $type = '')
     {
 
+        // var_dump(config('services.iam.enabled'));
+        if (config('services.iam.enabled')) {
+            $access_group_ids = [];
+        } else {
+            $api_key = checkParam('key', true);
+            $access_group_ids = AccessGroupKey::getAccessGroupIdsByApiKey($api_key);
+        }
 
+        // var_dump($api_key);
+        // var_dump($access_group_ids);
+        // exit();
+
+        if (!empty($access_group_ids)) {
+            $request->merge([
+                'middleware_access_group_ids' => $access_group_ids
+            ]);
+        }
         // get key from request
         // if SWITCH = true 
             // execute select on tables, 

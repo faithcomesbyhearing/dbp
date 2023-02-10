@@ -9,7 +9,8 @@ use App\Models\Language\NumeralSystem;
 use App\Models\Organization\Organization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
+// use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Collection;
 use App\Models\Language\Language;
 
 /**
@@ -416,22 +417,30 @@ class Bible extends Model
             );
     }
 
-    public function scopeIsContentAvailable($query, $key)
+    // public function scopeIsContentAvailable($query, $key)
+    public function scopeIsContentAvailable(Builder $query, Collection $access_group_ids)
     {
-        $dbp_users = config('database.connections.dbp_users.database');
-        $dbp_prod = config('database.connections.dbp.database');
+        // $dbp_users = config('database.connections.dbp_users.database');
+        // $dbp_prod = config('database.connections.dbp.database');
 
-        // return true if access_groups
+        // return $query->whereRaw(
+        //     'EXISTS (select 1
+        //             from ' . $dbp_users . '.user_keys uk
+        //             join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+        //             join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+        //             join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+        //             where uk.key = ? and bibles.id = bfc.bible_id
+        //     )',
+        //     [$key]
+        // );
 
-        return $query->whereRaw(
-            'EXISTS (select 1
-                    
-                    join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                    join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                    where bibles.id = bfc.bible_id and agf contains access_groups
-            )',
-            [$key]
-        );
+        return $query->whereExists(function ($query) use ($access_group_ids) {
+            return $query->select(\DB::raw(1))
+                ->from('access_group_filesets as agf')
+                ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                ->whereColumn('bibles.id', '=', 'bfc.bible_id')
+                ->whereIn('agf.access_group_id', $access_group_ids);
+        });
     }
     public function scopeIsTimingInformationAvailable($query)
     {

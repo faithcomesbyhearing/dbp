@@ -68,7 +68,9 @@ Route::name('v4_bible.one')->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
 ); // see note in Postman. the content is suspect
-Route::name('v4_bible.search')->get(
+Route::name('v4_bible.search')
+->middleware('AccessControl')
+->get(
     'bibles/search/{search_text}',
     'Bible\BiblesController@search'
 );
