@@ -77,7 +77,8 @@ return [
     ],
     'iam' => [
         'url' => env('IAM_API_URL', ''),
-        'enabled' => env('IAM_ENABLED', false)
+        'enabled' => env('IAM_ENABLED', false),
+        'service_timeout' => env('IAM_SERVICE_TIMEOUT', 5)
     ],
 
     // Testing

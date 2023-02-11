@@ -23,7 +23,9 @@ Route::name('v4_languages.one')->get(
     'languages/{language_id}',
     'Wiki\LanguagesController@show'
 );
-Route::name('v4_languages.search')->get(
+Route::name('v4_languages.search')
+->middleware('AccessControl')
+->get(
     'languages/search/{search_text}',
     'Wiki\LanguagesController@search'
 );
