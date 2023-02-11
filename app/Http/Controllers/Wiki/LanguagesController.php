@@ -196,6 +196,7 @@ class LanguagesController extends APIController
         $limit = min($limit, 50);
         $set_type_code = checkParam('set_type_code');
         $media = checkParam('media');
+        $access_group_ids = checkParam('middleware_access_group_ids', true);
         $formatted_search = $this->transformQuerySearchText($search_text);
         $formatted_search_cache = str_replace(' ', '', $search_text);
 
@@ -203,14 +204,15 @@ class LanguagesController extends APIController
             return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
         }
 
-        $key = $this->key;
+        // $key = $this->key;
         $cache_params = [
                 $this->v,
                 $formatted_search_cache,
                 $limit,
                 $page,
                 $GLOBALS['i18n_id'],
-                $key,
+                // $key,
+                $this->key,
                 $media,
                 $set_type_code
             ]
@@ -220,8 +222,10 @@ class LanguagesController extends APIController
         $languages = cacheRememberByKey(
             $cache_key,
             now()->addDay(),
-            function () use ($formatted_search, $limit, $key, $set_type_code, $media) {
-                $languages = Language::filterableByNameAndKey($formatted_search, $key, $set_type_code, $media)
+            // function () use ($formatted_search, $limit, $key, $set_type_code, $media) {
+            function () use ($formatted_search, $limit, $access_group_ids, $set_type_code, $media) {
+                // $languages = Language::filterableByNameAndKey($formatted_search, $key, $set_type_code, $media)
+                $languages = Language::filterableByNameAndKey($formatted_search, $access_group_ids, $set_type_code, $media)
                     ->select([
                         'languages.id',
                         'languages.glotto_id',
