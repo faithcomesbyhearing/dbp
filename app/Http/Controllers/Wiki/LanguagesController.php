@@ -9,6 +9,7 @@ use App\Transformers\LanguageTransformer;
 use App\Traits\AccessControlAPI;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Models\User\Key;
+use Symfony\Component\HttpFoundation\Response;
 
 class LanguagesController extends APIController
 {
@@ -98,8 +99,9 @@ class LanguagesController extends APIController
         // note: this two commented changes can be removed when bibleis and gideons no longer require a non-paginated response
         // remove pagination for bibleis and gideons (temporal fix)
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
+        $access_group_ids = checkAndGetAccessGroupIdsFromRequest();
 
-        $key = $this->key;
+        // $key = $this->key;
         $cache_params = $this->removeSpaceFromCacheParameters([
             $this->v,
             $country,
@@ -107,7 +109,8 @@ class LanguagesController extends APIController
             $GLOBALS['i18n_id'],
             $name,
             $include_translations,
-            $key,
+            // $key,
+            $this->key,
             $limit,
             $page,
             $is_bibleis_gideons,
@@ -116,7 +119,8 @@ class LanguagesController extends APIController
         ]);
 
         $select_country_population = $country ? 'country_population.population' : 'null';
-        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $key, $select_country_population, $limit, $media, $set_type_code) {
+        // $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $key, $select_country_population, $limit, $media, $set_type_code) {
+        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $access_group_ids, $select_country_population, $limit, $media, $set_type_code) {
             $languages = Language::includeCurrentTranslation()
                 ->includeAutonymTranslation()
                 ->includeExtraLanguageTranslations($include_translations)
@@ -125,7 +129,8 @@ class LanguagesController extends APIController
                 ->filterableByCountry($country)
                 ->filterableByIsoCode($code)
                 ->filterableByName($name)
-                ->isContentAvailableAndfilterableByMedia($key, $media)
+                // ->isContentAvailableAndfilterableByMedia($key, $media)
+                ->isContentAvailableAndfilterableByMedia($access_group_ids, $media)
                 ->filterableBySetTypeCode($set_type_code)
                 ->select([
                     'languages.id',
@@ -283,14 +288,20 @@ class LanguagesController extends APIController
      */
     public function show($id)
     {
-        $key = $this->key;
-        $cache_params = [$id, $key];
-        $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $key) {
+        // $key = $this->key;
+        // $cache_params = [$id, $key];
+        $cache_params = [$id, $this->key];
+        $access_group_ids = checkAndGetAccessGroupIdsFromRequest();
+
+        // $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $key) {
+        $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $access_group_ids) {
             $language = Language::where('id', $id)->orWhere('iso', $id)
-                ->isContentAvailable($key)
+                // ->isContentAvailable($key)
+                ->isContentAvailable($access_group_ids)
                 ->first();
             if (!$language) {
-                return $this->setStatusCode(404)->replyWithError("Language not found for ID: $id");
+                // return $this->setStatusCode(404)->replyWithError("Language not found for ID: $id");
+                return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError("Language not found for ID: $id");
             }
             $language->load(
                 'translations',
