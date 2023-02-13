@@ -342,14 +342,16 @@ class Bible extends Model
             }
 
             $q->select(\DB::raw(1));
-            $q->isContentAvailable($type_filters['key']);
+            // $q->isContentAvailable($type_filters['key']);
+            $q->isContentAvailable($type_filters['access_group_ids']);
             $this->setConditionFilesets($q, $type_filters);
             $this->setConditionTagExclude($q, $type_filters);
         })->with(['filesets' => function ($q) use ($type_filters) {
             $q->with(['meta' => function ($subQuery) {
                 $subQuery->where('admin_only', 0);
             }]);
-            $q->isContentAvailable($type_filters['key'])
+            // $q->isContentAvailable($type_filters['key'])
+            $q->isContentAvailable($type_filters['access_group_ids'])
                 ->conditionToExcludeOldTextFormat();
             $this->setConditionFilesets($q, $type_filters);
             $this->setConditionTagExclude($q, $type_filters);

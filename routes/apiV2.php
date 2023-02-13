@@ -21,7 +21,8 @@ Route::name('v2_country_lang')->get('country/countrylang',                      
 // VERSION 2 | Library
 Route::name('v2_library_version')->get('library/version',                          'Bible\LibraryController@version');
 Route::name('v2_library_metadata')->get('library/metadata',                        'Bible\LibraryController@metadata');
-Route::name('v2_library_volume')->get('library/volume',                            'Bible\LibraryController@volume');
+// Route::name('v2_library_volume')->get('library/volume',                            'Bible\LibraryController@volume');
+Route::name('v2_library_volume')->middleware('AccessControl')->get('library/volume','Bible\LibraryController@volume');
 Route::name('v2_library_verse')->get('library/verse',                              'Bible\TextControllerV2@index');
 Route::name('v2_library_verseInfo')->get('library/verseinfo',                      'Bible\TextController@info');
 Route::name('v2_library_numbers')->get('library/numbers',                          'Wiki\NumbersController@customRange');
