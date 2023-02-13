@@ -15,11 +15,15 @@ Route::name('v4_countries.search')->get(
 );
 
 // VERSION 4 | Languages
-Route::name('v4_languages.all')->get(
+Route::name('v4_languages.all')
+->middleware('AccessControl')
+->get(
     'languages',
     'Wiki\LanguagesController@index'
 );
-Route::name('v4_languages.one')->get(
+Route::name('v4_languages.one')
+->middleware('AccessControl')
+->get(
     'languages/{language_id}',
     'Wiki\LanguagesController@show'
 );
@@ -58,15 +62,21 @@ Route::name('v4_bible.defaults')->get(
     'bibles/defaults/types',
     'Bible\BiblesController@defaults'
 ); // used
-Route::name('v4_bible.books')->get(
+Route::name('v4_bible.books')
+->middleware('AccessControl')
+->get(
     'bibles/{bible_id}/book',
     'Bible\BiblesController@books'
 ); // used by bible.is, but book is not specified. suggest unifying on this one. (fixed)The signature looks wrong - the code doesn't accept book_id as a path param, only a query param
-Route::name('v4_bible_by_id.search')->get(
+Route::name('v4_bible_by_id.search')
+->middleware('AccessControl')
+->get(
     'bibles/search',
     'Bible\BiblesController@searchByBibleVersion'
 );
-Route::name('v4_bible.one')->get(
+Route::name('v4_bible.one')
+->middleware('AccessControl')
+->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
 ); // see note in Postman. the content is suspect
@@ -77,6 +87,7 @@ Route::name('v4_bible.search')
     'Bible\BiblesController@search'
 );
 Route::name('v4_bible.all')
+    ->middleware('AccessControl')
     ->get('bibles', 'Bible\BiblesController@index'); // used
 Route::name('v4_bible.copyright')->get(
     'bibles/{bible_id}/copyright',
@@ -84,6 +95,7 @@ Route::name('v4_bible.copyright')->get(
 ); // used
 Route::name('v4_internal_bible.chapter')
     ->middleware('APIToken')
+    ->middleware('AccessControl')
     ->get('bibles/{bible_id}/chapter', 'Bible\BiblesController@chapter'); //used
 Route::name('v4_internal_bible.chapter.annotations')
     ->middleware('APIToken:check')
@@ -131,7 +143,8 @@ Route::name('v4_filesets.chapter')->get(
 Route::name('v4_bible_verses.verse_by_language')->get(
     '/bibles/verses/{language_code}/{book_id}/{chapter_id}/{verse_number?}',
     'Bible\BibleVersesController@showVerseByLanguage'
-)->whereAlphaNumeric('language_code')
+)->middleware('AccessControl')
+->whereAlphaNumeric('language_code')
 ->whereAlphaNumeric('book_id')
 ->whereNumber('chapter_id')
 ->whereAlphaNumeric('verse_number');
@@ -139,7 +152,8 @@ Route::name('v4_bible_verses.verse_by_language')->get(
 Route::name('v4_bible_verses.verse_by_bible')->get(
     '/bible/{bible_id}/verses/{book_id}/{chapter_id}/{verse_number?}',
     'Bible\BibleVersesController@showVerseByBible'
-)->whereAlphaNumeric('bible_id')
+)->middleware('AccessControl')
+->whereAlphaNumeric('bible_id')
 ->whereAlphaNumeric('book_id')
 ->whereNumber('chapter_id')
 ->whereAlphaNumeric('verse_number');

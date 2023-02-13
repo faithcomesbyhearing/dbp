@@ -38,10 +38,6 @@ class AccessControl
     {
         $api_key = checkParam('key', true);
 
-        // var_dump("iam");
-        // var_dump($this->iam_client->isEnabled());
-        // exit();
-        // if (config('services.iam.enabled')) {
         if ($this->iam_client->isEnabled()) {
             try {
                 $access_group_ids = $this->iam_client->getAccessGroupIdsByUserKey($api_key);
