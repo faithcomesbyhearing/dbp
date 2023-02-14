@@ -15,8 +15,8 @@ Route::name('v2_library_chapter')->get('library/chapter',                       
 // VERSION 2 | Languages
 Route::name('v2_library_language')->get('library/language',                        'Wiki\LanguageControllerV2@languageListing');
 Route::name('v2_library_volumeLanguage')->get('library/volumelanguage',            'Wiki\LanguageControllerV2@volumeLanguage');
-Route::name('v2_library_volumeLanguageFamily')->get('library/volumelanguagefamily', 'Wiki\LanguageControllerV2@volumeLanguageFamily');
-Route::name('v2_country_lang')->get('country/countrylang',                         'Wiki\LanguageControllerV2@countryLang');
+Route::name('v2_library_volumeLanguageFamily')->middleware('AccessControl')->get('library/volumelanguagefamily', 'Wiki\LanguageControllerV2@volumeLanguageFamily');
+Route::name('v2_country_lang')->middleware('AccessControl')->get('country/countrylang',                         'Wiki\LanguageControllerV2@countryLang');
 
 // VERSION 2 | Library
 Route::name('v2_library_version')->get('library/version',                          'Bible\LibraryController@version');
