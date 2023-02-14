@@ -628,28 +628,34 @@ class Language extends Model
         ->addBinding($GLOBALS['i18n_id']);
     }
 
-    public function scopeWithRequiredFilesets($query, $type_filters)
+    public function scopeWithRequiredFilesets(Builder $query, array $type_filters) : Builder
     {
         $organization_id = $type_filters['organization_id'];
         $media = $type_filters['media'];
-        $key = $type_filters['key'];
+        // $key = $type_filters['key'];
+        $access_group_ids = $type_filters['access_group_ids'];
 
-        return $query->whereHas('filesets', function ($query_filesets) use ($key, $organization_id, $media) {
-            if ($organization_id) {
-                $query_filesets->whereHas('copyright', function ($query_filesets) use ($organization_id) {
-                    $query_filesets->where('organization_id', $organization_id);
-                });
-            }
-            $query_filesets->join('bible_filesets', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id');
-            $query_filesets->where('bible_filesets.asset_id', 'dbp-prod');
-            if ($media) {
-                $query_filesets->where('bible_filesets.set_type_code', 'LIKE', $media . '%');
-            } else {
-                $query_filesets->where('bible_filesets.set_type_code', '!=', 'text_format');
-            }
+        // return $query->whereHas('filesets', function ($query_filesets) use ($key, $organization_id, $media) {
+        return $query->whereHas(
+            'filesets',
+            function ($query_filesets) use ($access_group_ids, $organization_id, $media) {
+                if ($organization_id) {
+                    $query_filesets->whereHas('copyright', function ($query_filesets) use ($organization_id) {
+                        $query_filesets->where('organization_id', $organization_id);
+                    });
+                }
+                $query_filesets->join('bible_filesets', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id');
+                $query_filesets->where('bible_filesets.asset_id', 'dbp-prod');
+                if ($media) {
+                    $query_filesets->where('bible_filesets.set_type_code', 'LIKE', $media . '%');
+                } else {
+                    $query_filesets->where('bible_filesets.set_type_code', '!=', 'text_format');
+                }
 
-            $query_filesets->isContentAvailable($key);
-        });
+                // $query_filesets->isContentAvailable($key);
+                $query_filesets->isContentAvailable($access_group_ids);
+            }
+        );
     }
     
     public function population()
@@ -791,10 +797,11 @@ class Language extends Model
             ->whereIn('agf.access_group_id', $access_group_ids);
     }
 
-    public function scopeIsContentAvailable($query, $key)
+    // public function scopeIsContentAvailable($query, $key)
+    public function scopeIsContentAvailable(Builder $query, Collection $access_group_ids) : Builder
     {
-        return $query->whereExists(function ($query) use ($key) {
-            return $this->getQueryContentAvailable($query, $key);
+        return $query->whereExists(function ($query) use ($access_group_ids) {
+            return $this->getQueryContentAvailable($query, $access_group_ids);
         });
     }
 
