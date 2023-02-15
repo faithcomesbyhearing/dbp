@@ -190,7 +190,9 @@ trait AccessControlAPI
 
     public function allowedForDownload($fileset)
     {
-        if ($this->doesApiKeyBelongToBibleis($this->key)) {
+        // If the API key belongs to bible.is but the user is not currently logged in,
+        // the system will utilize the generic access group list instead.
+        if ($this->doesApiKeyBelongToBibleis($this->key) && isUserLoggedIn()) {
             $download_access_group_array_ids = AccessGroupKey::getAccessGroupIdsByApiKey($this->key)->toArray();
         } else {
             $download_access_group_array_ids = getDownloadAccessGroupList();

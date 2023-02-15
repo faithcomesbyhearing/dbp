@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
+use App\Models\User\User;
 
 /**
  * Get param from request object and check that the param is set if param is required
@@ -707,5 +708,18 @@ if (!function_exists('getDownloadAccessGroupList')) {
     function getDownloadAccessGroupList(): array
     {
         return array_map('intval', explode(',', config('settings.download_access_group_list')));
+    }
+}
+
+/**
+ * Retrieve the user object from the request and verify if it has been initialized or set.
+ *
+ * @return bool
+ */
+if (!function_exists('isUserLoggedIn')) {
+    function isUserLoggedIn() : bool
+    {
+        $user = request()->user();
+        return !empty($user) && optional($user)->id > 0;
     }
 }

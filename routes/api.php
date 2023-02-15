@@ -147,10 +147,12 @@ Route::name('v4_bible_filesets_download.list')->get(
     'Bible\BibleFilesetsDownloadController@list'
 );
 
-Route::name('v4_bible_filesets_download.index')->get(
-    'download/{fileset_id}/{book?}/{chapter_id?}',
-    'Bible\BibleFilesetsDownloadController@index'
-);
+Route::name('v4_bible_filesets_download.index')
+    ->middleware('APIToken')
+    ->get(
+        'download/{fileset_id}/{book?}/{chapter_id?}',
+        'Bible\BibleFilesetsDownloadController@index'
+    );
 
 // VERSION 4 | Text
 // This is new, added Dec 28, to provide just the verses for a bible or chapter. Note that this does not have filesets in path
