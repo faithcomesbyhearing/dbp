@@ -72,7 +72,7 @@ class BibleFilesetsDownloadController extends APIController
         $limit = (int) (checkParam('limit') ?? 5000);
         $limit = max($limit, 5000);
         $key = $this->getKey();
-        $user = $request->user();
+        $hasUserLoggedIn = isUserLoggedIn();
 
         $fileset_cache_params = $this->removeSpaceFromCacheParameters([$fileset_id, $type]);
 
@@ -101,20 +101,27 @@ class BibleFilesetsDownloadController extends APIController
             );
         }
 
-        $cache_params = $this->removeSpaceFromCacheParameters([$fileset_id, $book_id, $chapter, $key, $limit, $type]);
+        $bulk_access_control = $this->allowedForDownload($fileset);
+
+        if (isset($bulk_access_control->original['error'])) {
+            return $bulk_access_control;
+        }
+
+        $cache_params = $this->removeSpaceFromCacheParameters([
+            $fileset_id,
+            $book_id,
+            $chapter,
+            $key,
+            $limit,
+            $type,
+            $hasUserLoggedIn
+        ]);
 
         $fileset_chapters = cacheRemember(
             $cache_key,
             $cache_params,
             now()->addHours(12),
             function () use ($fileset, $book_id, $chapter, $limit) {
-
-                $bulk_access_control = $this->allowedForDownload($fileset);
-  
-                if (isset($bulk_access_control->original['error'])) {
-                    return $bulk_access_control;
-                }
-
                 $asset_id = $fileset->asset_id;
                 $bible = optional($fileset->bible)->first();
 
@@ -147,7 +154,8 @@ class BibleFilesetsDownloadController extends APIController
             }
         );
 
-        if (!empty($user) && !empty($fileset_chapters) && $fileset->isAudio()) {
+        if ($hasUserLoggedIn && !empty($fileset_chapters) && $fileset->isAudio()) {
+            $user = $request->user();
             cacheRemember(
                 'v4_user_download',
                 [$user->id, $fileset_id],
