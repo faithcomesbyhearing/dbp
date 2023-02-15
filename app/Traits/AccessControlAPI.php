@@ -209,5 +209,6 @@ trait AccessControlAPI
                 ->setStatusCode(Response::HTTP_FORBIDDEN)
                 ->replyWithError(Response::getStatusTextByCode(Response::HTTP_FORBIDDEN));
         }
+        return true;
     }
 }
