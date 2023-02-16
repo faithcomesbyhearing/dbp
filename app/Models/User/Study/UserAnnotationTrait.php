@@ -39,22 +39,43 @@ trait UserAnnotationTrait
         //             })
         //             ->where('playlist_items.playlist_id', $playlist_id);
         //     });
-        $fileset_ids = PlaylistItems::select('fileset_id')
+        // $fileset_ids = PlaylistItems::select(['fileset_id', 'chapter_start'])
+        $items = PlaylistItems::select(['fileset_id', 'chapter_start'])
             ->where('playlist_items.playlist_id', $playlist_id)
             ->where('playlist_items.book_id', $book_id)
-            ->groupBy('playlist_items.fileset_id')
-            ->get()
-            ->pluck('fileset_id');
+            ->groupBy('playlist_items.fileset_id', 'playlist_items.chapter_start')
+            ->get();
 
-        $bible_ids = BibleFilesetConnection::select('bible_id')
+        $fileset_ids = [];
+        $fileset_and_chapters = [];
+
+        foreach ($items as $item) {
+            $fileset_ids[$item->fileset_id] = true;
+        }
+
+        $bible_ids = BibleFilesetConnection::select('bible_id', 'bf.id as fileset_id')
             ->join('bible_filesets AS bf', 'bible_fileset_connections.hash_id', 'bf.hash_id')
-            ->whereIn('bf.id', $fileset_ids)
-            ->groupBy('bible_fileset_connections.bible_id')
-            ->get()
-            ->pluck('bible_id');
+            ->whereIn('bf.id', array_keys($fileset_ids))
+            ->groupBy('bible_fileset_connections.bible_id', 'bible_fileset_connections.bible_id')
+            ->get();
+
+        $fileset_and_bible = [];
+
+        foreach ($bible_ids as $bible_fileset) {
+            $fileset_and_bible[$bible_fileset->fileset_id] = $bible_fileset->bible_id;
+        }
+
+        $bible_per_chapter = [];
+
+        foreach ($items as $item) {
+            if (isset($fileset_and_bible[$item->fileset_id])) {
+                $bible_id = $fileset_and_bible[$item->fileset_id];
+                $bible_per_chapter[] = $bible_id.$item->chapter_start;
+            }
+        }
 
         return $query
             ->where($this->table.'.book_id', $book_id)
-            ->whereIn($this->table.'.bible_id', $bible_ids);
+            ->whereIn(\DB::raw("CONCAT($this->table.bible_id, '', $this->table.chapter)"), $bible_per_chapter);
     }
 }

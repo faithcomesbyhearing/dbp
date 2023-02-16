@@ -64,36 +64,52 @@ trait AccessControlAPI
             // which return a list of Languages associated with any fileset
             // content associated with the API key. For this case, the query has been optimized,
             // and returns a list of language ids instead of a list of fileset hashes
-            $dbp_users = config('database.connections.dbp_users.database');
-            $dbp_prod = config('database.connections.dbp.database');
+            // $dbp_users = config('database.connections.dbp_users.database');
+            // $dbp_prod = config('database.connections.dbp.database');
+            $access_group_ids = checkAndGetAccessGroupIdsFromRequest();
+
             switch ($control_table) {
                 case 'languages':
-                    $identifiers = DB::select(
-                        DB::raw(
-                            'select distinct l.id identifier
-                            from ' . $dbp_users . '.user_keys uk
-                            join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                            join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                            join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                            join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
-                            join ' . $dbp_prod . '.languages l on l.id = b.language_id
-                            where uk.id = ?'
-                        ),
-                        [$key->id]
-                    );
+                    // $identifiers = DB::select(
+                    //     DB::raw(
+                    //         'select distinct l.id identifier
+                    //         from ' . $dbp_users . '.user_keys uk
+                    //         join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                    //         join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                    //         join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                    //         join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
+                    //         join ' . $dbp_prod . '.languages l on l.id = b.language_id
+                    //         where uk.id = ?'
+                    //     ),
+                    //     [$key->id]
+                    // );
+                    $identifiers = \DB::table('access_group_filesets as agf')
+                        ->select(DB::raw('distinct l.id AS identifier'))
+                        ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                        ->join('bibles as b', 'bfc.bible_id', 'b.id')
+                        ->join('languages as l', 'l.id', 'b.language_id')
+                        ->whereIn('agf.access_group_id', $access_group_ids)
+                        ->get()
+                        ->pluck('identifier');
                     break;
                 case 'bibles':
-                    $identifiers = DB::select(
-                        DB::raw(
-                            'select distinct bfc.bible_id identifier
-                            from ' . $dbp_users . '.user_keys uk
-                            join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                            join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                            join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                            where uk.id = ?'
-                        ),
-                        [$key->id]
-                    );
+                    // $identifiers = DB::select(
+                    //     DB::raw(
+                    //         'select distinct bfc.bible_id identifier
+                    //         from ' . $dbp_users . '.user_keys uk
+                    //         join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
+                    //         join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
+                    //         join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
+                    //         where uk.id = ?'
+                    //     ),
+                    //     [$key->id]
+                    // );
+                    $identifiers = \DB::table('access_group_filesets as agf')
+                        ->select(DB::raw('distinct bfc.bible_id identifier'))
+                        ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                        ->whereIn('agf.access_group_id', $access_group_ids)
+                        ->get()
+                        ->pluck('identifier');
                     break;
                 default:
                     // Use Eloquent everywhere except for this giant request

@@ -119,7 +119,9 @@ Route::name('v4_internal_filesets.checkTypes')->post(
 Route::name('v4_internal_bible_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
 
 // DEPRECATED. Prefer instead v4_filesets.chapter. Reasons: It takes book and chapter as query parameters.
-Route::name('v4_internal_filesets.show')->get(
+Route::name('v4_internal_filesets.show')
+->middleware('AccessControl')
+->get(
     'bibles/filesets/{fileset_id?}',
     'Bible\BibleFileSetsController@show'
 );
