@@ -441,7 +441,6 @@ class LibraryController extends APIController
         $organization       = checkParam('organization_id');
         $version_code       = checkParam('version_code');
 
-        // $key = $this->key;
         $access_group_ids = checkAndGetAccessGroupIdsFromRequest();
 
         $arclight = new ArclightController();
@@ -449,10 +448,8 @@ class LibraryController extends APIController
             return $arclight->volumes();
         }
 
-        // $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code, $key];
         $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code, $this->key];
         $cache_key = generateCacheSafeKey('v2_library_volume', $cache_params);
-        // $filesets = cacheRememberByKey($cache_key, now()->addDay(), function () use ($dam_id, $media, $language_name, $iso, $updated, $organization, $version_code, $key) {
         $filesets = cacheRememberByKey(
             $cache_key,
             now()->addDay(),
@@ -537,7 +534,6 @@ class LibraryController extends APIController
                     ->when($organization, function ($query) use ($organization) {
                         $query->where('bible_organizations.organization_id', $organization);
                     })
-                    // ->isContentAvailable($key)
                     ->isContentAvailable($access_group_ids)
                     ->get()
                     ->filter(function ($item) {
