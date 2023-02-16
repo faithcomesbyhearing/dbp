@@ -191,28 +191,10 @@ class BibleVerse extends Model
      * @param Builder $query
      * @param string $key
      */
-    // public function scopeIsContentAvailable(Builder $query, string $key) : Builder
     public function scopeIsContentAvailable(Builder $query, Collection $access_group_ids) : Builder
     {
-        // $dbp_users = config('database.connections.dbp_users.database');
-        // $dbp_prod = config('database.connections.dbp.database');
-
-        // return $query->whereExists(function ($sub_query) use ($key, $dbp_users, $dbp_prod) {
-        //     return $sub_query->select(\DB::raw(1))
-        //         ->from($dbp_users . '.user_keys AS uk')
-        //         ->join($dbp_users . '.access_group_api_keys AS agak', 'agak.key_id', 'uk.id')
-        //         ->join(
-        //             $dbp_prod . '.access_group_filesets AS agf',
-        //             'agf.access_group_id',
-        //             'agak.access_group_id',
-        //         )
-        //         ->where('uk.key', $key)
-        //         ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id');
-        // });
         return $query->whereExists(function ($sub_query) use ($access_group_ids) {
             return $sub_query->select(\DB::raw(1))
-                // ->from($dbp_users . '.user_keys AS uk')
-                // ->join($dbp_users . '.access_group_api_keys AS agak', 'agak.key_id', 'uk.id')
                 ->from('access_group_filesets AS agf')
                 ->whereIn('agf.access_group_id', $access_group_ids)
                 ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id');

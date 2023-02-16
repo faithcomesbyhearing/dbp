@@ -145,8 +145,6 @@ class LanguageControllerV2 extends APIController
         $additional         = checkParam('additional');
         $access_group_ids   = checkAndGetAccessGroupIdsFromRequest();
 
-        // $key = $this->key;
-
         $cache_params = $this->removeSpaceFromCacheParameters([
             $sort_by,
             $lang_code,
@@ -154,7 +152,6 @@ class LanguageControllerV2 extends APIController
             $img_size,
             $img_type,
             $additional,
-            // $key
             $this->key
         ]);
 
@@ -170,7 +167,6 @@ class LanguageControllerV2 extends APIController
             'v2_country_lang',
             $cache_params,
             now()->addDay(),
-            // function () use ($sort_by, $lang_code, $country_code, $additional, $img_size, $img_type, $key) {
             function () use (
                 $sort_by,
                 $lang_code,
@@ -194,9 +190,6 @@ class LanguageControllerV2 extends APIController
                             $join->where('languages.iso', $v2_code ?? $lang_code);
                         }
                     })
-                    // ->whereHas('language', function ($query) use ($key) {
-                    //     $query->isContentAvailable($key);
-                    // })
                     ->whereHas('language', function ($query) use ($access_group_ids) {
                         $query->isContentAvailable($access_group_ids);
                     })
@@ -406,15 +399,11 @@ class LanguageControllerV2 extends APIController
 
         $access_group_ids= checkAndGetAccessGroupIdsFromRequest();
 
-        // $key = $this->key;
-
-        // $cache_params = [$root, $iso, $media, $organization_id, $key];
         $cache_params = [$root, $iso, $media, $organization_id, $this->key];
         $languages = cacheRemember(
             'volumeLanguageFamily',
             $cache_params,
             now()->addDay(),
-            // function () use ($root, $iso, $media, $organization_id, $key) {
             function () use ($root, $iso, $media, $organization_id, $access_group_ids) {
                 $language_v2 = !empty($iso) ? $this->getV2Language($iso) : null;
                 $v2_code = optional($language_v2)->language_ISO_639_3_id;
@@ -423,7 +412,6 @@ class LanguageControllerV2 extends APIController
                     ->includeAutonymTranslation()
                     ->includeCurrentTranslation()
                     ->withRequiredFilesets([
-                        // 'key'             => $key,
                         'access_group_ids' => $access_group_ids,
                         'media'            => $media,
                         'organization_id'  => $organization_id

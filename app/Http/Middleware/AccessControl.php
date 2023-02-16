@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Auth\AuthenticationException;
 use App\Models\User\AccessGroupKey;
-// use App\IAMAPIClient;
 use App\Services\IAMAPI\IAMAPIClientService;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
@@ -48,10 +47,6 @@ class AccessControl
         } else {
             $access_group_ids = AccessGroupKey::getAccessGroupIdsByApiKey($api_key);
         }
-
-        // var_dump($api_key);
-        // var_dump($access_group_ids);
-        // exit();
 
         if (!empty($access_group_ids)) {
             $request->merge([
