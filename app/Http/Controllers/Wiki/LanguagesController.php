@@ -132,7 +132,8 @@ class LanguagesController extends APIController
                 $media,
                 $set_type_code
             ) {
-                $languages = Language::includeCurrentTranslation()
+                $languages = Language::isContentAvailable($access_group_ids)
+                    ->includeCurrentTranslation()
                     ->includeAutonymTranslation()
                     ->includeExtraLanguageTranslations($include_translations)
                     ->includeCountryPopulation($country)
@@ -140,7 +141,7 @@ class LanguagesController extends APIController
                     ->filterableByCountry($country)
                     ->filterableByIsoCode($code)
                     ->filterableByName($name)
-                    ->isContentAvailableAndfilterableByMedia($access_group_ids, $media)
+                    ->filterableByMedia($media)
                     ->filterableBySetTypeCode($set_type_code)
                     ->select([
                         'languages.id',
@@ -237,11 +238,20 @@ class LanguagesController extends APIController
             $cache_key,
             now()->addDay(),
             function () use ($formatted_search, $limit, $access_group_ids, $set_type_code, $media) {
-                $languages = Language::filterableByNameAndKey(
+                $bible_fileset_filters = [];
+
+                if ($set_type_code) {
+                    $bible_fileset_filters['set_type_code'] = $set_type_code;
+                }
+
+                if ($media) {
+                    $bible_fileset_filters['media'] = $media;
+                }
+
+                $languages = Language::filterableByNameAndAccessGroup(
                     $formatted_search,
                     $access_group_ids,
-                    $set_type_code,
-                    $media
+                    $bible_fileset_filters
                 )
                     ->select([
                         'languages.id',

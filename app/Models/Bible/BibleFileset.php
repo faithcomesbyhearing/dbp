@@ -489,4 +489,18 @@ class BibleFileset extends Model
                     );
             });
     }
+
+    public function scopeFilterBy(Builder $query, array $filters) : Builder
+    {
+        $from_table = getAliasOrTableName($query->getQuery()->from);
+
+        return $query
+            ->when(isset($filters['set_type_code']), function ($query) use ($filters, $from_table) {
+                $query->where($from_table.'.set_type_code', $filters['set_type_code']);
+            })
+            ->when(isset($filters['media']), function ($query) use ($filters, $from_table) {
+                $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($filters['media']);
+                return $query->whereIn($from_table.'.set_type_code', $set_type_code_array);
+            });
+    }
 }

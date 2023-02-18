@@ -37,16 +37,25 @@ class AccessControl
     {
         $api_key = checkParam('key', true);
 
-        if ($this->iam_client->isEnabled()) {
-            try {
-                $access_group_ids = $this->iam_client->getAccessGroupIdsByUserKey($api_key);
-            } catch (\Exception $e) {
-                \Log::channel('errorlog')->error($e->getMessage());
-                return response('Service unavailable', HttpResponse::HTTP_SERVICE_UNAVAILABLE);
+        $cache_params = removeSpaceAndCntrlFromCacheParameters([$api_key]);
+
+        $access_group_ids = cacheRemember(
+            'access_control_middleware',
+            $cache_params,
+            now()->addDay(),
+            function () use ($api_key) {
+                if ($this->iam_client->isEnabled()) {
+                    try {
+                        return $this->iam_client->getAccessGroupIdsByUserKey($api_key);
+                    } catch (\Exception $e) {
+                        \Log::channel('errorlog')->error($e->getMessage());
+                        abort(HttpResponse::HTTP_SERVICE_UNAVAILABLE, 'Service unavailable');
+                    }
+                } else {
+                    return AccessGroupKey::getAccessGroupIdsByApiKey($api_key);
+                }
             }
-        } else {
-            $access_group_ids = AccessGroupKey::getAccessGroupIdsByApiKey($api_key);
-        }
+        );
 
         if (!empty($access_group_ids)) {
             $request->merge([
