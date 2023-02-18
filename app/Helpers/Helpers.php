@@ -738,3 +738,15 @@ if (!function_exists('isUserLoggedIn')) {
         return !empty($user) && optional($user)->id > 0;
     }
 }
+
+if (!function_exists('getAliasOrTableName')) {
+    function getAliasOrTableName(string $table_name) : string
+    {
+        $alias = \explode('as', $table_name);
+        if (sizeof($alias) === 1) {
+            $alias = \explode('AS', $table_name);
+        }
+
+        return \trim($alias[sizeof($alias) - 1]);
+    }
+}

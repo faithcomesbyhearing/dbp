@@ -94,8 +94,7 @@ Route::name('v4_bible.copyright')->get(
     'Bible\BiblesController@copyright'
 ); // used
 Route::name('v4_internal_bible.chapter')
-    ->middleware('APIToken')
-    ->middleware('AccessControl')
+    ->middleware(['APIToken', 'AccessControl'])
     ->get('bibles/{bible_id}/chapter', 'Bible\BiblesController@chapter'); //used
 Route::name('v4_internal_bible.chapter.annotations')
     ->middleware('APIToken:check')
@@ -164,13 +163,15 @@ Route::name('v4_bible_verses.verse_by_bible')->get(
 
 // BibleFileSet download version 4
 
-Route::name('v4_bible_filesets_download.list')->get(
+Route::name('v4_bible_filesets_download.list')
+->middleware('AccessControl')
+->get(
     'download/list',
     'Bible\BibleFilesetsDownloadController@list'
 );
 
 Route::name('v4_bible_filesets_download.index')
-    ->middleware('APIToken')
+    ->middleware(['APIToken', 'AccessControl'])
     ->get(
         'download/{fileset_id}/{book?}/{chapter_id?}',
         'Bible\BibleFilesetsDownloadController@index'

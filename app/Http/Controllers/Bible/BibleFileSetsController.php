@@ -96,9 +96,9 @@ class BibleFileSetsController extends APIController
                     );
                 }
 
-                $access_blocked = $this->blockedByAccessControl($fileset);
-                if ($access_blocked) {
-                    return $access_blocked;
+                $access_allowed = $this->allowedByAccessControl($fileset);
+                if ($access_allowed !== true) {
+                    return $access_allowed;
                 }
                 $asset_id = $fileset->asset_id;
                 $bible = optional($fileset->bible)->first();
@@ -234,9 +234,9 @@ class BibleFileSetsController extends APIController
                     );
                 }
 
-                $access_blocked = $this->blockedByAccessControl($fileset);
-                if ($access_blocked) {
-                    return $access_blocked;
+                $access_allowed = $this->allowedByAccessControl($fileset);
+                if ($access_allowed !== true) {
+                    return $access_allowed;
                 }
                 $asset_id = $fileset->asset_id;
                 $bible = optional($fileset->bible)->first();
