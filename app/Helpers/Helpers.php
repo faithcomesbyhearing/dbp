@@ -3,7 +3,22 @@
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
-use App\Models\User\User;
+use Symfony\Component\HttpFoundation\Response;
+
+function getAccessGroups() : \Illuminate\Support\Collection
+{
+    $group_ids = request()->input('middleware_access_group_ids');
+
+    if (empty($group_ids)) {
+        \Log::channel('errorlog')->error(["Missing access group ids", Response::HTTP_UNPROCESSABLE_ENTITY]);
+        abort(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            "Missing parameter access group ids."
+        );
+    }
+
+    return $group_ids;
+}
 
 /**
  * Get param from request object and check that the param is set if param is required
@@ -721,5 +736,17 @@ if (!function_exists('isUserLoggedIn')) {
     {
         $user = request()->user();
         return !empty($user) && optional($user)->id > 0;
+    }
+}
+
+if (!function_exists('getAliasOrTableName')) {
+    function getAliasOrTableName(string $table_name) : string
+    {
+        $alias = \explode('as', $table_name);
+        if (sizeof($alias) === 1) {
+            $alias = \explode('AS', $table_name);
+        }
+
+        return \trim($alias[sizeof($alias) - 1]);
     }
 }

@@ -75,6 +75,11 @@ return [
         // arclight service timeout in seconds
         'service_timeout' => env('ARCLIGHT_SERVICE_TIMEOUT', 5)
     ],
+    'iam' => [
+        'url' => env('IAM_API_URL', ''),
+        'enabled' => env('IAM_ENABLED', false),
+        'service_timeout' => env('IAM_SERVICE_TIMEOUT', 5)
+    ],
 
     // Testing
 

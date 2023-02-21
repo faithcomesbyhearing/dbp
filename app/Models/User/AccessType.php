@@ -82,4 +82,25 @@ class AccessType extends Model
     {
         return $this->belongsToMany(AccessGroup::class, 'access_group_types');
     }
+
+    /**
+     * Get an only one record filtering by country_id and continent_id
+     *
+     * @param $country_code
+     * @param $continent
+     *
+     * @return AccessType
+     */
+    public static function findOneByCountryCodeAndContinent(?string $country_code, ?string $continent) : AccessType
+    {
+        return AccessType::where('name', 'api')
+            ->where(function ($query) use ($country_code) {
+                $query->where('country_id', $country_code);
+            })
+            ->where(function ($query) use ($continent) {
+                $query->where('continent_id', $continent);
+            })
+            ->select('id', 'name')
+            ->first();
+    }
 }

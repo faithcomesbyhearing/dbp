@@ -10,8 +10,10 @@ use App\Models\Country\CountryLanguage;
 use App\Models\Country\CountryRegion;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use App\Models\Country\Country;
+use App\Models\User\AccessGroupFileset;
 use App\Models\Resource\Resource;
 
 /**
@@ -462,100 +464,43 @@ class Language extends Model
         });
     }
 
-    private function getLanguagesAccessGroupQuery($key, $set_type_code = null, $media = null)
-    {
-        $dbp_users = config('database.connections.dbp_users.database');
-        $dbp_prod = config('database.connections.dbp.database');
-
-        return \DB::table('languages as lang')
-            ->select('lang.id as id')
-            ->whereRaw('MATCH (lang.name) against (? IN BOOLEAN MODE)')
-            ->whereExists(function ($query) use ($dbp_users, $dbp_prod, $key, $set_type_code, $media) {
-                return $query->select(\DB::raw(1))
-                    ->from($dbp_users . '.user_keys as uk')
-                    ->join($dbp_users . '.access_group_api_keys as agak', 'agak.key_id', 'uk.id')
-                    ->join($dbp_prod . '.access_group_filesets as agf', 'agf.access_group_id', 'agak.access_group_id')
-                    ->join($dbp_prod . '.bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
-                    ->join($dbp_prod . '.bibles as b', 'bfc.bible_id', 'b.id')
-                    ->whereColumn('lang.id', '=', 'b.language_id')
-                    ->where('uk.key', $key)
-                    ->when($set_type_code || $media, function ($query) use ($dbp_prod) {
-                        $query->join($dbp_prod . '.bible_filesets as bfst', 'bfst.hash_id', 'bfc.hash_id');
-                    })
-                    ->when($set_type_code, function ($query) use ($set_type_code) {
-                        $query->where('bfst.set_type_code', $set_type_code);
-                    })
-                    ->when($media, function ($query) use ($media) {
-                        $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($media);
-                        $query->whereIn('bfst.set_type_code', $set_type_code_array);
-                    })
-                    ;
-            });
-    }
-
-    private function getLanguagesTranslationsAccessGroupQuery($key, $set_type_code = null, $media = null)
-    {
-        $dbp_users = config('database.connections.dbp_users.database');
-        $dbp_prod = config('database.connections.dbp.database');
-
-        return \DB::table('language_translations as lang_trans')
-            ->select('lang_trans.language_source_id as id')
-            ->whereRaw('MATCH (lang_trans.name) against (? IN BOOLEAN MODE)')
-            ->whereExists(function ($query) use ($dbp_users, $dbp_prod, $key, $set_type_code, $media) {
-                return $query->select(\DB::raw(1))
-                    ->from($dbp_users . '.user_keys as uk')
-                    ->join($dbp_users . '.access_group_api_keys as agak', 'agak.key_id', 'uk.id')
-                    ->join($dbp_prod . '.access_group_filesets as agf', 'agf.access_group_id', 'agak.access_group_id')
-                    ->join($dbp_prod . '.bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
-                    ->join($dbp_prod . '.bibles as b', 'bfc.bible_id', 'b.id')
-                    ->whereColumn('lang_trans.language_source_id', '=', 'b.language_id')
-                    ->where('uk.key', $key)
-                    ->where('lang_trans.priority', '=', function ($query) {
-                        $query->select(\DB::raw('MAX(`priority`)'))
-                            ->from('language_translations as lang_trans_prior')
-                            ->whereColumn('lang_trans_prior.language_source_id', '=', 'lang_trans.language_source_id')
-                            ->whereColumn('lang_trans_prior.language_translation_id', '=', 'lang_trans.language_translation_id')
-                            ->limit(1);
-                    })
-                    ->when($set_type_code || $media, function ($query) use ($dbp_prod) {
-                        $query->join($dbp_prod . '.bible_filesets as bfst', 'bfst.hash_id', 'bfc.hash_id');
-                    })
-                    ->when($set_type_code, function ($query) use ($set_type_code) {
-                        $query->where('bfst.set_type_code', $set_type_code);
-                    })
-                    ->when($media, function ($query) use ($media) {
-                        $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($media);
-                        $query->whereIn('bfst.set_type_code', $set_type_code_array);
-                    })
-                    ;
-            });
-    }
-
-    public function scopeFilterableByNameAndKey($query, $name, $key, $set_type_code = null, $media = null)
-    {
+    public function scopeFilterableByNameAndAccessGroup(
+        Builder $query,
+        string $name,
+        Collection $access_group_ids,
+        array $bible_fileset_filters = []
+    ) : Builder {
         $formatted_name = "+$name*";
 
-        $lang = $this->getLanguagesAccessGroupQuery($key, $set_type_code, $media);
-        $lang_trans = $this->getLanguagesTranslationsAccessGroupQuery($key, $set_type_code, $media);
+        $lang = Language::from('languages', 'lang')
+            ->select('lang.id as id')
+            ->whereRaw('MATCH (lang.name) against (? IN BOOLEAN MODE)', [$formatted_name])
+            ->isContentAvailable($access_group_ids, $bible_fileset_filters);
 
-        $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($media);
+        $lang_trans = LanguageTranslation::from('language_translations', 'lang_trans')
+            ->select('lang_trans.language_source_id as id')
+            ->whereRaw('MATCH (lang_trans.name) against (? IN BOOLEAN MODE)', [$formatted_name])
+            ->isContentAvailable($access_group_ids, $bible_fileset_filters)
+            ->hasPriority();
 
-        $lang_union_sql = \DB::table($lang)
-            ->unionAll($lang_trans)
-            ->toSql();
+        $lang_union_query = \DB::table($lang)
+            ->unionAll($lang_trans);
 
-        return $query->join(
-            \DB::raw(
-                "(
-                    SELECT lang_and_trans_group.id
-                    FROM ($lang_union_sql) as lang_and_trans_group
-                    GROUP BY lang_and_trans_group.id
-                ) as languages_and_translations"
-            ),
-            'languages_and_translations.id',
-            '=',
-            'languages.id'
-        )->leftJoin('language_translations as autonym', function ($join) {
+        $lang_union_all_group = \DB::table($lang_union_query, 'lang_and_trans_group')
+            ->groupBy('lang_and_trans_group.id');
+
+        return $query->joinSub(
+            $lang_union_all_group,
+            'languages_and_translations',
+            function ($join) {
+                $join->on(
+                    'languages_and_translations.id',
+                    '=',
+                    'languages.id'
+                );
+            }
+        )
+        ->leftJoin('language_translations as autonym', function ($join) {
             $join->on('autonym.language_source_id', '=', 'languages.id')
                 ->on('autonym.language_translation_id', '=', 'languages.id')
                 ->where('autonym.priority', '=', function ($autonym_query) {
@@ -567,55 +512,41 @@ class Language extends Model
                 });
         })->leftJoin('language_translations as current_translation', function ($join) {
             $join->on('current_translation.language_source_id', 'languages.id')
-                ->whereRaw('current_translation.language_translation_id = ?')
+                ->where('current_translation.language_translation_id', $GLOBALS['i18n_id'])
                 ->where('current_translation.priority', '=', function ($current_translation_query) {
                     $current_translation_query->select(\DB::raw('MAX(`priority`)'))
                         ->from('language_translations')
                         ->whereColumn('language_source_id', '=', 'languages.id')
                         ->limit(1);
                 });
-        })
-        ->addBinding($formatted_name)
-        ->addBinding($key)
-        ->when($set_type_code, function ($query) use ($set_type_code) {
-            $query->addBinding($set_type_code);
-        })
-        ->when($media, function ($query) use ($set_type_code_array) {
-            $query->addBinding($set_type_code_array);
-        })
-        ->addBinding($formatted_name)
-        ->addBinding($key)
-        ->when($set_type_code, function ($query) use ($set_type_code) {
-            $query->addBinding($set_type_code);
-        })
-        ->when($media, function ($query) use ($set_type_code_array) {
-            $query->addBinding($set_type_code_array);
-        })
-        ->addBinding($GLOBALS['i18n_id']);
+        });
     }
 
-    public function scopeWithRequiredFilesets($query, $type_filters)
+    public function scopeWithRequiredFilesets(Builder $query, array $type_filters) : Builder
     {
         $organization_id = $type_filters['organization_id'];
         $media = $type_filters['media'];
-        $key = $type_filters['key'];
+        $access_group_ids = $type_filters['access_group_ids'];
 
-        return $query->whereHas('filesets', function ($query_filesets) use ($key, $organization_id, $media) {
-            if ($organization_id) {
-                $query_filesets->whereHas('copyright', function ($query_filesets) use ($organization_id) {
-                    $query_filesets->where('organization_id', $organization_id);
-                });
-            }
-            $query_filesets->join('bible_filesets', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id');
-            $query_filesets->where('bible_filesets.asset_id', 'dbp-prod');
-            if ($media) {
-                $query_filesets->where('bible_filesets.set_type_code', 'LIKE', $media . '%');
-            } else {
-                $query_filesets->where('bible_filesets.set_type_code', '!=', 'text_format');
-            }
+        return $query->whereHas(
+            'filesets',
+            function ($query_filesets) use ($access_group_ids, $organization_id, $media) {
+                if ($organization_id) {
+                    $query_filesets->whereHas('copyright', function ($query_filesets) use ($organization_id) {
+                        $query_filesets->where('organization_id', $organization_id);
+                    });
+                }
+                $query_filesets->join('bible_filesets', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id');
+                $query_filesets->where('bible_filesets.asset_id', 'dbp-prod');
+                if ($media) {
+                    $query_filesets->where('bible_filesets.set_type_code', 'LIKE', $media . '%');
+                } else {
+                    $query_filesets->where('bible_filesets.set_type_code', '!=', 'text_format');
+                }
 
-            $query_filesets->isContentAvailable($key);
-        });
+                $query_filesets->isContentAvailable($access_group_ids);
+            }
+        );
     }
     
     public function population()
@@ -728,33 +659,33 @@ class Language extends Model
         return $this->hasOne(LanguageDialect::class, 'dialect_id', 'id');
     }
 
-    /**
-     * Get the query to filter the languages by available bible fileset
-     * @param Illuminate\Database\Query\Builder $query
-     * @param string $key
-     *
-     * @return Illuminate\Database\Query\Builder
-     */
-    public function getQueryContentAvailable(QueryBuilder $query, string $key) : QueryBuilder
-    {
-        $dbp_users = config('database.connections.dbp_users.database');
-        $dbp_prod = config('database.connections.dbp.database');
+    public function scopeIsContentAvailable(
+        Builder $query,
+        Collection $access_group_ids,
+        array $bible_fileset_filters = []
+    ) : Builder {
+        $from_table = getAliasOrTableName($query->getQuery()->from);
 
-        return $query->select(\DB::raw(1))
-            ->from($dbp_users . '.user_keys as uk')
-            ->join($dbp_users . '.access_group_api_keys as agak', 'agak.key_id', 'uk.id')
-            ->join($dbp_prod . '.access_group_filesets as agf', 'agf.access_group_id', 'agak.access_group_id')
-            ->join($dbp_prod . '.bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
-            ->join($dbp_prod . '.bibles as b', 'bfc.bible_id', 'b.id')
-            ->whereColumn('languages.id', '=', 'b.language_id')
-            ->where('uk.key', $key);
-    }
+        return $query->whereExists(
+            function (QueryBuilder $query) use ($access_group_ids, $from_table, $bible_fileset_filters) {
+                $query->select(\DB::raw(1))
+                    ->from('access_group_filesets as agf')
+                    ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                    ->join('bibles as b', 'bfc.bible_id', 'b.id');
 
-    public function scopeIsContentAvailable($query, $key)
-    {
-        return $query->whereExists(function ($query) use ($key) {
-            return $this->getQueryContentAvailable($query, $key);
-        });
+                if (!empty($bible_fileset_filters)) {
+                    $has_filesets = BibleFileset::from('bible_filesets', 'bfst')
+                        ->select(\DB::raw(1))
+                        ->filterBy($bible_fileset_filters)
+                        ->whereColumn('bfst.hash_id', 'bfc.hash_id');
+
+                    $query->addWhereExistsQuery($has_filesets->getQuery());
+                }
+
+                return $query->whereColumn($from_table.'.id', '=', 'b.language_id')
+                    ->whereIn('agf.access_group_id', $access_group_ids);
+            }
+        );
     }
 
     public function scopeFilterableByMedia($query, $media)
@@ -768,29 +699,6 @@ class Language extends Model
                 });
             });
         }
-    }
-
-    /**
-     * Filter the languages by available bible fileset and the given media parameter.
-     *
-     * @param Builder $query
-     * @param string $key
-     * @param string $media
-     *
-     * @return Builder
-     */
-    public function scopeIsContentAvailableAndfilterableByMedia(Builder $query, ?string $key, ?string $media) : Builder
-    {
-        $dbp_prod = config('database.connections.dbp.database');
-
-        return $query->whereExists(function ($query) use ($dbp_prod, $key, $media) {
-            return $this->getQueryContentAvailable($query, $key)
-                ->when($media, function ($query) use ($media, $dbp_prod) {
-                    $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($media);
-                    $query->join($dbp_prod . '.bible_filesets as bfst', 'bfst.hash_id', 'bfc.hash_id')
-                        ->whereIn('bfst.set_type_code', $set_type_code_array);
-                });
-        });
     }
 
     public function scopeFilterableBySetTypeCode($query, $set_type_code)
