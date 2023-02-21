@@ -108,7 +108,7 @@ class BiblesController extends APIController
         $limit              = (int) (checkParam('limit') ?? 50);
         $limit              = min($limit, 50);
         $page               = checkParam('page') ?? 1;
-
+        $access_group_ids   = getAccessGroups();
         // removes opus filesets from the request to avoid memory overflows
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
         // created to support old bibleis versions
@@ -157,79 +157,99 @@ class BiblesController extends APIController
             $audio_timing
         ]);
 
-        $bibles = cacheRemember('bibles', $cache_params, now()->addDay(), function () use ($language_code, $organization, $country, $key, $media, $media_exclude, $size, $size_exclude, $tag_exclude, $limit, $page, $order_by, $audio_timing) {
-            $bibles = Bible::filterByLanguage($language_code)
-            ->withRequiredFilesets([
-                'key'            => $key,
-                'media'          => $media,
-                'media_exclude'  => $media_exclude,
-                'size'           => $size,
-                'size_exclude'   => $size_exclude,
-                'tag_exclude'    => $tag_exclude,
-            ])
-            ->leftJoin('bible_translations as ver_title', function ($join) {
-                $join->on('ver_title.bible_id', '=', 'bibles.id')->where('ver_title.vernacular', 1);
-            })
-            ->leftJoin('bible_translations as current_title', function ($join) {
-                $join->on('current_title.bible_id', '=', 'bibles.id');
-                if (isset($GLOBALS['i18n_id'])) {
-                    $join->where('current_title.language_id', '=', $GLOBALS['i18n_id']);
-                }
-            })
-            ->leftJoin('languages as languages', function ($join) {
-                $join->on('languages.id', '=', 'bibles.language_id');
-            })
-            ->leftJoin('language_translations as language_autonym', function ($join) {
-                $join->on('language_autonym.language_source_id', '=', 'bibles.language_id')
-                    ->on('language_autonym.language_translation_id', '=', 'bibles.language_id')
-                    ->orderBy('priority', 'desc');
-            })
-            ->leftJoin('language_translations as language_current', function ($join) {
-                $join->on('language_current.language_source_id', '=', 'bibles.language_id')
-                    ->orderBy('priority', 'desc');
-                if (isset($GLOBALS['i18n_id'])) {
-                    $join->where('language_current.language_translation_id', '=', $GLOBALS['i18n_id']);
-                }
-            })
-            ->when($country, function ($q) use ($country) {
-                $q->whereHas('country', function ($query) use ($country) {
-                    $query->where('countries.id', $country);
-                });
-            })
-            ->when($organization, function ($q) use ($organization) {
-                $q->whereHas('organizations', function ($q) use ($organization) {
-                    $q->where('organization_id', $organization->id);
-                })->orWhereHas('links', function ($q) use ($organization) {
-                    $q->where('organization_id', $organization->id);
-                });
-            })
-            ->when($audio_timing, function ($q) {
-                $q->isTimingInformationAvailable();
-            })
-            ->select(
-                \DB::raw(
-                    'MIN(current_title.name) as ctitle,
-                    MIN(ver_title.name) as vtitle,
-                    MIN(bibles.language_id) as language_id,
-                    MIN(languages.iso) as iso,
-                    MIN(bibles.date) as date,
-                    MIN(language_autonym.name) as language_autonym,
-                    MIN(language_current.name) as language_current,
-                    MIN(languages.rolv_code) as language_rolv_code,
-                    MIN(bibles.priority) as priority,
-                    MIN(bibles.id) as id'
+        $bibles = cacheRemember(
+            'bibles',
+            $cache_params,
+            now()->addDay(),
+            function () use (
+                $language_code,
+                $organization,
+                $country,
+                $access_group_ids,
+                $media,
+                $media_exclude,
+                $size,
+                $size_exclude,
+                $tag_exclude,
+                $limit,
+                $page,
+                $order_by,
+                $audio_timing
+            ) {
+                $bibles = Bible::filterByLanguage($language_code)
+                ->withRequiredFilesets([
+                    // 'key'            => $key,
+                    'access_group_ids' => $access_group_ids,
+                    'media'          => $media,
+                    'media_exclude'  => $media_exclude,
+                    'size'           => $size,
+                    'size_exclude'   => $size_exclude,
+                    'tag_exclude'    => $tag_exclude,
+                ])
+                ->leftJoin('bible_translations as ver_title', function ($join) {
+                    $join->on('ver_title.bible_id', '=', 'bibles.id')->where('ver_title.vernacular', 1);
+                })
+                ->leftJoin('bible_translations as current_title', function ($join) {
+                    $join->on('current_title.bible_id', '=', 'bibles.id');
+                    if (isset($GLOBALS['i18n_id'])) {
+                        $join->where('current_title.language_id', '=', $GLOBALS['i18n_id']);
+                    }
+                })
+                ->leftJoin('languages as languages', function ($join) {
+                    $join->on('languages.id', '=', 'bibles.language_id');
+                })
+                ->leftJoin('language_translations as language_autonym', function ($join) {
+                    $join->on('language_autonym.language_source_id', '=', 'bibles.language_id')
+                        ->on('language_autonym.language_translation_id', '=', 'bibles.language_id')
+                        ->orderBy('priority', 'desc');
+                })
+                ->leftJoin('language_translations as language_current', function ($join) {
+                    $join->on('language_current.language_source_id', '=', 'bibles.language_id')
+                        ->orderBy('priority', 'desc');
+                    if (isset($GLOBALS['i18n_id'])) {
+                        $join->where('language_current.language_translation_id', '=', $GLOBALS['i18n_id']);
+                    }
+                })
+                ->when($country, function ($q) use ($country) {
+                    $q->whereHas('country', function ($query) use ($country) {
+                        $query->where('countries.id', $country);
+                    });
+                })
+                ->when($organization, function ($q) use ($organization) {
+                    $q->whereHas('organizations', function ($q) use ($organization) {
+                        $q->where('organization_id', $organization->id);
+                    })->orWhereHas('links', function ($q) use ($organization) {
+                        $q->where('organization_id', $organization->id);
+                    });
+                })
+                ->when($audio_timing, function ($q) {
+                    $q->isTimingInformationAvailable();
+                })
+                ->select(
+                    \DB::raw(
+                        'MIN(current_title.name) as ctitle,
+                        MIN(ver_title.name) as vtitle,
+                        MIN(bibles.language_id) as language_id,
+                        MIN(languages.iso) as iso,
+                        MIN(bibles.date) as date,
+                        MIN(language_autonym.name) as language_autonym,
+                        MIN(language_current.name) as language_current,
+                        MIN(languages.rolv_code) as language_rolv_code,
+                        MIN(bibles.priority) as priority,
+                        MIN(bibles.id) as id'
+                    )
                 )
-            )
-            ->orderByRaw($order_by)->groupBy('bibles.id');
+                ->orderByRaw($order_by)->groupBy('bibles.id');
 
-            $bibles = $bibles->paginate($limit);
-            $bibles_return = fractal(
-                $bibles->getCollection(),
-                BibleTransformer::class,
-                new DataArraySerializer()
-            );
-            return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
-        });
+                $bibles = $bibles->paginate($limit);
+                $bibles_return = fractal(
+                    $bibles->getCollection(),
+                    BibleTransformer::class,
+                    new DataArraySerializer()
+                );
+                return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
+            }
+        );
 
         return $this->reply($bibles);
     }
@@ -264,6 +284,7 @@ class BiblesController extends APIController
         $page           = checkParam('page') ?? 1;
         $formatted_search = $this->transformQuerySearchText($search_text);
         $formatted_search_cache = str_replace(' ', '', $search_text);
+        $access_group_ids = getAccessGroups();
 
         if ($formatted_search_cache === '' || !$formatted_search_cache || empty($formatted_search)) {
             return $this
@@ -271,21 +292,24 @@ class BiblesController extends APIController
                 ->replyWithError(trans('api.search_errors_400'));
         }
 
-        $key = $this->key;
-        $cache_params = [$limit, $page, $formatted_search_cache, $key];
+        $cache_params = [$limit, $page, $formatted_search_cache, $this->key];
         $cache_key = generateCacheSafeKey('bibles_search', $cache_params);
         
-        $bibles = cacheRememberByKey($cache_key, now()->addDay(), function () use ($key, $limit, $formatted_search) {
-            $bibles = Bible::isContentAvailable($key)
-            ->matchByFulltextSearch($formatted_search)
-            ->paginate($limit);
+        $bibles = cacheRememberByKey(
+            $cache_key,
+            now()->addDay(),
+            function () use ($limit, $formatted_search, $access_group_ids) {
+                $bibles = Bible::isContentAvailable($access_group_ids)
+                    ->matchByFulltextSearch($formatted_search)
+                    ->paginate($limit);
 
-            return fractal(
-                $bibles->getCollection(),
-                BibleTransformer::class,
-                new DataArraySerializer()
-            )->paginateWith(new IlluminatePaginatorAdapter($bibles));
-        });
+                return fractal(
+                    $bibles->getCollection(),
+                    BibleTransformer::class,
+                    new DataArraySerializer()
+                )->paginateWith(new IlluminatePaginatorAdapter($bibles));
+            }
+        );
         return $this->reply($bibles);
     }
 
@@ -325,21 +349,26 @@ class BiblesController extends APIController
                 ->replyWithError(trans('api.search_errors_400'));
         }
 
-        $key = $this->key;
-        $cache_params = [$limit, $page, $version_query_cache, $key];
+        $access_group_ids = getAccessGroups();
+        $cache_params = [$limit, $page, $version_query_cache, $this->key];
         $cache_key = generateCacheSafeKey('bibles_by_id_search', $cache_params);
 
-        $bibles = cacheRememberByKey($cache_key, now()->addDay(), function () use ($key, $limit, $version_query) {
-            $bibles = Bible::isContentAvailable($key)
-            ->matchByBibleVersion($version_query)
-            ->paginate($limit);
 
-            return fractal(
-                $bibles->getCollection(),
-                BibleTransformer::class,
-                new DataArraySerializer()
-            )->paginateWith(new IlluminatePaginatorAdapter($bibles));
-        });
+        $bibles = cacheRememberByKey(
+            $cache_key,
+            now()->addDay(),
+            function () use ($access_group_ids, $limit, $version_query) {
+                $bibles = Bible::isContentAvailable($access_group_ids)
+                ->matchByBibleVersion($version_query)
+                ->paginate($limit);
+
+                return fractal(
+                    $bibles->getCollection(),
+                    BibleTransformer::class,
+                    new DataArraySerializer()
+                )->paginateWith(new IlluminatePaginatorAdapter($bibles));
+            }
+        );
 
         return $this->reply($bibles);
     }
@@ -377,8 +406,8 @@ class BiblesController extends APIController
             $id = substr($id, 0, 6);
         }
         $key_error_404 = 'api.bibles_errors_404';
-        $key = $this->key;
-        $bible = Bible::whereId($id)->isContentAvailable($key)->count();
+        $access_group_ids = getAccessGroups();
+        $bible = Bible::whereId($id)->isContentAvailable($access_group_ids)->count();
 
         if (!$bible) {
             return $this
@@ -386,12 +415,12 @@ class BiblesController extends APIController
                 ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
-        $cache_params = [$id, $key, $include_font];
+        $cache_params = [$id, $this->key, $include_font];
         $bible = cacheRemember(
             'bibles_show',
             $cache_params,
             now()->addDay(),
-            function () use ($key, $id, $include_font) {
+            function () use ($access_group_ids, $id, $include_font) {
                 return Bible::with([
                     'translations',
                     'books.book',
@@ -400,8 +429,8 @@ class BiblesController extends APIController
                     'organizations.logoIcon',
                     'organizations.translations',
                     'alphabet.primaryFont',
-                    'filesets' => function ($query) use ($key, $include_font) {
-                        $query->isContentAvailable($key)
+                    'filesets' => function ($query) use ($access_group_ids, $include_font) {
+                        $query->isContentAvailable($access_group_ids)
                             ->when($include_font, function ($sub_query) {
                                 $sub_query->with('fonts');
                             })->conditionToExcludeOldTextFormat();
@@ -460,19 +489,24 @@ class BiblesController extends APIController
         $verify_content = checkBoolean('verify_content');
         $verse_count = checkBoolean('verse_count');
 
-        $key = $this->key;
-        $cache_params = [$bible_id, $key, $verify_content, $verse_count];
-        $bible = cacheRemember('bible_books_bible', $cache_params, now()->addDay(), function () use ($bible_id, $verify_content, $key) {
-            if (!$verify_content) {
-                return Bible::find($bible_id);
-            }
-
-            return Bible::with([
-                'filesets' => function ($query) use ($key) {
-                    $query->isContentAvailable($key);
+        $access_group_ids = getAccessGroups();
+        $cache_params = [$bible_id, $this->key, $verify_content, $verse_count];
+        $bible = cacheRemember(
+            'bible_books_bible',
+            $cache_params,
+            now()->addDay(),
+            function () use ($bible_id, $verify_content, $access_group_ids) {
+                if (!$verify_content) {
+                    return Bible::find($bible_id);
                 }
-            ])->find($bible_id);
-        });
+
+                return Bible::with([
+                    'filesets' => function ($query) use ($access_group_ids) {
+                        $query->isContentAvailable($access_group_ids);
+                    }
+                ])->find($bible_id);
+            }
+        );
 
 
         if (!$bible) {
@@ -492,56 +526,70 @@ class BiblesController extends APIController
         );
 
         if ($verify_content) {
-            $cache_params = [$bible_id, $key, $verify_content, $book_id];
-            $books = cacheRemember('bible_books_books_verified', $cache_params, now()->addDay(), function () use ($books, $bible) {
-                $book_controller = new BooksController();
-                $active_books = [];
-                foreach ($bible->filesets as $fileset) {
-                    $books_fileset = $book_controller
-                        ->getActiveBooksFromFileset($fileset->id, $fileset->set_type_code)
-                        ->pluck('id');
-                    $active_books = $this->processActiveBooks($books_fileset, $active_books, $fileset->set_type_code);
-                }
-
-                return $books->map(function ($book) use ($active_books) {
-                    if (isset($active_books[$book->book_id])) {
-                        $book->content_types = array_unique($active_books[$book->book_id]);
+            $cache_params = [$bible_id, $this->key, $verify_content, $book_id];
+            $books = cacheRemember(
+                'bible_books_books_verified',
+                $cache_params,
+                now()->addDay(),
+                function () use ($books, $bible) {
+                    $book_controller = new BooksController();
+                    $active_books = [];
+                    foreach ($bible->filesets as $fileset) {
+                        $books_fileset = $book_controller
+                            ->getActiveBooksFromFileset($fileset->id, $fileset->set_type_code)
+                            ->pluck('id');
+                        $active_books = $this->processActiveBooks(
+                            $books_fileset,
+                            $active_books,
+                            $fileset->set_type_code
+                        );
                     }
-                    return $book;
-                })->filter(function ($book) {
-                    return $book->content_types;
-                });
-            });
+
+                    return $books->map(function ($book) use ($active_books) {
+                        if (isset($active_books[$book->book_id])) {
+                            $book->content_types = array_unique($active_books[$book->book_id]);
+                        }
+                        return $book;
+                    })->filter(function ($book) {
+                        return $book->content_types;
+                    });
+                }
+            );
 
             if ($verse_count) {
-                $cache_params = [$bible_id, $key, $book_id];
-                $books = cacheRemember('bible_books_verse_count', $cache_params, now()->addDay(), function () use ($books, $bible) {
-                    $text_fileset = $bible->filesets->where('set_type_code', 'text_plain')->first();
-                    if (!$text_fileset) {
-                        return $books;
-                    }
-
-                    return $books->map(function ($book) use ($text_fileset) {
-                        $verses_count = [];
-
-                        $verses_by_book = BibleVerse::where('hash_id', $text_fileset->hash_id)
-                            ->where('book_id', $book->book_id)
-                            ->whereIn('chapter', array_map('\intval', explode(',', $book->chapters)))
-                            ->select('chapter', \DB::raw('COUNT(id) as verse_count'))
-                            ->groupBy('chapter')
-                            ->get();
-
-                        foreach ($verses_by_book as $verse) {
-                            if ($verse['verse_count']) {
-                                $verses_count[] = [
-                                    'chapter' => $verse['chapter'], 'verses' => $verse['verse_count']
-                                ];
-                            }
+                $cache_params = [$bible_id, $this->key, $book_id];
+                $books = cacheRemember(
+                    'bible_books_verse_count',
+                    $cache_params,
+                    now()->addDay(),
+                    function () use ($books, $bible) {
+                        $text_fileset = $bible->filesets->where('set_type_code', 'text_plain')->first();
+                        if (!$text_fileset) {
+                            return $books;
                         }
-                        $book->verses_count = $verses_count;
-                        return $book;
-                    });
-                });
+
+                        return $books->map(function ($book) use ($text_fileset) {
+                            $verses_count = [];
+
+                            $verses_by_book = BibleVerse::where('hash_id', $text_fileset->hash_id)
+                                ->where('book_id', $book->book_id)
+                                ->whereIn('chapter', array_map('\intval', explode(',', $book->chapters)))
+                                ->select('chapter', \DB::raw('COUNT(id) as verse_count'))
+                                ->groupBy('chapter')
+                                ->get();
+
+                            foreach ($verses_by_book as $verse) {
+                                if ($verse['verse_count']) {
+                                    $verses_count[] = [
+                                        'chapter' => $verse['chapter'], 'verses' => $verse['verse_count']
+                                    ];
+                                }
+                            }
+                            $book->verses_count = $verses_count;
+                            return $book;
+                        });
+                    }
+                );
             }
         }
 
@@ -818,26 +866,30 @@ class BiblesController extends APIController
             return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError(trans('api.errors_404'));
         }
 
-        $bible = cacheRemember('v4_chapter_bible', [$bible_id], now()->addDay(), function () use ($bible_id) {
-            $key = $this->key;
-            return Bible::with([
-                'filesets' => function ($query) use ($key) {
-                    $query->isContentAvailable($key);
-                }
-            ])->whereId($bible_id)->first();
-        });
+        $access_group_ids = getAccessGroups();
+        $bible = cacheRemember(
+            'v4_chapter_bible',
+            [$bible_id, $this->key],
+            now()->addDay(),
+            function () use ($bible_id, $access_group_ids) {
+                return Bible::with([
+                    'filesets' => function ($query) use ($access_group_ids) {
+                        $query->isContentAvailable($access_group_ids);
+                    }
+                ])->whereId($bible_id)->first();
+            }
+        );
         if (!$bible) {
             return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError('Bible not found');
         }
 
         $user = $request->user();
         $show_annotations = !empty($user);
-        
+
         // Validate Project / User Connection
         if ($show_annotations && !$this->compareProjects($user->id, $this->key)) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
         }
-
 
         $book_id = checkParam('book_id', true);
         $chapter = checkParam('chapter', true);

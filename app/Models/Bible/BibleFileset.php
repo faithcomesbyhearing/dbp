@@ -288,20 +288,16 @@ class BibleFileset extends Model
         return (string) $client->createPresignedRequest($command, $expiry)->getUri();
     }
 
-    public function scopeIsContentAvailable($query, $key)
-    {
-        $dbp_users = config('database.connections.dbp_users.database');
-        $dbp_prod = config('database.connections.dbp.database');
-
-        return $query->whereRaw(
-            'EXISTS (select 1
-                    from ' . $dbp_users . '.user_keys uk
-                    join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                    join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                    where uk.key = ? and agf.hash_id = bible_filesets.hash_id
-            )',
-            [$key]
-        );
+    public function scopeIsContentAvailable(
+        Builder $query,
+        \Illuminate\Support\Collection $access_group_ids
+    ) : Builder {
+        return $query->whereExists(function ($query) use ($access_group_ids) {
+            return $query->select(\DB::raw(1))
+                ->from('access_group_filesets as agf')
+                ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id')
+                ->whereIn('agf.access_group_id', $access_group_ids);
+        });
     }
 
     public static function getsetTypeCodeFromMedia($media)
@@ -491,6 +487,20 @@ class BibleFileset extends Model
                         '=',
                         'bible_filesets.id'
                     );
+            });
+    }
+
+    public function scopeFilterBy(Builder $query, array $filters) : Builder
+    {
+        $from_table = getAliasOrTableName($query->getQuery()->from);
+
+        return $query
+            ->when(isset($filters['set_type_code']), function ($query) use ($filters, $from_table) {
+                $query->where($from_table.'.set_type_code', $filters['set_type_code']);
+            })
+            ->when(isset($filters['media']), function ($query) use ($filters, $from_table) {
+                $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($filters['media']);
+                return $query->whereIn($from_table.'.set_type_code', $set_type_code_array);
             });
     }
 }

@@ -217,6 +217,7 @@ class BibleFilesetsDownloadController extends APIController
         $type = checkParam('type');
         $limit = min($limit, 50);
         $key = $this->getKey();
+        $access_group_ids = getAccessGroups();
 
         $cache_params = $this->removeSpaceFromCacheParameters([$key, $limit, $page, $type]);
 
@@ -224,8 +225,12 @@ class BibleFilesetsDownloadController extends APIController
             $cache_key,
             $cache_params,
             now()->addHours(12),
-            function () use ($key, $limit, $type) {
-                return BibleFilesetLookup::getContentAvailableByKey($key, $limit, $type);
+            function () use ($limit, $access_group_ids, $type) {
+                return BibleFilesetLookup::getDownloadContentByKey(
+                    $limit,
+                    $access_group_ids,
+                    $type
+                );
             }
         );
 
