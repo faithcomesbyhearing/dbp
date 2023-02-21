@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3271ed40915f1a6caa2cd9b0b55a4b57",
+    "content-hash": "ab57c9ad5f56092d98606308ec96508f",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -288,25 +288,25 @@
         },
         {
             "name": "biscolab/laravel-recaptcha",
-            "version": "v5.4.0",
+            "version": "v6.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/biscolab/laravel-recaptcha.git",
-                "reference": "1bab726402d5376553a439b88a0faa07e84488fd"
+                "reference": "c3d742e6a082cefe2ffce1e13b17a104abfc7234"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/biscolab/laravel-recaptcha/zipball/1bab726402d5376553a439b88a0faa07e84488fd",
-                "reference": "1bab726402d5376553a439b88a0faa07e84488fd",
+                "url": "https://api.github.com/repos/biscolab/laravel-recaptcha/zipball/c3d742e6a082cefe2ffce1e13b17a104abfc7234",
+                "reference": "c3d742e6a082cefe2ffce1e13b17a104abfc7234",
                 "shasum": ""
             },
             "require": {
-                "illuminate/routing": "^7.0|^8.0|^9.0",
-                "illuminate/support": "^7.0|^8.0|^9.0",
+                "illuminate/routing": "^7.0|^8.0|^9.0|^10.0",
+                "illuminate/support": "^7.0|^8.0|^9.0|^10.0",
                 "php": "^7.3|^8.0"
             },
             "require-dev": {
-                "orchestra/testbench": "5.*|6.*|^7.0",
+                "orchestra/testbench": "5.*|6.*|^7.0|^8.0",
                 "phpunit/phpunit": "^9.1"
             },
             "suggest": {
@@ -353,9 +353,9 @@
             ],
             "support": {
                 "issues": "https://github.com/biscolab/laravel-recaptcha/issues",
-                "source": "https://github.com/biscolab/laravel-recaptcha/tree/v5.4.0"
+                "source": "https://github.com/biscolab/laravel-recaptcha/tree/v6.0.0"
             },
-            "time": "2022-05-07T12:52:46+00:00"
+            "time": "2023-02-11T17:27:50+00:00"
         },
         {
             "name": "brick/math",
