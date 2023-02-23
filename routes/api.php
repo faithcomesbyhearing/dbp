@@ -1,15 +1,21 @@
 <?php
 
 // VERSION 4 | Countries
-Route::name('v4_countries.all')->get(
+Route::name('v4_countries.all')
+->middleware('AccessControl')
+->get(
     'countries',
     'Wiki\CountriesController@index'
 );
-Route::name('v4_countries.one')->get(
+Route::name('v4_countries.one')
+->middleware('AccessControl')
+->get(
     'countries/{country_id}',
     'Wiki\CountriesController@show'
 );
-Route::name('v4_countries.search')->get(
+Route::name('v4_countries.search')
+->middleware('AccessControl')
+->get(
     'countries/search/{search_text}',
     'Wiki\CountriesController@search'
 );
