@@ -348,7 +348,7 @@ Route::name('v4_internal_playlists_items.complete')
         'Playlist\PlaylistsController@completeItem'
     );
 Route::name('v4_internal_playlists.translate')
-    ->middleware('APIToken:check')
+    ->middleware(['APIToken:check', 'AccessControl'])
     ->get('playlists/{playlist_id}/translate', 'Playlist\PlaylistsController@translate');
 Route::name('v4_internal_playlists.hls')
     ->get('playlists/{playlist_id}/hls', 'Playlist\PlaylistsController@hls');
@@ -405,7 +405,7 @@ Route::name('v4_internal_plans.stop')
     ->middleware('APIToken:check')
     ->delete('plans/{plan_id}/stop', 'Plan\PlansController@stop');
 Route::name('v4_internal_plans.translate')
-    ->middleware('APIToken:check')
+    ->middleware(['APIToken:check', 'AccessControl'])
     ->get('plans/{plan_id}/translate', 'Plan\PlansController@translate');
 Route::name('v4_internal_plans_days.store')
     ->middleware('APIToken:check')

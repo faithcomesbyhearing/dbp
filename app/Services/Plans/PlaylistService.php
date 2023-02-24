@@ -16,8 +16,13 @@ class PlaylistService
         $playlist = Playlist::findWithBibleRelationByUserAndId($user_id, $playlist_id);
 
         $audio_fileset_types = collect(['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama']);
-        $bible_audio_filesets = $bible->filesets->whereIn('set_type_code', $audio_fileset_types);
-
+        $bible_id = $bible->id;
+        $access_group_ids = getAccessGroups();
+        $bible_audio_filesets = self::getFilesetsByBibleTypeAndAccessGroup(
+            $bible_id,
+            $audio_fileset_types,
+            $access_group_ids
+        );
         $translated_items = [];
         $metadata_items = [];
         $total_translated_items = 0;
@@ -347,5 +352,28 @@ class PlaylistService
             ->groupBy('playlist_id')
             ->get()
             ->keyBy('playlist_id');
+    }
+
+     /**
+     * Retrieve all filesets associated with a specific Bible ID, including the available audio types
+     * and access group IDs
+     *
+     * @param string $bible_id
+     * @param \Illuminate\Support\Collection $audio_fileset_types
+     * @param \Illuminate\Support\Collection $access_group_ids
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public static function getFilesetsByBibleTypeAndAccessGroup(
+        string $bible_id,
+        \Illuminate\Support\Collection $audio_fileset_types,
+        \Illuminate\Support\Collection $access_group_ids
+    ) : Collection {
+        return BibleFileset::whereHas('bible', function ($query) use ($bible_id) {
+            $query->where('bibles.id', $bible_id);
+        })
+            ->isContentAvailable($access_group_ids)
+            ->whereIn('set_type_code', $audio_fileset_types)
+            ->get();
     }
 }
