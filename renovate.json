@@ -9,7 +9,8 @@
   "description": "until AWS updates the PHP platform to 8.1, symfony/* needs to stay below 6.1",
   "ignoreDeps": [
     "symfony/http-client", 
-    "symfony/yaml"
+    "symfony/yaml",
+    "friendsofphp/php-cs-fixer"
   ],
   "docker": {
     "enabled": false
