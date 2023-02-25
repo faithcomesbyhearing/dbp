@@ -349,7 +349,9 @@ class Bible extends Model
                 $subQuery->where('admin_only', 0);
             }]);
             $q->isContentAvailable($type_filters['access_group_ids'])
-                ->conditionToExcludeOldTextFormat();
+                ->conditionToExcludeOldTextFormat()
+                ->conditionToExcludeOldDA16Format()
+                ;
             $this->setConditionFilesets($q, $type_filters);
             $this->setConditionTagExclude($q, $type_filters);
         }]);

@@ -433,7 +433,9 @@ class BiblesController extends APIController
                         $query->isContentAvailable($access_group_ids)
                             ->when($include_font, function ($sub_query) {
                                 $sub_query->with('fonts');
-                            })->conditionToExcludeOldTextFormat();
+                            })
+                            ->conditionToExcludeOldTextFormat()
+                            ->conditionToExcludeOldDA16Format();
                     }
                 ])->find($id);
             }
