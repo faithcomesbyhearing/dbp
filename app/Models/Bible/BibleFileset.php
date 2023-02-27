@@ -52,6 +52,7 @@ class BibleFileset extends Model
 
     public const NEW_TEXT_PLAIN_FILESET_LENGTH = 10;
     public const OLD_TEXT_PLAIN_FILESET_LENGTH = 6;
+    public const V1_AUDIO_16_KBPS_FILESET_LENGTH = 12;
     public const V1_SUFIX_AUDIO_16_KBPS = 'DA16';
     public const V2_SUFIX_AUDIO_16_KBPS = '-opus16';
 
@@ -294,11 +295,16 @@ class BibleFileset extends Model
         Builder $query,
         \Illuminate\Support\Collection $access_group_ids
     ) : Builder {
-        return $query->whereExists(function ($query) use ($access_group_ids) {
+        return $query->whereExists(function (QueryBuilder $query) use ($access_group_ids) {
             return $query->select(\DB::raw(1))
                 ->from('access_group_filesets as agf')
                 ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id')
-                ->whereIn('agf.access_group_id', $access_group_ids);
+                ->whereExists(function (QueryBuilder $subquery) use ($access_group_ids) {
+                    return $subquery->select(\DB::raw(1))
+                        ->from('access_group_filesets as agf2')
+                        ->whereColumn('agf.hash_id', '=', 'agf2.hash_id')
+                        ->whereIn('agf2.access_group_id', $access_group_ids);
+                });
         });
     }
 
@@ -514,13 +520,11 @@ class BibleFileset extends Model
                     ->whereColumn('bfcaudio.set_type_code', '=', $from_table.'.set_type_code')
                     ->where(
                         DB::raw(\sprintf(
-                            'SUBSTRING(%s.id, %d, %d)',
-                            $from_table,
-                            strlen(self::V1_SUFIX_AUDIO_16_KBPS)*-1,
-                            strlen(self::V1_SUFIX_AUDIO_16_KBPS)
+                            'CHAR_LENGTH(%s.id)',
+                            $from_table
                         )),
                         '=',
-                        self::V1_SUFIX_AUDIO_16_KBPS
+                        self::V1_AUDIO_16_KBPS_FILESET_LENGTH
                     )
                     ->where(
                         DB::raw(\sprintf(
