@@ -52,6 +52,8 @@ class BibleFileset extends Model
 
     public const NEW_TEXT_PLAIN_FILESET_LENGTH = 10;
     public const OLD_TEXT_PLAIN_FILESET_LENGTH = 6;
+    public const V1_SUFIX_AUDIO_16_KBPS = 'DA16';
+    public const V2_SUFIX_AUDIO_16_KBPS = '-opus16';
 
     protected $connection = 'dbp';
     public $incrementing = false;
@@ -472,20 +474,74 @@ class BibleFileset extends Model
      */
     public function scopeConditionToExcludeOldTextFormat(Builder $query) : Builder
     {
-        $dbp_prod = config('database.connections.dbp.database');
+        $from_table = getAliasOrTableName($query->getQuery()->from);
 
         return $query
-            ->whereNotExists(function (QueryBuilder $subquery) use ($dbp_prod) {
+            ->whereNotExists(function (QueryBuilder $subquery) use ($from_table) {
                 return $subquery->select(\DB::raw(1))
-                    ->from($dbp_prod . '.bible_filesets AS bfctext')
+                    ->from('bible_filesets', 'bfctext')
                     ->where('bfctext.set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
-                    ->whereColumn('bfctext.set_type_code', '=', 'bible_filesets.set_type_code')
-                    ->where(DB::raw('CHAR_LENGTH(bible_filesets.id)'), '=', self::OLD_TEXT_PLAIN_FILESET_LENGTH)
+                    ->whereColumn('bfctext.set_type_code', '=', $from_table.'.set_type_code')
+                    ->where(
+                        DB::raw(\sprintf('CHAR_LENGTH(%s.id)', $from_table)),
+                        '=',
+                        self::OLD_TEXT_PLAIN_FILESET_LENGTH
+                    )
                     ->where(DB::raw('CHAR_LENGTH(bfctext.id)'), '=', self::NEW_TEXT_PLAIN_FILESET_LENGTH)
                     ->whereColumn(
                         DB::raw(\sprintf('SUBSTRING(bfctext.id, %d, %d)', 1, self::OLD_TEXT_PLAIN_FILESET_LENGTH)),
                         '=',
-                        'bible_filesets.id'
+                        $from_table.'.id'
+                    );
+            });
+    }
+
+    /**
+     * Filter bible fileset records to avoid pulling the old 16kbps content (DA16) fileset
+     * when a opus16 content are available.
+     *
+     * @param Builder $query
+     */
+    public function scopeConditionToExcludeOldDA16Format(Builder $query) : Builder
+    {
+        $from_table = getAliasOrTableName($query->getQuery()->from);
+
+        return $query
+            ->whereNotExists(function (QueryBuilder $subquery) use ($from_table) {
+                return $subquery->select(\DB::raw(1))
+                    ->from('bible_filesets', 'bfcaudio')
+                    ->whereIn('bfcaudio.set_type_code', [BibleFileset::TYPE_AUDIO, BibleFileset::TYPE_AUDIO_DRAMA])
+                    ->whereColumn('bfcaudio.set_type_code', '=', $from_table.'.set_type_code')
+                    ->where(
+                        DB::raw(\sprintf(
+                            'SUBSTRING(%s.id, %d, %d)',
+                            $from_table,
+                            strlen(self::V1_SUFIX_AUDIO_16_KBPS)*-1,
+                            strlen(self::V1_SUFIX_AUDIO_16_KBPS)
+                        )),
+                        '=',
+                        self::V1_SUFIX_AUDIO_16_KBPS
+                    )
+                    ->where(
+                        DB::raw(\sprintf(
+                            'SUBSTRING(bfcaudio.id, %d, %d)',
+                            strlen(self::V2_SUFIX_AUDIO_16_KBPS)*-1,
+                            strlen(self::V2_SUFIX_AUDIO_16_KBPS)
+                        )),
+                        '=',
+                        self::V2_SUFIX_AUDIO_16_KBPS
+                    )
+                    ->whereColumn(
+                        DB::raw(\sprintf('SUBSTRING(bfcaudio.id, %d, %d)', 1, self::NEW_TEXT_PLAIN_FILESET_LENGTH)),
+                        '=',
+                        DB::raw(
+                            \sprintf(
+                                'SUBSTRING(%s.id, %d, %d)',
+                                $from_table,
+                                1,
+                                self::NEW_TEXT_PLAIN_FILESET_LENGTH
+                            ),
+                        )
                     );
             });
     }
