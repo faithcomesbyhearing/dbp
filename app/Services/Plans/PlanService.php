@@ -62,7 +62,13 @@ class PlanService
         $translated_percentage = 0;
         $play_day_data = [];
         $audio_fileset_types = collect(['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama']);
-        $bible_audio_filesets = $bible->filesets->whereIn('set_type_code', $audio_fileset_types);
+        $bible_id = $bible->id;
+        $access_group_ids = getAccessGroups();
+        $bible_audio_filesets = PlaylistService::getFilesetsByBibleTypeAndAccessGroup(
+            $bible_id,
+            $audio_fileset_types,
+            $access_group_ids
+        );
         $count_plan_days = 0;
         $playlist_ids = [];
         $valid_bible_audio_filesets = $this->playlist_service->getValidAudioStreamFilesets($bible_audio_filesets);
