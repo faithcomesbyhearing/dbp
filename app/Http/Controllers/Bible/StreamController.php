@@ -51,29 +51,10 @@ class StreamController extends APIController
                     ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
                     ->replyWithError(trans('api.bible_file_errors_404', ['id' => $file_id_location]));
             }
-            $asset_id = $fileset->asset_id;
+
             $current_file = '#EXTM3U';
             foreach ($file->streamBandwidth as $bandwidth) {
-                $current_file .= "\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=$bandwidth->bandwidth";
-
-                $transportStream = sizeof($bandwidth->transportStreamBytes)
-                    ? $bandwidth->transportStreamBytes
-                    : $bandwidth->transportStreamTS;
-
-                $extra_args = '';
-                if (sizeof($transportStream) &&
-                    isset($transportStream[0]->timestamp) &&
-                    $transportStream[0]->timestamp->verse_start === 0
-                ) {
-                    $extra_args = '&v0=0';
-                }
-                if ($bandwidth->resolution_width) {
-                    $current_file .= ',RESOLUTION=' . $bandwidth->resolution_width . "x$bandwidth->resolution_height";
-                }
-                if ($bandwidth->codec) {
-                    $current_file .= ",CODECS=\"$bandwidth->codec\"";
-                }
-                $current_file .= "\n$bandwidth->file_name" . '?key=' . $this->key . '&v=4&asset_id=' . $asset_id . $extra_args;
+                $current_file .= $bandwidth->getPlaylistContent($this->key, $fileset->asset_id);
             }
             return response($current_file, 200, [
                 'Content-Disposition' => 'attachment; filename="' . $file->file_name . '"',
