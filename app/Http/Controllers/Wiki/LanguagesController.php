@@ -153,7 +153,9 @@ class LanguagesController extends APIController
                         'languages.rolv_code',
                         \DB::raw($select_country_population . ' as country_population')
                     ])
-                    ->with('bibles')
+                    ->with(['bibles' => function ($query) {
+                        $query->whereHas('filesets');
+                    }])
                     ->withCount([
                         'filesets'
                     ]);
