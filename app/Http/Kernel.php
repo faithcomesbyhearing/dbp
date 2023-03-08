@@ -80,6 +80,7 @@ class Kernel extends HttpKernel
         'throttle'            => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified'            => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'APIToken'            => \App\Http\Middleware\APIToken::class,
+        'AccessControl'       => \App\Http\Middleware\AccessControl::class,
     ];
 
     /**

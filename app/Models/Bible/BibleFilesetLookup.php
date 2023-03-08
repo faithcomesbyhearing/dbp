@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFilesetConnection;
 use App\Models\Bible\BibleTranslation;
@@ -18,10 +19,7 @@ use App\Models\Bible\BibleFileSecondary;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFilesetCopyrightRole;
 use App\Models\Language\Language;
-use App\Models\User\Key;
-use App\Models\Organization\Organization;
-use App\Models\User\AccessGroupKey;
-use App\Models\User\AccessGroupFileset;
+use App\Models\User\AccessGroup;
 
 /**
  * App\Models\Bible\BibleFilesetLookup
@@ -118,21 +116,23 @@ class BibleFilesetLookup extends Model
     /**
      * Get fileset list available for a user key given
      *
-     * @param string $key
      * @param int $limit
+     * @param Collection $group_id_list_by_user_key
      * @param string $type
      *
      * @return LengthAwarePaginator
      */
-    public static function getContentAvailableByKey(string $key, int $limit, string $type = null) : LengthAwarePaginator
-    {
-        $user_key_id = Key::getIdByKey($key);
+    public static function getDownloadContentByKey(
+        int $limit,
+        Collection $access_group_by_user_key,
+        string $type = null
+    ) : LengthAwarePaginator {
 
-        $group_id_list_by_user_key = AccessGroupKey::select('access_group_id')
-            ->where('key_id', $user_key_id)
-            ->whereIn('access_group_id', getDownloadAccessGroupList())
+        $download_access_group_array_ids = AccessGroup::select('id')
+            ->whereIn('id', $access_group_by_user_key)
+            ->whereIn('id', getDownloadAccessGroupList())
             ->get()
-            ->pluck('access_group_id')
+            ->pluck('id')
             ->toArray();
 
         return BibleFileset::select([
@@ -162,7 +162,7 @@ class BibleFilesetLookup extends Model
         })
         ->whereNotIn('bible_filesets.set_type_code', ['text_format'])
         ->where('bible_filesets.id', 'NOT LIKE', '%DA16')
-        ->hasAccessGroup($group_id_list_by_user_key)
+        ->hasAccessGroup($download_access_group_array_ids)
         ->paginate($limit);
     }
 }
