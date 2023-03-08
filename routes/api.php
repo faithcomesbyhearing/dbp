@@ -1,29 +1,41 @@
 <?php
 
 // VERSION 4 | Countries
-Route::name('v4_countries.all')->get(
+Route::name('v4_countries.all')
+->middleware('AccessControl')
+->get(
     'countries',
     'Wiki\CountriesController@index'
 );
-Route::name('v4_countries.one')->get(
+Route::name('v4_countries.one')
+->middleware('AccessControl')
+->get(
     'countries/{country_id}',
     'Wiki\CountriesController@show'
 );
-Route::name('v4_countries.search')->get(
+Route::name('v4_countries.search')
+->middleware('AccessControl')
+->get(
     'countries/search/{search_text}',
     'Wiki\CountriesController@search'
 );
 
 // VERSION 4 | Languages
-Route::name('v4_languages.all')->get(
+Route::name('v4_languages.all')
+->middleware('AccessControl')
+->get(
     'languages',
     'Wiki\LanguagesController@index'
 );
-Route::name('v4_languages.one')->get(
+Route::name('v4_languages.one')
+->middleware('AccessControl')
+->get(
     'languages/{language_id}',
     'Wiki\LanguagesController@show'
 );
-Route::name('v4_languages.search')->get(
+Route::name('v4_languages.search')
+->middleware('AccessControl')
+->get(
     'languages/search/{search_text}',
     'Wiki\LanguagesController@search'
 );
@@ -56,30 +68,39 @@ Route::name('v4_bible.defaults')->get(
     'bibles/defaults/types',
     'Bible\BiblesController@defaults'
 ); // used
-Route::name('v4_bible.books')->get(
+Route::name('v4_bible.books')
+->middleware('AccessControl')
+->get(
     'bibles/{bible_id}/book',
     'Bible\BiblesController@books'
 ); // used by bible.is, but book is not specified. suggest unifying on this one. (fixed)The signature looks wrong - the code doesn't accept book_id as a path param, only a query param
-Route::name('v4_bible_by_id.search')->get(
+Route::name('v4_bible_by_id.search')
+->middleware('AccessControl')
+->get(
     'bibles/search',
     'Bible\BiblesController@searchByBibleVersion'
 );
-Route::name('v4_bible.one')->get(
+Route::name('v4_bible.one')
+->middleware('AccessControl')
+->get(
     'bibles/{bible_id}',
     'Bible\BiblesController@show'
 ); // see note in Postman. the content is suspect
-Route::name('v4_bible.search')->get(
+Route::name('v4_bible.search')
+->middleware('AccessControl')
+->get(
     'bibles/search/{search_text}',
     'Bible\BiblesController@search'
 );
 Route::name('v4_bible.all')
+    ->middleware('AccessControl')
     ->get('bibles', 'Bible\BiblesController@index'); // used
 Route::name('v4_bible.copyright')->get(
     'bibles/{bible_id}/copyright',
     'Bible\BiblesController@copyright'
 ); // used
 Route::name('v4_internal_bible.chapter')
-    ->middleware('APIToken')
+    ->middleware(['APIToken', 'AccessControl'])
     ->get('bibles/{bible_id}/chapter', 'Bible\BiblesController@chapter'); //used
 Route::name('v4_internal_bible.chapter.annotations')
     ->middleware('APIToken:check')
@@ -103,7 +124,9 @@ Route::name('v4_internal_filesets.checkTypes')->post(
 Route::name('v4_internal_bible_filesets.copyright')->get('bibles/filesets/{fileset_id}/copyright', 'Bible\BibleFileSetsController@copyright');
 
 // DEPRECATED. Prefer instead v4_filesets.chapter. Reasons: It takes book and chapter as query parameters.
-Route::name('v4_internal_filesets.show')->get(
+Route::name('v4_internal_filesets.show')
+->middleware('AccessControl')
+->get(
     'bibles/filesets/{fileset_id?}',
     'Bible\BibleFileSetsController@show'
 );
@@ -115,11 +138,15 @@ Route::name('v4_filesets.books')->get(
 );
 
 // the order of these next two routes matters, the most general (bibles/filesets/bulk) must go before /bibles/filesets/{fileset_id}
-Route::name('v4_filesets.bulk')->get(
+Route::name('v4_filesets.bulk')
+->middleware('AccessControl')
+->get(
     'bibles/filesets/bulk/{fileset_id}/{book?}',
     'Bible\BibleFileSetsController@showBulk'
 );
-Route::name('v4_filesets.chapter')->get(
+Route::name('v4_filesets.chapter')
+->middleware('AccessControl')
+->get(
     'bibles/filesets/{fileset_id}/{book}/{chapter}',
     'Bible\BibleFileSetsController@showChapter'
 );
@@ -127,7 +154,8 @@ Route::name('v4_filesets.chapter')->get(
 Route::name('v4_bible_verses.verse_by_language')->get(
     '/bibles/verses/{language_code}/{book_id}/{chapter_id}/{verse_number?}',
     'Bible\BibleVersesController@showVerseByLanguage'
-)->whereAlphaNumeric('language_code')
+)->middleware('AccessControl')
+->whereAlphaNumeric('language_code')
 ->whereAlphaNumeric('book_id')
 ->whereNumber('chapter_id')
 ->whereAlphaNumeric('verse_number');
@@ -135,20 +163,23 @@ Route::name('v4_bible_verses.verse_by_language')->get(
 Route::name('v4_bible_verses.verse_by_bible')->get(
     '/bible/{bible_id}/verses/{book_id}/{chapter_id}/{verse_number?}',
     'Bible\BibleVersesController@showVerseByBible'
-)->whereAlphaNumeric('bible_id')
+)->middleware('AccessControl')
+->whereAlphaNumeric('bible_id')
 ->whereAlphaNumeric('book_id')
 ->whereNumber('chapter_id')
 ->whereAlphaNumeric('verse_number');
 
 // BibleFileSet download version 4
 
-Route::name('v4_bible_filesets_download.list')->get(
+Route::name('v4_bible_filesets_download.list')
+->middleware('AccessControl')
+->get(
     'download/list',
     'Bible\BibleFilesetsDownloadController@list'
 );
 
 Route::name('v4_bible_filesets_download.index')
-    ->middleware('APIToken')
+    ->middleware(['APIToken', 'AccessControl'])
     ->get(
         'download/{fileset_id}/{book?}/{chapter_id?}',
         'Bible\BibleFilesetsDownloadController@index'
@@ -156,7 +187,9 @@ Route::name('v4_bible_filesets_download.index')
 
 // VERSION 4 | Text
 // This is new, added Dec 28, to provide just the verses for a bible or chapter. Note that this does not have filesets in path
-Route::name('v4_bible.verseinfo')->get(
+Route::name('v4_bible.verseinfo')
+->middleware('AccessControl')
+->get(
     'bibles/{bible_id}/{book}/{chapter?}',
     'Bible\TextController@index'
 );
@@ -315,7 +348,7 @@ Route::name('v4_internal_playlists_items.complete')
         'Playlist\PlaylistsController@completeItem'
     );
 Route::name('v4_internal_playlists.translate')
-    ->middleware('APIToken:check')
+    ->middleware(['APIToken:check', 'AccessControl'])
     ->get('playlists/{playlist_id}/translate', 'Playlist\PlaylistsController@translate');
 Route::name('v4_internal_playlists.hls')
     ->get('playlists/{playlist_id}/hls', 'Playlist\PlaylistsController@hls');
@@ -372,7 +405,7 @@ Route::name('v4_internal_plans.stop')
     ->middleware('APIToken:check')
     ->delete('plans/{plan_id}/stop', 'Plan\PlansController@stop');
 Route::name('v4_internal_plans.translate')
-    ->middleware('APIToken:check')
+    ->middleware(['APIToken:check', 'AccessControl'])
     ->get('plans/{plan_id}/translate', 'Plan\PlansController@translate');
 Route::name('v4_internal_plans_days.store')
     ->middleware('APIToken:check')

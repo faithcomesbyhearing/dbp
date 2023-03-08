@@ -143,8 +143,7 @@ class LanguageControllerV2 extends APIController
         $img_size           = checkParam('img_size');
         $img_type           = checkParam('img_type') ?? 'png';
         $additional         = checkParam('additional');
-
-        $key = $this->key;
+        $access_group_ids   = getAccessGroups();
 
         $cache_params = $this->removeSpaceFromCacheParameters([
             $sort_by,
@@ -153,7 +152,7 @@ class LanguageControllerV2 extends APIController
             $img_size,
             $img_type,
             $additional,
-            $key
+            $this->key
         ]);
 
         if ($sort_by === 'lang_code') {
@@ -168,7 +167,15 @@ class LanguageControllerV2 extends APIController
             'v2_country_lang',
             $cache_params,
             now()->addDay(),
-            function () use ($sort_by, $lang_code, $country_code, $additional, $img_size, $img_type, $key) {
+            function () use (
+                $sort_by,
+                $lang_code,
+                $country_code,
+                $additional,
+                $img_size,
+                $img_type,
+                $access_group_ids
+            ) {
                 $language_v2 = !empty($lang_code) ? $this->getV2Language($lang_code) : null;
                 $v2_code = optional($language_v2)->language_ISO_639_3_id;
                 $country_langs = CountryLanguage::with(['country', 'language' => function ($query) use ($additional) {
@@ -183,8 +190,8 @@ class LanguageControllerV2 extends APIController
                             $join->where('languages.iso', $v2_code ?? $lang_code);
                         }
                     })
-                    ->whereHas('language', function ($query) use ($key) {
-                        $query->isContentAvailable($key);
+                    ->whereHas('language', function ($query) use ($access_group_ids) {
+                        $query->isContentAvailable($access_group_ids);
                     })
                     ->whereHas('country', function ($query) use ($country_code) {
                         $query->when($country_code, function ($subquery) use ($country_code) {
@@ -200,7 +207,11 @@ class LanguageControllerV2 extends APIController
                         $item->country_image = $path;
                     });
 
-                return fractal($country_langs, new CountryLanguageTransformer(['language_v2' => $language_v2]), $this->serializer);
+                return fractal(
+                    $country_langs,
+                    new CountryLanguageTransformer(['language_v2' => $language_v2]),
+                    $this->serializer
+                );
             }
         );
 
@@ -386,44 +397,53 @@ class LanguageControllerV2 extends APIController
         $media           = checkParam('media');
         $organization_id = checkParam('organization_id');
 
-        $key = $this->key;
+        $access_group_ids= getAccessGroups();
 
-        $cache_params = [$root, $iso, $media, $organization_id, $key];
-        $languages = cacheRemember('volumeLanguageFamily', $cache_params, now()->addDay(), function () use ($root, $iso, $media, $organization_id, $key) {
-            $language_v2 = !empty($iso) ? $this->getV2Language($iso) : null;
-            $v2_code = optional($language_v2)->language_ISO_639_3_id;
+        $cache_params = [$root, $iso, $media, $organization_id, $this->key];
+        $languages = cacheRemember(
+            'volumeLanguageFamily',
+            $cache_params,
+            now()->addDay(),
+            function () use ($root, $iso, $media, $organization_id, $access_group_ids) {
+                $language_v2 = !empty($iso) ? $this->getV2Language($iso) : null;
+                $v2_code = optional($language_v2)->language_ISO_639_3_id;
 
-            $languages = Language::with('bibles')->with('dialects')
-                ->includeAutonymTranslation()
-                ->includeCurrentTranslation()
-                ->withRequiredFilesets([
-                    'key'             => $key,
-                    'media'           => $media,
-                    'organization_id' => $organization_id
-                ])
-                ->with(['dialects.childLanguage' => function ($query) {
-                    $query->select(['id', 'iso']);
-                }])
-                ->when($iso, function ($query) use ($iso, $v2_code) {
-                    return $query->where('iso', $v2_code ?? $iso);
-                })
-                ->when($root, function ($query) use ($root) {
-                    return $query->where('name', 'LIKE', '%' . $root . '%');
-                })
-                ->select(
-                    [
-                        'current_translation.name as name',
-                        'autonym.name as autonym',
-                        'languages.iso',
-                        'languages.iso2B',
-                        'languages.iso2T',
-                        'languages.iso1'
-                    ]
-                )
-                ->get();
+                $languages = Language::with('bibles')->with('dialects')
+                    ->includeAutonymTranslation()
+                    ->includeCurrentTranslation()
+                    ->withRequiredFilesets([
+                        'access_group_ids' => $access_group_ids,
+                        'media'            => $media,
+                        'organization_id'  => $organization_id
+                    ])
+                    ->with(['dialects.childLanguage' => function ($query) {
+                        $query->select(['id', 'iso']);
+                    }])
+                    ->when($iso, function ($query) use ($iso, $v2_code) {
+                        return $query->where('iso', $v2_code ?? $iso);
+                    })
+                    ->when($root, function ($query) use ($root) {
+                        return $query->where('name', 'LIKE', '%' . $root . '%');
+                    })
+                    ->select(
+                        [
+                            'current_translation.name as name',
+                            'autonym.name as autonym',
+                            'languages.iso',
+                            'languages.iso2B',
+                            'languages.iso2T',
+                            'languages.iso1'
+                        ]
+                    )
+                    ->get();
 
-            return fractal($languages, new LanguageListingTransformer(['language_v2' => $language_v2]), $this->serializer);
-        });
+                return fractal(
+                    $languages,
+                    new LanguageListingTransformer(['language_v2' => $language_v2]),
+                    $this->serializer
+                );
+            }
+        );
         return $this->reply($languages);
     }
 

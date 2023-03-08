@@ -441,96 +441,110 @@ class LibraryController extends APIController
         $organization       = checkParam('organization_id');
         $version_code       = checkParam('version_code');
 
-        $key = $this->key;
+        $access_group_ids = getAccessGroups();
 
         $arclight = new ArclightController();
         if ($version_code === 'JFV') {
             return $arclight->volumes();
         }
 
-        $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code, $key];
+        $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code, $this->key];
         $cache_key = generateCacheSafeKey('v2_library_volume', $cache_params);
-        $filesets = cacheRememberByKey($cache_key, now()->addDay(), function () use ($dam_id, $media, $language_name, $iso, $updated, $organization, $version_code, $key) {
-            $language_v2 = $this->getV2Language($iso);
-            $v2_iso = optional($language_v2)->language_ISO_639_3_id;
-            $language_id = $iso ? optional(Language::where('iso', $v2_iso ?? $iso)->first())->id : null;
+        $filesets = cacheRememberByKey(
+            $cache_key,
+            now()->addDay(),
+            function () use (
+                $dam_id,
+                $media,
+                $language_name,
+                $iso,
+                $updated,
+                $organization,
+                $version_code,
+                $access_group_ids
+            ) {
+                $language_v2 = $this->getV2Language($iso);
+                $v2_iso = optional($language_v2)->language_ISO_639_3_id;
+                $language_id = $iso ? optional(Language::where('iso', $v2_iso ?? $iso)->first())->id : null;
 
-            if (!empty($iso) && empty($language_id)) {
-                return [];
-            }
+                if (!empty($iso) && empty($language_id)) {
+                    return [];
+                }
 
-            $has_nondrama = BibleFileset::where('set_type_code', 'audio')
-                ->select('id')
-                ->where('set_type_code', 'audio')
-                ->whereHas('permissions', function ($query) {
-                    $query->whereHas('access', function ($query) {
-                        $query->where('name', '!=', 'RESTRICTED');
-                    });
-                })
-                ->whereColumn('id', 'bible_filesets.id')
-                ->limit(1);
+                $has_nondrama = BibleFileset::where('set_type_code', 'audio')
+                    ->select('id')
+                    ->where('set_type_code', 'audio')
+                    ->whereHas('permissions', function ($query) {
+                        $query->whereHas('access', function ($query) {
+                            $query->where('name', '!=', 'RESTRICTED');
+                        });
+                    })
+                    ->whereColumn('id', 'bible_filesets.id')
+                    ->limit(1);
 
-            $filesets = BibleFileset::with('meta', 'bible.translations')->where('set_type_code', '!=', 'text_format')
-                ->where('bible_filesets.id', 'NOT LIKE', '%16')
-                ->uniqueFileset($dam_id, $media, true)
-                ->withBible($language_name, $language_id, $organization)
-                ->when($language_id, function ($query) use ($language_id) {
-                    $query->whereHas('translations', function ($query) use ($language_id) {
-                        $query->where('language_id', $language_id);
-                    });
-                })
-                ->leftJoin('language_codes as arclight', function ($query) {
-                    $query->on('arclight.language_id', 'languages.id')->where('source', 'arclight');
-                })
-                ->leftJoin(
-                    'bible_files_secondary',
-                    'bible_files_secondary.hash_id',
-                    'bible_filesets.hash_id'
-                )
-                ->select(
-                    \DB::raw(
-                        'english_name.name as english_name,
-                        autonym.name as autonym_name,
-                        bibles.id as bible_id,
-                        bible_filesets.id,
-                        bible_filesets.created_at,
-                        bible_filesets.updated_at,
-                        bible_filesets.set_type_code,
-                        bible_filesets.set_size_code,
-                        bible_filesets.asset_id,
-                        alphabets.direction,
-                        languages.iso,
-                        languages.iso2B,
-                        languages.iso2T,
-                        languages.iso1,
-                        arclight.code as arclight_code,
-                        languages.name as language_name,
-                        language_translations.name as autonym,
-                        MIN(bible_files_secondary.file_name) as secondary_file_name,
-                        bible_files_secondary.file_type as secondary_file_type'
+                $filesets = BibleFileset::with('meta', 'bible.translations')
+                    ->where('set_type_code', '!=', 'text_format')
+                    ->where('bible_filesets.id', 'NOT LIKE', '%16')
+                    ->uniqueFileset($dam_id, $media, true)
+                    ->withBible($language_name, $language_id, $organization)
+                    ->when($language_id, function ($query) use ($language_id) {
+                        $query->whereHas('translations', function ($query) use ($language_id) {
+                            $query->where('language_id', $language_id);
+                        });
+                    })
+                    ->leftJoin('language_codes as arclight', function ($query) {
+                        $query->on('arclight.language_id', 'languages.id')->where('source', 'arclight');
+                    })
+                    ->leftJoin(
+                        'bible_files_secondary',
+                        'bible_files_secondary.hash_id',
+                        'bible_filesets.hash_id'
                     )
-                )
-                ->addSelect(['bible_filesets_has_dram' => $has_nondrama])
-                ->groupBy(['bible_filesets.hash_id', 'bible_files_secondary.file_type'])
-                ->when($updated, function ($query) use ($updated) {
-                    $query->where('bible_filesets.updated_at', '>', $updated);
-                })
-                ->when($version_code, function ($query) use ($version_code) {
-                    $query->where('bible_filesets.id', 'LIKE', '%' . $version_code .'%');
-                })
-                ->when($organization, function ($query) use ($organization) {
-                    $query->where('bible_organizations.organization_id', $organization);
-                })
-                ->isContentAvailable($key)
-                ->get()
-                ->filter(function ($item) {
-                    return $item->english_name;
-                });
+                    ->select(
+                        \DB::raw(
+                            'english_name.name as english_name,
+                            autonym.name as autonym_name,
+                            bibles.id as bible_id,
+                            bible_filesets.id,
+                            bible_filesets.created_at,
+                            bible_filesets.updated_at,
+                            bible_filesets.set_type_code,
+                            bible_filesets.set_size_code,
+                            bible_filesets.asset_id,
+                            alphabets.direction,
+                            languages.iso,
+                            languages.iso2B,
+                            languages.iso2T,
+                            languages.iso1,
+                            arclight.code as arclight_code,
+                            languages.name as language_name,
+                            language_translations.name as autonym,
+                            MIN(bible_files_secondary.file_name) as secondary_file_name,
+                            bible_files_secondary.file_type as secondary_file_type'
+                        )
+                    )
+                    ->addSelect(['bible_filesets_has_dram' => $has_nondrama])
+                    ->groupBy(['bible_filesets.hash_id', 'bible_files_secondary.file_type'])
+                    ->when($updated, function ($query) use ($updated) {
+                        $query->where('bible_filesets.updated_at', '>', $updated);
+                    })
+                    ->when($version_code, function ($query) use ($version_code) {
+                        $query->where('bible_filesets.id', 'LIKE', '%' . $version_code .'%');
+                    })
+                    ->when($organization, function ($query) use ($organization) {
+                        $query->where('bible_organizations.organization_id', $organization);
+                    })
+                    ->isContentAvailable($access_group_ids)
+                    ->get()
+                    ->filter(function ($item) {
+                        return $item->english_name;
+                    });
 
-            $this->setSecondaryFilePathForEachFileset($filesets);
+                $this->setSecondaryFilePathForEachFileset($filesets);
 
-            return $this->generateV2StyleId($filesets);
-        });
+                return $this->generateV2StyleId($filesets);
+            }
+        );
 
         $this->getBiblesByFilesetId($filesets);
 
