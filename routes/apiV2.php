@@ -35,7 +35,7 @@ Route::name('v2_text_verse')->middleware('AccessControl')->get('text/verse',    
 Route::name('v2_verseInfo')->get('text/verseinfo',                                 'Bible\TextController@info'); // I cannot see a difference between library/verseinfo and text/verseinfo
 Route::name('v2_text_search')->get('text/search',                                  'Bible\TextControllerV2@search');
 Route::name('v2_text_search_group')->get('text/searchgroup',                       'Bible\TextController@searchGroup');
-Route::name('v2_text_volume')->get('/text/volume',                                 'Bible\BiblesController@show');
+Route::name('v2_text_volume')->middleware('AccessControl')->get('/text/volume',    'Bible\BiblesController@show');
 
 
 // VERSION 2 | Audio
