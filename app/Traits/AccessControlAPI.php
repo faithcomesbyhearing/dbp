@@ -4,11 +4,13 @@ namespace App\Traits;
 
 use App\Models\User\AccessGroup;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Illuminate\Support\Collection;
 use App\Models\User\AccessGroupFileset;
 use App\Models\User\AccessType;
 use App\Models\User\Key;
 use App\Models\Bible\BibleFileset;
 use App\Exceptions\ResponseException as Response;
+use App\Support\AccessGroupsCollection;
 use DB;
 
 trait AccessControlAPI
@@ -21,13 +23,13 @@ trait AccessControlAPI
      *
      * @return object
      */
-    public function accessControl(?string $api_key, $control_table = 'filesets')
+    public function accessControl(AccessGroupsCollection $access_groups, $control_table = 'filesets')
     {
         return cacheRemember(
             'access_control:',
-            [$control_table, $api_key],
+            [$control_table, $access_groups->toString()],
             now()->addDay(),
-            function () use ($api_key) {
+            function () use ($access_groups) {
                 $user_location = geoip(request()->ip());
                 $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
                 $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
@@ -41,16 +43,14 @@ trait AccessControlAPI
                 }
 
                 // Access Control has historically been tied to fileset hashes.
-                $access_group_ids = getAccessGroups();
-
                 $accessGroups = AccessGroup::select('id', 'name')
-                    ->whereIn('id', $access_group_ids)
+                    ->whereIn('id', $access_groups)
                     ->where('name', '!=', 'RESTRICTED')
                     ->get()
                 ;
                 // Use Eloquent everywhere except for this giant request
                 $identifiers = AccessGroupFileset::select('hash_id as identifier')
-                    ->whereIn('access_group_id', $access_group_ids)->distinct()->get();
+                    ->whereIn('access_group_id', $access_groups)->distinct()->get();
 
                 return (object) [
                     'identifiers' => collect($identifiers)->pluck('identifier')->toArray(),
@@ -60,15 +60,17 @@ trait AccessControlAPI
         );
     }
 
-    private function genericAccessControl(?string $api_key, ?string $fileset_hash, array $access_group_ids = [])
-    {
-
-        $cache_params = [$api_key, $fileset_hash, join('', $access_group_ids)];
+    private function genericAccessControl(
+        AccessGroupsCollection $access_groups,
+        ?string $fileset_hash,
+        array $access_group_ids = []
+    ) {
+        $cache_params = [$access_groups->toString(), $fileset_hash, join('', $access_group_ids)];
         return cacheRemember(
             'bulk_access_control',
             $cache_params,
             now()->addMinutes(40),
-            function () use ($api_key, $fileset_hash, $access_group_ids) {
+            function () use ($access_groups, $fileset_hash, $access_group_ids) {
                 $user_location = geoip(request()->ip());
                 $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
                 $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
@@ -81,14 +83,12 @@ trait AccessControlAPI
                     return [];
                 }
 
-                $access_groups_by_api_key_user = getAccessGroups();
-
-                if (empty($access_groups_by_api_key_user)) {
+                if (empty($access_groups)) {
                     return [];
                 }
 
                 return AccessGroupFileset::select('hash_id')
-                    ->whereIn('access_group_id', $access_groups_by_api_key_user)
+                    ->whereIn('access_group_id', $access_groups)
                     ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
                         $query->whereIn('access_group_id', $access_group_ids);
                     })
@@ -112,7 +112,8 @@ trait AccessControlAPI
 
     public function allowedByAccessControl(BibleFileset $fileset)
     {
-        $access_control = $this->genericAccessControl($this->key, $fileset->hash_id);
+        $access_groups = getAccessGroups();
+        $access_control = $this->genericAccessControl($access_groups, $fileset->hash_id);
         if (sizeof($access_control) === 0) {
             return $this->setStatusCode(HttpResponse::HTTP_FORBIDDEN)
                 ->replyWithError(trans('api.bible_fileset_errors_401'));
@@ -122,7 +123,8 @@ trait AccessControlAPI
 
     public function allowedByBulkAccessControl(BibleFileset $fileset)
     {
-        $allowed_fileset = $this->genericAccessControl($this->key, $fileset->hash_id);
+        $access_groups = getAccessGroups();
+        $allowed_fileset = $this->genericAccessControl($access_groups, $fileset->hash_id);
         if (sizeof($allowed_fileset) === 0) {
             return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError('Not found');
         }
@@ -131,6 +133,8 @@ trait AccessControlAPI
 
     public function allowedForDownload(BibleFileset $fileset)
     {
+        $access_groups = getAccessGroups();
+
         // Note that in the future, this constraint should be updated to account for
         // whether the user is logged in or not.
         // if ($this->doesApiKeyBelongToBibleis($this->key) && isUserLoggedIn()) {
@@ -138,15 +142,15 @@ trait AccessControlAPI
         // If the API key belongs to bible.is DBP will utilize the bible.is access group list else,
         // the system will utilize the generic access group list instead.
         if ($this->doesApiKeyBelongToBibleis($this->key)) {
-            $download_access_group_array_ids = optional(getAccessGroups())->toArray();
+            $download_access_groups = optional($access_groups)->toArray();
         } else {
-            $download_access_group_array_ids = getDownloadAccessGroupList();
+            $download_access_groups = getDownloadAccessGroupList();
         }
 
         $allowed_fileset_for_download = $this->genericAccessControl(
-            $this->key,
+            $access_groups,
             $fileset->hash_id,
-            $download_access_group_array_ids
+            $download_access_groups
         );
 
         if (sizeof($allowed_fileset_for_download) === 0) {
