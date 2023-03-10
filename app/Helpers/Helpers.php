@@ -4,8 +4,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
+use App\Support\AccessGroupsCollection;
 
-function getAccessGroups() : \Illuminate\Support\Collection
+function getAccessGroups() : AccessGroupsCollection
 {
     $group_ids = request()->input('middleware_access_group_ids');
 
@@ -17,7 +18,7 @@ function getAccessGroups() : \Illuminate\Support\Collection
         );
     }
 
-    return $group_ids;
+    return new AccessGroupsCollection($group_ids);
 }
 
 /**
