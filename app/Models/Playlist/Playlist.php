@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Carbon\Carbon;
 use App\Models\User\User;
+use App\Services\Bibles\BibleFilesetService;
 
 /**
  * App\Models\Playlist
@@ -182,11 +183,14 @@ class Playlist extends Model
 
     public function scopeWithUserAndItemsById(Builder $query, int $playlist_id, int $user_id) : Builder
     {
+        $unique_filesets = PlaylistItems::getUniqueFilesetsByPlaylistIds(collect([$playlist_id]));
+        $valid_filesets = BibleFilesetService::getValidFilesets($unique_filesets);
+
         return Playlist::select([
             'user_playlists.*',
             \DB::Raw('IF(playlists_followers.user_id, true, false) as following')
         ])
-        ->with(['user', 'items' => function ($query_items) use ($user_id) {
+        ->with(['user', 'items' => function ($query_items) use ($user_id, $valid_filesets) {
             if (!empty($user_id)) {
                 $query_items->withPlaylistItemCompleted($user_id);
             }
@@ -194,7 +198,7 @@ class Playlist extends Model
             $query_items->with(['fileset' => function ($query_fileset) {
                 $query_fileset->with('bible');
             }])
-            ->conditionTagExcludeFileset(['opus', 'webm']);
+            ->whereIn('fileset_id', $valid_filesets);
         }])
             ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
                 $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
@@ -253,7 +257,10 @@ class Playlist extends Model
 
     public static function findWithFollowersByUserAndIds(int $user_id, Array $playlist_ids) : Collection
     {
-        return Playlist::with(['user', 'items' => function ($query_items) use ($user_id) {
+        $unique_filesets = PlaylistItems::getUniqueFilesetsByPlaylistIds($playlist_ids);
+        $valid_filesets = BibleFilesetService::getValidFilesets($unique_filesets);
+
+        return Playlist::with(['user', 'items' => function ($query_items) use ($user_id, $valid_filesets) {
             if (!empty($user_id)) {
                 $query_items->withPlaylistItemCompleted($user_id);
             }
@@ -261,7 +268,7 @@ class Playlist extends Model
             $query_items->with(['fileset' => function ($query_fileset) {
                 $query_fileset->with('bible');
             }])
-            ->conditionTagExcludeFileset(['opus', 'webm']);
+            ->whereIn('fileset_id', $valid_filesets);
         }])
             ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user_id) {
                 $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')
@@ -308,5 +315,30 @@ class Playlist extends Model
     public static function findOne(int $playlist_id) : ?Playlist
     {
         return Playlist::where('id', $playlist_id)->first();
+    }
+
+    public static function getFeaturedListIds(
+        bool $featured,
+        int $limit,
+        ?int $user_id,
+        ?int $language_id,
+        null|array|\Illuminate\Support\Collection $following_playlist_ids
+    ) : \Illuminate\Support\Collection {
+        return Playlist::select('id')
+            ->where('draft', 0)
+            ->where('plan_id', 0)
+            ->when($language_id, function ($q) use ($language_id) {
+                $q->where('user_playlists.language_id', $language_id);
+            })
+            ->when($featured, function ($q) {
+                $q->where('user_playlists.featured', '1');
+            })
+            ->unless($featured, function ($q) use ($user_id, $following_playlist_ids) {
+                $q->where('user_playlists.user_id', $user_id)
+                    ->orWhereIn('user_playlists.id', $following_playlist_ids);
+            })
+            ->paginate($limit)
+            ->getCollection()
+            ->pluck('id');
     }
 }

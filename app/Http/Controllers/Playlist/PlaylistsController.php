@@ -37,6 +37,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Services\Plans\PlaylistService;
+use App\Services\Bibles\BibleFilesetService;
 
 class PlaylistsController extends APIController
 {
@@ -222,46 +223,36 @@ class PlaylistsController extends APIController
         $language_id
     ) {
         $has_user = !empty($user);
+        $user_id = $has_user ? $user->id : null;
         $featured = $featured || !$has_user;
 
         $select = ['user_playlists.*'];
 
         $following_playlists = [];
         if ($has_user) {
-            $following_playlists = PlaylistFollower::where('user_id', $user->id)->get();
+            $following_playlists = PlaylistFollower::where('user_id', $user_id)->pluck('playlist_id', 'playlist_id');
         }
+
+        $playlist_ids = Playlist::getFeaturedListIds($featured, $limit, $user_id, $language_id, $following_playlists);
+        $unique_filesets = PlaylistItems::getUniqueFilesetsByPlaylistIds($playlist_ids);
+        $valid_filesets = BibleFilesetService::getValidFilesets($unique_filesets);
 
         $playlists = Playlist::with('user')
-            ->where('draft', 0)
-            ->where('plan_id', 0)
-            ->when($show_details, function ($query) use ($user) {
-                $query->with(['items' => function ($query_items) use ($user) {
+            ->when($show_details, function ($query) use ($user, $valid_filesets) {
+                $query->with(['items' => function ($qitems) use ($user, $valid_filesets) {
                     if (!empty($user)) {
-                        $query_items->withPlaylistItemCompleted($user->id);
+                        $qitems->withPlaylistItemCompleted($user->id);
                     }
-                    $query_items->with(['fileset' => function ($query_fileset) {
-                        $query_fileset->with(['bible' => function ($query_bible) {
-                            $query_bible->with(['translations', 'books.book']);
+                    $qitems->with(['fileset' => function ($qfileset) {
+                        $qfileset->with(['bible' => function ($qbible) {
+                            $qbible->with(['translations', 'books.book']);
                         }]);
-                    }])->conditionTagExcludeFileset(['opus', 'webm']);
+                    }])->whereIn('fileset_id', $valid_filesets);
                 }]);
             })
-            ->when($language_id, function ($q) use ($language_id) {
-                $q->where('user_playlists.language_id', $language_id);
-            })
-            ->when($featured, function ($q) {
-                $q->where('user_playlists.featured', '1');
-            })
-            ->unless($featured, function ($q) use ($user, $following_playlists) {
-                $q->where('user_playlists.user_id', $user->id)
-                    ->orWhereIn('user_playlists.id', $following_playlists->pluck('playlist_id'));
-            })
             ->select($select)
+            ->whereIn('user_playlists.id', $playlist_ids)
             ->orderBy($sort_by, $sort_dir)->paginate($limit);
-
-        if ($has_user) {
-            $following_playlists = $following_playlists->pluck('playlist_id', 'playlist_id');
-        }
 
         $playlist_ids = [];
 

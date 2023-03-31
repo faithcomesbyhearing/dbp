@@ -344,8 +344,7 @@ class BibleFile extends Model
         return $query
             ->where('bible_files.hash_id', $fileset_hash_id)
             ->join(
-                config('database.connections.dbp.database') .
-                    '.bible_books',
+                'bible_books',
                 function ($q) use ($bible_id) {
                     $q
                         ->on(
@@ -356,7 +355,7 @@ class BibleFile extends Model
                 }
             )
             ->join(
-                config('database.connections.dbp.database') . '.books',
+                'books',
                 'books.id',
                 'bible_files.book_id'
             )
