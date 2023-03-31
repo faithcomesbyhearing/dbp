@@ -20,7 +20,7 @@ class HighlightTransformer extends TransformerAbstract
      */
     public function transform($highlight)
     {
-        $dam_id = $highlight->bible_id.substr($highlight->book->book->book_testament, 0, 1).'2ET';
+        $dam_id = $highlight->bible_id.substr($highlight->bibleBook->book->book_testament, 0, 1).'2ET';
         $highlight_fileset_info = $highlight->fileset_info;
         $verse_text = $highlight_fileset_info->get('verse_text');
         $audio_filesets = $highlight_fileset_info->get('audio_filesets');
@@ -29,7 +29,7 @@ class HighlightTransformer extends TransformerAbstract
             'id'                   => (string) $highlight->id,
             'user_id'              => (string) $highlight->user_id,
             'dam_id'               => $dam_id,
-            'book_id'              => (string) $highlight->book->book->id_osis,
+            'book_id'              => (string) $highlight->bibleBook->book->id_osis,
             'chapter_id'           => (string) $highlight->chapter,
             'verse_id'             => $highlight->verse_sequence,
             'verse_start_alt'      => $highlight->verse_start,
@@ -37,9 +37,9 @@ class HighlightTransformer extends TransformerAbstract
             'created'              => (string) $highlight->created_at,
             'updated'              => (string) $highlight->updated_at,
             'dbt_data'             => [[
-                'book_name'        => (string) $highlight->book->name,
+                'book_name'        => (string) $highlight->bibleBook->name,
                 'book_id'          => (string) $highlight->book_id,
-                'book_order'       => (string) $highlight->book->book->protestant_order,
+                'book_order'       => (string) $highlight->bibleBook->book->protestant_order,
                 'chapter_id'       => (string) $highlight->chapter,
                 'chapter_title'    => 'Chapter '.$highlight->chapter,
                 'verse_id'         => $highlight->verse_sequence,

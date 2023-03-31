@@ -25,6 +25,7 @@ use App\Models\Bible\BibleFileTimestamp;
 use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Language\Language;
+use App\Services\Bibles\BibleFilesetService;
 use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
@@ -1064,75 +1065,16 @@ class BiblesController extends APIController
         return $this->replyWithDownload($result, $zip, $bible, $book, $chapter);
     }
 
-    public function getFileset($filesets, $type, $testament)
-    {
-        $available_filesets = [];
+    public function getFileset(
+        ?\Illuminate\Support\Collection $filesets,
+        string $type,
+        string $testament
+    ) {
         foreach ($filesets as $fileset) {
             $fileset->addMetaRecordsAsAttributes();
         }
 
-        $completeFileset = $filesets->filter(function ($fileset) use ($type) {
-            return (
-                $this->validateFileset($fileset) &&
-                $fileset->set_type_code === $type &&
-                $fileset->set_size_code === 'C'
-            );
-        })->first();
-
-        if ($completeFileset) {
-            $available_filesets[] = $completeFileset;
-        }
-
-        $size_filesets = $filesets->filter(function ($fileset) use ($type, $testament) {
-            return (
-              $this->validateFileset($fileset) &&
-              is_string($testament) &&
-              $fileset->set_type_code === $type &&
-              $fileset->set_size_code === $testament
-            );
-        })->toArray();
-
-        if (!empty($size_filesets)) {
-            $available_filesets = array_merge($available_filesets, $size_filesets);
-        }
-
-        $size_partial_filesets = $filesets->filter(function ($fileset) use ($type, $testament) {
-            return (
-                $this->validateFileset($fileset) &&
-                is_string($testament) &&
-                $fileset->set_type_code === $type &&
-                strpos($fileset->set_size_code, $testament) !== false
-            );
-        })->toArray();
-
-        if (!empty($size_partial_filesets)) {
-            $available_filesets = array_merge($available_filesets, $size_partial_filesets);
-        }
-
-        $partial_fileset = $filesets->filter(function ($fileset) use ($type) {
-            return (
-                $this->validateFileset($fileset) &&
-                $fileset->set_type_code === $type &&
-                $fileset->set_size_code === 'P'
-            );
-        })->first();
-
-        if ($partial_fileset) {
-            $available_filesets[] = $partial_fileset;
-        }
-
-        if (!empty($available_filesets)) {
-            return (object) collect($available_filesets)->sortBy(function ($fileset) {
-                return strpos($fileset['id'], '16') !== false;
-            })->first();
-        }
-
-        return false;
-    }
-
-    private function validateFileset($fileset)
-    {
-        return isset($fileset->set_type_code) && isset($fileset->set_size_code);
+        return BibleFilesetService::getFilesetFromValidFilesets($filesets, $type, $testament);
     }
 
     private function getAudioFilesetData($results, $bible, $book, $chapter, $type, $name, $download, $secondary_type, $secondary_name, $get_secondary = false)
