@@ -10,6 +10,7 @@ use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use Validator;
 use App\Traits\CheckProjectMembership;
 use App\Traits\AnnotationTags;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class NotesController extends APIController
 {
@@ -32,12 +33,6 @@ class NotesController extends APIController
      *     @OA\Parameter(name="chapter_id",  in="query", description="The starting chapter", @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
      *     @OA\Parameter(name="limit",       in="query", description="The number of highlights to return", @OA\Schema(type="integer",example=25)),
      *     @OA\Parameter(name="paginate",    in="query", description="When set to false will disable pagination", @OA\Schema(type="boolean",example=false)),
-     *     @OA\Parameter(
-     *          name="query",
-     *          in="query",
-     *          description="The word or phrase to filter notes book name by.",
-     *          @OA\Schema(type="string")
-     *     ),
      *     @OA\Parameter(name="page",  in="query", description="The current page of the results",
      *          @OA\Schema(type="integer",default=1)),
      *     @OA\Parameter(ref="#/components/parameters/sort_by"),
@@ -58,7 +53,9 @@ class NotesController extends APIController
         $user_id = $user ? $user->id : $user_id;
         $user_is_member = $this->compareProjects($user_id, $this->key);
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $bible_id   = checkParam('bible_id');
@@ -66,13 +63,22 @@ class NotesController extends APIController
         $chapter_id = checkParam('chapter|chapter_id');
         $sort_by    = checkParam('sort_by');
         $sort_dir   = checkParam('sort_dir') ?? 'asc';
-        $query      = checkParam('query');
         // used by chapter annotations to get the max possible annotations for one chapter (180)
         $chapter_max_verses = 180;
         $limit              = (int) (checkParam('limit') ?? $chapter_max_verses);
         $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
 
-        $notes = Note::with('tags')
+        $notes = Note::with([
+            'bible' => [
+                'filesets' => function ($query) {
+                    $query->where('bible_filesets.set_type_code', 'text_plain');
+                },
+                'vernacularTranslation',
+                'translations'
+            ],
+            'tags',
+            'bibleBook.book'
+        ])
             ->where('user_notes.user_id', $user_id)
             ->when($bible_id, function ($q) use ($bible_id) {
                 $q->where('user_notes.bible_id', $bible_id);
@@ -82,19 +88,17 @@ class NotesController extends APIController
                 $q->orderBy('user_notes.' . $sort_by, $sort_dir);
             })->when($chapter_id, function ($q) use ($chapter_id) {
                 $q->where('user_notes.chapter', $chapter_id);
-            })->when($query, function ($q) use ($query) {
-                $dbp_database = config('database.connections.dbp.database');
-                $q->join($dbp_database . '.bible_books as bible_books', function ($join) use ($query) {
-                    $join->on('user_notes.bible_id', '=', 'bible_books.bible_id')
-                        ->on('user_notes.book_id', '=', 'bible_books.book_id');
-                });
-                $q->where('bible_books.name', 'like', '%' . $query . '%');
             })->paginate($limit);
 
         if (!$notes) {
-            return $this->setStatusCode(404)->replyWithError('No User found for the specified ID');
+            return $this
+                ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                ->replyWithError('No User found for the specified ID');
         }
-        return $this->reply(fractal($notes->getCollection(), UserNotesTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($notes)));
+        return $this->reply(
+            fractal($notes->getCollection(), UserNotesTransformer::class)
+                ->paginateWith(new IlluminatePaginatorAdapter($notes))
+        );
     }
 
     /**

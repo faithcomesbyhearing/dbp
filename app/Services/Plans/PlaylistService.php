@@ -8,6 +8,7 @@ use App\Models\Playlist\PlaylistItems;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFileset;
 use Illuminate\Database\Eloquent\Collection;
+use App\Services\Bibles\BibleFilesetService;
 
 class PlaylistService
 {
@@ -18,7 +19,7 @@ class PlaylistService
         $audio_fileset_types = collect(['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama']);
         $bible_id = $bible->id;
         $access_group_ids = getAccessGroups();
-        $bible_audio_filesets = self::getFilesetsByBibleTypeAndAccessGroup(
+        $bible_audio_filesets = BibleFilesetService::getFilesetsByBibleTypeAndAccessGroup(
             $bible_id,
             $audio_fileset_types,
             $access_group_ids
@@ -145,66 +146,10 @@ class PlaylistService
         return collect($valid_filesets);
     }
 
-    /**
-     * Get available filesets given a collection and according to a give type and size
-     *
-     * @param \Illuminate\Support\Collection $valid_filesets
-     * @param string $type
-     * @param string $size
-     *
-     * @return bool|BibleFileset
-     */
-    public function getFilesetFromValidFilesets(
-        ?\Illuminate\Support\Collection $valid_filesets,
-        string $type,
-        string $size
-    ) : bool|BibleFileset {
-        $available_filesets = [];
-
-        $complete_fileset = $valid_filesets->where('set_type_code', $type)->where('set_size_code', 'C')->first();
-        if ($complete_fileset) {
-            $available_filesets[] = $complete_fileset;
-        }
-
-        $size_filesets = $valid_filesets->where('set_type_code', $type)->where('set_size_code', $size)->first();
-        if ($size_filesets) {
-            $available_filesets[] = $size_filesets;
-        }
-
-        $size__partial_filesets = $valid_filesets->filter(function ($item) use ($type, $size) {
-            $valid_item = isset($item->set_type_code) && isset($item->set_size_code);
-            return (
-                $valid_item &&
-                is_string($size) &&
-                $item->set_type_code === $type &&
-                strpos($item->set_size_code, $size . 'P') !== false
-            );
-        })->first();
-        if ($size__partial_filesets) {
-            $available_filesets[] = $size__partial_filesets;
-        }
-
-        $partial_fileset = $valid_filesets->where('set_type_code', $type)->where('set_size_code', 'P')->first();
-        if ($partial_fileset) {
-            $available_filesets[] = $partial_fileset;
-        }
-
-        if (!empty($available_filesets)) {
-            $available_filesets =
-                collect($available_filesets)->sortBy(function ($item) {
-                    return strpos($item->id, '16');
-                });
-            
-            return $available_filesets->first();
-        }
-
-        return false;
-    }
-
     public function getFileset($filesets, $type, $size)
     {
         $valid_filesets = $this->getValidAudioStreamFilesets($filesets);
-        return $this->getFilesetFromValidFilesets($valid_filesets, $type, $size);
+        return BibleFilesetService::getFilesetFromValidFilesets($valid_filesets, $type, $size);
     }
 
     private function getCodecMetadata($fileset)
@@ -267,7 +212,7 @@ class PlaylistService
             return [];
         }
 
-        $filesets_validated = BibleFileset::getConditionTagExcludeByIds($fileset_ids, ['opus', 'webm']);
+        $filesets_validated = BibleFilesetService::getValidFilesets(collect($fileset_ids), ['opus', 'webm']);
 
         if (empty($filesets_validated)) {
             return [];
@@ -352,28 +297,5 @@ class PlaylistService
             ->groupBy('playlist_id')
             ->get()
             ->keyBy('playlist_id');
-    }
-
-     /**
-     * Retrieve all filesets associated with a specific Bible ID, including the available audio types
-     * and access group IDs
-     *
-     * @param string $bible_id
-     * @param \Illuminate\Support\Collection $audio_fileset_types
-     * @param \Illuminate\Support\Collection $access_group_ids
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public static function getFilesetsByBibleTypeAndAccessGroup(
-        string $bible_id,
-        \Illuminate\Support\Collection $audio_fileset_types,
-        \Illuminate\Support\Collection $access_group_ids
-    ) : Collection {
-        return BibleFileset::whereHas('bible', function ($query) use ($bible_id) {
-            $query->where('bibles.id', $bible_id);
-        })
-            ->isContentAvailable($access_group_ids)
-            ->whereIn('set_type_code', $audio_fileset_types)
-            ->get();
     }
 }

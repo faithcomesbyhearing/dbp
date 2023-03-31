@@ -53,7 +53,7 @@ class UserNotesTransformer extends TransformerAbstract
             'bible_id' => (string) $note->bible_id,
             'bible_name' => (string) $note->bible_name,
             'book_id' => (string) $note->book_id,
-            'book_name' => (string) optional($note->book)->name,
+            'book_name' => (string) optional($note->bibleBook)->name,
             'chapter' => (int) $note->chapter,
             'verse_start' => $note->verse_sequence,
             'verse_start_alt' => $note->verse_start,

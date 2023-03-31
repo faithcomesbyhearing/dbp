@@ -51,7 +51,7 @@ class UserHighlightsTransformer extends TransformerAbstract
             'id'                => (int) $highlight->id,
             'bible_id'          => (string) $highlight->bible_id,
             'book_id'           => (string) $highlight->book_id,
-            'book_name'         => (string) optional($highlight->book)->name,
+            'book_name'         => (string) optional($highlight->bibleBook)->name,
             'chapter'           => (int) $highlight->chapter,
             'verse_start'       => $highlight->verse_sequence,
             'verse_start_alt'   => $highlight->verse_start,

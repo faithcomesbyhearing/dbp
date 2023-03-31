@@ -208,13 +208,12 @@ class BibleFileset extends Model
                         ->orWhere('bible_filesets.id', 'like', substr($id, 0, 6))
                         ->orWhere('bible_filesets.id', 'like', substr($id, 0, -2) . '%');
                 } else {
-                    $dbp_database = config('database.connections.dbp.database');
                     $query->where('bible_filesets.id', $id)
-                        ->orWhere(function ($query) use ($dbp_database, $id) {
-                            $query->whereIn('bible_filesets.hash_id', function ($sub_query) use ($dbp_database, $id) {
+                        ->orWhere(function ($query) use ($id) {
+                            $query->whereIn('bible_filesets.hash_id', function ($sub_query) use ($id) {
                                 $sub_query
                                     ->select('hash_id')
-                                    ->from($dbp_database . '.bible_fileset_connections')
+                                    ->from('bible_fileset_connections')
                                     ->where('bible_id', 'LIKE', $id . '%');
                             });
                         });
@@ -345,7 +344,7 @@ class BibleFileset extends Model
      *
      * @return Builder
      */
-    public function scopeFilterByIds(Builder $query, Array $fileset_ids) : Builder
+    public function scopeFilterByIds(Builder $query, \Illuminate\Support\Collection|Array $fileset_ids) : Builder
     {
         return $query->select('id', 'hash_id')
             ->whereIn('id', $fileset_ids);
@@ -366,7 +365,7 @@ class BibleFileset extends Model
         });
     }
 
-    public static function getConditionTagExcludeByIds(Array $fileset_ids, Array $tags_exclude) : Collection
+    public static function getConditionTagExcludeByIds(\Illuminate\Support\Collection $fileset_ids, Array $tags_exclude) : Collection
     {
         return self::filterByIds($fileset_ids)
             ->conditionTagExclude($tags_exclude)

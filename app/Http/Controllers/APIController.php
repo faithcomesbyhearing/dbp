@@ -135,7 +135,6 @@ class APIController extends Controller
     protected $preset_v;
     protected $v;
     protected $key;
-    protected $access_group_ids;
     protected $user;
 
     public function __construct()

@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Traits\AnnotationTags;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class BookmarksController extends APIController
 {
@@ -48,12 +49,6 @@ class BookmarksController extends APIController
      *          @OA\Schema(type="integer",default=25)),
      *     @OA\Parameter(name="page",  in="query", description="The current page of the results",
      *          @OA\Schema(type="integer",default=1)),
-     *     @OA\Parameter(
-     *          name="query",
-     *          in="query",
-     *          description="The word or phrase to filter bookmarks by.",
-     *          @OA\Schema(type="string")
-     *     ),
      *     @OA\Parameter(ref="#/components/parameters/sort_by"),
      *     @OA\Parameter(ref="#/components/parameters/sort_dir"),
      *     @OA\Response(
@@ -72,7 +67,9 @@ class BookmarksController extends APIController
         $user_id = $user ? $user->id : $request->user_id;
         $user_is_member = $this->compareProjects($user_id, $this->key);
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $bible_id     = checkParam('bible_id');
@@ -80,13 +77,20 @@ class BookmarksController extends APIController
         $chapter      = checkParam('chapter|chapter_id');
         $sort_by      = checkParam('sort_by');
         $sort_dir     = checkParam('sort_dir') ?? 'asc';
-        $query        = checkParam('query');
         // used by chapter annotations to get the max possible annotations for one chapter (180)
         $chapter_max_verses = 180;
         $limit              = (int) (checkParam('limit') ?? $chapter_max_verses);
         $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
 
-        $bookmarks = Bookmark::with('tags')
+        $bookmarks = Bookmark::with([
+            'bible' => [
+                'filesets' => function ($query) {
+                    $query->where('bible_filesets.set_type_code', 'text_plain');
+                }
+            ],
+            'tags',
+            'bibleBook.book'
+        ])
             ->where('user_bookmarks.user_id', $user_id)
             ->when($bible_id, function ($q) use ($bible_id) {
                 $q->where('user_bookmarks.bible_id', $bible_id);
@@ -96,18 +100,14 @@ class BookmarksController extends APIController
                 $q->where('user_bookmarks.chapter', $chapter);
             })->when($sort_by, function ($q) use ($sort_by, $sort_dir) {
                 $q->orderBy('user_bookmarks.' . $sort_by, $sort_dir);
-            })->when($query, function ($q) use ($query) {
-                $dbp_database = config('database.connections.dbp.database');
-                $q->join($dbp_database . '.bible_books as bible_books', function ($join) use ($query) {
-                    $join->on('user_bookmarks.bible_id', '=', 'bible_books.bible_id')
-                        ->on('user_bookmarks.book_id', '=', 'bible_books.book_id');
-                });
-                $q->where('bible_books.name', 'like', '%' . $query . '%');
             })->paginate($limit);
 
         $bookmarkCollection = $bookmarks->getCollection();
         $bookmarkPagination = new IlluminatePaginatorAdapter($bookmarks);
-        return $this->reply(fractal($bookmarkCollection, UserBookmarksTransformer::class, $this->serializer)->paginateWith($bookmarkPagination));
+        return $this->reply(
+            fractal($bookmarkCollection, UserBookmarksTransformer::class, $this->serializer)
+                ->paginateWith($bookmarkPagination)
+        );
     }
 
     /**

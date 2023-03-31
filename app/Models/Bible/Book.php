@@ -339,26 +339,24 @@ class Book extends Model
             ? $versification
             : 'protestant';
 
-        $dbp_database = config('database.connections.dbp.database');
-
         $is_plain_text = BibleVerse::where('hash_id', $fileset->hash_id)->exists();
 
         return \DB::connection('dbp')
-            ->table($dbp_database . '.bible_filesets as fileset')
+            ->table('bible_filesets as fileset')
             ->where('fileset.id', $fileset->id)
             ->leftJoin(
-                $dbp_database . '.bible_fileset_connections as connection',
+                'bible_fileset_connections as connection',
                 'connection.hash_id',
                 'fileset.hash_id'
             )
-            ->leftJoin($dbp_database . '.bibles', 'bibles.id', 'connection.bible_id')
+            ->leftJoin('bibles', 'bibles.id', 'connection.bible_id')
             ->when($fileset_type, function ($q) use ($fileset_type) {
                 $q->where('set_type_code', $fileset_type);
             })
-            ->join($dbp_database . '.bible_books', function ($join) {
+            ->join('bible_books', function ($join) {
                 $join->on('bible_books.bible_id', 'bibles.id');
             })
-            ->rightJoin($dbp_database . '.books', 'books.id', 'bible_books.book_id')
+            ->rightJoin('books', 'books.id', 'bible_books.book_id')
             ->when(!$is_plain_text, function ($query) use ($fileset) {
                 $query = self::compareFilesetToFileTableBooks($query, $fileset->hash_id);
             })
@@ -387,7 +385,6 @@ class Book extends Model
     public static function compareFilesetToFileTableBooks(Builder $query, string $hashId) : Builder
     {
         // If the fileset referencesade dbp.bible_files from that table
-        $dbp_database = config('database.connections.dbp.database');
         $fileset_book_ids = \DB::connection('dbp')
             ->table('bible_files')
             ->where('hash_id', $hashId)
@@ -396,6 +393,6 @@ class Book extends Model
             ->get()
             ->pluck('book_id');
 
-        return $query->whereIn($dbp_database . '.bible_books.book_id', $fileset_book_ids);
+        return $query->whereIn('bible_books.book_id', $fileset_book_ids);
     }
 }
