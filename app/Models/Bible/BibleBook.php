@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Query\Expression;
 use App\Models\Bible\Book;
+use Awobaz\Compoships\Compoships;
 
 /**
  * App\Models\Bible\BibleBook
@@ -22,6 +23,8 @@ use App\Models\Bible\Book;
  */
 class BibleBook extends Model
 {
+    use Compoships;
+
     public const BOOK_ORDER_COLUMN = 'book_order_column';
 
     protected $connection = 'dbp';

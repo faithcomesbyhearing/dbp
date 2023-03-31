@@ -2,6 +2,7 @@
 
 namespace App\Services\Plans;
 
+use Illuminate\Database\Eloquent\Collection;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleVerse;
@@ -15,7 +16,7 @@ use App\Models\Playlist\PlaylistItems;
 use App\Models\Playlist\PlaylistItemsComplete;
 use App\Models\Bible\Bible;
 use App\Services\Plans\PlaylistService;
-use Illuminate\Database\Eloquent\Collection;
+use App\Services\Bibles\BibleFilesetService;
 
 class PlanService
 {
@@ -64,7 +65,7 @@ class PlanService
         $audio_fileset_types = collect(['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama']);
         $bible_id = $bible->id;
         $access_group_ids = getAccessGroups();
-        $bible_audio_filesets = PlaylistService::getFilesetsByBibleTypeAndAccessGroup(
+        $bible_audio_filesets = BibleFilesetService::getFilesetsByBibleTypeAndAccessGroup(
             $bible_id,
             $audio_fileset_types,
             $access_group_ids
@@ -683,7 +684,7 @@ class PlanService
                     })->prepend($item->fileset->set_type_code);
                     $preferred_fileset = $ordered_types->map(
                         function ($type) use ($bible_audio_filesets, $item) {
-                            return $this->playlist_service->getFilesetFromValidFilesets(
+                            return BibleFilesetService::getFilesetFromValidFilesets(
                                 $bible_audio_filesets,
                                 $type,
                                 $item->fileset->set_size_code

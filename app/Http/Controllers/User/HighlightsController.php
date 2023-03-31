@@ -5,6 +5,11 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\APIController;
 use App\Models\User\User;
 use App\Models\User\Study\HighlightColor;
+use App\Models\Bible\BibleFileset;
+use App\Models\Bible\BibleVerse;
+use App\Models\Bible\Book;
+use App\Models\Bible\BibleBook;
+use App\Models\Bible\Bible;
 use App\Traits\AnnotationTags;
 use App\Transformers\UserHighlightsTransformer;
 use App\Models\User\Study\Highlight;
@@ -13,6 +18,7 @@ use App\Transformers\V2\Annotations\HighlightTransformer;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use Illuminate\Support\Facades\DB;
 use Validator;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -86,12 +92,6 @@ class HighlightsController extends APIController
      *          description="One or more six letter hexadecimal colors to filter highlights by.",
      *          example="aabbcc,eedd11,112233")
      *     ),
-     *     @OA\Parameter(
-     *          name="query",
-     *          in="query",
-     *          description="The word or phrase to filter highlights by.",
-     *          @OA\Schema(type="string")
-     *     ),
      *     @OA\Parameter(ref="#/components/parameters/sort_by"),
      *     @OA\Parameter(ref="#/components/parameters/sort_dir"),
      *     @OA\Response(
@@ -111,7 +111,6 @@ class HighlightsController extends APIController
         $user_id = $user ? $user->id : $request->user_id;
         $sort_by    = checkParam('sort_by') ?? 'book';
         $sort_dir   = checkParam('sort_dir') ?? 'asc';
-        $query      = checkParam('query');
 
         if (!in_array(Str::lower($sort_dir), ['asc', 'desc'])) {
             $sort_dir = 'desc';
@@ -121,13 +120,17 @@ class HighlightsController extends APIController
         $user = User::where('id', $user_id)->select('id')->first();
         
         if (!$user) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.users_errors_404'));
+            return $this
+                ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                ->replyWithError(trans('api.users_errors_404'));
         }
 
         $user_is_member = $this->compareProjects($user_id, $this->key);
 
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
         
         $bible_id      = checkParam('bible_id');
@@ -141,7 +144,7 @@ class HighlightsController extends APIController
 
         $sort_by_book = $sort_by === 'book';
         $order_by = $sort_by_book
-            ? DB::raw('book_order, user_highlights.chapter, user_highlights.verse_sequence')
+            ? DB::raw('user_highlights.chapter, user_highlights.verse_sequence')
             : 'user_highlights.' . $sort_by;
 
         $select_fields = [
@@ -157,75 +160,36 @@ class HighlightsController extends APIController
             'user_highlights.highlighted_color',
         ];
 
-        if ($sort_by_book) {
-            $book_order_query = cacheRemember('book_order_columns', [], now()->addDay(), function () {
-                $query = collect(Schema::connection('dbp')->getColumnListing('books'))->filter(function ($column) {
-                    return strpos($column, '_order') !== false;
-                })->map(function ($column) {
-                    $name = str_replace('_order', '', $column);
-                    return "IF(bibles.versification = '" . $name . "', books." . $name . '_order , 0)';
-                })->toArray();
-
-                return implode('+', $query);
-            });
-
-            $select_fields[] = DB::raw($book_order_query . ' as book_order');
-        }
-        
-        $dbp_database = config('database.connections.dbp.database');
-        $highlights = Highlight::join('user_highlight_colors', 'user_highlights.highlighted_color', '=', 'user_highlight_colors.id')
+        $highlights = Highlight::with(['bible.filesets', 'color', 'bibleBook.book', 'tags'])
             ->where('user_id', $user_id)
-            ->join($dbp_database . '.bibles as bibles', function ($join) use ($query) {
-                $join->on('user_highlights.bible_id', '=', 'bibles.id');
-            })
             ->when($bible_id, function ($q) use ($bible_id) {
                 $q->where('user_highlights.bible_id', $bible_id);
             })->when($book_id, function ($q) use ($book_id) {
                 $q->where('user_highlights.book_id', $book_id);
             })->when($chapter_id, function ($q) use ($chapter_id) {
-                $q->where('chapter', $chapter_id);
-            })->when($color, function ($q) use ($color) {
+                $q->where('user_highlights.chapter', $chapter_id);
+            })
+            ->when($color, function ($q) use ($color) {
                 $color = str_replace('#', '', $color);
                 $color = explode(',', $color);
-                $q->whereIn('user_highlight_colors.hex', $color);
-            })->when($query, function ($q) use ($query) {
-                $dbp_database = config('database.connections.dbp.database');
-                $q->join($dbp_database . '.bible_fileset_connections as connection', 'connection.bible_id', 'user_highlights.bible_id');
-                $q->join($dbp_database . '.bible_filesets as filesets', function ($join) {
-                    $join->on('filesets.hash_id', '=', 'connection.hash_id');
-                });
-                $q->where('filesets.set_type_code', 'text_plain');
-                $q->join($dbp_database . '.bible_verses as bible_verses', function ($join) use ($query) {
-                    $join->on('connection.hash_id', '=', 'bible_verses.hash_id')
-                        ->where('bible_verses.book_id', DB::raw('user_highlights.book_id'))
-                        ->where('bible_verses.chapter', DB::raw('user_highlights.chapter'))
-                        ->where('bible_verses.verse_start', '>=', DB::raw('user_highlights.verse_start'))
-                        ->where('bible_verses.verse_end', '<=', DB::raw('user_highlights.verse_end'));
-                });
-
-                $q->join($dbp_database . '.bible_books as bible_books', function ($join) use ($query) {
-                    $join->on('user_highlights.bible_id', '=', 'bible_books.bible_id')
-                        ->on('user_highlights.book_id', '=', 'bible_books.book_id');
-                });
-
-                $q->where(function ($q) use ($query) {
-                    $q->where('bible_verses.verse_text', 'like', '%' . $query . '%')
-                        ->orWhere('bible_books.name', 'like', '%' . $query . '%');
-                });
-            })->when($sort_by_book, function ($q) {
-                $dbp_database = config('database.connections.dbp.database');
-                $q->join($dbp_database . '.books as books', function ($join) {
-                    $join->on('user_highlights.book_id', '=', 'books.id');
-                });
-            })->select($select_fields)
+                $q->join(
+                    'user_highlight_colors',
+                    'user_highlights.highlighted_color',
+                    '=',
+                    'user_highlight_colors.id'
+                )
+                ->whereIn('user_highlight_colors.hex', $color);
+            })
+            ->select($select_fields)
             ->orderBy($order_by, $sort_dir)
             ->paginate($limit);
 
         $highlight_collection = $highlights->getCollection();
-
         $highlight_pagination = new IlluminatePaginatorAdapter($highlights);
 
-        return $this->reply(fractal($highlight_collection, UserHighlightsTransformer::class)->paginateWith($highlight_pagination));
+        return $this->reply(
+            fractal($highlight_collection, UserHighlightsTransformer::class)->paginateWith($highlight_pagination)
+        );
     }
 
     /**
