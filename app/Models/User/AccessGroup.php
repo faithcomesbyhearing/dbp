@@ -87,11 +87,6 @@ class AccessGroup extends Model
         return $this->belongsToMany(AccessType::class, 'access_group_types')->whereIn('name', ['podcast'])->where('allowed', 1);
     }
 
-    public function keys()
-    {
-        return $this->hasMany(AccessGroupKey::class);
-    }
-
     public function user()
     {
         return $this->belongsTo(Key::class);

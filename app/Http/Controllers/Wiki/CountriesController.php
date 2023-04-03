@@ -66,7 +66,7 @@ class CountriesController extends APIController
             $languages,
             $limit,
             $page, $is_bibleis_gideons,
-            $access_group_ids->implode(',')
+            $access_group_ids->toString()
         ];
         $cache_key = generateCacheSafeKey('countries_list', $cache_params);
 
@@ -143,7 +143,13 @@ class CountriesController extends APIController
 
         $access_group_ids = getAccessGroups();
 
-        $cache_params = [$GLOBALS['i18n_iso'], $limit, $page, $formatted_search_cache, $access_group_ids->implode(',')];
+        $cache_params = [
+            $GLOBALS['i18n_iso'],
+            $limit,
+            $page,
+            $formatted_search_cache,
+            $access_group_ids->toString()
+        ];
         $cache_key = generateCacheSafeKey('countries', $cache_params);
 
         $countries = cacheRememberByKey($cache_key, now()->addDay(), function () use ($limit, $formatted_search, $access_group_ids) {
@@ -231,7 +237,7 @@ class CountriesController extends APIController
     {
         $access_group_ids = getAccessGroups();
 
-        $cache_params = [$id, $GLOBALS['i18n_iso'], $access_group_ids->implode(',')];
+        $cache_params = [$id, $GLOBALS['i18n_iso'], $access_group_ids->toString()];
         $country = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($id, $access_group_ids) {
             $country = Country::with(['languagesFiltered' => function ($query) use ($access_group_ids) {
                 $query->IsContentAvailable($access_group_ids)

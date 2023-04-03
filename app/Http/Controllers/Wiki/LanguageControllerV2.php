@@ -152,7 +152,7 @@ class LanguageControllerV2 extends APIController
             $img_size,
             $img_type,
             $additional,
-            $this->key
+            $access_group_ids->toString()
         ]);
 
         if ($sort_by === 'lang_code') {
@@ -399,7 +399,7 @@ class LanguageControllerV2 extends APIController
 
         $access_group_ids= getAccessGroups();
 
-        $cache_params = [$root, $iso, $media, $organization_id, $this->key];
+        $cache_params = [$root, $iso, $media, $organization_id, $access_group_ids->toString()];
         $languages = cacheRemember(
             'volumeLanguageFamily',
             $cache_params,

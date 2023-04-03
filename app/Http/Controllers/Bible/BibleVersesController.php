@@ -75,7 +75,15 @@ class BibleVersesController extends APIController
         $page           = checkParam('page') ?? 1;
 
         $access_group_ids = getAccessGroups();
-        $cache_params = [$limit, $page, $language_code, $this->key, $book_id, $chapter_id, $verse_number];
+        $cache_params = [
+            $limit,
+            $page,
+            $language_code,
+            $access_group_ids->toString(),
+            $book_id,
+            $chapter_id,
+            $verse_number
+        ];
         $cache_key = generateCacheSafeKey('bible_verses_by_language', $cache_params);
         $verses = cacheRememberByKey(
             $cache_key,
@@ -149,7 +157,15 @@ class BibleVersesController extends APIController
         $page           = checkParam('page') ?? 1;
         $access_group_ids = getAccessGroups();
 
-        $cache_params = [$limit, $page, $bible_id, $this->key, $book_id, $chapter_id, $verse_number];
+        $cache_params = [
+            $limit,
+            $page,
+            $bible_id,
+            $access_group_ids->toString(),
+            $book_id,
+            $chapter_id,
+            $verse_number
+        ];
         $cache_key = generateCacheSafeKey('bible_verses_by_bible', $cache_params);
         $verses = cacheRememberByKey(
             $cache_key,

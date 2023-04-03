@@ -139,7 +139,7 @@ class BiblesController extends APIController
         $organization = $organization_id
             ? Organization::where('id', $organization_id)->orWhere('slug', $organization_id)->first()
             : null;
-        $key = $this->key;
+
         $cache_params = $this->removeSpaceFromCacheParameters([
             $language_code,
             $organization,
@@ -153,7 +153,7 @@ class BiblesController extends APIController
             $page,
             $is_bibleis_gideons,
             $order_cache_key,
-            $key,
+            $access_group_ids->toString(),
             $audio_timing
         ]);
 
@@ -178,13 +178,12 @@ class BiblesController extends APIController
             ) {
                 $bibles = Bible::filterByLanguage($language_code)
                 ->withRequiredFilesets([
-                    // 'key'            => $key,
                     'access_group_ids' => $access_group_ids,
-                    'media'          => $media,
-                    'media_exclude'  => $media_exclude,
-                    'size'           => $size,
-                    'size_exclude'   => $size_exclude,
-                    'tag_exclude'    => $tag_exclude,
+                    'media'            => $media,
+                    'media_exclude'    => $media_exclude,
+                    'size'             => $size,
+                    'size_exclude'     => $size_exclude,
+                    'tag_exclude'      => $tag_exclude,
                 ])
                 ->leftJoin('bible_translations as ver_title', function ($join) {
                     $join->on('ver_title.bible_id', '=', 'bibles.id')->where('ver_title.vernacular', 1);
@@ -292,7 +291,7 @@ class BiblesController extends APIController
                 ->replyWithError(trans('api.search_errors_400'));
         }
 
-        $cache_params = [$limit, $page, $formatted_search_cache, $this->key];
+        $cache_params = [$limit, $page, $formatted_search_cache, $access_group_ids->toString()];
         $cache_key = generateCacheSafeKey('bibles_search', $cache_params);
         
         $bibles = cacheRememberByKey(
@@ -350,7 +349,7 @@ class BiblesController extends APIController
         }
 
         $access_group_ids = getAccessGroups();
-        $cache_params = [$limit, $page, $version_query_cache, $this->key];
+        $cache_params = [$limit, $page, $version_query_cache, $access_group_ids->toString()];
         $cache_key = generateCacheSafeKey('bibles_by_id_search', $cache_params);
 
 
@@ -415,7 +414,7 @@ class BiblesController extends APIController
                 ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
-        $cache_params = [$id, $this->key, $include_font];
+        $cache_params = [$id, $access_group_ids->toString(), $include_font];
         $bible = cacheRemember(
             'bibles_show',
             $cache_params,
@@ -492,7 +491,7 @@ class BiblesController extends APIController
         $verse_count = checkBoolean('verse_count');
 
         $access_group_ids = getAccessGroups();
-        $cache_params = [$bible_id, $this->key, $verify_content, $verse_count];
+        $cache_params = [$bible_id, $access_group_ids->toString(), $verify_content, $verse_count];
         $bible = cacheRemember(
             'bible_books_bible',
             $cache_params,
@@ -528,7 +527,7 @@ class BiblesController extends APIController
         );
 
         if ($verify_content) {
-            $cache_params = [$bible_id, $this->key, $verify_content, $book_id];
+            $cache_params = [$bible_id, $access_group_ids->toString(), $verify_content, $book_id];
             $books = cacheRemember(
                 'bible_books_books_verified',
                 $cache_params,
@@ -559,7 +558,7 @@ class BiblesController extends APIController
             );
 
             if ($verse_count) {
-                $cache_params = [$bible_id, $this->key, $book_id];
+                $cache_params = [$bible_id, $access_group_ids->toString(), $book_id];
                 $books = cacheRemember(
                     'bible_books_verse_count',
                     $cache_params,
@@ -871,7 +870,7 @@ class BiblesController extends APIController
         $access_group_ids = getAccessGroups();
         $bible = cacheRemember(
             'v4_chapter_bible',
-            [$bible_id, $this->key],
+            [$bible_id, $access_group_ids->toString()],
             now()->addDay(),
             function () use ($bible_id, $access_group_ids) {
                 return Bible::with([

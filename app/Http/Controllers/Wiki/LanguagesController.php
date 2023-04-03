@@ -108,7 +108,7 @@ class LanguagesController extends APIController
             $GLOBALS['i18n_id'],
             $name,
             $include_translations,
-            $this->key,
+            $access_group_ids->toString(),
             $limit,
             $page,
             $is_bibleis_gideons,
@@ -213,7 +213,7 @@ class LanguagesController extends APIController
         $limit = min($limit, 50);
         $set_type_code = checkParam('set_type_code');
         $media = checkParam('media');
-        $access_group_ids = checkParam('middleware_access_group_ids', true);
+        $access_group_ids = getAccessGroups();
         $formatted_search = $this->transformQuerySearchText($search_text);
         $formatted_search_cache = str_replace(' ', '', $search_text);
 
@@ -227,7 +227,7 @@ class LanguagesController extends APIController
                 $limit,
                 $page,
                 $GLOBALS['i18n_id'],
-                $this->key,
+                $access_group_ids->toString(),
                 $media,
                 $set_type_code
             ]
@@ -310,8 +310,8 @@ class LanguagesController extends APIController
      */
     public function show($id)
     {
-        $cache_params = [$id, $this->key];
         $access_group_ids = getAccessGroups();
+        $cache_params = [$id, $access_group_ids->toString()];
 
         $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $access_group_ids) {
             $language = Language::where('id', $id)->orWhere('iso', $id)

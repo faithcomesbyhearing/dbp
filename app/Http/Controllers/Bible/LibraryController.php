@@ -448,7 +448,15 @@ class LibraryController extends APIController
             return $arclight->volumes();
         }
 
-        $cache_params = [$dam_id, $media, $language_name, $iso, $updated, $organization, $version_code, $this->key];
+        $cache_params = [
+            $dam_id,
+            $media,
+            $language_name,
+            $iso, $updated,
+            $organization,
+            $version_code,
+            $access_group_ids->toString()
+        ];
         $cache_key = generateCacheSafeKey('v2_library_volume', $cache_params);
         $filesets = cacheRememberByKey(
             $cache_key,

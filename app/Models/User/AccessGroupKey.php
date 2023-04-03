@@ -77,7 +77,7 @@ class AccessGroupKey extends Model
      */
     public static function getAccessGroupIdsByApiKey(string $api_key) : Collection
     {
-        return  AccessGroupKey::select('access_group_id')
+        return AccessGroupKey::select('access_group_id')
             ->join('user_keys', function ($join) use ($api_key) {
                 $join->on('user_keys.id', '=', 'access_group_api_keys.key_id')
                     ->where('user_keys.key', $api_key);
