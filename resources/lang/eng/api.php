@@ -4,6 +4,7 @@ return [
 
     'success'                                => 'success',
     'search_errors_400'                      => 'Wrong data provided for this search',
+    'sort_errors_400'                        => 'Wrong data provided to sort',
     'errors_401'                             => 'You do not have permission for this action',
     'errors_404'                             => '404 Not Found.',
     'errors_410'                             => '410 Gone',
