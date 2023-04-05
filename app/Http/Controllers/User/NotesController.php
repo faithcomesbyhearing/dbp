@@ -68,6 +68,18 @@ class NotesController extends APIController
         $limit              = (int) (checkParam('limit') ?? $chapter_max_verses);
         $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
 
+        if ($sort_by) {
+            $columns = cacheRemember('user_notes_columns', [], now()->addDay(), function () {
+                return Note::getColumnListing();
+            });
+
+            if (!isset($columns[$sort_by])) {
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_BAD_REQUEST)
+                    ->replyWithError(trans('api.sort_errors_400'));
+            }
+        }
+
         $notes = Note::with([
             'bible' => [
                 'filesets' => function ($query) {
