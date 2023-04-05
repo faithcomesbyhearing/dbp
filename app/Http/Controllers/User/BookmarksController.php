@@ -82,6 +82,18 @@ class BookmarksController extends APIController
         $limit              = (int) (checkParam('limit') ?? $chapter_max_verses);
         $limit              = $limit > $chapter_max_verses ? $chapter_max_verses : $limit;
 
+        if ($sort_by) {
+            $columns = cacheRemember('user_bookmarks_columns', [], now()->addDay(), function () {
+                return Bookmark::getColumnListing();
+            });
+
+            if (!isset($columns[$sort_by])) {
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_BAD_REQUEST)
+                    ->replyWithError(trans('api.sort_errors_400'));
+            }
+        }
+
         $bookmarks = Bookmark::with([
             'bible' => [
                 'filesets' => function ($query) {

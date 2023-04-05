@@ -125,6 +125,18 @@ class HighlightsController extends APIController
                 ->replyWithError(trans('api.users_errors_404'));
         }
 
+        if ($sort_by && $sort_by !== 'book') {
+            $columns = cacheRemember('user_highlights_columns', [], now()->addDay(), function () {
+                return Highlight::getColumnListing();
+            });
+
+            if (!isset($columns[$sort_by])) {
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_BAD_REQUEST)
+                    ->replyWithError(trans('api.sort_errors_400'));
+            }
+        }
+
         $user_is_member = $this->compareProjects($user_id, $this->key);
 
         if (!$user_is_member) {

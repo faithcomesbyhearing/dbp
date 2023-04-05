@@ -4,12 +4,27 @@ namespace App\Models\User\Study;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Playlist\PlaylistItems;
-
 use App\Models\Bible\BibleFilesetConnection;
 
 trait UserAnnotationTrait
 {
+    /**
+     * Get Column name list of the user_notes entity
+     *
+     * @return Collection
+     */
+    public static function getColumnListing() : Collection
+    {
+        $tableName = (new static)->getTable();
+        return collect(Schema::connection('dbp_users')->getColumnListing($tableName))
+            ->mapWithKeys(function ($item) {
+                return [$item => true];
+            });
+    }
+
     /**
      * Scope a query to only include playlist items that belong to a specific playlist and book.
      *
