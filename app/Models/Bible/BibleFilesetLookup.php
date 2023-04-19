@@ -163,6 +163,7 @@ class BibleFilesetLookup extends Model
         ->whereNotIn('bible_filesets.set_type_code', ['text_format'])
         ->where('bible_filesets.id', 'NOT LIKE', '%DA16')
         ->hasAccessGroup($download_access_group_array_ids)
+        ->orderBy('bible_filesets.id')
         ->paginate($limit);
     }
 }
