@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4d0cb748a7765024e71f167b19648b8f",
+    "content-hash": "aaeb942d002c5bbfd14f591f6b2f959a",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -660,24 +660,24 @@
         },
         {
             "name": "caneara/quest",
-            "version": "v2.0.2",
+            "version": "v3.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/caneara/quest.git",
-                "reference": "e6bdd2b25bb899141edcd8f54f3101785c2b0f51"
+                "reference": "cb00e95724431004c304463627cff95e0365adf4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/caneara/quest/zipball/e6bdd2b25bb899141edcd8f54f3101785c2b0f51",
-                "reference": "e6bdd2b25bb899141edcd8f54f3101785c2b0f51",
+                "url": "https://api.github.com/repos/caneara/quest/zipball/cb00e95724431004c304463627cff95e0365adf4",
+                "reference": "cb00e95724431004c304463627cff95e0365adf4",
                 "shasum": ""
             },
             "require": {
                 "php": "^7.4|^8.0"
             },
             "require-dev": {
-                "orchestra/testbench": "^6.0",
-                "phpunit/phpunit": "^9.0"
+                "orchestra/testbench": "^8.0",
+                "phpunit/phpunit": "^10.0"
             },
             "type": "library",
             "extra": {
@@ -697,7 +697,7 @@
                 "MIT"
             ],
             "description": "A package that provides pseudo fuzzy-searching to Laravel database queries.",
-            "homepage": "https://github.com/mattkingshott/quest",
+            "homepage": "https://github.com/caneara/quest",
             "keywords": [
                 "fuzzy",
                 "laravel",
@@ -707,9 +707,9 @@
             ],
             "support": {
                 "issues": "https://github.com/caneara/quest/issues",
-                "source": "https://github.com/caneara/quest/tree/v2.0.2"
+                "source": "https://github.com/caneara/quest/tree/v3.0.0"
             },
-            "time": "2022-04-22T08:05:21+00:00"
+            "time": "2023-04-18T15:44:04+00:00"
         },
         {
             "name": "clue/stream-filter",

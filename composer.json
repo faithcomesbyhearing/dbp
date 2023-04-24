@@ -18,7 +18,7 @@
         "aws/aws-sdk-php": "3.263.12",
         "biscolab/laravel-recaptcha": "6.0.0",
         "bugsnag/bugsnag-laravel": "2.26.0",
-        "caneara/quest": "2.0.2",
+        "caneara/quest": "3.0.0",
         "curl/curl": "2.5.0",
         "doctrine/dbal": "3.6.2",
         "geoip2/geoip2": "2.13.0",
