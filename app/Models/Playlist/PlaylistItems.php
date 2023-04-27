@@ -9,6 +9,7 @@ use App\Models\Bible\BibleFileTimestamp;
 use App\Models\Bible\BibleVerse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection as SupCollection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
@@ -756,24 +757,18 @@ class PlaylistItems extends Model implements Sortable
     }
 
     /**
-     * Get records that they are not related with the tag
+     * Get unique filesets using given playlist ids
      *
-     * @param Builder $query
-     * @param Array $tags_exclude
+     * @param Illuminate\Support\Collection $playlist_ids
      *
-     * @return Builder
+     * @return Illuminate\Support\Collection
      */
-    public function scopeConditionTagExcludeFileset(Builder $query, Array $tags_exclude)
+    public static function getUniqueFilesetsByPlaylistIds(Array|SupCollection $playlist_ids) : SupCollection
     {
-        $query->whereNotExists(function ($sub_query) use ($tags_exclude) {
-            $dbp_prod = config('database.connections.dbp.database');
-
-            return $sub_query
-                ->select(\DB::raw(1))
-                ->from($dbp_prod . '.bible_filesets as bf')
-                ->join($dbp_prod . '.bible_fileset_tags as bft', 'bft.hash_id', 'bf.hash_id')
-                ->whereColumn('bf.id', '=', 'playlist_items.fileset_id')
-                ->whereIn($dbp_prod . '.bft.description', $tags_exclude);
-        });
+        return PlaylistItems::select('fileset_id')
+            ->distinct()
+            ->whereIn('playlist_id', $playlist_ids)
+            ->get()
+            ->pluck('fileset_id');
     }
 }

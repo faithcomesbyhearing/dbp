@@ -10,7 +10,8 @@
   "ignoreDeps": [
     "symfony/http-client", 
     "symfony/yaml",
-    "friendsofphp/php-cs-fixer"
+    "friendsofphp/php-cs-fixer",
+    "spatie/eloquent-sortable"
   ],
   "docker": {
     "enabled": false

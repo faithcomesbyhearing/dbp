@@ -5,9 +5,12 @@ namespace App\Models\User\Study;
 use App\Http\Controllers\Bible\BiblesController;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
+use App\Models\Bible\Book;
 use App\Models\Bible\BibleVerse;
+use App\Services\Bibles\BibleFilesetService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Awobaz\Compoships\Compoships;
 
 /**
  * App\Models\User\Highlight
@@ -47,6 +50,7 @@ use Illuminate\Support\Str;
  */
 class Highlight extends Model
 {
+    use Compoships;
     use UserAnnotationTrait;
 
     protected $connection = 'dbp_users';
@@ -178,9 +182,14 @@ class Highlight extends Model
         return $this->belongsTo(Bible::class);
     }
 
+    public function bibleBook()
+    {
+        return $this->hasOne(BibleBook::class, ['book_id', 'bible_id'], ['book_id', 'bible_id']);
+    }
+
     public function book()
     {
-        return $this->hasOne(BibleBook::class, 'book_id', 'book_id')->where('bible_id', $this['bible_id']);
+        return $this->belongsTo(Book::class);
     }
 
     public function tags()
@@ -190,11 +199,11 @@ class Highlight extends Model
 
     public function getFilesetInfoAttribute()
     {
-        $highlight = $this->toArray();
-        $chapter = $highlight['chapter'];
-        $verse_start = $highlight['verse_start'];
-        $verse_end = $highlight['verse_end'] ?? $verse_start;
-        $bible = Bible::where('id', $highlight['bible_id'])->first();
+        $chapter = $this['chapter'];
+        $verse_start = $this['verse_start'];
+        $verse_end = $this['verse_end'] ?? $verse_start;
+
+        $bible = $this->bible;
         if (!$bible) {
             return collect([]);
         }
@@ -204,46 +213,44 @@ class Highlight extends Model
         }
         $text_fileset = $filesets->firstWhere('set_type_code', 'text_plain');
 
-        $bibles_controller = new BiblesController();
         $fileset_types = collect(['audio_stream_drama', 'audio_drama', 'audio_stream', 'audio']);
-        if (!$this->book || !$this->book->book) {
-            $testament = '';
-        } else {
-            $testament = $this->book->book->book_testament;
-        }
+
+        $testament = $this->bibleBook && $this->bibleBook->book
+            ? $this->bibleBook->book->book_testament
+            : '';
 
         $audio_filesets = $filesets->filter(function ($fs) {
             return Str::contains($fs->set_type_code, 'audio');
         });
+
+        foreach ($audio_filesets as $fileset) {
+            $fileset->addMetaRecordsAsAttributes();
+        }
+
         $available_filesets = $fileset_types->map(
-            function ($fileset) use ($audio_filesets, $testament, $bibles_controller) {
-                return $bibles_controller->getFileset($audio_filesets, $fileset, $testament);
+            function ($fileset) use ($audio_filesets, $testament) {
+                return BibleFilesetService::getFilesetFromValidFilesets($audio_filesets, $fileset, $testament);
             }
         )->filter(function ($item) {
             return $item;
-        })->toArray();
+        });
 
-        $verses = '';
         $verse_text = '';
         if ($text_fileset) {
-            $verses = BibleVerse::withVernacularMetaData($bible)
-                ->where('hash_id', $text_fileset->hash_id)
-                ->where('bible_verses.book_id', $highlight['book_id'])
-                ->when($verse_start, function ($query) use ($verse_start) {
-                    return $query->where('verse_sequence', '>=', (int) $verse_start);
-                })
-                ->when($verse_end, function ($query) use ($verse_end) {
-                    return $query->where('verse_sequence', '<=', (int) $verse_end);
-                })
-                ->where('chapter', $chapter)
-                ->orderBy('verse_sequence')
-                ->select([
-                    'bible_verses.verse_text',
-                ])->get()->pluck('verse_text');
-            $verse_text = implode(' ', $verses->toArray());
+            $verse_text = BibleFilesetService::getRangeVersesTextFilterBy(
+                $bible,
+                $text_fileset->hash_id,
+                $this['book_id'],
+                $verse_start,
+                $verse_end,
+                $chapter
+            );
         }
 
-        return collect(['verse_text' => $verse_text, 'audio_filesets' => array_values($available_filesets)]);
+        return collect([
+            'verse_text' => $verse_text,
+            'audio_filesets' => $available_filesets
+        ]);
     }
 
     public static function checkAndReturnColorPreference(Highlight $highlight, string $color_preference = 'rgba')
