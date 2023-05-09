@@ -13,7 +13,6 @@ use League\Fractal\Serializer\DataArraySerializer;
 use Spatie\Fractalistic\ArraySerializer;
 use Spatie\ArrayToXml\ArrayToXml;
 
-use Log;
 use Symfony\Component\Yaml\Yaml;
 use Yosymfony\Toml\TomlBuilder;
 

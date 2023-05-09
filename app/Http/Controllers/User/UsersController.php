@@ -23,7 +23,8 @@ use Illuminate\Support\Str;
 
 use Log;
 use Mail;
-use Validator;
+use Illuminate\Support\Facades\Validator;
+use App\Validators\AccountValidator;
 use Illuminate\Support\Facades\Auth;
 
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
@@ -410,7 +411,10 @@ class UsersController extends APIController
             'name' => $request->name,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
-            'token' => unique_random('dbp_users.users', 'token'),
+            'token' => unique_random(
+                config('database.connections.dbp_users.database') . '.users',
+                'token'
+            ),
             'activated' => 0,
             'notes' => $request->notes,
             'password' => \Hash::make($request->password)
@@ -841,7 +845,8 @@ class UsersController extends APIController
         $rules = [
             'project_id' => 'required|exists:dbp_users.projects,id',
             'social_provider_id' => 'required_with:social_provider_user_id',
-            'social_provider_user_id' => 'required_with:social_provider_id',
+            'social_provider_user_id'
+                => 'unique_social_provider:dbp_users.user_accounts,social_provider_user_id,social_provider_id',
             'name' => 'string|max:191|nullable',
             'first_name' => 'string|max:64|nullable',
             'last_name' => 'string|max:64|nullable',
@@ -854,8 +859,10 @@ class UsersController extends APIController
         ];
 
         if ($validate_email) {
-            $rules['email'] = 'required|unique:dbp_users.users,email';
+            $rules['email'] = 'required_without:social_provider_user_id|unique:dbp_users.users,email';
         }
+
+        Validator::extend('unique_social_provider', AccountValidator::class);
 
         $validator = Validator::make(request()->all(), $rules);
 
