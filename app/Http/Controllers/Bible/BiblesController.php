@@ -171,7 +171,6 @@ class BiblesController extends APIController
                 $size_exclude,
                 $tag_exclude,
                 $limit,
-                $page,
                 $order_by,
                 $audio_timing
             ) {
@@ -209,7 +208,7 @@ class BiblesController extends APIController
                     }
                 })
                 ->when($country, function ($q) use ($country) {
-                    $q->whereHas('country', function ($query) use ($country) {
+                    $q->whereHas('countryLanguage', function ($query) use ($country) {
                         $query->where('countries.id', $country);
                     });
                 })
