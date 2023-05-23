@@ -133,6 +133,8 @@ return [
         ],
     ],
 
+    'unique_social_provider' => 'El :attribute ya ha sido usado para un usuario y el ID del proveedor social juntos',
+
     /*
     |--------------------------------------------------------------------------
     | Atributos de validación personalizados
