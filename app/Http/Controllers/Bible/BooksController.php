@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Bible;
 
 use Symfony\Component\HttpFoundation\Response;
-use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Bible\BibleFileset;
 use App\Transformers\BooksTransformer;
 use App\Http\Controllers\APIController;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 
 class BooksController extends APIController
 {

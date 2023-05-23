@@ -2,8 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Contracts\Auth\Factory as Auth;
-use Illuminate\Auth\AuthenticationException;
 use App\Models\User\AccessGroupKey;
 use App\Services\IAMAPI\IAMAPIClientService;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -12,10 +10,12 @@ use Closure;
 
 class AccessControl
 {
+    private $iam_client;
+
     /**
      * Create a new middleware instance.
      *
-     * @param  \Illuminate\Contracts\Auth\Factory  $auth
+     * @param  App\Services\IAMAPI\IAMAPIClientService  $iam_client
      * @return void
      */
     public function __construct(IAMAPIClientService $iam_client)

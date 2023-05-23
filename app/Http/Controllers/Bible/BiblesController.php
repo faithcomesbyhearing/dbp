@@ -19,9 +19,7 @@ use App\Http\Controllers\User\HighlightsController;
 use App\Http\Controllers\User\NotesController;
 use App\Models\User\UserDownload;
 use App\Models\Bible\BibleDefault;
-use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
-use App\Models\Bible\BibleFileTimestamp;
 use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Language\Language;
@@ -173,7 +171,6 @@ class BiblesController extends APIController
                 $size_exclude,
                 $tag_exclude,
                 $limit,
-                $page,
                 $order_by,
                 $audio_timing
             ) {
@@ -211,7 +208,7 @@ class BiblesController extends APIController
                     }
                 })
                 ->when($country, function ($q) use ($country) {
-                    $q->whereHas('country', function ($query) use ($country) {
+                    $q->whereHas('countryLanguage', function ($query) use ($country) {
                         $query->where('countries.id', $country);
                     });
                 })
