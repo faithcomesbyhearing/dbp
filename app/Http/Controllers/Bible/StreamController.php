@@ -6,10 +6,7 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Http\Controllers\APIController;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
-use App\Models\Organization\Asset;
 use App\Traits\CallsBucketsTrait;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 
 class StreamController extends APIController
 {

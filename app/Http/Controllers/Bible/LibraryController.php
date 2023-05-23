@@ -11,7 +11,6 @@ use App\Models\Language\Language;
 use App\Models\Language\LanguageCodeV2;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\Version;
-use App\Models\Organization\Asset;
 
 use App\Transformers\V2\LibraryVolumeTransformer;
 use App\Transformers\V2\LibraryCatalog\LibraryMetadataTransformer;

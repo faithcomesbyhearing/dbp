@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers\Bible;
 
-use Symfony\Component\HttpFoundation\Response;
 use App\Traits\AccessControlAPI;
 use App\Traits\CheckProjectMembership;
-use League\Fractal\Pagination\IlluminatePaginatorAdapter;
-use App\Transformers\Serializers\DataArraySerializer;
 use App\Http\Controllers\APIController;
 use App\Models\Bible\BibleVerse;
 use App\Transformers\BibleVerseTransformer;

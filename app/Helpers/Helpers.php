@@ -496,7 +496,16 @@ if (!function_exists('unique_random')) {
             }
 
             // Check if it is unique in the database
-            $count = DB::table($table)->where($col, '=', $random)->count();
+            $parameters_connection = \explode('.', $table);
+
+            if (!empty($parameters_connection) && sizeof($parameters_connection) > 1) {
+                $connection = $parameters_connection[0];
+                $table = $parameters_connection[1];
+    
+                $count = \DB::connection($connection)->table($table)->where($col, '=', $random)->count();
+            } else {
+                $count = \DB::table($table)->where($col, '=', $random)->count();
+            }
 
             // Store the random character in the tested array
             // To keep track which ones are already tested

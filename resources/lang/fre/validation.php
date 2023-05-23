@@ -105,6 +105,9 @@ return [
         ],
     ],
 
+    'unique_social_provider'
+        => "Le :attribute est déjà pris pour une combinaison d'identifiant d'utilisateur et de fournisseur social",
+
     /*
     |--------------------------------------------------------------------------
     | Custom Validation Attributes

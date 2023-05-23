@@ -2,25 +2,16 @@
 
 namespace App\Http\Controllers\Bible;
 
-use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-use Illuminate\Support\Str;
 use App\Traits\AccessControlAPI;
 use App\Traits\CallsBucketsTrait;
 use App\Traits\BibleFileSetsTrait;
 use App\Http\Controllers\APIController;
-use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleFile;
-use App\Models\Bible\BibleFileSecondary;
-use App\Models\Bible\BibleVerse;
 use App\Models\Bible\BibleFilesetType;
 use App\Models\Bible\Book;
 use App\Models\Language\Language;
-use App\Models\Organization\Asset;
-
-
-use App\Transformers\FileSetTransformer;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;

@@ -103,6 +103,8 @@ return [
         ],
     ],
 
+    'unique_social_provider' => 'The :attribute is already taken for an user and social provider ID combination',
+
     /*
     |--------------------------------------------------------------------------
     | Custom Validation Attributes

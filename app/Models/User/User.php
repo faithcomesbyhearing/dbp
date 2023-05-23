@@ -270,7 +270,7 @@ class User extends Authenticatable
 
     public function organizations()
     {
-        return $this->hasManyThrough(Organization::class, RoleUser::class, 'user_id', 'id', 'id', 'organization_id');
+        return new UserOrganizationRelationship($this);
     }
 
     public function permissions()

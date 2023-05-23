@@ -4,6 +4,7 @@ namespace App\Models\Bible;
 
 use DB;
 use App\Models\Country\Country;
+use App\Models\Country\CountryLanguage;
 use App\Models\Language\Alphabet;
 use App\Models\Language\NumeralSystem;
 use App\Models\Organization\Organization;
@@ -282,6 +283,18 @@ class Bible extends Model
     public function language()
     {
         return $this->belongsTo(Language::class);
+    }
+
+    public function countryLanguage()
+    {
+        return $this->hasManyThrough(
+            Country::class,
+            CountryLanguage::class,
+            'language_id',
+            'id',
+            'language_id',
+            'country_id'
+        )->select(['countries.id as country_id','countries.continent','countries.name']);
     }
 
     public function country()

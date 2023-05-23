@@ -8,7 +8,6 @@ use DB;
 use Illuminate\Http\Response;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\Book;
-use App\Models\Language\AlphabetFont;
 use App\Traits\AccessControlAPI;
 use App\Traits\CheckProjectMembership;
 use App\Traits\CallsBucketsTrait;
