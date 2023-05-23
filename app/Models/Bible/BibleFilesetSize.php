@@ -30,6 +30,17 @@ use Illuminate\Database\Eloquent\Model;
  */
 class BibleFilesetSize extends Model
 {
+    public const SIZE_COMPLETE = 'C';
+    public const SIZE_NEW_TESTAMENT = 'NT';
+    public const SIZE_NEW_TESTAMENT_OLD_TESTAMENT_PORTION = 'NTOTP';
+    public const SIZE_NEW_TESTAMENT_PORTION = 'NTP';
+    public const SIZE_NEW_TESTAMENT_PORTION_OLD_TESTAMENT_PORTION = 'NTPOTP';
+    public const SIZE_OLD_TESTAMENT = 'OT';
+    public const SIZE_OLD_TESTAMENT_NEW_TESTAMENT_PORTION = 'OTNTP';
+    public const SIZE_OLD_TESTAMENT_PORTION = 'OTP';
+    public const SIZE_PORTION = 'P';
+    public const SIZE_STORIES = 'S';
+
     protected $connection = 'dbp';
     protected $table = 'bible_fileset_sizes';
 
