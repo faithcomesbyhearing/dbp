@@ -5,6 +5,7 @@ use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 use App\Support\AccessGroupsCollection;
+use App\Models\Bible\BibleFilesetSize;
 
 function getAccessGroups() : AccessGroupsCollection
 {
@@ -655,15 +656,22 @@ if (!function_exists('getTestamentString')) {
         }
         switch ($substring) {
             case 'O':
-                $testament = ['OT', 'C'];
+                $testament = [BibleFilesetSize::SIZE_OLD_TESTAMENT, BibleFilesetSize::SIZE_COMPLETE];
                 break;
 
             case 'N':
-                $testament = ['NT', 'C'];
+                $testament = [BibleFilesetSize::SIZE_NEW_TESTAMENT, BibleFilesetSize::SIZE_COMPLETE];
                 break;
 
             case 'P':
-                $testament = ['NTOTP', 'NTP', 'NTPOTP', 'OTNTP', 'OTP', 'P'];
+                $testament = [
+                    BibleFilesetSize::SIZE_NEW_TESTAMENT_OLD_TESTAMENT_PORTION,
+                    BibleFilesetSize::SIZE_NEW_TESTAMENT_PORTION,
+                    BibleFilesetSize::SIZE_NEW_TESTAMENT_PORTION_OLD_TESTAMENT_PORTION,
+                    BibleFilesetSize::SIZE_OLD_TESTAMENT_NEW_TESTAMENT_PORTION,
+                    BibleFilesetSize::SIZE_OLD_TESTAMENT_PORTION,
+                    BibleFilesetSize::SIZE_PORTION
+                ];
                 break;
             default:
                 $testament = [];
