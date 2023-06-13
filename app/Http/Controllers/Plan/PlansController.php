@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Plan;
 use Spatie\Fractalistic\ArraySerializer;
 use App\Traits\AccessControlAPI;
 use App\Http\Controllers\APIController;
-use App\Http\Controllers\Playlist\PlaylistsController;
 use App\Models\Bible\Bible;
 use App\Models\Language\Language;
 use App\Models\Plan\Plan;
@@ -13,11 +12,9 @@ use App\Traits\CheckProjectMembership;
 use App\Models\Plan\PlanDay;
 use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
-use App\Models\Playlist\PlaylistItems;
 use App\Transformers\PlanTransformer;
 use App\Transformers\PlanTranslateTransformer;
 use App\Transformers\PlanDayPlaylistItemsTransformer;
-use App\Transformers\PlanAndPlaylistTransformer;
 use App\Transformers\PlanBasicTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -30,6 +27,7 @@ class PlansController extends APIController
     use CheckProjectMembership;
 
     protected $days_limit = 1095;
+    public $plan_service;
 
     public function __construct()
     {
@@ -956,7 +954,7 @@ class PlansController extends APIController
             $show_details = $show_text;
         }
 
-        $plan = $this->plan_service->translate($plan_id, $bible, $user_id, $draft, $save_completed_items);
+        $plan = $this->plan_service->translate($plan_id, $bible, $user_id, $draft, $save_completed_items, true, true);
 
         if ($show_details === true) {
             $this->plan_service->setPlaylistItemsForEachPlaylist($plan, $user_id);

@@ -3,10 +3,6 @@
 namespace App\Services\Plans;
 
 use Illuminate\Database\Eloquent\Collection;
-use App\Models\Bible\BibleFile;
-use App\Models\Bible\BibleFileset;
-use App\Models\Bible\BibleVerse;
-use App\Models\Bible\StreamBandwidth;
 use App\Models\Plan\Plan;
 use App\Models\Plan\PlanDay;
 use App\Models\Plan\PlanDayComplete;
@@ -21,9 +17,12 @@ use App\Services\Bibles\BibleFilesetService;
 class PlanService
 {
     private $playlist_service;
+    private $playlist_item_service;
+
     public function __construct()
     {
         $this->playlist_service = new PlaylistService();
+        $this->playlist_item_service = new PlaylistItemService();
     }
 
     /**
@@ -136,7 +135,6 @@ class PlanService
                     'chapter_end'   => $translated_item['chapter_end'],
                     'verse_start'   => $translated_item['verse_start'] ?? null,
                     'verse_end'     => $translated_item['verse_end'] ?? null,
-                    'verses'        => $translated_item['verses'] ?? 0,
                     'order_column'  => $translated_item['order_column'] ?? $order
                 ];
                 $key_translated = implode('-', $playlist_item_data);
@@ -150,7 +148,7 @@ class PlanService
         }
 
         if ($calculate_items_duration === true) {
-            $this->calculateDurationForPlaylistItems($playlist_items_to_create);
+            $this->playlist_item_service->calculateDurationForPlaylistItems($playlist_items_to_create);
         }
 
         if ($calculate_items_verses === true) {
@@ -158,7 +156,7 @@ class PlanService
                 ->filesets
                 ->where('set_type_code', 'text_plain');
 
-            $this->calculateVersesForPlaylistItems($playlist_items_to_create, $bible_filesets);
+            $this->playlist_item_service->calculateVersesForPlaylistItems($playlist_items_to_create, $bible_filesets);
         }
 
         PlaylistItems::insert($playlist_items_to_create);
@@ -215,225 +213,6 @@ class PlanService
         $plan->translated_percentage = $translated_percentage*100;
 
         return $plan;
-    }
-
-
-    /**
-     * Get the bible filesets attached to the fileset attached to each palylist item
-     *
-     * @param Array $playlist_items_to_create
-     *
-     * @return Collection list filesets indexed by ID
-     */
-    public function getBibleFilesetsFromPlaylistItems(Array $playlist_items_to_create) : Collection
-    {
-        $fileset_ids = [];
-
-        foreach ($playlist_items_to_create as $item_to_create) {
-            $fileset_ids[$item_to_create['fileset_id']] = true;
-        }
-
-        return BibleFileset::select(['id', 'hash_id', 'set_type_code'])
-            ->whereIn('id', array_keys($fileset_ids))
-            ->get()
-            ->keyBy('id');
-    }
-
-    /**
-     * Get the bible files attached to the fileset attached to each palylist item
-     *
-     * @param Array $playlist_items_to_create
-     * @param Collection $bible_filesets - bible fileset collection indexed by filese ID
-     *
-     * @return Array
-     */
-    public function getBibleFilesFromPlaylistItems(
-        Array $playlist_items_to_create,
-        Collection $bible_filesets
-    ) : Array|Collection {
-        $bible_files = BibleFile::select(['id', 'hash_id', 'book_id', 'chapter_start', 'duration'])
-            ->with('streamBandwidth.transportStreamTS')
-            ->with('streamBandwidth.transportStreamBytes');
-
-        $flag_constraint = false;
-        foreach ($playlist_items_to_create as $item_to_create) {
-            $bible_files->orWhere(
-                function ($query_or_duration) use ($item_to_create, $bible_filesets, &$flag_constraint) {
-                    if (isset($bible_filesets[$item_to_create['fileset_id']])) {
-                        $flag_constraint = true;
-                        $query_or_duration
-                            ->where('chapter_start', '>=', $item_to_create['chapter_start'])
-                            ->where('chapter_start', '<=', $item_to_create['chapter_end'])
-                            ->where('hash_id', $bible_filesets[$item_to_create['fileset_id']]->hash_id)
-                            ->where('book_id', $item_to_create['book_id']);
-                    }
-                }
-            );
-        }
-
-        return $flag_constraint ? $bible_files->get() : [];
-    }
-
-    /**
-     * Filter the bible files array according to the chapter values of the playlist item
-     *
-     * @param Array $bible_files
-     * @param Array $item_to_create
-     *
-     * @return Array
-     */
-    public function filterBibleFilesByChapter(Array $bible_files, Array $item_to_create) : ?Array
-    {
-        return array_filter(
-            $bible_files,
-            function ($bible_file) use ($item_to_create) {
-                return $bible_file->chapter_start >= $item_to_create['chapter_start'] &&
-                    $bible_file->chapter_start <= $item_to_create['chapter_end'];
-            }
-        );
-    }
-
-    /**
-     * Get transportStream from a bible file
-     *
-     * @param StreamBandwidth $current_band_width
-     * @param Array $item_to_create
-     */
-    public function getTransportStreamFromBibleFile(StreamBandwidth $current_band_width, Array $item_to_create)
-    {
-        $transportStream = sizeof($current_band_width->transportStreamBytes)
-            ? $current_band_width->transportStreamBytes
-            : $current_band_width->transportStreamTS;
-        if ($item_to_create['verse_end'] && $item_to_create['verse_start']) {
-            $transportStream = $this->processVersesOnTransportStream(
-                $item_to_create,
-                $transportStream,
-                $bible_file
-            );
-        }
-
-        return $transportStream;
-    }
-
-    /**
-     * Update the duration property for each playlist item
-     * @param Array &$playlist_items_to_create
-     *
-     * @return void
-     */
-    public function calculateDurationForPlaylistItems(Array &$playlist_items_to_create) : void
-    {
-        $bible_filesets = $this->getBibleFilesetsFromPlaylistItems($playlist_items_to_create);
-        $bible_files = $this->getBibleFilesFromPlaylistItems($playlist_items_to_create, $bible_filesets);
-
-        $bible_files_indexed = [];
-
-        foreach ($bible_files as $bible_file) {
-            $bible_files_indexed[$bible_file->hash_id][$bible_file->book_id][] = $bible_file;
-        }
-
-        foreach ($playlist_items_to_create as &$item_to_create) {
-            $bible_fileset_attached = $bible_filesets[$item_to_create['fileset_id']];
-
-            if (isset($bible_files_indexed[$bible_fileset_attached->hash_id][$item_to_create['book_id']])) {
-                $hash_id = $bible_fileset_attached->hash_id;
-
-                $bible_files_to_perform_filtered = $this->filterBibleFilesByChapter(
-                    $bible_files_indexed[$hash_id][$item_to_create['book_id']],
-                    $item_to_create
-                );
-                $duration = 0;
-
-                if ($bible_fileset_attached->set_type_code === 'audio_stream' ||
-                    $bible_fileset_attached->set_type_code === 'audio_drama_stream'
-                ) {
-                    foreach ($bible_files_to_perform_filtered as $bible_file) {
-                        $currentBandwidth = $bible_file->streamBandwidth->first();
-                        $transportStream = $this->getTransportStreamFromBibleFile($currentBandwidth, $item_to_create);
-
-                        foreach ($transportStream as $stream) {
-                            $duration += $stream->runtime;
-                        }
-                    }
-                } else {
-                    foreach ($bible_files_to_perform_filtered as $bible_file) {
-                        $duration += $bible_file->duration ?? 180;
-                    }
-                }
-
-                $item_to_create['duration'] = $duration;
-            }
-        }
-
-        unset($item_to_create);
-    }
-
-    /**
-     * Update the verses property for each playlist item
-     * @param Array &$playlist_items_to_create
-     * @param Collection $bible_filesets
-     *
-     * @return void
-     */
-    public function calculateVersesForPlaylistItems(Array &$playlist_items_to_create, Collection $bible_filesets) : void
-    {
-        $book_ids = [];
-        foreach ($playlist_items_to_create as $item_to_create) {
-            $book_ids[$item_to_create['book_id']] = true;
-        }
-
-        $bible_verses = BibleVerse::select([ \DB::raw('COUNT(id) as verse_count'), 'book_id', 'chapter'])
-            ->whereIn('hash_id', $bible_filesets->pluck('hash_id'))
-            ->whereIn('book_id', array_keys($book_ids))
-            ->groupBy(['book_id', 'chapter'])
-            ->get();
-
-        $bible_verses_indexed = [];
-
-        foreach ($bible_verses as $bible_verse) {
-            $bible_verses_indexed[$bible_verse->book_id][(int)$bible_verse->chapter] = $bible_verse->verse_count;
-        }
-
-        foreach ($playlist_items_to_create as &$item_to_create) {
-            if (isset($bible_verses_indexed[$item_to_create['book_id']])) {
-                $verses = 0;
-                foreach ($bible_verses_indexed[$item_to_create['book_id']] as $chapter => $verse_count) {
-                    if ((int) $chapter >= $item_to_create['chapter_start'] &&
-                        (int) $chapter <= $item_to_create['chapter_end']
-                    ) {
-                        $verses = $verses + (int) $verse_count;
-                    }
-                }
-                $item_to_create['verses'] = $verses;
-            }
-        }
-
-        unset($item_to_create);
-    }
-
-    /**
-     * Filter the collection of transport stream by verse_start and verse_end properties
-     *
-     * @param Array $item
-     * @param Collection $transportStream
-     * @param BibleFile $bible_file
-     */
-    public function processVersesOnTransportStream(Array $item, Collection $transportStream, BibleFile $bible_file)
-    {
-        if ($item['chapter_end'] === $item['chapter_start']) {
-            $transportStream = $transportStream->splice(1, $item['verse_end'])->all();
-            return collect($transportStream)->slice($item['verse_start'] - 1)->all();
-        }
-
-        $transportStream = $transportStream->splice(1)->all();
-        if ($bible_file->chapter_start === $item['chapter_start']) {
-            return collect($transportStream)->slice($item['verse_start'] - 1)->all();
-        }
-        if ($bible_file->chapter_start === $item['chapter_end']) {
-            return collect($transportStream)->splice(0, $item['verse_end'])->all();
-        }
-
-        return $transportStream;
     }
 
     /**
@@ -760,32 +539,5 @@ class PlanService
     public function getPlanById(int $plan_id) : ?Plan
     {
         return Plan::findOne($plan_id);
-    }
-
-    /**
-     * Calculate the duration and verses values for each playlist item that belong to plan
-     *
-     * @param int $plan_id
-     *
-     * @return Plan
-     */
-    public function calculateDurationAndVersesUpdatePlan(Plan $plan, bool $save = false) : Plan
-    {
-        $playlist_ids = [];
-        foreach ($plan->days as $day) {
-            $playlist_ids[] = $day->playlist_id;
-        }
-
-        $playlist_items = PlaylistItems::whereIn('playlist_id', $playlist_ids)->get();
-        $this->playlist_service->calculateDuration($playlist_items);
-        $this->playlist_service->calculateVerses($playlist_items);
-
-        if ($save === true) {
-            foreach ($playlist_items as $playlist_item) {
-                $playlist_item->save();
-            }
-        }
-
-        return $plan;
     }
 }
