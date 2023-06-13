@@ -257,8 +257,11 @@ class PlaylistItems extends Model implements Sortable
                     ? $currentBandwidth->transportStreamBytes
                     : $currentBandwidth->transportStreamTS;
                 if ($playlist_item->verse_end && $playlist_item->verse_start) {
-                    $transportStream = $this->processVersesOnTransportStream(
-                        $playlist_item,
+                    $transportStream = self::processVersesOnTransportStream(
+                        $playlist_item->chapter_start,
+                        $playlist_item->chapter_end,
+                        (int) $playlist_item->verse_start,
+                        (int) $playlist_item->verse_end,
                         $transportStream,
                         $bible_file
                     );
@@ -277,24 +280,46 @@ class PlaylistItems extends Model implements Sortable
         return $duration;
     }
 
-    private function processVersesOnTransportStream($item, $transportStream, $bible_file)
-    {
-        if ($item->chapter_end  === $item->chapter_start) {
-            $transportStream = $transportStream->splice(1, $item->verse_end)->all();
-            return collect($transportStream)->slice($item->verse_start - 1)->all();
+    /**
+     * Processes verses on a transport stream.
+     *
+     * This method takes in start and end chapters and verses, a transport stream, and a Bible file.
+     * It then processes the verses based on these parameters and returns the processed transport stream.
+     *
+     * @param int $chapter_start The starting chapter.
+     * @param int $chapter_end The ending chapter.
+     * @param int $verse_start The starting verse.
+     * @param int $verse_end The ending verse.
+     * @param Collection $transportStream The transport stream to process.
+     * @param BibleFile $bible_file The Bible file associated with the transport stream.
+     *
+     * @return Collection | array The processed transport stream.
+     *
+     */
+    public static function processVersesOnTransportStream(
+        int $chapter_start,
+        int $chapter_end,
+        int $verse_start,
+        int $verse_end,
+        Collection $transportStream,
+        BibleFile $bible_file
+    ) : Collection | array {
+        if ($chapter_end === $chapter_start) {
+            $transport_stream_array = array_slice($transportStream->all(), 1, $verse_end);
+            return array_slice($transport_stream_array, $verse_start - 1);
         }
 
-        $transportStream = $transportStream->splice(1)->all();
-        if ($bible_file->chapter_start === $item->chapter_start) {
-            return collect($transportStream)->slice($item->verse_start - 1)->all();
+        $transport_stream_array = $transportStream->all();
+        $transport_stream_array = array_slice($transport_stream_array, 1);
+        if ($bible_file->chapter_start === $chapter_start) {
+            return array_slice($transport_stream_array, $verse_start - 1);
         }
-        if ($bible_file->chapter_start === $item->chapter_end) {
-            return collect($transportStream)->splice(0, $item->verse_end)->all();
+        if ($bible_file->chapter_start === $chapter_end) {
+            return array_slice($transport_stream_array, 0, $verse_end);
         }
 
         return $transportStream;
     }
-
 
     protected $appends = ['completed', 'full_chapter', 'path', 'metadata'];
 
@@ -750,7 +775,6 @@ class PlaylistItems extends Model implements Sortable
                 'chapter_end'   => $this['chapter_end'],
                 'verse_start'   => $this['verse_start'] ?? null,
                 'verse_end'     => $this['verse_end'] ?? null,
-                'verses'        => $this['verses'] ?? 0,
                 'order_column'  => $this['order_column']
             ]
         );

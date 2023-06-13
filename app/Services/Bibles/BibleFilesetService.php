@@ -2,9 +2,6 @@
 
 namespace App\Services\Bibles;
 
-use App\Models\Plan\Plan;
-use App\Models\Playlist\Playlist;
-use App\Models\Playlist\PlaylistItems;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleVerse;
@@ -39,6 +36,7 @@ class BibleFilesetService
         return BibleFileset::whereHas('bible', function ($query) use ($bible_id) {
             $query->where('bibles.id', $bible_id);
         })
+            ->with('meta')
             ->isContentAvailable($access_group_ids)
             ->whereIn('set_type_code', $audio_fileset_types)
             ->get();
@@ -55,9 +53,7 @@ class BibleFilesetService
      */
     public static function getFilesetFromValidFilesets(
         ?\Illuminate\Support\Collection $valid_filesets,
-        // ?\Illuminate\Support\Collection $filesets,
         string $type,
-        // string $size
         string $testament
     ) : bool|BibleFileset {
         $available_filesets = [];
@@ -75,13 +71,11 @@ class BibleFilesetService
         }
 
         $size_partial_filesets = $valid_filesets->filter(function ($fileset) use ($type, $testament) {
-            return (
-                isset($fileset->set_type_code) &&
+            return isset($fileset->set_type_code) &&
                 isset($fileset->set_size_code) &&
                 is_string($testament) &&
                 $fileset->set_type_code === $type &&
-                strpos($fileset->set_size_code, $testament) !== false
-            );
+                strpos($fileset->set_size_code, $testament) !== false;
         });
 
         if (!empty($size_partial_filesets)) {
@@ -91,12 +85,10 @@ class BibleFilesetService
         }
 
         $partial_fileset = $valid_filesets->filter(function ($fileset) use ($type) {
-            return (
-                isset($fileset->set_type_code) &&
+            return isset($fileset->set_type_code) &&
                 isset($fileset->set_size_code) &&
                 $fileset->set_type_code === $type &&
-                $fileset->set_size_code === 'P'
-            );
+                $fileset->set_size_code === 'P';
         })->first();
 
         if ($partial_fileset) {
