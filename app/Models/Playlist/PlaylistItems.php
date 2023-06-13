@@ -301,7 +301,7 @@ class PlaylistItems extends Model implements Sortable
         int $chapter_end,
         int $verse_start,
         int $verse_end,
-        Collection $transportStream,
+        SupCollection $transportStream,
         BibleFile $bible_file
     ) : Collection | array {
         if ($chapter_end === $chapter_start) {
