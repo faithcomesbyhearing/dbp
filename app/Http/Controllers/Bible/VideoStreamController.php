@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Bible;
 
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Symfony\Component\HttpClient\Exception\ServerException;
+
 use Spatie\Fractalistic\ArraySerializer;
 use App\Http\Controllers\APIController;
 use App\Traits\ArclightConnection;
@@ -88,40 +90,60 @@ class VideoStreamController extends APIController
             }
         }
 
-        try {
-            $media_components_response = $arclight_service->doRequest(
-                'media-components',
-                $arclight_id,
-                false,
-                'metadataLanguageTags=' . $metadata_language_tag . ',en&ids='.join(',', $verse_keys)
-            );
+        $media_components_response = $arclight_service->doRequest(
+            'media-components',
+            $arclight_id,
+            false,
+            'metadataLanguageTags=' . $metadata_language_tag . ',en&ids='.join(',', $verse_keys)
+        );
 
-            $media_components = $arclight_service->getContent($media_components_response);
-
-            $films = $this->getJesusFilmsFromMediaComponents($media_components, $verses, $book->id_osis, $chapter);
-
-            // We don't cache this portion because streaming url session can expire
-            foreach ($verses as $verse_key => $verse) {
-                if ($verse && isset($verse[$book->id_osis][$chapter])) {
-                    $streaming_component_responses[$verse_key] = $arclight_service->doRequest(
-                        'media-components/' . $verse_key . '/languages/' . $arclight_id,
-                        $arclight_id,
-                        false
-                    );
-                }
+        $streaming_component_responses_keys = [];
+        foreach ($verses as $verse_key => $verse) {
+            if ($verse && isset($verse[$book->id_osis][$chapter])) {
+                $streaming_component_responses[$verse_key] = $arclight_service->doRequest(
+                    'media-components/' . $verse_key . '/languages/' . $arclight_id,
+                    $arclight_id,
+                    false
+                );
+                $final_url = $streaming_component_responses[$verse_key]->getInfo('url');
+                $streaming_component_responses_keys[$final_url] = $verse_key;
             }
+        }
 
-            foreach ($streaming_component_responses as $verse_key => $response) {
-                if (isset($films[$verse_key])) {
-                    $streaming_component = $arclight_service->getContent($response);
+        try {
+            $media_components = $arclight_service->getContent($media_components_response);
+        } catch (ServerException $e) {
+            \Log::channel('errorlog')
+                ->error(["Arclight - ServerException Error (media-components): '{$e->getMessage()}" ]);
+            return [];
+        } catch (Exception $e) {
+            \Log::channel('errorlog')->error(["Arclight - Exception Error (media-components): '{$e->getMessage()}" ]);
+            return [];
+        }
+        $films = $this->getJesusFilmsFromMediaComponents($media_components, $verses, $book->id_osis, $chapter);
+        
+        foreach ($arclight_service->stream($streaming_component_responses) as $response => $chunk) {
+            if ($chunk->isFirst()) {
+                // Pass 'false' to the getHeaders method in order to handle 300-599 status codes on our end
+                $response->getHeaders(false);
+            } elseif ($chunk->isLast()) {
+                $verse_key = $streaming_component_responses_keys[$response->getInfo('url')];
+                // Pass 'false' to the getContent method in order to handle 300-599 status codes on our end.
+                $streaming_component = $arclight_service->getContent($response, false);
+
+                if( $streaming_component &&
+                    isset($streaming_component->streamingUrls) &&
+                    $verse_key &&
+                    $films[$verse_key]
+                ) {
                     $films[$verse_key]['meta']['file_name'] = $streaming_component->streamingUrls->m3u8[0]->url;
                 }
             }
-        } catch (Exception $e) {
-            \Log::channel('errorlog')
-                ->error(["Arclight Service - Error: '{$e->getMessage()}" ]);
-            return [];
         }
+
+        unset($media_components_response);
+        unset($streaming_component_responses);
+
         return $this->reply(fractal($films, new JesusFilmChapterTransformer, new ArraySerializer()));
     }
     
