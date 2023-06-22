@@ -4,6 +4,8 @@ namespace App\Services\Arclight;
 
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\ResponseInterface;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 
 class ArclightService
 {
@@ -43,16 +45,46 @@ class ArclightService
      * Do a get request to the arclight API
      *
      * @param ResponseInterface $response
+     * @param bool $throw
      */
-    public function getContent(ResponseInterface $response)
+    public function getContent(ResponseInterface $response, bool $throw = true)
     {
-        $media_component = json_decode($response->getContent());
+        $media_component = json_decode($response->getContent($throw));
 
         if (isset($media_component->_embedded)) {
             return $media_component->_embedded;
         }
 
+        if (!$this->isSuccessful($response)) {
+            \Log::channel('errorlog')
+            ->error([
+                "Arclight - Error URL:{$response->getInfo('url')} Error Code: '{$response->getStatusCode()}"
+            ]);
+        }
+
         return $media_component;
+    }
+
+    /**
+     * Is ResponseInterface successful?
+     *
+     * @return bool
+     */
+    public function isSuccessful(ResponseInterface $response) : bool
+    {
+        return $response->getStatusCode() >= HttpResponse::HTTP_OK &&
+            $response->getStatusCode() < HttpResponse::HTTP_MULTIPLE_CHOICES;
+    }
+
+    /**
+     * @param ResponseInterface|iterable<array-key, ResponseInterface> $responses
+     * @param float|null $timeout — The idle timeout before yielding timeout chunks
+     *
+     * @return \Symfony\Contracts\HttpClient\ResponseStreamInterface
+     */
+    public function stream(ResponseInterface|iterable $responses, float $timeout = null) : ResponseStreamInterface
+    {
+        return $this->client->stream($responses, $timeout);
     }
 
     public static function createPath(
