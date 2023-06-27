@@ -4,11 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFileset;
-use App\Models\Organization\Asset;
 use App\Models\User\Changelog;
 use App\Traits\CallsBucketsTrait;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Carbon;
 
 class ApiMetadataController extends APIController
 {

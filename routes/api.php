@@ -540,3 +540,6 @@ Route::name('v4_bible.links')->get(
 
 # Podcast is not currently supported in DBP4, but will be in the near future.
 #Route::name('v4_internal_filesets.podcast')->get('bibles/filesets/{fileset_id}/podcast',    'Bible\BibleFilesetsPodcastController@index');
+
+// VERSION 4 | API status
+Route::name('status')->get('/status', 'ApiMetadataController@getStatus');

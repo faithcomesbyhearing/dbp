@@ -10,13 +10,11 @@ use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleFileTimestamp;
-use App\Models\Bible\BibleFilesetConnection;
 use App\Models\Language\Language;
 use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
 use App\Models\Playlist\PlaylistFollower;
 use App\Models\Playlist\PlaylistItems;
-use App\Models\Bible\BibleVerse;
 use App\Models\User\Study\Note;
 use App\Models\User\Study\Highlight;
 use App\Models\User\Study\Bookmark;
@@ -31,7 +29,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
@@ -793,11 +790,6 @@ class PlaylistsController extends APIController
         return $this->playlist_service->createPlaylistItems($playlist->id, $playlist_items);
     }
 
-    public function createTranslatedPlaylistItems($playlist, $playlist_items)
-    {
-        return $this->playlist_service->createTranslatedPlaylistItems($playlist, $playlist_items);
-    }
-
     /**
      * Complete a playlist item.
      *
@@ -1011,11 +1003,26 @@ class PlaylistsController extends APIController
         return $this->playlist_service->getFileset($filesets, $type, $size);
     }
 
-    private function getCodecMetadata($fileset)
-    {
-        return $this->playlist_service->getCodecMetadata($fileset);
-    }
-
+    /**
+     *  @OA\Post(
+     *     path="/playlists/{fileset_id}-{book_id}-{chapter}-{verse_start}-{verse_end}/item-hls",
+     *     path="/playlists/{playlist_item_id}/item-hls",
+     *     tags={"Playlists"},
+     *     summary="Get item hls.",
+     *     operationId="v4_internal_playlists_item.hls",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="fileset_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
+     *     @OA\Parameter(name="book_id", in="path", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
+     *     @OA\Parameter(name="chapter", in="path", @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
+     *     @OA\Parameter(name="verse_start", in="path", @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_start")),
+     *     @OA\Parameter(name="verse_end", in="path", @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_end")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
+     *     )
+     * )
+     */
     public function itemHls(
         Response $response,
         $playlist_item_id,
@@ -1037,7 +1044,7 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Item Not Found');
         }
 
-        $hls_playlist = $this->getHlsPlaylist($response, [$playlist_item], $download);
+        $hls_playlist = $this->getHlsPlaylist([$playlist_item], $download);
 
         if ($download) {
             return $this->reply(
@@ -1084,7 +1091,7 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
         }
 
-        $hls_playlist = $this->getHlsPlaylist($response, $playlist->items, $download);
+        $hls_playlist = $this->getHlsPlaylist($playlist->items, $download);
 
         if ($download) {
             return $this->reply(['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]);
@@ -1126,7 +1133,14 @@ class PlaylistsController extends APIController
                         $transportStream = $this->fillVerseRangeOnTransportStream($transportStream);
                     }
 
-                    $transportStream = $this->processVersesOnTransportStream($item, $transportStream, $bible_file);
+                    $transportStream = PlaylistItems::processVersesOnTransportStream(
+                        $item->chapter_start,
+                        $item->chapter_end,
+                        (int) $item->verse_start,
+                        (int) $item->verse_end,
+                        $transportStream,
+                        $bible_file
+                    );
                 }
     
                 $fileset = $bible_file->fileset;
@@ -1238,25 +1252,7 @@ class PlaylistsController extends APIController
         return $new_transport_stream;
     }
 
-    private function processVersesOnTransportStream($item, $transportStream, $bible_file)
-    {
-        if ($item->chapter_end  === $item->chapter_start) {
-            $transportStream = $transportStream->splice(1, $item->verse_end);
-            return $transportStream->slice((int)$item->verse_start - 1)->all();
-        }
-
-        $transportStream = $transportStream->splice(1)->all();
-        if ($bible_file->chapter_start === $item->chapter_start) {
-            return collect($transportStream)->slice((int)$item->verse_start - 1)->all();
-        }
-        if ($bible_file->chapter_start === $item->chapter_end) {
-            return collect($transportStream)->splice(0, (int)$item->verse_end)->all();
-        }
-
-        return $transportStream;
-    }
-
-    private function getHlsPlaylist($response, $items, $download)
+    private function getHlsPlaylist($items, $download)
     {
         $signed_files = [];
         $transaction_id = random_int(0, 10000000);

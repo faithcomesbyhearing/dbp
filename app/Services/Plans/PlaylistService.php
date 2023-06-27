@@ -6,12 +6,19 @@ use App\Models\Plan\Plan;
 use App\Models\Playlist\Playlist;
 use App\Models\Playlist\PlaylistItems;
 use App\Models\Bible\Bible;
-use App\Models\Bible\BibleFileset;
 use Illuminate\Database\Eloquent\Collection;
 use App\Services\Bibles\BibleFilesetService;
+use App\Services\Plans\PlaylistItemService;
 
 class PlaylistService
 {
+    private $playlist_item_service;
+
+    public function __construct()
+    {
+        $this->playlist_item_service = new PlaylistItemService();
+    }
+
     public function translate(int $playlist_id, Bible $bible, int $user_id = 0, $plan_id = 0)
     {
         $playlist = Playlist::findWithBibleRelationByUserAndId($user_id, $playlist_id);
@@ -43,7 +50,8 @@ class PlaylistService
 
                     if ($has_translation) {
                         $item->fileset_id = $preferred_fileset->id;
-                        $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' || $preferred_fileset->set_type_code === 'audio_drama_stream';
+                        $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' ||
+                            $preferred_fileset->set_type_code === 'audio_drama_stream';
                         $translated_items[] = [
                             'translated_id' => $item->id,
                             'fileset_id' => $item->fileset_id,
@@ -110,6 +118,7 @@ class PlaylistService
             $order += 1;
         }
 
+        $this->playlist_item_service->calculateDurationForPlaylistItems($playlist_items_to_create);
         PlaylistItems::insert($playlist_items_to_create);
         $new_items = PlaylistItems::findByIdsWithFilesetRelation([$playlist->id], 'order_column');
 
