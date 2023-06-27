@@ -8,6 +8,7 @@ use Illuminate\Support\Collection;
 use App\Models\Bible\BibleVerse;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleBook;
+use App\Models\Bible\BibleFilesetSize;
 
 /**
  * App\Models\Bible\Book
@@ -257,11 +258,11 @@ class Book extends Model
     public function scopeFilterByTestament($query, $testament)
     {
         $query->when($testament, function ($q) use ($testament) {
-            if (\in_array('NT', $testament)) {
-                $q->where('books.book_testament', 'NT');
+            if (\in_array(BibleFilesetSize::SIZE_NEW_TESTAMENT, $testament)) {
+                $q->where('books.book_testament', BibleFilesetSize::SIZE_NEW_TESTAMENT);
             }
-            if (\in_array('OT', $testament)) {
-                $q->where('books.book_testament', 'OT');
+            if (\in_array(BibleFilesetSize::SIZE_OLD_TESTAMENT, $testament)) {
+                $q->where('books.book_testament', BibleFilesetSize::SIZE_OLD_TESTAMENT);
             }
         });
     }
@@ -359,6 +360,14 @@ class Book extends Model
             ->rightJoin('books', 'books.id', 'bible_books.book_id')
             ->when(!$is_plain_text, function ($query) use ($fileset) {
                 $query = self::compareFilesetToFileTableBooks($query, $fileset->hash_id);
+            })
+            ->where(function ($query) {
+                // The set_size_code value in the fileset column must be either equal to "C" (COMPLETE) or have the
+                // book_testament value from the book column contained within it. For example, if the book_testament
+                // value is "NT" and the set_size_code value is "NTP".
+                $query->orWhereColumn('fileset.set_size_code', '=', 'books.book_testament')
+                    ->orWhere('fileset.set_size_code', BibleFilesetSize::SIZE_COMPLETE)
+                    ->orWhereRaw(\DB::raw("fileset.set_size_code LIKE CONCAT('%', books.book_testament, '%')"));
             })
             ->select([
                 'books.id',
