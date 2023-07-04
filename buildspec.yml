@@ -18,17 +18,15 @@ phases:
       - echo "extension=igbinary.so" > /etc/php/8.1/cli/conf.d/45-igbinary.ini
       - echo "extension=memcached.so" > /etc/php/8.1/cli/conf.d/50-memcached.ini
       # Install New Relic PHP agent
-      # - echo 'deb http://apt.newrelic.com/debian/ newrelic non-free' | tee /etc/apt/sources.list.d/newrelic.list
-      # - wget -O- https://download.newrelic.com/548C16BF.gpg | apt-key add -
-      # - apt-get update
-      # - apt-get install -y newrelic-php5
-      # - newrelic-install install
-      # # Configure New Relic license key and app name
-      # - sed -i -e "s/REPLACE_WITH_LICENSE_KEY/${NEW_RELIC_LICENSE_KEY}/" /etc/newrelic/newrelic.ini
-      # - sed -i -e "s/newrelic.appname = \"PHP Application\"/newrelic.appname = \"${NEW_RELIC_APP_NAME}\"/" /etc/newrelic/newrelic.ini
-      # - echo "newrelic.enabled=true" > /etc/php/8.1/cli/conf.d/newrelic.ini
-      # - echo "newrelic.loglevel=debug" > /etc/php/8.1/cli/conf.d/newrelic.ini
-      # - echo "newrelic.appname=${NEW_RELIC_APP_NAME}" > /etc/php/8.1/cli/conf.d/newrelic.ini
+      - curl -sS https://download.newrelic.com/php_agent/release/newrelic-php5-10.11.0.3-linux.tar.gz | gzip -dc | tar xf -
+      - export NR_INSTALL_SILENT=1
+      - newrelic-php5-10.11.0.3-linux/newrelic-install install
+ 
+      # Configure New Relic options
+      - echo "newrelic.license=\"${NEW_RELIC_LICENSE_KEY}\"" >> /etc/php/8.1/cli/conf.d/newrelic.ini
+      - echo "newrelic.enabled=true" >> /etc/php/8.1/cli/conf.d/newrelic.ini
+      - echo "newrelic.loglevel=debug" >> /etc/php/8.1/cli/conf.d/newrelic.ini
+      - echo "newrelic.appname=\"${NEW_RELIC_APP_NAME}\"" >> /etc/php/8.1/cli/conf.d/newrelic.ini
       # Enable custom PHP options
       - echo "expose_php = Off" > /etc/php/8.1/cli/conf.d/aws.ini
       - echo "html_errors = Off" > /etc/php/8.1/cli/conf.d/aws.ini
@@ -137,12 +135,34 @@ phases:
 
   post_build:
     commands:
-      # Any commands to be run after the build phase should be placed here
-      # For example, cleaning up resources or notifying other services
+      - php artisan cache:clear # If something fails in the build, this command will throw an error
       - echo "Build completed!"
 artifacts:
-  # Collects the files to be stored as build output artifacts, like the web app's PHP files, assets, etc.
+  # Collects the files to be stored as build output artifacts
   files:
-    - '**/*'
-   # Specify the folders to exclude
+    - app/**/*
+    - bootstrap/**/*
+    - config/**/*
+    - database/**/*
+    - doc/**/*
+    - fixers/**/*
+    - public/**/*
+    - resources/**/*
+    - routes/**/*
+    - storage/**/*
+    - tests/**/*
+    - tools/**/*
+    - vendor/**/*
+    - vendor/**/*
+    - artisan
+    - buildspec.yml
+    - composer.json
+    - composer.lock
+    - LICENSE.md
+    - license.svg
+    - phpunit.xml
+    - README.md
+    - server.php
+    - .env
+
   base-directory: '.' # Specify the directory containing your web app source code
