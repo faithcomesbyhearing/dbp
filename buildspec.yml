@@ -1,9 +1,148 @@
 version: 0.2
 
 phases:
+  install:
+    runtime-versions:
+      php: 8.1
+    commands:
+      # Update packages and install any additional dependencies
+      - apt-get update
+       # Install PHP development tools needed for PECL
+      - apt-get install -y php-pear php-dev
+      # Install dependencies required for building igbinary and memcached
+      - apt-get install -y libmemcached-dev
+      # Install igbinary and memcached PHP extensions
+      - pecl install igbinary
+      - pecl install memcached
+      # Enable igbinary and memcached extensions
+      - echo "extension=igbinary.so" > /etc/php/8.1/cli/conf.d/45-igbinary.ini
+      - echo "extension=memcached.so" > /etc/php/8.1/cli/conf.d/50-memcached.ini
+      # Install New Relic PHP agent
+      # - echo 'deb http://apt.newrelic.com/debian/ newrelic non-free' | tee /etc/apt/sources.list.d/newrelic.list
+      # - wget -O- https://download.newrelic.com/548C16BF.gpg | apt-key add -
+      # - apt-get update
+      # - apt-get install -y newrelic-php5
+      # - newrelic-install install
+      # # Configure New Relic license key and app name
+      # - sed -i -e "s/REPLACE_WITH_LICENSE_KEY/${NEW_RELIC_LICENSE_KEY}/" /etc/newrelic/newrelic.ini
+      # - sed -i -e "s/newrelic.appname = \"PHP Application\"/newrelic.appname = \"${NEW_RELIC_APP_NAME}\"/" /etc/newrelic/newrelic.ini
+      # - echo "newrelic.enabled=true" > /etc/php/8.1/cli/conf.d/newrelic.ini
+      # - echo "newrelic.loglevel=debug" > /etc/php/8.1/cli/conf.d/newrelic.ini
+      # - echo "newrelic.appname=${NEW_RELIC_APP_NAME}" > /etc/php/8.1/cli/conf.d/newrelic.ini
+      # Enable custom PHP options
+      - echo "expose_php = Off" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "html_errors = Off" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "variables_order = \"EGPCS\"" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "session.save_path = \"/tmp\"" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "default_socket_timeout = 90" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "post_max_size = 32M" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "short_open_tag = 1" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "date.timezone = UTC" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "memory_limit = 256M" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "zlib.output_compression = Off" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "allow_url_fopen = On" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "display_errors = On" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "max_execution_time = 60" > /etc/php/8.1/cli/conf.d/aws.ini
+      # install Composer for dependency management in PHP projects
+      - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+  pre_build:
+    commands:
+      # use Composer to install project dependencies
+      - composer install
+      - echo "APP_NAME=${APP_NAME}" > .env
+      - echo "APP_ENV=${APP_ENV}" >> .env
+      - echo "APP_KEY=${APP_KEY}" >> .env
+      - echo "APP_DEBUG=${APP_DEBUG}" >> .env
+      - echo "APP_URL=${APP_URL}" >> .env
+      - echo "APP_URL_PODCAST=${APP_URL_PODCAST}" >> .env
+      - echo "APP_SITE_CONTACT=${APP_SITE_CONTACT}" >> .env
+      - echo "APP_SERVER_NAME=${APP_SERVER_NAME}" >> .env
+      - echo "LOG_CHANNEL=${LOG_CHANNEL}" >> .env
+      - echo "SESSION_LIFETIME=${SESSION_LIFETIME}" >> .env
+      # Database connections
+      - echo "DB_CONNECTION=${DB_CONNECTION}" >> .env
+      - echo "DBP_HOST=${DBP_HOST}" >> .env
+      - echo "DBP_PORT=${DBP_PORT}" >> .env
+      - echo "DBP_DATABASE=${DBP_DATABASE}" >> .env
+      - echo "DBP_USERNAME=${DBP_USERNAME}" >> .env
+      - echo "DBP_PASSWORD=${DBP_PASSWORD}" >> .env
+      - echo "DBP_USERS_HOST=${DBP_USERS_HOST}" >> .env
+      - echo "DBP_USERS_PORT=${DBP_USERS_PORT}" >> .env
+      - echo "DBP_USERS_DATABASE=${DBP_USERS_DATABASE}" >> .env
+      - echo "DBP_USERS_USERNAME=${DBP_USERS_USERNAME}" >> .env
+      - echo "DBP_USERS_PASSWORD=${DBP_USERS_PASSWORD}" >> .env
+      # Log
+      - echo "LOG_SLACK_WEBHOOK_URL=${LOG_SLACK_WEBHOOK_URL}" >> .env
+      # memcached
+      - echo "CACHE_DRIVER=${CACHE_DRIVER}" >> .env
+      - echo "MEMCACHED_HOST_ONLINE=${MEMCACHED_HOST_ONLINE}" >> .env
+      - echo "MEMCACHED_HOST=${MEMCACHED_HOST}" >> .env
+      - echo "MEMCACHED_PORT=${MEMCACHED_PORT}" >> .env
+      - echo "MEMCACHED_PERSISTENT_ID=${MEMCACHED_PERSISTENT_ID}" >> .env
+      - echo "MEMCACHED_USERNAME=${MEMCACHED_USERNAME}" >> .env
+      - echo "MEMCACHED_PASSWORD=${MEMCACHED_PASSWORD}" >> .env
+      - echo "SESSION_DRIVER=${SESSION_DRIVER}" >> .env
+      - echo "QUEUE_DRIVER=${QUEUE_DRIVER}" >> .env
+      # AWS Services
+      - echo "AWS_CLOUDFRONT_KEY_ID=${AWS_CLOUDFRONT_KEY_ID}" >> .env
+      - echo "AWS_CLOUDFRONT_KEY_SECRET=${AWS_CLOUDFRONT_KEY_SECRET}" >> .env
+      - echo "AWS_ARN_ROLE=${AWS_ARN_ROLE}" >> .env
+      - echo "AWS_KEY=${AWS_KEY}" >> .env
+      - echo "AWS_SECRET=${AWS_SECRET}" >> .env
+      - echo "AWS_REGION=${AWS_REGION}" >> .env
+      - echo "FCBH_AWS_KEY=${FCBH_AWS_KEY}" >> .env
+      - echo "FCBH_AWS_SECRET=${FCBH_AWS_SECRET}" >> .env
+      - echo "FCBH_AWS_REGION=${FCBH_AWS_REGION}" >> .env
+      - echo "FCBH_AWS_BUCKET=${FCBH_AWS_BUCKET}" >> .env
+      # Mail Services
+      - echo "MAIL_DRIVER=${MAIL_DRIVER}" >> .env
+      - echo "MAIL_PORT=${MAIL_PORT}" >> .env
+      - echo "MAIL_ENCRYPTION=${MAIL_ENCRYPTION}" >> .env
+      - echo "MAIL_HOST=${MAIL_HOST}" >> .env
+      - echo "MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}" >> .env
+      - echo "MAIL_USERNAME=${MAIL_USERNAME}" >> .env
+      - echo "MAIL_PASSWORD=${MAIL_PASSWORD}" >> .env
+      # Bible Organization APIs
+      - echo "ARCLIGHT_API_URL=${ARCLIGHT_API_URL}" >> .env
+      - echo "ARCLIGHT_API=${ARCLIGHT_API}" >> .env
+      - echo "FORBIDDEN_ARCLIGHT_ISO=${FORBIDDEN_ARCLIGHT_ISO}" >> .env
+      - echo "BIS_API_KEY=${BIS_API_KEY}" >> .env
+      - echo "BIS_API_SECRET=${BIS_API_SECRET}" >> .env
+      # CDN
+      - echo "CDN_SERVER=${CDN_SERVER}" >> .env
+      - echo "CDN_VIDEO_SERVER=${CDN_VIDEO_SERVER}" >> .env
+      - echo "CDN_SERVER_V2=${CDN_SERVER_V2}" >> .env
+      - echo "CDN_VIDEO_SERVER_v2=${CDN_VIDEO_SERVER_v2}" >> .env
+      - echo "CDN_FONTS_SERVER=${CDN_FONTS_SERVER}" >> .env
+      - echo "MCDN_COUNTRY_IMAGE=${MCDN_COUNTRY_IMAGE}" >> .env
+      # OPCACHE
+      - echo "OPCACHE_URL=${OPCACHE_URL}" >> .env
+      # API DBP logic
+      - echo "API_KEY_ACCESS_GROUPS=${API_KEY_ACCESS_GROUPS}" >> .env
+      - echo "BIBLEIS_KEYS=${BIBLEIS_KEYS}" >> .env
+      - echo "GIDEONS_KEYS=${GIDEONS_KEYS}" >> .env
+      - echo "BIBLEIS_DEPRECATE_FROM_VERSION=${BIBLEIS_DEPRECATE_FROM_VERSION}" >> .env
+      - echo "GIDEONS_DEPRECATE_FROM_VERSION=${GIDEONS_DEPRECATE_FROM_VERSION}" >> .env
+      - echo "BIBLEIS_COMPATIBILITY_APP_NAME=${BIBLEIS_COMPATIBILITY_APP_NAME}" >> .env
+      - echo "GIDEONS_COMPATIBILITY_APP_NAME=${GIDEONS_COMPATIBILITY_APP_NAME}" >> .env
+      - echo "DOWNLOAD_ACCESS_GROUP_LIST=${DOWNLOAD_ACCESS_GROUP_LIST}" >> .env
+      # newrelic
+      - echo "NEWRELIC_ADAPTER=${NEWRELIC_ADAPTER}" >> .env
+      - echo "NEWRELIC_NAME_PROVIDER=${NEWRELIC_NAME_PROVIDER}" >> .env
+      - echo "NEWRELIC_ADAPTER_LOG_CHANNEL=${NEWRELIC_ADAPTER_LOG_CHANNEL}" >> .env
+
+  build:
+    commands:
+      # run tests or other build steps here
+
   post_build:
     commands:
-      - echo no need to do anything, as zip is handled by external tooling
+      # Any commands to be run after the build phase should be placed here
+      # For example, cleaning up resources or notifying other services
+      - echo "Build completed!"
 artifacts:
+  # Collects the files to be stored as build output artifacts, like the web app's PHP files, assets, etc.
   files:
-    - "**/*"
+    - '**/*'
+   # Specify the folders to exclude
+  base-directory: '.' # Specify the directory containing your web app source code
