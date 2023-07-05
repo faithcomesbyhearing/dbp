@@ -94,7 +94,7 @@ return [
             'key'    => env('FCBH_AWS_KEY'),
             'secret' => env('FCBH_AWS_SECRET'),
             'region' => env('FCBH_AWS_REGION') ?? 'us-west-2',
-            'bucket' => env('FCBH_AWS_BUCKET'),
+            'bucket' => env('FCBH_AWS_BUCKET', 'dbp-prod'),
         ],
 
         's3_dbs_log' => [
@@ -110,7 +110,7 @@ return [
             'key'    => env('FCBH_AWS_KEY'),
             'secret' => env('FCBH_AWS_SECRET'),
             'region' => env('FCBH_AWS_REGION') ?? 'us-west-2',
-            'bucket' => env('FCBH_AWS_BUCKET'),
+            'bucket' => env('FCBH_AWS_BUCKET', 'dbp-prod'),
         ],
 
         'dbp-dev' => [
