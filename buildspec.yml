@@ -47,6 +47,37 @@ phases:
     commands:
       # use Composer to install project dependencies
       - composer install
+      - echo "APP_KEY=${APP_KEY}" > .env
+      # Database connections
+      - echo "DBP_HOST=${DBP_HOST}" >> .env
+      - echo "DBP_DATABASE=${DBP_DATABASE}" >> .env
+      - echo "DBP_USERNAME=${DBP_USERNAME}" >> .env
+      - echo "DBP_PASSWORD=${DBP_PASSWORD}" >> .env
+      - echo "DBP_USERS_HOST=${DBP_USERS_HOST}" >> .env
+      - echo "DBP_USERS_DATABASE=${DBP_USERS_DATABASE}" >> .env
+      - echo "DBP_USERS_USERNAME=${DBP_USERS_USERNAME}" >> .env
+      - echo "DBP_USERS_PASSWORD=${DBP_USERS_PASSWORD}" >> .env
+      # memcached
+      - echo "MEMCACHED_HOST=${MEMCACHED_HOST}" >> .env
+      # AWS Services
+      - echo "AWS_CLOUDFRONT_KEY_ID=${AWS_CLOUDFRONT_KEY_ID}" >> .env
+      - echo "AWS_CLOUDFRONT_KEY_SECRET=${AWS_CLOUDFRONT_KEY_SECRET}" >> .env
+      # Mail Services
+      - echo "MAIL_USERNAME=${MAIL_USERNAME}" >> .env
+      - echo "MAIL_PASSWORD=${MAIL_PASSWORD}" >> .env
+      # Bible Organization APIs
+      - echo "ARCLIGHT_API_KEY=${ARCLIGHT_API_KEY}" >> .env
+      # CDN
+      - echo "CDN_SERVER=${CDN_SERVER}" >> .env
+      # API DBP logic
+      - echo "BIBLEIS_KEYS=${BIBLEIS_KEYS}" >> .env
+      - echo "GIDEONS_KEYS=${GIDEONS_KEYS}" >> .env
+      # newrelic
+      - echo "NEW_RELIC_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY}" >> .env
+      - echo "NEW_RELIC_APP_NAME=${NEW_RELIC_APP_NAME}" >> .env
+      - echo "NEWRELIC_NAME_PROVIDER=${NEWRELIC_NAME_PROVIDER:-"{route}"}" >> .env
+      - echo "S3_CONFIG_LOC=${S3_CONFIG_LOC}" >> .env
+      - echo "BEANSTALK_BUCKET=${BEANSTALK_BUCKET}" >> .env
   build:
     commands:
       # run tests or other build steps here
@@ -76,5 +107,6 @@ artifacts:
     - license.svg
     - phpunit.xml
     - server.php
+    - .env
 
   base-directory: '.' # Specify the directory containing your web app source code
