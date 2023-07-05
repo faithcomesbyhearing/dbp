@@ -67,18 +67,14 @@ artifacts:
     - resources/**/*
     - routes/**/*
     - storage/**/*
-    - tests/**/*
     - tools/**/*
     - vendor/**/*
-    - vendor/**/*
     - artisan
-    - buildspec.yml
     - composer.json
     - composer.lock
     - LICENSE.md
     - license.svg
     - phpunit.xml
-    - README.md
     - server.php
 
   base-directory: '.' # Specify the directory containing your web app source code
