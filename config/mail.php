@@ -29,7 +29,7 @@ return [
     |
     */
 
-    'host' => env('MAIL_HOST', 'smtp.mailgun.org'),
+    'host' => env('MAIL_HOST', 'email-smtp.us-east-1.amazonaws.com'),
 
     /*
     |--------------------------------------------------------------------------
@@ -56,7 +56,7 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'support@digitalbibleplatform.com'),
+        'address' => env('MAIL_FROM_ADDRESS', 'support@bible.is'),
         'name'    => env('MAIL_FROM_NAME', 'Digital Bible Platform Support'),
     ],
 

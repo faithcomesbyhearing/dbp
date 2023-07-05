@@ -44,7 +44,7 @@ return [
   /*
    * v2 v4 sync chunk size
    */
-  'v2V4SyncChunkSize' => env('V2_V4_SYNC_CHUNK_SIZE', 5000),
+  'v2V4SyncChunkSize' => env('V2_V4_SYNC_CHUNK_SIZE', 10000),
 
   /*
    * v2 v4 sync chunk size
@@ -119,8 +119,8 @@ return [
    * Version to start bibleis/gid deprecation
    */
   'deprecate_from_version' => [
-      'bibleis' => env('BIBLEIS_DEPRECATE_FROM_VERSION', '3.3.10'),
-      'gideons' => env('GIDEONS_DEPRECATE_FROM_VERSION', '2.1.3'),
+      'bibleis' => env('BIBLEIS_DEPRECATE_FROM_VERSION', '3.4.1'),
+      'gideons' => env('GIDEONS_DEPRECATE_FROM_VERSION', '2.2.1'),
   ],
 
   /*
@@ -128,7 +128,7 @@ return [
    */
   'download_access_group_list' => env(
       'DOWNLOAD_ACCESS_GROUP_LIST',
-      '12,15,16,17,18,19,20,141,143,145,181,183,185,191,193'
+      '12,15,16,17,18,19,20,21,22,23,24,181,183,185,191,193,141,143,145'
   ),
   'backward_compatibility' => [
       'app_name' => [

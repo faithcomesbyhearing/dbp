@@ -124,7 +124,7 @@ return [
 
     'cookie' => env(
         'SESSION_COOKIE',
-        env('APP_NAME', 'laravel').'_session'
+        env('APP_NAME', 'digital_bible_platform').'_session'
     ),
 
     /*
