@@ -12,9 +12,9 @@ return [
     | any other location as required by the application or its packages.
     */
 
-    'name'        => env('APP_NAME', 'Laravel'),
-    'server_name' => env('APP_SERVER_NAME'),
-    'contact'     => env('APP_SITE_CONTACT'),
+    'name'        => env('APP_NAME', 'digital_bible_platform'),
+    'server_name' => env('APP_SERVER_NAME', 'Biblebrain dev'),
+    'contact'     => env('APP_SITE_CONTACT', 'info@fcbhmail.net'),
 
     /*
     |--------------------------------------------------------------------------
@@ -27,7 +27,7 @@ return [
     |
     */
 
-    'env' => env('APP_ENV', 'production'),
+    'env' => env('APP_ENV', 'prod'),
 
     /*
     |--------------------------------------------------------------------------
@@ -53,8 +53,8 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
-    'url_podcast' => env('APP_URL_PODCAST', 'https://dbp4.org'),
+    'url' => env('APP_URL', 'https://4.dbt.io'),
+    'url_podcast' => env('APP_URL_PODCAST', 'https://4.dbt.io'),
     'api_url' => env('API_URL', 'https://b4.dbt.io'),
     'get_started_url' => env('GET_STARTED_URL', 'https://github.com/faithcomesbyhearing/dbp/blob/master/doc/STARTING.md'),
 
