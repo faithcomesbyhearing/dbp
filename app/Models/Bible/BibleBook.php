@@ -201,11 +201,12 @@ class BibleBook extends Model
      *
      * @param string $bible_versification
      *
-     * @return Expression
+     * @return string
      */
-    public static function getBookOrderExpressionRaw(string $bible_versification) : Expression
+    public static function getBookOrderExpressionRaw(string $bible_versification) : string
     {
-        return \DB::raw(self::getBookOrderSql($bible_versification));
+        $expression = new Expression(self::getBookOrderSql($bible_versification));
+        return $expression->getValue(\DB::connection()->getQueryGrammar());
     }
 
     /**
