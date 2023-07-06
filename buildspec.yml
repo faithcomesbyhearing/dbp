@@ -78,6 +78,9 @@ phases:
       - echo "NEWRELIC_NAME_PROVIDER=${NEWRELIC_NAME_PROVIDER:-"{route}"}" >> .env
       - echo "S3_CONFIG_LOC=${S3_CONFIG_LOC}" >> .env
       - echo "BEANSTALK_BUCKET=${BEANSTALK_BUCKET}" >> .env
+      # captcha
+      - echo "CHECKBOX_RECAPTCHA_SITEKEY=${CHECKBOX_RECAPTCHA_SITEKEY}" >> .env
+      - echo "CHECKBOX_RECAPTCHA_SECRETKEY=${CHECKBOX_RECAPTCHA_SECRETKEY}" >> .env
   build:
     commands:
       # run tests or other build steps here
