@@ -8,6 +8,7 @@ use DB;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Spatie\Fractalistic\ArraySerializer;
 use Illuminate\Http\Response;
+use Illuminate\Database\Query\Expression;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\Book;
 use App\Models\Language\AlphabetFont;
@@ -388,8 +389,8 @@ class TextController extends APIController
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }
-
         $search_text  = \DB::connection()->getPdo()->quote($query);
+        $expression = new Expression("MATCH (verse_text) AGAINST($search_text IN NATURAL LANGUAGE MODE)");
         $verses = \DB::connection('dbp')->table('bible_verses')
             ->where('bible_verses.hash_id', $fileset->hash_id)
             ->join('bible_filesets', 'bible_filesets.hash_id', 'bible_verses.hash_id')
@@ -407,7 +408,7 @@ class TextController extends APIController
                     MIN(books.protestant_order) as protestant_order'
                 )
             )
-            ->whereRaw(DB::raw("MATCH (verse_text) AGAINST($search_text IN NATURAL LANGUAGE MODE)"))
+            ->whereRaw($expression->getValue(\DB::connection()->getQueryGrammar()))
             ->groupBy('book_id')->orderBy('protestant_order')->get();
 
         return $this->reply([
