@@ -13,7 +13,7 @@ $finder = PhpCsFixer\Finder::create()
     ->ignoreVCS(true);
 ;
 
-return PhpCsFixer\Config::create()
+return (new PhpCsFixer\Config())
     ->registerCustomFixers([
         (new PrettierPHPFixer()),
     ])
@@ -21,7 +21,7 @@ return PhpCsFixer\Config::create()
         'Prettier/php' => true,
         '@PSR2'                 => true,
         'method_argument_space' => [
-            'ensure_fully_multiline' => false,
+            'on_multiline' => 'ensure_fully_multiline',
             'keep_multiple_spaces_after_comma' => true
         ],
         'array_syntax' => ['syntax' => 'short'],
