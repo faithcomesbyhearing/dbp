@@ -2,6 +2,8 @@
 
 use PhpCsFixer\Fixer\FixerInterface;
 use PhpCsFixer\Tokenizer\Tokens;
+use PhpCsFixer\FixerDefinition\FixerDefinitionInterface;
+use PhpCsFixer\FixerDefinition\FixerDefinition;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -12,29 +14,39 @@ final class PrettierPHPFixer implements FixerInterface
     /**
      * {@inheritdoc}
      */
-    public function getPriority()
+    public function getPriority(): int
     {
         // should be absolute first
         return 999;
     }
     /**
+     * Returns the description of the fixer.
+     *
+     * @return FixerDefinitionInterface
+     */
+    public function getDefinition(): FixerDefinitionInterface
+    {
+        // Example: Return a basic definition
+        return new FixerDefinition('Fixer description.', []);
+    }
+    /**
      * {@inheritdoc}
      */
-    public function isCandidate(Tokens $tokens)
+    public function isCandidate(Tokens $tokens): bool
     {
         return true;
     }
     /**
      * {@inheritdoc}
      */
-    public function isRisky()
+    public function isRisky(): bool
     {
         return false;
     }
     /**
      * {@inheritdoc}
      */
-    public function fix(SplFileInfo $file, Tokens $tokens)
+    public function fix(SplFileInfo $file, Tokens $tokens): void
     {
         if (
             0 < $tokens->count() &&
@@ -47,14 +59,14 @@ final class PrettierPHPFixer implements FixerInterface
     /**
      * {@inheritdoc}
      */
-    public function getName()
+    public function getName(): string
     {
         return 'Prettier/php';
     }
     /**
      * {@inheritdoc}
      */
-    public function supports(SplFileInfo $file)
+    public function supports(SplFileInfo $file): bool
     {
         return true;
     }
