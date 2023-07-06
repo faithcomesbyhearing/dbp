@@ -9,7 +9,7 @@
 |
 */
 
-Localization::localizedRoutesGroup(function () {
+Route::group(['prefix' => LaravelLocalization::setLocale()], function() {
 
     // Primary documentation resides in WebFlow. Home page is now redirected to WebFlow
     // Route::get('/', 'WelcomeController@redirect')->name('webflow');
