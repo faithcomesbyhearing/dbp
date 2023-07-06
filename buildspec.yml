@@ -9,18 +9,19 @@ phases:
       - apt-get update
        # Install PHP development tools needed for PECL
       - apt-get install -y php-pear php-dev
-      # Install dependencies required for building igbinary and memcached
-      - apt-get install -y libmemcached-dev
-      # Install igbinary and memcached PHP extensions
-      - pecl install igbinary
-      - pecl install -D 'enable-memcached-igbinary="yes"' memcached
-      # Enable igbinary and memcached extensions
-      - echo "extension=igbinary.so" > /etc/php/8.1/cli/conf.d/45-igbinary.ini
-      - echo "extension=memcached.so" > /etc/php/8.1/cli/conf.d/50-memcached.ini
-      # Install New Relic PHP agent
-      - curl -sS https://download.newrelic.com/php_agent/release/newrelic-php5-10.11.0.3-linux.tar.gz | gzip -dc | tar xf -
-      - export NR_INSTALL_SILENT=1
-      - newrelic-php5-10.11.0.3-linux/newrelic-install install
+
+      # # Install dependencies required for building igbinary and memcached
+      # - apt-get install -y libmemcached-dev
+      # # Install igbinary and memcached PHP extensions
+      # - pecl install igbinary
+      # - pecl install -D 'enable-memcached-igbinary="yes"' memcached
+      # # Enable igbinary and memcached extensions
+      # - echo "extension=igbinary.so" > /etc/php/8.1/cli/conf.d/45-igbinary.ini
+      # - echo "extension=memcached.so" > /etc/php/8.1/cli/conf.d/50-memcached.ini
+      # # Install New Relic PHP agent
+      # - curl -sS https://download.newrelic.com/php_agent/release/newrelic-php5-10.11.0.3-linux.tar.gz | gzip -dc | tar xf -
+      # - export NR_INSTALL_SILENT=1
+      # - newrelic-php5-10.11.0.3-linux/newrelic-install install
  
       # Configure New Relic options
       - echo "newrelic.license=\"${NEW_RELIC_LICENSE_KEY}\"" >> /etc/php/8.1/cli/conf.d/newrelic.ini
