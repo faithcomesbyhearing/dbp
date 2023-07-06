@@ -12,6 +12,7 @@
 namespace App\Logs;
 
 use Monolog\Formatter\NormalizerFormatter;
+use Monolog\LogRecord;
 use Throwable;
 
 /**
@@ -37,8 +38,12 @@ class EmptyLineFormatter extends NormalizerFormatter
      * @param bool   $allowInlineLineBreaks      Whether to allow inline line breaks in log entries
      * @param bool   $ignoreEmptyContextAndExtra
      */
-    public function __construct($format = null, $dateFormat = null, $allowInlineLineBreaks = false, $ignoreEmptyContextAndExtra = false)
-    {
+    public function __construct(
+        $format = null,
+        $dateFormat = null,
+        $allowInlineLineBreaks = false,
+        $ignoreEmptyContextAndExtra = false
+    ) {
         $this->format = $format ?: static::SIMPLE_FORMAT;
         $this->allowInlineLineBreaks = $allowInlineLineBreaks;
         $this->ignoreEmptyContextAndExtra = $ignoreEmptyContextAndExtra;
@@ -66,10 +71,10 @@ class EmptyLineFormatter extends NormalizerFormatter
     /**
      * {@inheritdoc}
      */
-    public function format(array $record)
+    public function format(LogRecord $record): string
     {
         $vars = parent::format($record);
-        return $vars['message']."\n";
+        return $vars['message'] . "\n";
     }
 
     public function formatBatch(array $records)
@@ -90,19 +95,46 @@ class EmptyLineFormatter extends NormalizerFormatter
     protected function normalizeException(Throwable $e, int $depth = 0)
     {
         if (!$e instanceof \Exception && !$e instanceof \Throwable) {
-            throw new \InvalidArgumentException('Exception/Throwable expected, got '.gettype($e).' / '.get_class($e));
+            throw new \InvalidArgumentException(
+                'Exception/Throwable expected, got ' .
+                    gettype($e) .
+                    ' / ' .
+                    get_class($e)
+            );
         }
 
         $previousText = '';
         if ($previous = $e->getPrevious()) {
             do {
-                $previousText .= ', '.get_class($previous).'(code: '.$previous->getCode().'): '.$previous->getMessage().' at '.$previous->getFile().':'.$previous->getLine();
+                $previousText .=
+                    ', ' .
+                    get_class($previous) .
+                    '(code: ' .
+                    $previous->getCode() .
+                    '): ' .
+                    $previous->getMessage() .
+                    ' at ' .
+                    $previous->getFile() .
+                    ':' .
+                    $previous->getLine();
             } while ($previous = $previous->getPrevious());
         }
 
-        $str = '[object] ('.get_class($e).'(code: '.$e->getCode().'): '.$e->getMessage().' at '.$e->getFile().':'.$e->getLine().$previousText.')';
+        $str =
+            '[object] (' .
+            get_class($e) .
+            '(code: ' .
+            $e->getCode() .
+            '): ' .
+            $e->getMessage() .
+            ' at ' .
+            $e->getFile() .
+            ':' .
+            $e->getLine() .
+            $previousText .
+            ')';
         if ($this->includeStacktraces) {
-            $str .= "\n[stacktrace]\n".$e->getTraceAsString()."\n";
+            $str .= "\n[stacktrace]\n" . $e->getTraceAsString() . "\n";
         }
 
         return $str;
