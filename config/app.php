@@ -82,7 +82,7 @@ return [
     |
     */
 
-    'locale' => 'eng',
+    'locale' => 'en',
 
     /*
     |--------------------------------------------------------------------------
@@ -95,7 +95,7 @@ return [
     |
     */
 
-    'fallback_locale' => 'eng',
+    'fallback_locale' => 'en',
 
     /*
     |--------------------------------------------------------------------------
@@ -173,6 +173,7 @@ return [
         Bugsnag\BugsnagLaravel\BugsnagServiceProvider::class,
         Sentry\Laravel\ServiceProvider::class,
         Biscolab\ReCaptcha\ReCaptchaServiceProvider::class,
+        Mcamara\LaravelLocalization\LaravelLocalizationServiceProvider::class,
     ],
 
     /*
@@ -223,8 +224,8 @@ return [
         'Socialite'    => Laravel\Socialite\Facades\Socialite::class,
         'Input'        => Illuminate\Support\Facades\Input::class,
         'Image'        => Intervention\Image\Facades\Image::class,
-        'Localization' => Lunaweb\Localization\Facades\Localization::class,
-        'i18n'         => Lunaweb\Localization\Facades\Localization::class,
+        'i18n'         => Mcamara\LaravelLocalization\Facades\LaravelLocalization::class,
+        'LaravelLocalization' => Mcamara\LaravelLocalization\Facades\LaravelLocalization::class,
         'Bugsnag'      => Bugsnag\BugsnagLaravel\Facades\Bugsnag::class,
         'Sentry'       => Sentry\Laravel\Facade::class,
         'ReCaptcha'    => Biscolab\ReCaptcha\Facades\ReCaptcha::class
