@@ -5,6 +5,7 @@ namespace App\Models\Bible;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Expression;
 use App\Models\Bible\BibleVerse;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleBook;
@@ -362,12 +363,13 @@ class Book extends Model
                 $query = self::compareFilesetToFileTableBooks($query, $fileset->hash_id);
             })
             ->where(function ($query) {
+                $expression = new Expression("fileset.set_size_code LIKE CONCAT('%', books.book_testament, '%')");
                 // The set_size_code value in the fileset column must be either equal to "C" (COMPLETE) or have the
                 // book_testament value from the book column contained within it. For example, if the book_testament
                 // value is "NT" and the set_size_code value is "NTP".
                 $query->orWhereColumn('fileset.set_size_code', '=', 'books.book_testament')
                     ->orWhere('fileset.set_size_code', BibleFilesetSize::SIZE_COMPLETE)
-                    ->orWhereRaw(\DB::raw("fileset.set_size_code LIKE CONCAT('%', books.book_testament, '%')"));
+                    ->orWhereRaw($expression->getValue(\DB::connection()->getQueryGrammar()));
             })
             ->select([
                 'books.id',
