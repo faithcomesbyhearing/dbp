@@ -1,0 +1,25 @@
+commands:
+  01_add_newrelic_repo:
+    command: echo "deb http://apt.newrelic.com/debian/ newrelic non-free" | tee /etc/apt/sources.list.d/newrelic.list
+  02_add_newrelic_gpg_key:
+    command: wget -O - https://download.newrelic.com/548C16BF.gpg | apt-key add -
+  03_update_package_list:
+    command: apt-get update
+  04_install_newrelic_php:
+    command: apt-get install -y newrelic-php5
+  05_run_newrelic_install:
+    command: newrelic-install install
+    env:
+      NR_INSTALL_SILENT: 1
+  06_set_newrelic_key_and_name:
+    command: |
+      sed -i -e "s/REPLACE_WITH_REAL_KEY/${NEW_RELIC_LICENSE_KEY}/" \
+              -e "s/newrelic.appname[[:space:]]=[[:space:]].*/newrelic.appname=\"${NEW_RELIC_APP_NAME}\"/" \
+              $(php -r "echo(PHP_CONFIG_FILE_SCAN_DIR);")/newrelic.ini
+    env:
+      NEW_RELIC_LICENSE_KEY: '`{"Fn::GetOptionSetting": {"Namespace": "aws:elasticbeanstalk:application:environment", "OptionName": "NEW_RELIC_LICENSE_KEY"}}`'
+      NEW_RELIC_APP_NAME: '`{"Fn::GetOptionSetting": {"Namespace": "aws:elasticbeanstalk:application:environment", "OptionName": "NEW_RELIC_APP_NAME"}}`'
+  07_enable_newrelic:
+    command: echo "newrelic.enabled=true"  >> $(php -r "echo(PHP_CONFIG_FILE_SCAN_DIR);")/newrelic.ini
+  08_set_loglevel:
+    command: echo "newrelic.loglevel=debug"  >> $(php -r "echo(PHP_CONFIG_FILE_SCAN_DIR);")/newrelic.ini
