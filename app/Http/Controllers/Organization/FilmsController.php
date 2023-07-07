@@ -53,7 +53,7 @@ class FilmsController extends APIController
     {
         return $this->reply([
             [
-                'server'    => config('services.cdn.video_server'),
+                'server'    => config('services.cdn.server'),
                 'root_path' => 'video',
                 'protocol'  => 'https',
                 'CDN'       => 0,
