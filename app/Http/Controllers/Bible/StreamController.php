@@ -129,7 +129,9 @@ class StreamController extends APIController
 
             $currentBandwidth = $file->streamBandwidth->where('file_name', $file_name)->first();
             if (!$currentBandwidth) {
-                return $this->setStatusCode(404)->replyWithError(trans('api.file_errors_404_size'));
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                    ->replyWithError(trans('api.file_errors_404_size'));
             }
             $transaction_id = random_int(0, 10000000);
 
