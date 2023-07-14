@@ -36,6 +36,7 @@ use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Services\Plans\PlaylistService;
 use App\Services\Bibles\BibleFilesetService;
 
+
 class PlaylistsController extends APIController
 {
     use AccessControlAPI;
@@ -834,33 +835,37 @@ class PlaylistsController extends APIController
             $playlist_item = PlaylistItems::where('id', $item_id)->first();
 
             if (!$playlist_item) {
-                return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Item Not Found');
+                return $this
+                    ->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)
+                    ->replyWithError('Playlist Item Not Found');
             }
 
-            $user_plan = UserPlan::join('plans', function ($join) use ($user) {
-                $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
-            })
-                ->join('plan_days', function ($join) use ($playlist_item) {
-                    $join
-                        ->on('plan_days.plan_id', '=', 'plans.id')
-                        ->where('plan_days.playlist_id', $playlist_item->playlist_id);
-                })
-                ->select('user_plans.*')
-                ->first();
+            $user_plan = UserPlan::getByPlaylistIdAndUserId($playlist_item->playlist_id, $user->id);
 
             if (!$user_plan) {
                 return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('User Plan Not Found');
             }
 
-            $complete = $complete && $complete !== 'false';
+            $result = null;
 
-            if ($complete) {
-                $playlist_item->complete();
-            } else {
-                $playlist_item->unComplete();
+            try {
+                $complete = $complete && $complete !== 'false';
+
+                if ($complete) {
+                    $playlist_item->complete();
+                } else {
+                    $playlist_item->unComplete();
+                }
+
+                $result = $complete ? 'completed' : 'not completed';
+            } catch(\Exception $e) {
+                \Log::error("Exception to complete Playlist Item [user: {$user->id} item id: {$item_id}]");
+                \Log::error($e);
+                return $this
+                    ->setStatusCode(SymfonyResponse::HTTP_UNPROCESSABLE_ENTITY)
+                    ->replyWithError('The system is unable to process the completion of the playlist item.');
             }
 
-            $result = $complete ? 'completed' : 'not completed';
             $user_plan->calculatePercentageCompleted()->save();
 
             return $this->reply([
