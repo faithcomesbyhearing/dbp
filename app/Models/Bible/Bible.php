@@ -18,9 +18,9 @@ use App\Models\Language\Language;
  * @mixin \Eloquent
  *
  * @property-read \App\Models\Language\Alphabet $alphabet
- * @property-read \App\Models\Bible\BibleBook[] $books
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Bible\BibleBook[] $books
  * @property-read BibleFile[] $files
- * @property-read BibleFileset[] $filesets
+ * @property-read \Illuminate\Database\Eloquent\Collection|BibleFileset[] $filesets
  * @property-read \App\Models\Language\Language $language
  * @property-read BibleLink[] $links
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Organization\Organization[] $organizations

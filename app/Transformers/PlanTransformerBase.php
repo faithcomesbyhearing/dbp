@@ -166,7 +166,6 @@ class PlanTransformerBase extends BaseTransformer
                 ]
             ),
             "verses" => $playlist->verses,
-            "verses" => 0,
             "user" => [
                 "id" => $playlist->user->id,
                 "name" => $playlist->user->name

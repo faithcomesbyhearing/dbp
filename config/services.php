@@ -89,9 +89,8 @@ return [
 
     // CDN server
     'cdn' => [
-        'server' => env('CDN_SERVER', 'content.cdn.dbp-prod.dbp4.org'),
+        'server' => env('CDN_SERVER', 'd1gd73roq7kqw6.cloudfront.net'),
         'server_v2' => env('CDN_SERVER_V2', 'cloud.faithcomesbyhearing.com'),
-        'video_server' => env('CDN_VIDEO_SERVER', 'content.cdn.dbp-vid.dbp4.org'),
         'video_server_v2' => env('CDN_VIDEO_SERVER_V2', 'video.dbt.io'),
         'fonts_server' => env('CDN_FONTS_SERVER', 'cdn.bible.build'),
         'country_image_server' => env('MCDN_COUNTRY_IMAGE', 'dbp-mcdn.s3.us-west-2.amazonaws.com')

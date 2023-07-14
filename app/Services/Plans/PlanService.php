@@ -135,6 +135,7 @@ class PlanService
                     'chapter_end'   => $translated_item['chapter_end'],
                     'verse_start'   => $translated_item['verse_start'] ?? null,
                     'verse_end'     => $translated_item['verse_end'] ?? null,
+                    'verse_sequence'=> $translated_item['verse_sequence'] ?? null,
                     'order_column'  => $translated_item['order_column'] ?? $order
                 ];
                 $key_translated = implode('-', $playlist_item_data);
@@ -455,6 +456,8 @@ class PlanService
         $total_translated_items = 0;
         
         if (isset($playlist->items)) {
+            $books_target_bible = $bible->books->keyBy('book_id');
+
             foreach ($playlist->items as $item) {
                 if (isset($item->fileset, $item->fileset->set_type_code)) {
                     $item->fileset->addMetaRecordsAsAttributes();
@@ -473,7 +476,7 @@ class PlanService
                     $has_translation = isset($preferred_fileset);
                     $is_streaming = true;
 
-                    if ($has_translation) {
+                    if ($has_translation && $books_target_bible->has($item->book_id)) {
                         $item->fileset_id = $preferred_fileset->id;
                         $is_streaming = $preferred_fileset->set_type_code === 'audio_stream'
                             || $preferred_fileset->set_type_code === 'audio_drama_stream';
