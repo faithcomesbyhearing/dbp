@@ -292,6 +292,7 @@ class Playlist extends Model
                 'playlist_id',
                 'verse_start',
                 'verse_end',
+                'verse_sequence',
                 'verses',
                 'duration',
                 \DB::Raw('false as completed'),

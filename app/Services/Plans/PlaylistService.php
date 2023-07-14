@@ -61,6 +61,7 @@ class PlaylistService
                             'verse_start' => $is_streaming ? $item->verse_sequence : null,
                             'verse_start_alt' => $is_streaming ? $item->verse_start : null,
                             'verse_end' => $is_streaming ? $item->verse_end : null,
+                            'verse_sequence' => $is_streaming ? $item->verse_sequence : null,
                             'verses' => $item->verses,
                         ];
                         $total_translated_items += 1;
@@ -111,6 +112,7 @@ class PlaylistService
                 'chapter_end'       => $playlist_item['chapter_end'],
                 'verse_start'       => $playlist_item['verse_start'] ?? null,
                 'verse_end'         => $playlist_item['verse_end'] ?? null,
+                'verse_sequence'    => $playlist_item['verse_sequence'] ?? null,
                 'verses'            => $playlist_item['verses'] ?? 0,
                 'order_column'      => $order
             ];

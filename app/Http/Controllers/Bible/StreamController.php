@@ -103,7 +103,7 @@ class StreamController extends APIController
                 ->select('hash_id', 'id', 'asset_id')
                 ->first();
 
-            $fileset_type = 'audio';
+            $fileset_type = BibleFileset::AUDIO;
 
             if (empty($fileset)) {
                 $fileset = BibleFileset::uniqueFileset($fileset_id, 'video_stream')
@@ -111,10 +111,12 @@ class StreamController extends APIController
                     ->first();
 
                 if (empty($fileset)) {
-                    return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
+                    return $this
+                        ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                        ->replyWithError('No fileset found for the provided params');
                 }
 
-                $fileset_type = 'video';
+                $fileset_type = BibleFileset::VIDEO;
             }
 
             $file = $this->getFileFromLocation($fileset, $file_id_location);
@@ -127,7 +129,9 @@ class StreamController extends APIController
 
             $currentBandwidth = $file->streamBandwidth->where('file_name', $file_name)->first();
             if (!$currentBandwidth) {
-                return $this->setStatusCode(404)->replyWithError(trans('api.file_errors_404_size'));
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                    ->replyWithError(trans('api.file_errors_404_size'));
             }
             $transaction_id = random_int(0, 10000000);
 
