@@ -20,7 +20,9 @@ use App\Transformers\PlanBasicTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 use App\Services\Plans\PlanService;
+use App\Exceptions\MySQLErrorCode;
 
 class PlansController extends APIController
 {
@@ -645,16 +647,18 @@ class PlansController extends APIController
 
                 return $plan_day;
             });
-            $result = $complete ? 'completed' : 'not completed';
-        } catch (\Exception $e) {
-            \Log::error(
-                "Exception to complete Plan Day [user: {$user->id} plan ID: {$user_plan->id} plan day ID: {$day_id}]"
-            );
-            \Log::error($e);
-            return $this
-                ->setStatusCode(SymfonyResponse::HTTP_UNPROCESSABLE_ENTITY)
-                ->replyWithError('The system is unable to process the completion of the plan day');
+        } catch (QueryException $e) {
+            // Catch only the error code for a duplicate entry
+            if ($e->getCode() == MySQLErrorCode::DUPLICATE_ENTRY) {
+                \Log::info(
+                    "Exception to complete Plan Day [user: {$user->id} plan ID: {$user_plan->id} plan day ID: {$day_id}]"
+                );
+            }  else {
+                throw $e;
+            }
         }
+
+        $result = $complete ? 'completed' : 'not completed';
 
         $user_plan->calculatePercentageCompleted()->save();
 

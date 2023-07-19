@@ -135,10 +135,16 @@ class PlanDay extends Model implements Sortable
         if (is_null($user_id)) {
             $user_id = Auth::user()->id;
         }
-        PlanDayComplete::updateOrCreate([
-            'user_id'     => $user_id,
-            'plan_day_id' => $this['id']
-        ]);
+
+        $days_complete_to_create = [
+            ['user_id' => $user_id, 'plan_day_id' => $this['id']]
+        ];
+
+        PlanDayComplete::upsert(
+            $days_complete_to_create,
+            ['user_id', 'plan_day_id'],
+            ['user_id', 'plan_day_id']
+        );
 
         $this->completePlaylistItems($this['id'], $user_id);
     }
