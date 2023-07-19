@@ -32,10 +32,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Collection;
+use Illuminate\Database\QueryException;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Services\Plans\PlaylistService;
 use App\Services\Bibles\BibleFilesetService;
-
+use App\Exceptions\MySQLErrorCode;
 
 class PlaylistsController extends APIController
 {
@@ -856,15 +857,16 @@ class PlaylistsController extends APIController
                 } else {
                     $playlist_item->unComplete();
                 }
-
-                $result = $complete ? 'completed' : 'not completed';
-            } catch(\Exception $e) {
-                \Log::error("Exception to complete Playlist Item [user: {$user->id} item id: {$item_id}]");
-                \Log::error($e);
-                return $this
-                    ->setStatusCode(SymfonyResponse::HTTP_UNPROCESSABLE_ENTITY)
-                    ->replyWithError('The system is unable to process the completion of the playlist item.');
+            } catch(QueryException $e) {
+                // Catch only the error code for a duplicate entry
+                if ($e->getCode() == MySQLErrorCode::DUPLICATE_ENTRY) {
+                    \Log::info("Exception to complete Playlist Item [user: {$user->id} item id: {$item_id}]");
+                }  else {
+                    throw $e;
+                }
             }
+
+            $result = $complete ? 'completed' : 'not completed';
 
             $user_plan->calculatePercentageCompleted()->save();
 
