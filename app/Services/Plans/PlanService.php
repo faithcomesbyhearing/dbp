@@ -330,7 +330,11 @@ class PlanService
         }
 
         if (!empty($pitems_complete_to_create)) {
-            return PlaylistItemsComplete::insert($pitems_complete_to_create);
+            return PlaylistItemsComplete::upsert(
+                $pitems_complete_to_create,
+                ['user_id', 'playlist_item_id'],
+                ['user_id', 'playlist_item_id']
+            );
         }
 
         return false;

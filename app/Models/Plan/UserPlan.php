@@ -90,38 +90,14 @@ class UserPlan extends Model
         return $this->getAttribute($keyName);
     }
    
-    public function calculatePercentageCompleted()
+    public function calculatePercentageCompleted() : UserPlan
     {
         $completed_per_day = PlanDay::summaryItemsCompletedByPlanId($this->plan_id, $this->user_id)->get();
-
-        $this->completeDaysCurrentUserPlan();
 
         $this->attributes['percentage_completed'] = $completed_per_day->sum('total_items')
             ? $completed_per_day->sum('total_items_completed') / $completed_per_day->sum('total_items') * 100
             : 0;
         return $this;
-    }
-
-    /**
-     * Complete every Plan Day that belongs to current UserPlan object
-     *
-     * @return void
-     */
-    private function completeDaysCurrentUserPlan() : void
-    {
-        $plan_days_to_complete = PlanDay::daysToCompleteByPlanId($this->plan_id, $this->user_id)->get();
-
-        $inserts_plan_days_completed = [];
-        foreach ($plan_days_to_complete as $plan_day) {
-            $inserts_plan_days_completed[] = [
-                'user_id'     => Auth::user()->id,
-                'plan_day_id' => $plan_day->id
-            ];
-        }
-
-        if (!empty($inserts_plan_days_completed)) {
-            PlanDayComplete::insert($inserts_plan_days_completed);
-        }
     }
 
     /**
@@ -166,5 +142,28 @@ class UserPlan extends Model
             PlaylistItemsComplete::removeItemsByPlayListsAndUser($playlist_ids_by_plan, $user_id);
             PlanDayComplete::removeDaysByPlanAndUser($plan_id, $user_id);
         });
+    }
+
+    public static function getByPlaylistIdAndUserId(int $playlist_id, int $user_id) : ?UserPlan
+    {
+        return UserPlan::join('plans', function ($join) use ($user_id) {
+            $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user_id);
+        })
+            ->join('plan_days', function ($join) use ($playlist_id) {
+                $join
+                    ->on('plan_days.plan_id', '=', 'plans.id')
+                    ->where('plan_days.playlist_id', $playlist_id);
+            })
+            ->select('user_plans.*')
+            ->first();
+    }
+
+    public static function getByPlanIdAndUserId(int $plan_id, int $user_id) : ?UserPlan
+    {
+        return UserPlan::join('plans', function ($join) use ($user_id) {
+            $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user_id);
+        })->where('user_plans.plan_id', $plan_id)
+            ->select('user_plans.*')
+            ->first();
     }
 }
