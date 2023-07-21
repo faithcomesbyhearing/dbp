@@ -616,11 +616,16 @@ class PlaylistItems extends Model implements Sortable
     public function complete()
     {
         $user = Auth::user();
-        $completed_item = PlaylistItemsComplete::firstOrNew([
-            'user_id'               => $user->id,
-            'playlist_item_id'      => $this['id']
-        ]);
-        $completed_item->save();
+
+        $playlist_items_to_complete = [
+            ['user_id' => $user->id, 'playlist_item_id' => $this['id']]
+        ];
+
+        PlaylistItemsComplete::upsert(
+            $playlist_items_to_complete,
+            ['user_id', 'playlist_item_id'],
+            ['user_id', 'playlist_item_id']
+        );
     }
 
     public function unComplete()
