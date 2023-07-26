@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Http\Controllers\APIController;
 use App\Mail\ProjectVerificationEmail;
 
@@ -14,7 +15,6 @@ use App\Models\User\User;
 use App\Models\User\Profile;
 use App\Models\User\Key;
 use App\Models\User\Study\Note;
-use App\Models\Country\Country;
 
 use App\Traits\CheckProjectMembership;
 use App\Transformers\UserTransformer;
@@ -519,7 +519,7 @@ class UsersController extends APIController
             ->whereId($id)
             ->first();
         if (!$user) {
-            return $this->setStatusCode(404)->replyWithError(
+            return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
                 trans(
                     'api.users_errors_404_email',
                     ['email' => request()->email],
@@ -547,7 +547,7 @@ class UsersController extends APIController
             ->pluck('project_id');
 
         if (!$developer_projects->contains(request()->project_id)) {
-            return $this->setStatusCode(401)->replyWithError(
+            return $this->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)->replyWithError(
                 trans(
                     'api.projects_developer_not_a_member',
                     [],
@@ -559,7 +559,7 @@ class UsersController extends APIController
         if ($developer_projects->intersect($user_projects)->count() === 0) {
             $project = Project::where('id', request()->project_id)->first();
             if (!$project) {
-                return $this->setStatusCode(404)->replyWithError(
+                return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
                     trans('api.projects_404')
                 );
             }
@@ -578,7 +578,7 @@ class UsersController extends APIController
             Mail::to($user->email)->send(
                 new ProjectVerificationEmail($connection, $project)
             );
-            return $this->setStatusCode(401)->replyWithError(
+            return $this->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)->replyWithError(
                 trans(
                     'api.projects_users_needs_to_connect',
                     [],
@@ -602,13 +602,13 @@ class UsersController extends APIController
         if ($request->profile) {
             $user->profile->fill($request->profile);
             if (isset($user->profile['country_id'])) {
-                $valid_country = $this->validUserCountry($user->profile);
-                if (!$valid_country) {
-                    return $this->setStatusCode(400)->replyWithError(
+                $valid_country_id = Profile::IsValidCountry($user->profile['country_id']);
+                if (!$valid_country_id) {
+                    return $this->setStatusCode(HttpResponse::HTTP_BAD_REQUEST)->replyWithError(
                         trans('api.countries_errors_404')
                     );
                 }
-                $user->profile['country_id'] = $valid_country;
+                $user->profile['country_id'] = $valid_country_id;
             }
             
             $user->profile->save();
@@ -893,24 +893,6 @@ class UsersController extends APIController
             return $this->setStatusCode(422)->replyWithError($validator->errors());
         }
         return false;
-    }
-
-    private function validUserCountry($profile)
-    {
-      $country_id = strtoupper($profile['country_id']);
-      $country_id = preg_replace('/[^a-zA-Z]+/', '', $country_id);
-      // checks for data issues to get US errors
-      if ($country_id === 'USA') {
-          $country_id = 'US';
-      } elseif (str_contains($country_id, 'UNITEDSTATES')) {
-          $country_id = 'US';
-      }
-
-      $valid_country_id = Country::select('id')->where('id', $country_id)->first();
-      if (!$valid_country_id) {
-          return false;
-      }
-      return $valid_country_id['id'];
     }
 
     public function adminLogin(Request $request)
