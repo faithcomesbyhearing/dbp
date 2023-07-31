@@ -42,6 +42,7 @@ class UserBookmarksTransformer extends TransformerAbstract
         return [
           'id' => (int) $bookmark->id,
           'bible_id' => (string) $bookmark->bible_id,
+          'bible_abbr' => (string) $bookmark->bible_id,
           'book_id' => (string) $bookmark->book_id,
           'book_name' => (string) optional($bookmark->bibleBook)->name,
           'chapter' => (int) $bookmark->chapter,
