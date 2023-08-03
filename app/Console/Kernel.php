@@ -27,7 +27,8 @@ class Kernel extends ConsoleKernel
         Commands\TranslatePlaylist::class,
         Commands\encryptNote::class,
 
-        Commands\syncPlaylistDuration::class,
+        Commands\SyncPlaylistDuration::class,
+        Commands\SyncFeaturedPlansDuration::class,
         Commands\DeleteDraftPlaylistsPlans::class,
         Commands\DeleteTemporaryZipFiles::class,
 
