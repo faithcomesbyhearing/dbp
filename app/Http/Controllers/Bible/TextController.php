@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Bible;
 use App\Models\Bible\BibleVerse;
 use DB;
 
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Spatie\Fractalistic\ArraySerializer;
 use Illuminate\Http\Response;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\Book;
@@ -20,10 +22,12 @@ use App\Models\Playlist\Playlist;
 use App\Models\User\Study\Bookmark;
 use App\Models\User\Study\Highlight;
 use App\Models\User\Study\Note;
+use App\Models\User\Annotations;
 use App\Transformers\UserBookmarksTransformer;
 use App\Transformers\UserHighlightsTransformer;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Transformers\UserNotesTransformer;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Bible\Traits\TextControllerTrait;
@@ -282,31 +286,32 @@ class TextController extends APIController
         $limit      = checkParam('limit') ?? 100;
 
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)->replyWithError(trans('api.projects_users_not_connected'));
         }
         $query = strtolower(checkParam('query', true));
-        $plans = Plan::with('days')
+        $plans = Plan::select(['plans.*', 'user_plans.start_date', 'user_plans.percentage_completed'])
+            ->withCount('days as total_days')
             ->with('user')
             ->where('plans.name', 'like', '%' . $query . '%')
             ->join('user_plans', function ($join) use ($user) {
                 $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
             })
-            ->select(['plans.*', 'user_plans.start_date', 'user_plans.percentage_completed'])
             ->orderBy('name', 'asc')->get();
-        foreach ($plans as $plan) {
-            $plan->total_days = sizeof($plan->days);
-            unset($plan->days);
-        }
-        
-        $playlists = Playlist::with('user')
+
+        $playlists = Playlist::withSum('items as total_duration', 'duration')
+            ->with('user')
             ->where('draft', 0)
             ->where('plan_id', 0)
             ->where('user_playlists.name', 'like', '%' . $query . '%')
             ->where('user_playlists.user_id', $user->id)
-            ->select(['user_playlists.*'])
             ->get();
 
-        $followed_playlists = Playlist::with('user')
+        $followed_playlists = Playlist::select([
+                'user_playlists.*',
+                DB::Raw('IF(playlists_followers.user_id, true, false) as following')
+            ])
+            ->withSum('items as total_duration', 'duration')
+            ->with('user')
             ->where('draft', 0)
             ->where('plan_id', 0)
             ->where('user_playlists.name', 'like', '%' . $query . '%')
@@ -316,38 +321,28 @@ class TextController extends APIController
                     ->where('playlists_followers.user_id', $user->id);
             })
             ->where('playlists_followers.user_id', $user->id)
-            ->select(['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
             ->get();
             
         $all_playlists = $playlists->merge($followed_playlists)->sortBy('name');
 
         $highlights = Highlight::where('user_id', $user->id)
+            ->with(['bible', 'bibleBook'])
             ->orderBy('user_highlights.updated_at')->limit($limit)->get();
-        $highlights = $this->filterAnnotations($highlights, $query);
+        $highlights = Annotations::filterAnnotations($highlights, $query);
 
-        $bookmarks = Bookmark::where('user_id', $user->id)->limit($limit)->get();
-        $bookmarks = $this->filterAnnotations($bookmarks, $query);
+        $bookmarks = Bookmark::where('user_id', $user->id)->with(['bible', 'bibleBook'])->limit($limit)->get();
+        $bookmarks = Annotations::filterAnnotations($bookmarks, $query);
 
-        $notes = Note::where('user_id', $user->id)->limit($limit)->get();
-        $notes = $this->filterAnnotations($notes, $query);
+        $notes = Note::where('user_id', $user->id)->with(['bible', 'bibleBook'])->limit($limit)->get();
+        $notes = Annotations::filterAnnotations($notes, $query);
 
         return $this->reply([
-            'bookmarks' => fractal($bookmarks, UserBookmarksTransformer::class)->toArray()['data'],
-            'highlights' => fractal($highlights, UserHighlightsTransformer::class)->toArray()['data'],
-            'notes' => fractal($notes, UserNotesTransformer::class)->toArray()['data'],
+            'bookmarks' => fractal($bookmarks, UserBookmarksTransformer::class, new ArraySerializer()),
+            'highlights' => fractal($highlights, UserHighlightsTransformer::class, new ArraySerializer()),
+            'notes' => fractal($notes, UserNotesTransformer::class, new ArraySerializer()),
             'plans' => $plans,
             'playlists' => $all_playlists,
         ]);
-    }
-
-    private function filterAnnotations($annotation_query, $search_query)
-    {
-        return $annotation_query->filter(function ($annotation) use ($search_query) {
-            if (isset($annotation->verse_text, $annotation->book, $annotation->book->name)) {
-                return str_contains(strtolower($annotation->book->name . ' ' . $annotation->verse_text), $search_query);
-            }
-            return false;
-        });
     }
 
     /**
