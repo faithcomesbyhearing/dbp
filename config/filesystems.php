@@ -81,14 +81,6 @@ return [
             'secret' => env('AWS_CLOUDFRONT_KEY_SECRET')
         ],
 
-        's3_dbs' => [
-            'driver' => 's3',
-            'key'    => env('DBS_AWS_KEY'),
-            'secret' => env('DBS_AWS_SECRET'),
-            'region' => env('DBS_AWS_REGION') ?? 'us-west-2',
-            'bucket' => env('DBS_AWS_BUCKET'),
-        ],
-
         'dbp-web' => [
             'driver' => 's3',
             'key'    => env('FCBH_AWS_KEY'),
@@ -97,45 +89,12 @@ return [
             'bucket' => env('FCBH_AWS_BUCKET', 'dbp-prod'),
         ],
 
-        's3_dbs_log' => [
-            'driver' => 's3',
-            'key'    => env('AWS_KEY'),
-            'secret' => env('AWS_SECRET'),
-            'region' => env('AWS_REGION') ?? 'us-west-2',
-            'bucket' => env('AWS_BUCKET_LOG'),
-        ],
-
         's3_fcbh' => [
             'driver' => 's3',
             'key'    => env('FCBH_AWS_KEY'),
             'secret' => env('FCBH_AWS_SECRET'),
             'region' => env('FCBH_AWS_REGION') ?? 'us-west-2',
             'bucket' => env('FCBH_AWS_BUCKET', 'dbp-prod'),
-        ],
-
-        'dbp-dev' => [
-            'driver' => 's3',
-            'key'    => env('FCBH_AWS_KEY'),
-            'secret' => env('FCBH_AWS_SECRET'),
-            'region' => env('FCBH_AWS_REGION') ?? 'us-west-2',
-            'bucket' => env('FCBH_AWS_BUCKET'),
-        ],
-
-        'dbp-dev-cdn' => [
-            'driver' => 's3',
-            'key'    => env('DBS_AWS_KEY'),
-            'secret' => env('DBS_AWS_SECRET'),
-            'region' => env('DBS_AWS_REGION') ?? 'us-west-2',
-            'bucket' => 'dbp-dev-cdn',
-        ],
-
-        's3_fcbh_ccdn' => [
-            'driver' => 's3',
-            'key'    => env('FCBH_AWS_KEY'),
-            'secret' => env('FCBH_AWS_SECRET'),
-            'region' => env('FCBH_AWS_REGION') ?? 'us-west-2',
-            'bucket' => env('FCBH_AWS_BUCKET'),
-            'url'    => 'https://ccdn.bible.build',
         ],
 
         's3_fcbh_stream' => [
