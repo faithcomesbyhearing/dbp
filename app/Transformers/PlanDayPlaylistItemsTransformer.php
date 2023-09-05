@@ -31,6 +31,8 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
 
                 if ($this->params['show_details']) {
                     $day_result["playlist"] = $this->parsePlaylistData($day->playlist);
+                } else {
+                    $day_result["playlist_is_empty"] = $day->playlist_is_empty;
                 }
 
                 return $day_result;

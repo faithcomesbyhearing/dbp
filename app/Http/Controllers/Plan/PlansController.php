@@ -292,6 +292,8 @@ class PlansController extends APIController
             if ($show_text) {
                 $this->plan_service->setVerseTextToEachPlaylistItem($plan);
             }
+        } else {
+            $this->plan_service->setFlagEmptyPlaylistForEachPlanDay($plan);
         }
 
         return $this->reply(fractal(
