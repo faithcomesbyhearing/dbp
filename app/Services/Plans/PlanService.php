@@ -396,6 +396,31 @@ class PlanService
     }
 
     /**
+     * Assigns a flag to each plan day within a given Plan to indicate if its associated playlist has any items.
+     *
+     * This method iterates over all days of the given Plan. For each day, it checks if the associated playlist
+     * contains any items. If the playlist is empty, it attaches a flag (`playlist_is_empty`) to the plan day.
+     *
+     * @param Plan $plan The Plan model instance for which the days' playlists need to be checked.
+     *
+     * @return void
+     */
+    public function setFlagEmptyPlaylistForEachPlanDay(Plan $plan) : void
+    {
+        $day_playlist_ids = [];
+
+        foreach ($plan->days as $day) {
+            $day_playlist_ids[] = $day->playlist_id;
+        }
+
+        $playlists = Playlist::findPlaylistWithAttachedItems($day_playlist_ids);
+
+        foreach ($plan->days as $day) {
+            $day->playlist_is_empty = !isset($playlists[$day->playlist_id]);
+        }
+    }
+
+    /**
      * For each play list item that belong to a Plan, it will create the verse_text property for the given Plan Object
      *
      * @param Plan $plan

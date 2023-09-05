@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Carbon\Carbon;
 use App\Models\User\User;
 use App\Services\Bibles\BibleFilesetService;
@@ -276,6 +277,29 @@ class Playlist extends Model
             })
             ->whereIn('user_playlists.id', $playlist_ids)
             ->select(['user_playlists.*', \DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
+            ->get()
+            ->keyBy('id');
+    }
+
+    /**
+     * Retrieve playlists by their IDs that have at least one associated item.
+     *
+     * This method fetches playlists from the database based on a list of playlist IDs.
+     * It only returns playlists that have at least one item associated with them in the 'playlist_items' table.
+     * The resulting collection is keyed by the playlist's ID for quick look-up.
+     *
+     * @param array $playlist_ids An array of playlist IDs to fetch.
+     *
+     * @return \Illuminate\Support\Collection A collection of Playlist models keyed by their ID.
+     */
+    public static function findPlaylistWithAttachedItems(array $playlist_ids) : Collection
+    {
+        return Playlist::whereIn('id', $playlist_ids)
+            ->whereExists(function (QueryBuilder $query) {
+                return $query->select(\DB::raw(1))
+                    ->from('playlist_items as pi')
+                    ->whereColumn('pi.playlist_id', '=', 'user_playlists.id');
+            })
             ->get()
             ->keyBy('id');
     }
