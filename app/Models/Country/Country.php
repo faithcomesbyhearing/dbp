@@ -45,6 +45,11 @@ class Country extends Model
     public $incrementing = false;
     public $keyType = 'string';
 
+
+    const COUNTRY_CODE_USA = 'USA';
+    const COUNTRY_CODE_US = 'US';
+    const COUNTRY_CODE_UNITEDSTATES = 'UNITEDSTATES';
+
     /**
      * @OA\Property(
      *     title="Country Iso 3166-1",
