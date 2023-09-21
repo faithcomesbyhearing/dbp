@@ -5,43 +5,39 @@ phases:
     runtime-versions:
       php: 8.2
     commands:
-      # Update packages and install any additional dependencies
-      - apt-get update
-        # Install PHP development tools needed for PECL
-      - apt-get install -y php-pear php-dev
-
       # # Install dependencies required for building igbinary and memcached
       # - apt-get install -y libmemcached-dev
       # # Install igbinary and memcached PHP extensions
       # - pecl install igbinary
       # - pecl install -D 'enable-memcached-igbinary="yes"' memcached
       # # Enable igbinary and memcached extensions
-      # - echo "extension=igbinary.so" > /etc/php/8.1/cli/conf.d/45-igbinary.ini
-      # - echo "extension=memcached.so" > /etc/php/8.1/cli/conf.d/50-memcached.ini
+      # - echo "extension=igbinary.so" > /etc/php/8.2.7/cli/conf.d/45-igbinary.ini
+      # - echo "extension=memcached.so" > /etc/php/8.2.7/cli/conf.d/50-memcached.ini
       # # Install New Relic PHP agent
       # - curl -sS https://download.newrelic.com/php_agent/release/newrelic-php5-10.11.0.3-linux.tar.gz | gzip -dc | tar xf -
       # - export NR_INSTALL_SILENT=1
       # - newrelic-php5-10.11.0.3-linux/newrelic-install install
 
       # Configure New Relic options
-      - echo "newrelic.license=\"${NEW_RELIC_LICENSE_KEY}\"" >> /etc/php/8.1/cli/conf.d/newrelic.ini
-      - echo "newrelic.enabled=true" >> /etc/php/8.1/cli/conf.d/newrelic.ini
-      - echo "newrelic.loglevel=debug" >> /etc/php/8.1/cli/conf.d/newrelic.ini
-      - echo "newrelic.appname=\"${NEW_RELIC_APP_NAME}\"" >> /etc/php/8.1/cli/conf.d/newrelic.ini
+      - echo "newrelic.license=\"${NEW_RELIC_LICENSE_KEY}\"" >> /root/.phpenv/versions/8.2.7/etc/conf.d/newrelic.ini
+      - echo "newrelic.enabled=true" >> /root/.phpenv/versions/8.2.7/etc/conf.d/newrelic.ini
+      - echo "newrelic.loglevel=debug" >> /root/.phpenv/versions/8.2.7/etc/conf.d/newrelic.ini
+      - echo "newrelic.appname=\"${NEW_RELIC_APP_NAME}\"" >> /root/.phpenv/versions/8.2.7/etc/conf.d/newrelic.ini
       # Enable custom PHP options
-      - echo "expose_php = Off" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "html_errors = Off" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "variables_order = \"EGPCS\"" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "session.save_path = \"/tmp\"" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "default_socket_timeout = 90" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "post_max_size = 32M" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "short_open_tag = 1" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "date.timezone = UTC" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "memory_limit = 256M" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "zlib.output_compression = Off" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "allow_url_fopen = On" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "display_errors = On" > /etc/php/8.1/cli/conf.d/aws.ini
-      - echo "max_execution_time = 60" > /etc/php/8.1/cli/conf.d/aws.ini
+      - echo "expose_php = Off" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "html_errors = Off" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "variables_order = \"EGPCS\"" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "session.save_path = \"/tmp\"" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "default_socket_timeout = 90" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "post_max_size = 32M" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "short_open_tag = 1" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "date.timezone = UTC" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "memory_limit = 256M" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "zlib.output_compression = Off" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "allow_url_fopen = On" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "display_errors = On" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - echo "max_execution_time = 60" > /root/.phpenv/versions/8.2.7/etc/conf.d/aws.ini
+      - php --ini
       # install Composer for dependency management in PHP projects
       - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
   pre_build:
