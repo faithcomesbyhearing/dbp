@@ -171,7 +171,6 @@ return [
         Intervention\Image\ImageServiceProvider::class,
         App\Providers\LocalEnvironmentServiceProvider::class,
         Bugsnag\BugsnagLaravel\BugsnagServiceProvider::class,
-        Sentry\Laravel\ServiceProvider::class,
         Biscolab\ReCaptcha\ReCaptchaServiceProvider::class,
         Mcamara\LaravelLocalization\LaravelLocalizationServiceProvider::class,
     ],

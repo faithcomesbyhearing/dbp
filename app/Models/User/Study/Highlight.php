@@ -269,4 +269,30 @@ class Highlight extends Model
 
         return $color;
     }
+
+    public function getVerseTextAttribute()
+    {
+        $chapter = $this['chapter'];
+        $verse_start = $this['verse_start'];
+        $verse_end = $this['verse_end'] ? $this['verse_end'] : $verse_start;
+        $bible = $this->bible;
+
+        if (!$bible) {
+            return '';
+        }
+
+        $text_fileset = $bible->filesets->firstWhere('set_type_code', 'text_plain');
+        if (!$text_fileset) {
+            return '';
+        }
+
+        return BibleFilesetService::getRangeVersesTextFilterBy(
+            $bible,
+            $text_fileset->hash_id,
+            $this['book_id'],
+            $verse_start,
+            $verse_end,
+            $chapter
+        );
+    }
 }

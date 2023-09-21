@@ -8,12 +8,10 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Support\Facades\Log;
 use Mail;
-use ReflectionClass;
 use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\Debug\ExceptionHandler as SymfonyExceptionHandler;
 use App\Exceptions\ResponseException as Response;
 use Throwable;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Session\TokenMismatchException;
 
 class Handler extends ExceptionHandler

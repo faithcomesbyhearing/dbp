@@ -3,6 +3,7 @@
 namespace App\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Country\Country;
 
 /**
  * App\Models\User\Profile
@@ -173,5 +174,38 @@ class Profile extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Validates a given country code.
+     *
+     * This method receives a country ID as an argument and checks if it corresponds
+     * to a valid country in the database. If the input is either "USA" or contains "UNITEDSTATES",
+     * it gets normalized to "US". The country ID is also cleaned of non-alphabetic characters and
+     * converted to uppercase to avoid common data inconsistencies.
+     *
+     * If the country ID is found in the database, the ID of the corresponding Country model instance
+     * is returned. If not, false is returned.
+     *
+     * @param string $country_id The country ID to validate. This is expected to be a string
+     *                           of alphabetic characters.
+     *
+     * @return bool|string Returns the ID of the Country model instance if the country ID is valid,
+     *                     false otherwise.
+     */
+    public static function IsValidCountry(string $country_id): bool | string
+    {
+        $country_id = strtoupper($country_id);
+        $country_id = preg_replace('/[^a-zA-Z]+/', '', $country_id);
+        // checks for data issues to get US errors
+        if ($country_id === Country::COUNTRY_CODE_USA ||
+            str_contains($country_id, Country::COUNTRY_CODE_UNITEDSTATES)
+        ) {
+            $country_id = Country::COUNTRY_CODE_US;
+        }
+
+        $valid_country = Country::find($country_id);
+
+        return $valid_country ? $valid_country->id : false;
     }
 }

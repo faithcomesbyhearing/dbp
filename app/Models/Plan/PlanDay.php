@@ -135,11 +135,16 @@ class PlanDay extends Model implements Sortable
         if (is_null($user_id)) {
             $user_id = Auth::user()->id;
         }
-        $completed_item = PlanDayComplete::firstOrNew([
-            'user_id'     => $user_id,
-            'plan_day_id' => $this['id']
-        ]);
-        $completed_item->save();
+
+        $days_complete_to_create = [
+            ['user_id' => $user_id, 'plan_day_id' => $this['id']]
+        ];
+
+        PlanDayComplete::upsert(
+            $days_complete_to_create,
+            ['user_id', 'plan_day_id'],
+            ['user_id', 'plan_day_id']
+        );
 
         $this->completePlaylistItems($this['id'], $user_id);
     }
@@ -171,7 +176,11 @@ class PlanDay extends Model implements Sortable
         }
 
         if (!empty($inserts_items_completed)) {
-            return PlaylistItemsComplete::insert($inserts_items_completed);
+            return PlaylistItemsComplete::upsert(
+                $inserts_items_completed,
+                ['user_id', 'playlist_item_id'],
+                ['user_id', 'playlist_item_id']
+            );
         }
 
         return false;

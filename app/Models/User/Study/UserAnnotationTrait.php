@@ -3,7 +3,6 @@
 namespace App\Models\User\Study;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Playlist\PlaylistItems;
