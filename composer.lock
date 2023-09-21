@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "053d701f5e989106ebb974420fb4d9bb",
+    "content-hash": "323d1e0323f10b634f4f470c8277f8ae",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -664,16 +664,16 @@
         },
         {
             "name": "caneara/quest",
-            "version": "v3.0.0",
+            "version": "v4.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/caneara/quest.git",
-                "reference": "cb00e95724431004c304463627cff95e0365adf4"
+                "reference": "3fb5ad3641cc14e1bd35783275cd45b6f7f34354"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/caneara/quest/zipball/cb00e95724431004c304463627cff95e0365adf4",
-                "reference": "cb00e95724431004c304463627cff95e0365adf4",
+                "url": "https://api.github.com/repos/caneara/quest/zipball/3fb5ad3641cc14e1bd35783275cd45b6f7f34354",
+                "reference": "3fb5ad3641cc14e1bd35783275cd45b6f7f34354",
                 "shasum": ""
             },
             "require": {
@@ -711,9 +711,9 @@
             ],
             "support": {
                 "issues": "https://github.com/caneara/quest/issues",
-                "source": "https://github.com/caneara/quest/tree/v3.0.0"
+                "source": "https://github.com/caneara/quest/tree/v4.0.0"
             },
-            "time": "2023-04-18T15:44:04+00:00"
+            "time": "2023-09-21T07:24:46+00:00"
         },
         {
             "name": "clue/stream-filter",
@@ -12885,5 +12885,5 @@
         "php": "<=8.2.3"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.6.0"
 }
