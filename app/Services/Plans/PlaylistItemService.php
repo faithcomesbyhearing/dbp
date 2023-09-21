@@ -91,7 +91,7 @@ class PlaylistItemService
      *
      * @param StreamBandwidth $current_band_width
      * @param array $item_to_create
-     * @param Bible $bible_file
+     * @param BibleFile $bible_file
      *
      * @return Collection | array The processed transport stream.
      */
@@ -170,7 +170,6 @@ class PlaylistItemService
                     }
                 }
             }
-
             $item_to_create['duration'] = $duration;
         }
 
@@ -191,7 +190,7 @@ class PlaylistItemService
             $book_ids[$item_to_create['book_id']] = true;
         }
 
-        $bible_verses = BibleVerse::select([ \DB::raw('COUNT(id) as verse_count'), 'book_id', 'chapter'])
+        $bible_verses = BibleVerse::select([\DB::raw('COUNT(id) as verse_count'), 'book_id', 'chapter'])
             ->whereIn('hash_id', $bible_filesets->pluck('hash_id'))
             ->whereIn('book_id', array_keys($book_ids))
             ->groupBy(['book_id', 'chapter'])
@@ -204,6 +203,7 @@ class PlaylistItemService
         }
 
         foreach ($playlist_items_to_create as &$item_to_create) {
+            $verses = null;
             if (isset($bible_verses_indexed[$item_to_create['book_id']])) {
                 $verses = 0;
                 foreach ($bible_verses_indexed[$item_to_create['book_id']] as $chapter => $verse_count) {
@@ -213,8 +213,8 @@ class PlaylistItemService
                         $verses = $verses + (int) $verse_count;
                     }
                 }
-                $item_to_create['verses'] = $verses;
             }
+            $item_to_create['verses'] = $verses;
         }
 
         unset($item_to_create);

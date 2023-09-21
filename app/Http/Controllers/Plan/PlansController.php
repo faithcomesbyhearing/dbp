@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Plan;
 
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Spatie\Fractalistic\ArraySerializer;
 use App\Traits\AccessControlAPI;
 use App\Http\Controllers\APIController;
@@ -19,7 +20,9 @@ use App\Transformers\PlanBasicTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 use App\Services\Plans\PlanService;
+use App\Exceptions\MySQLErrorCode;
 
 class PlansController extends APIController
 {
@@ -609,40 +612,56 @@ class PlansController extends APIController
         $user_is_member = $this->compareProjects($user->id, $this->key);
 
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $plan_day = PlanDay::where('id', $day_id)->first();
 
         if (!$plan_day) {
-            return $this->setStatusCode(404)->replyWithError('Plan Day Not Found');
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)
+                ->replyWithError('Plan Day Not Found');
         }
 
-        $user_plan = UserPlan::join('plans', function ($join) use ($user) {
-            $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
-        })->where('user_plans.plan_id', $plan_day->plan_id)
-            ->select('user_plans.*')
-            ->first();
+        $user_plan = UserPlan::getByPlanIdAndUserId($plan_day->plan_id, $user->id);
 
         if (!$user_plan) {
-            return $this->setStatusCode(404)->replyWithError('User Plan Not Found');
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)
+                ->replyWithError('User Plan Not Found');
         }
 
         $complete = checkParam('complete') ?? true;
         $complete = $complete && $complete !== 'false';
 
-        $user_plan = \DB::transaction(function () use ($complete, $plan_day, $user, $user_plan) {
-            if ($complete) {
-                $plan_day->complete($user->id);
-            } else {
-                $plan_day->unComplete($user->id);
-            }
+        $result = null;
+        try {
+            \DB::transaction(function () use ($complete, $plan_day, $user) {
+                if ($complete) {
+                    $plan_day->complete($user->id);
+                } else {
+                    $plan_day->unComplete($user->id);
+                }
 
-            $user_plan->calculatePercentageCompleted()->save();
-            return $user_plan;
-        });
+                return $plan_day;
+            });
+        } catch (QueryException $e) {
+            // Catch only the error code for a duplicate entry
+            if ($e->getCode() == MySQLErrorCode::DUPLICATE_ENTRY) {
+                \Log::info(
+                    "Exception to complete Plan Day [user: {$user->id} plan ID: {$user_plan->id} plan day ID: {$day_id}]"
+                );
+            }  else {
+                throw $e;
+            }
+        }
 
         $result = $complete ? 'completed' : 'not completed';
+
+        $user_plan->calculatePercentageCompleted()->save();
+
         return $this->reply([
             'percentage_completed' => (int) $user_plan->percentage_completed,
             'message' => 'Plan Day ' . $result

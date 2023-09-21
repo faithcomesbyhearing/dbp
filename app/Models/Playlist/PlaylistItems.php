@@ -616,11 +616,16 @@ class PlaylistItems extends Model implements Sortable
     public function complete()
     {
         $user = Auth::user();
-        $completed_item = PlaylistItemsComplete::firstOrNew([
-            'user_id'               => $user->id,
-            'playlist_item_id'      => $this['id']
-        ]);
-        $completed_item->save();
+
+        $playlist_items_to_complete = [
+            ['user_id' => $user->id, 'playlist_item_id' => $this['id']]
+        ];
+
+        PlaylistItemsComplete::upsert(
+            $playlist_items_to_complete,
+            ['user_id', 'playlist_item_id'],
+            ['user_id', 'playlist_item_id']
+        );
     }
 
     public function unComplete()
@@ -699,6 +704,7 @@ class PlaylistItems extends Model implements Sortable
             'playlist_id',
             'verse_start',
             'verse_end',
+            'verse_sequence',
             'order_column',
             'verses',
             'duration',
@@ -775,6 +781,7 @@ class PlaylistItems extends Model implements Sortable
                 'chapter_end'   => $this['chapter_end'],
                 'verse_start'   => $this['verse_start'] ?? null,
                 'verse_end'     => $this['verse_end'] ?? null,
+                'verse_sequence'=> $this['verse_sequence'] ?? null,
                 'order_column'  => $this['order_column']
             ]
         );
