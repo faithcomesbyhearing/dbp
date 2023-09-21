@@ -3,11 +3,11 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      php: 8.1
+      php: 8.2
     commands:
       # Update packages and install any additional dependencies
       - apt-get update
-       # Install PHP development tools needed for PECL
+        # Install PHP development tools needed for PECL
       - apt-get install -y php-pear php-dev
 
       # # Install dependencies required for building igbinary and memcached
@@ -22,7 +22,7 @@ phases:
       # - curl -sS https://download.newrelic.com/php_agent/release/newrelic-php5-10.11.0.3-linux.tar.gz | gzip -dc | tar xf -
       # - export NR_INSTALL_SILENT=1
       # - newrelic-php5-10.11.0.3-linux/newrelic-install install
- 
+
       # Configure New Relic options
       - echo "newrelic.license=\"${NEW_RELIC_LICENSE_KEY}\"" >> /etc/php/8.1/cli/conf.d/newrelic.ini
       - echo "newrelic.enabled=true" >> /etc/php/8.1/cli/conf.d/newrelic.ini
@@ -113,4 +113,4 @@ artifacts:
     - server.php
     - .env
 
-  base-directory: '.' # Specify the directory containing your web app source code
+  base-directory: "." # Specify the directory containing your web app source code
