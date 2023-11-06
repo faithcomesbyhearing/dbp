@@ -1,11 +1,12 @@
 #!/bin/sh
 
-rpm -Uvh http://yum.newrelic.com/pub/newrelic/el5/x86_64/newrelic-repo-5-3.noarch.rpm
-yum install newrelic-php5 -y
-cp /usr/lib/newrelic-php5/scripts/newrelic.ini.template /etc/php.d/newrelic.ini
-
+# Export variables from .env
+set -a
 source /var/app/staging/.env
-export NR_INSTALL_SILENT=true;export NR_INSTALL_KEY; newrelic-install install
+set +a
+
+curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=$NEW_RELIC_API_KEY NEW_RELIC_ACCOUNT_ID=$NEW_RELIC_ACCOUNT_ID /usr/local/bin/newrelic install -y
+
 echo newrelic.enabled=true  >> /etc/php.d/newrelic.ini
 echo newrelic.loglevel=debug  >> /etc/php.d/newrelic.ini
 
