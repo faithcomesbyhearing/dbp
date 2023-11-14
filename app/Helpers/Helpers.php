@@ -768,3 +768,17 @@ if (!function_exists('getAliasOrTableName')) {
         return \trim($alias[sizeof($alias) - 1]);
     }
 }
+
+if (!function_exists('constraintExists')) {
+    function constraintExists($db, string $table, string $constraint)
+    {
+        $connection = $db->getDatabaseName();
+        $count = $db->table('information_schema.table_constraints')
+                ->where('constraint_schema', $connection)
+                ->where('table_name', $table)
+                ->where('constraint_name', $constraint)
+                ->count();
+
+        return $count > 0;
+    }
+}

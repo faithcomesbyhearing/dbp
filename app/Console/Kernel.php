@@ -33,6 +33,8 @@ class Kernel extends ConsoleKernel
         Commands\DeleteTemporaryZipFiles::class,
 
         Commands\showEnvironment::class,
+        Commands\CleanUpPlanDaysCompletedTable::class,
+        Commands\CleanUpPlaylistItemsCompletedTable::class,
     ];
 
     /**
