@@ -2,11 +2,9 @@
 
 namespace App\Models\User\Study;
 
-use App\Http\Controllers\Bible\BiblesController;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
 use App\Models\Bible\Book;
-use App\Models\Bible\BibleVerse;
 use App\Services\Bibles\BibleFilesetService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -211,13 +209,14 @@ class Highlight extends Model
         if (!$filesets) {
             return collect([]);
         }
-        $text_fileset = $filesets->firstWhere('set_type_code', 'text_plain');
 
         $fileset_types = collect(['audio_stream_drama', 'audio_drama', 'audio_stream', 'audio']);
 
         $testament = $this->bibleBook && $this->bibleBook->book
             ? $this->bibleBook->book->book_testament
             : '';
+
+        $text_fileset = $this->getTextFilesetRelatedByTestament($testament);
 
         $audio_filesets = $filesets->filter(function ($fs) {
             return Str::contains($fs->set_type_code, 'audio');
@@ -281,7 +280,12 @@ class Highlight extends Model
             return '';
         }
 
-        $text_fileset = $bible->filesets->firstWhere('set_type_code', 'text_plain');
+        $testament = $this->bibleBook && $this->bibleBook->book
+            ? $this->bibleBook->book->book_testament
+            : '';
+
+        $text_fileset = $this->getTextFilesetRelatedByTestament($testament);
+
         if (!$text_fileset) {
             return '';
         }
