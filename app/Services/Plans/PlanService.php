@@ -479,7 +479,7 @@ class PlanService
         $bible,
         $audio_fileset_types,
         $bible_audio_filesets
-    ) : Array {
+    ) : array {
         $translated_items = [];
         $metadata_items = [];
         $total_translated_items = 0;
@@ -505,7 +505,10 @@ class PlanService
                     $has_translation = isset($preferred_fileset);
                     $is_streaming = true;
 
-                    if ($has_translation && $books_target_bible->has($item->book_id)) {
+                    if ($has_translation &&
+                        $books_target_bible->has($item->book_id) &&
+                        $preferred_fileset->hasFileRelatedBookAndChapter($item->book_id, $item->chapter_start)
+                    ) {
                         $item->fileset_id = $preferred_fileset->id;
                         $is_streaming = $preferred_fileset->set_type_code === 'audio_stream'
                             || $preferred_fileset->set_type_code === 'audio_drama_stream';
