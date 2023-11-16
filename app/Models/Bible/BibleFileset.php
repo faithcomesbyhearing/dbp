@@ -101,6 +101,8 @@ class BibleFileset extends Model
 
     protected $updated_at;
 
+    protected $bible_files_indexed_by_book_and_chapter;
+
     public function copyright()
     {
         return $this->hasOne(BibleFilesetCopyright::class, 'hash_id', 'hash_id');
@@ -561,5 +563,48 @@ class BibleFileset extends Model
                 $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($filters['media']);
                 return $query->whereIn($from_table.'.set_type_code', $set_type_code_array);
             });
+    }
+
+    /**
+     * Determines if a file related to a specific book and chapter exists.
+     *
+     * This method checks if there's a Bible file associated with a given book and chapter. If the
+     * files haven't been indexed by book and chapter yet, it retrieves and caches them in the class
+     * property `$bible_files_indexed_by_book_and_chapter` for efficient subsequent lookups.
+     *
+     * @param string $book_id The identifier of the book.
+     * @param int    $chapter The chapter number.
+     *
+     * @return bool True if a related file exists for the specified book and chapter, false otherwise.
+     */
+    public function hasFileRelatedBookAndChapter(string $book_id, int $chapter) : bool
+    {
+        if (!$this['hash_id']) {
+            return false;
+        }
+
+        if (!$this->bible_files_indexed_by_book_and_chapter) {
+            $bible_file_hash_id = $this['hash_id'];
+
+            $this->bible_files_indexed_by_book_and_chapter = cacheRemember(
+                'bible_file_indexed_by_book_and_chapter',
+                [$bible_file_hash_id],
+                now()->addDay(),
+                function () use ($bible_file_hash_id) {
+                    $files = BibleFile::select(['book_id', 'chapter_start'])
+                        ->where('hash_id', $bible_file_hash_id)
+                        ->get();
+
+                    $hash_by_book_and_chapter = [];
+                    foreach($files as $file) {
+                        $hash_by_book_and_chapter[$file->book_id][(int) $file->chapter_start] = true;
+                    }
+                    return $hash_by_book_and_chapter;
+                }
+            );
+        }
+
+        return  isset($this->bible_files_indexed_by_book_and_chapter[$book_id]) &&
+                isset($this->bible_files_indexed_by_book_and_chapter[$book_id][$chapter]);
     }
 }
