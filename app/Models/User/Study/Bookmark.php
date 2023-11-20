@@ -4,9 +4,6 @@ namespace App\Models\User\Study;
 
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
-use App\Models\Bible\BibleFileset;
-use App\Models\Bible\BibleVerse;
-use App\Models\Bible\Book;
 use App\Services\Bibles\BibleFilesetService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -169,7 +166,12 @@ class Bookmark extends Model
             return '';
         }
 
-        $text_fileset = $bible->filesets->firstWhere('set_type_code', 'text_plain');
+        $testament = $this->bibleBook && $this->bibleBook->book
+        ? $this->bibleBook->book->book_testament
+        : '';
+
+        $text_fileset = $this->getTextFilesetRelatedByTestament($testament);
+
         if (!$text_fileset) {
             return '';
         }

@@ -4,8 +4,6 @@ namespace App\Models\User\Study;
 
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
-use App\Models\Bible\BibleFileset;
-use App\Models\Bible\BibleVerse;
 use App\Models\User\User;
 use App\Services\Bibles\BibleFilesetService;
 use Illuminate\Contracts\Encryption\DecryptException;
@@ -242,7 +240,12 @@ class Note extends Model
             return '';
         }
 
-        $text_fileset = $bible->filesets->firstWhere('set_type_code', 'text_plain');
+        $testament = $this->bibleBook && $this->bibleBook->book
+            ? $this->bibleBook->book->book_testament
+            : '';
+
+        $text_fileset = $this->getTextFilesetRelatedByTestament($testament);
+
         if (!$text_fileset) {
             return '';
         }
