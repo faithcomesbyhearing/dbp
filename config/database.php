@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'dbp_users'),
+    'default' => env('DB_CONNECTION', 'dbp'),
 
     /*
     |--------------------------------------------------------------------------

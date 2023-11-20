@@ -5,8 +5,11 @@ namespace App\Models\User\Study;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use App\Models\Playlist\PlaylistItems;
 use App\Models\Bible\BibleFilesetConnection;
+use App\Models\Bible\BibleFileset;
+use App\Models\Bible\BibleFilesetSize;
 
 trait UserAnnotationTrait
 {
@@ -78,5 +81,29 @@ trait UserAnnotationTrait
         return $query
             ->where($this->table.'.book_id', $book_id)
             ->whereIn(\DB::raw("CONCAT($this->table.bible_id, '', $this->table.chapter)"), $bible_per_chapter);
+    }
+
+    public function getTextFilesetRelatedByTestament(string $testament)
+    {
+        // Check if the bible property is set, return null if not
+        if (!$this->bible) {
+            return null;
+        }
+
+        // Return the first text fileset that matches the specified testament
+        // The method filters the filesets collection based on the testament
+        return $this->bible->filesets->when($testament !== '', function (Collection $collection) use ($testament) {
+            return $collection->filter(function (BibleFileset $value) use ($testament) {
+                // Check if the fileset is either complete or matches the specified testament
+                // The check includes cases where the set_size_code contains the testament as a substring
+                if ($value->set_size_code === BibleFilesetSize::SIZE_COMPLETE || $testament == $value->set_size_code) {
+                    return true;
+                }
+
+                // Additional check for cases where the testament is a part of the set_size_code
+                // Useful for scenarios like 'NT' being part of 'NTP'
+                return Str::contains($value->set_size_code, $testament);
+            });
+        })->firstWhere('set_type_code', 'text_plain');
     }
 }
