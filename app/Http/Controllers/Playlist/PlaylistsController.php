@@ -249,8 +249,18 @@ class PlaylistsController extends APIController
                     }])->whereIn('fileset_id', $valid_filesets);
                 }]);
             })
+            ->unless($show_details, function ($query) use ($user, $valid_filesets) {
+                $query->with(['items' => function ($qitems) use ($user, $valid_filesets) {
+                    if (!empty($user)) {
+                        $qitems->withPlaylistItemCompleted($user->id);
+                    }
+                    $qitems
+                        ->with('fileset')
+                        ->whereIn('fileset_id', $valid_filesets);
+                }]);
+            })
             ->select($select)
-            ->whereIn('user_playlists.id', $playlist_ids)
+            ->withFeaturedListIds($featured, $user_id, $language_id, $following_playlists)
             ->orderBy($sort_by, $sort_dir)->paginate($limit);
 
         $playlist_ids = [];

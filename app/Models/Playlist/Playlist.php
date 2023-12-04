@@ -342,14 +342,14 @@ class Playlist extends Model
         return Playlist::where('id', $playlist_id)->first();
     }
 
-    public static function getFeaturedListIds(
+    public function scopeWithFeaturedListIds(
+        Builder $query,
         bool $featured,
-        int $limit,
         ?int $user_id,
         ?int $language_id,
         null|array|\Illuminate\Support\Collection $following_playlist_ids
-    ) : \Illuminate\Support\Collection {
-        return Playlist::select('id')
+    ) : Builder {
+        return $query
             ->where('draft', 0)
             ->where('plan_id', 0)
             ->when($language_id, function ($q) use ($language_id) {
@@ -361,7 +361,18 @@ class Playlist extends Model
             ->unless($featured, function ($q) use ($user_id, $following_playlist_ids) {
                 $q->where('user_playlists.user_id', $user_id)
                     ->orWhereIn('user_playlists.id', $following_playlist_ids);
-            })
+            });
+    }
+
+    public static function getFeaturedListIds(
+        bool $featured,
+        int $limit,
+        ?int $user_id,
+        ?int $language_id,
+        null|array|\Illuminate\Support\Collection $following_playlist_ids
+    ) : \Illuminate\Support\Collection {
+        return Playlist::select('id')
+            ->withFeaturedListIds($featured, $user_id, $language_id, $following_playlist_ids)
             ->paginate($limit)
             ->getCollection()
             ->pluck('id');
