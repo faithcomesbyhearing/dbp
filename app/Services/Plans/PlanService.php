@@ -518,6 +518,7 @@ class PlanService
                             'book_id' => $item->book_id,
                             'chapter_start' => $item->chapter_start,
                             'chapter_end' => $item->chapter_end,
+                            'verse_sequence' => $item->verse_sequence,
                             'verse_start' => $is_streaming ? $item->verse_sequence : null,
                             'verse_start_alt' => $is_streaming ? $item->verse_start : null,
                             'verse_end' => $is_streaming ? $item->verse_end : null,

@@ -208,6 +208,13 @@ class PlaylistItemService
                 $verses = 0;
                 foreach ($bible_verses_indexed[$item_to_create['book_id']] as $chapter => $verse_count) {
                     if ((int) $chapter >= $item_to_create['chapter_start'] &&
+                        (int) $chapter <= $item_to_create['chapter_end'] &&
+                        (int) $item_to_create['verse_start'] <= (int) $verse_count &&
+                        (int) $item_to_create['verse_end'] <= (int) $verse_count &&
+                        (int) $item_to_create['verse_end'] >= (int) $item_to_create['verse_start']
+                    ) {
+                        $verses = $verses + ((int) $item_to_create['verse_end']-(int) $item_to_create['verse_start']+1);
+                    } elseif ((int) $chapter >= $item_to_create['chapter_start'] &&
                         (int) $chapter <= $item_to_create['chapter_end']
                     ) {
                         $verses = $verses + (int) $verse_count;
