@@ -18,7 +18,7 @@ use App\Transformers\Factbook\TransportationTransformer;
 
 class CountryTransformer extends BaseTransformer
 {
-    protected $availableIncludes = [
+    protected array $availableIncludes = [
         'communications',
         'economy',
         'energy',
@@ -55,6 +55,41 @@ class CountryTransformer extends BaseTransformer
         }
     }
 
+    /**
+     * @OA\Schema (
+     *   type="object",
+     *   schema="v4_countries.one",
+     *   description="The minimized country return for the all countries route",
+     *   title="v4_countries.one",
+     *   @OA\Xml(name="v4_countries.one"),
+     *   @OA\Property(property="data", type="object",
+     *
+     *          @OA\Property(property="name",              ref="#/components/schemas/Country/properties/name"),
+     *          @OA\Property(property="continent_code",    ref="#/components/schemas/Country/properties/continent"),
+     *          @OA\Property(property="languages",
+     *              @OA\Schema(type="array", @OA\Items(@OA\Schema(ref="#/components/schemas/Language/properties/id")))
+     *          )
+     *   )
+     * )
+     *
+     * @OA\Schema (
+     *  type="object",
+     *  schema="v4_countries.all",
+     *  description="The minimized country return for the all countries route",
+     *  title="v4_countries.all",
+     *  @OA\Xml(name="v4_countries.all"),
+     *   @OA\Property(property="data", type="array",
+     *    @OA\Items(
+     *          @OA\Property(property="name",              ref="#/components/schemas/Country/properties/name"),
+     *          @OA\Property(property="continent_code",    ref="#/components/schemas/Country/properties/continent"),
+     *          @OA\Property(property="languages",
+     *              @OA\Schema(type="array", @OA\Items(@OA\Schema(ref="#/components/schemas/Language/properties/id")))
+     *          )
+     *      )
+     *    )
+     *   )
+     * )
+     */
     public function transformForV4($country)
     {
         switch ($this->route) {
@@ -76,21 +111,7 @@ class CountryTransformer extends BaseTransformer
                 ];
 
             /**
-             * @OA\Schema (
-            *   type="object",
-            *   schema="v4_countries.one",
-            *   description="The minimized country return for the all countries route",
-            *   title="v4_countries.one",
-            *   @OA\Xml(name="v4_countries.one"),
-            *   @OA\Property(property="data", type="object",
-            *
-             *          @OA\Property(property="name",              ref="#/components/schemas/Country/properties/name"),
-             *          @OA\Property(property="continent_code",    ref="#/components/schemas/Country/properties/continent"),
-             *          @OA\Property(property="languages",
-             *              @OA\Schema(type="array", @OA\Items(@OA\Schema(ref="#/components/schemas/Language/properties/id")))
-             *          )
-             *   )
-             * )
+             * schema="v4_countries.one"
              */
             case 'v4_countries.one':
                 return [
@@ -123,23 +144,7 @@ class CountryTransformer extends BaseTransformer
                 ];
 
             /**
-             * @OA\Schema (
-             *  type="object",
-             *  schema="v4_countries.all",
-             *  description="The minimized country return for the all countries route",
-             *  title="v4_countries.all",
-             *  @OA\Xml(name="v4_countries.all"),
-             *   @OA\Property(property="data", type="array",
-             *    @OA\Items(
-             *          @OA\Property(property="name",              ref="#/components/schemas/Country/properties/name"),
-             *          @OA\Property(property="continent_code",    ref="#/components/schemas/Country/properties/continent"),
-             *          @OA\Property(property="languages",
-             *              @OA\Schema(type="array", @OA\Items(@OA\Schema(ref="#/components/schemas/Language/properties/id")))
-             *          )
-             *      )
-             *    )
-             *   )
-             * )
+             * schema="v4_countries.all"
              */
             default:
             case 'v4_countries.all':

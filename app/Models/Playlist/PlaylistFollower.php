@@ -4,9 +4,12 @@ namespace App\Models\Playlist;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\Traits\ModelBase;
 
 class PlaylistFollower extends Model
 {
+    use ModelBase;
+
     protected $connection = 'dbp_users';
     protected $primaryKey = ['user_id', 'playlist_id'];
     public $incrementing  = false;
@@ -20,7 +23,7 @@ class PlaylistFollower extends Model
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function setKeysForSaveQuery(Builder $query)
+    protected function setKeysForSaveQuery($query)
     {
         $keys = $this->getKeyName();
         if (!is_array($keys)) {

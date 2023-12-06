@@ -9,10 +9,22 @@ class KeyRequest extends Model
 {
     protected $connection = 'dbp_users';
     protected $table = 'user_key_requests';
-    protected $fillable = ['name', 'email', 'description', 'questions', 'temporary_key', 'notes', 'state', 'key_id'];
-
+    protected $fillable = [
+        'name',
+        'email',
+        'description',
+        'questions',
+        'temporary_key',
+        'notes',
+        'state',
+        'key_id',
+        'application_name',
+        'application_url',
+    ];
 
     protected $name;
+    protected $application_name;
+    protected $application_url;
     protected $email;
     protected $description;
     protected $questions;

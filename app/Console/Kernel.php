@@ -2,7 +2,6 @@
 
 namespace App\Console;
 
-use App\Console\Commands\syncV2Database;
 use App\Console\Commands\DeleteDraftPlaylistsPlans;
 use App\Console\Commands\DeleteTemporaryZipFiles;
 use Illuminate\Console\Scheduling\Schedule;
@@ -16,54 +15,26 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-
-        Commands\BibleEquivalents\SyncBebliaBible::class,
-        Commands\BibleEquivalents\SyncDigitalBibleLibrary::class,
-        Commands\BibleEquivalents\SyncTalkingBibles::class,
-        Commands\BibleEquivalents\SyncEbible::class,
-        Commands\BibleEquivalents\SyncFcbhApk::class,
-        Commands\BibleEquivalents\SyncScriptureEarth::class,
-        Commands\BibleEquivalents\UpdateBibleLinkOrganizations::class,
-
-        Commands\BibleFormats\FormatGetBible::class,
-        Commands\BibleFormats\FormatRunberg::class,
-
-        Commands\Wiki\GenerateWorldFactbook::class,
         Commands\Wiki\SyncAlphabets::class,
         Commands\Wiki\SyncLanguageDescriptions::class,
         Commands\Wiki\OrgDigitalBibleLibraryCompare::class,
 
         Commands\StudyFormats\fetchTyndalePeople::class,
 
-        Commands\generateOpenApiDoc::class,
+        Commands\GenerateOpenApiDoc::class,
 
-        Commands\loaderPush::class,
-
-        Commands\syncV2Database::class,
-        Commands\syncV2Users::class,
-        Commands\syncV2Profiles::class,
-        Commands\syncV2Bookmarks::class,
-        Commands\syncV2Highlights::class,
-        Commands\syncV2Notes::class,
-        Commands\reSyncV2Notes::class,
-        Commands\syncV4Annotations::class,
-        Commands\translatePlan::class,
-        Commands\translatePlaylist::class,
+        Commands\TranslatePlan::class,
+        Commands\TranslatePlaylist::class,
         Commands\encryptNote::class,
 
-        Commands\syncLiveBibleIsUsers::class,
-        Commands\syncLiveBibleIsHighlights::class,
-        Commands\syncLiveBibleIsNotes::class,
-        Commands\syncLiveBibleIsBookmarks::class,
-
-        Commands\syncPlaylistDuration::class,
+        Commands\SyncPlaylistDuration::class,
+        Commands\SyncFeaturedPlansDuration::class,
         Commands\DeleteDraftPlaylistsPlans::class,
         Commands\DeleteTemporaryZipFiles::class,
 
-        Commands\S3LogBackup::class,
-        Commands\CleanAndImportKD::class,
-
         Commands\showEnvironment::class,
+        Commands\CleanUpPlanDaysCompletedTable::class,
+        Commands\CleanUpPlaylistItemsCompletedTable::class,
     ];
 
     /**
@@ -74,12 +45,6 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command(syncV2Database::class)
-            ->everyFifteenMinutes()
-            ->onOneServer()
-            ->appendOutputTo('/var/app/current/storage/logs/artisan-scheduler.log')
-            ->withoutOverlapping();
-
         $schedule->command(DeleteDraftPlaylistsPlans::class)
             ->hourly()
             ->onOneServer()

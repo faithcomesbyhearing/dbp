@@ -112,7 +112,7 @@ class Account extends Model
         return $this->belongsTo(User::class);
     }
 
-    protected function setKeysForSaveQuery(Builder $query)
+    public function setKeysForSaveQuery($query)
     {
         $query
             ->where('user_id', '=', $this->getAttribute('user_id'))

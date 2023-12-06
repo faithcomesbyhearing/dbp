@@ -9,14 +9,14 @@ class UserNotesTransformer extends TransformerAbstract
 {
     /**
      * @OA\Schema (
-     *        type="object",
-     *        schema="v4_internal_notes_index",
-     *        description="The transformed user notes",
-     *        title="v4_user_notes",
-     *      @OA\Xml(name="v4_internal_notes_index"),
-     *      allOf={
-     *        @OA\Schema(ref="#/components/schemas/pagination"),
-     *      },
+     *   type="object",
+     *   schema="v4_internal_notes_index",
+     *   description="The transformed user notes",
+     *   title="v4_user_notes",
+     *   @OA\Xml(name="v4_internal_notes_index"),
+     *   allOf={
+     *      @OA\Schema(ref="#/components/schemas/pagination"),
+     *   },
      *   @OA\Property(property="data", type="array",
      *      @OA\Items(ref="#/components/schemas/v4_note")
      *    )
@@ -31,7 +31,9 @@ class UserNotesTransformer extends TransformerAbstract
      *          @OA\Property(property="book_name",      ref="#/components/schemas/BibleBook/properties/name"),
      *          @OA\Property(property="chapter",        ref="#/components/schemas/Note/properties/chapter"),
      *          @OA\Property(property="verse_start",    ref="#/components/schemas/Note/properties/verse_start"),
+     *          @OA\Property(property="verse_start_alt",ref="#/components/schemas/Note/properties/verse_start"),
      *          @OA\Property(property="verse_end",      ref="#/components/schemas/Note/properties/verse_end"),
+     *          @OA\Property(property="verse_end_alt",  ref="#/components/schemas/Note/properties/verse_end"),
      *          @OA\Property(property="verse_text",     ref="#/components/schemas/BibleFile/properties/verse_text"),
      *          @OA\Property(property="notes",          ref="#/components/schemas/Note/properties/notes"),
      *          @OA\Property(property="created_at",     ref="#/components/schemas/Note/properties/created_at"),
@@ -47,19 +49,21 @@ class UserNotesTransformer extends TransformerAbstract
     public function transform(Note $note)
     {
         return [
-      'id' => (int) $note->id,
-      'bible_id' => (string) $note->bible_id,
-      'bible_name' => (string) $note->bible_name,
-      'book_id' => (string) $note->book_id,
-      'book_name' => (string) optional($note->book)->name,
-      'chapter' => (int) $note->chapter,
-      'verse_start' => (int) $note->verse_start,
-      'verse_end' => (int) $note->verse_end,
-      'verse_text' => (string) $note->verse_text,
-      'notes' => (string) $note->notes,
-      'created_at' => (string) $note->created_at,
-      'updated_at' => (string) $note->updated_at,
-      'tags' => $note->tags
-    ];
+            'id' => (int) $note->id,
+            'bible_id' => (string) $note->bible_id,
+            'bible_name' => (string) $note->bible_name,
+            'book_id' => (string) $note->book_id,
+            'book_name' => (string) optional($note->bibleBook)->name,
+            'chapter' => (int) $note->chapter,
+            'verse_start' => $note->verse_sequence,
+            'verse_start_alt' => $note->verse_start,
+            'verse_end' => $note->verse_end ? (int) $note->verse_end : null,
+            'verse_end_alt' => $note->verse_end,
+            'verse_text' => (string) $note->verse_text,
+            'notes' => (string) $note->notes,
+            'created_at' => (string) $note->created_at,
+            'updated_at' => (string) $note->updated_at,
+            'tags' => $note->tags
+        ];
     }
 }

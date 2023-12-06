@@ -44,7 +44,7 @@ return [
   /*
    * v2 v4 sync chunk size
    */
-  'v2V4SyncChunkSize' => env('V2_V4_SYNC_CHUNK_SIZE', 5000),
+  'v2V4SyncChunkSize' => env('V2_V4_SYNC_CHUNK_SIZE', 10000),
 
   /*
    * v2 v4 sync chunk size
@@ -99,8 +99,8 @@ return [
    * DropZone CDN
    */
   'dropZoneJsCDN' => env(
-    'DROPZONE_JS_CDN',
-    'https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.4.0/dropzone.js'
+      'DROPZONE_JS_CDN',
+      'https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.4.0/dropzone.js'
   ),
   
   /*
@@ -119,7 +119,23 @@ return [
    * Version to start bibleis/gid deprecation
    */
   'deprecate_from_version' => [
-      'bibleis' => env('BIBLEIS_DEPRECATE_FROM_VERSION', '3.3.10'),
-      'gideons' => env('GIDEONS_DEPRECATE_FROM_VERSION', '2.1.3'),
+      'bibleis' => env('BIBLEIS_DEPRECATE_FROM_VERSION', '3.4.1'),
+      'gideons' => env('GIDEONS_DEPRECATE_FROM_VERSION', '2.2.1'),
   ],
+
+  /*
+   * Download access group list allowed
+   */
+  'download_access_group_list' => env(
+      'DOWNLOAD_ACCESS_GROUP_LIST',
+      '12,15,16,17,18,19,20,21,22,23,24,181,183,185,191,193,141,143,145'
+  ),
+  'backward_compatibility' => [
+      'app_name' => [
+        'bibleis' => env('BIBLEIS_COMPATIBILITY_APP_NAME', 'Bible.is'),
+        'gideons' => env('GIDEONS_COMPATIBILITY_APP_NAME', 'Gideon Bible App'),
+      ]
+  ],
+
+  'youtube_url' => env('YOUTUBE_URL', 'https://www.youtube.com/')
 ];

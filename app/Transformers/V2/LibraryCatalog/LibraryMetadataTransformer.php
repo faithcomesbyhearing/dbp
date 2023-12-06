@@ -54,34 +54,57 @@ class LibraryMetadataTransformer extends TransformerAbstract
      * @return array
      */
     public function transform($bible_fileset)
-    {   
-        $copyright = optional($bible_fileset->copyright)->copyright;
+    {
+        $copyright = $bible_fileset->copyright;
         $mark = $this->formatCopyrightMark($copyright);
 
         $output = [
             'dam_id'         => isset($bible_fileset->dam_id) ? $bible_fileset->dam_id : $bible_fileset->id,
             'mark'           => $mark,
-            'volume_summary' => optional($bible_fileset->copyright)->copyright_description,
+            'volume_summary' => $bible_fileset->copyright_description,
             'font_copyright' => null,
             'font_url'       => null
         ];
 
-        $organization = optional(optional($bible_fileset->copyright)->organizations)->first();
-        if ($organization) {
+        if ($bible_fileset->organization) {
             $output['organization'][] = [
-                'organization_id'       => (string) $organization->id,
-                'organization'          => (string) optional($organization->translations->where('vernacular', 1)->first())->name,
-                'organization_english'  => optional($organization->translations->where('language_id', $GLOBALS['i18n_id'])->first())->name ?? $organization->slug,
-                'organization_role'     => optional($bible_fileset->copyright)->role->roleTitle->name,
-                'organization_url'      => $organization->url_website,
-                'organization_donation' => $organization->url_donate,
-                'organization_address'  => $organization->address,
-                'organization_address2' => $organization->address2,
-                'organization_city'     => $organization->city,
-                'organization_state'    => $organization->state,
-                'organization_country'  => $organization->country,
-                'organization_zip'      => $organization->zip,
-                'organization_phone'    => $organization->phone,
+                'organization_id'       => (string) $bible_fileset->organization->id,
+                'organization'          => isset($bible_fileset->organization->name)
+                    ? $bible_fileset->organization->name
+                    : '',
+                'organization_english'  => isset($bible_fileset->organization->slug)
+                    ? $bible_fileset->organization->slug
+                    : '',
+                'organization_role'     => isset($bible_fileset->organization->role_name)
+                    ? $bible_fileset->organization->role_name
+                    : '',
+                'organization_url'      => isset($bible_fileset->organization->url_website)
+                    ? $bible_fileset->organization->url_website
+                    : '',
+                'organization_donation' => isset($bible_fileset->organization->url_donate)
+                    ? $bible_fileset->organization->url_donate
+                    : '',
+                'organization_address'  => isset($bible_fileset->organization->address)
+                    ? $bible_fileset->organization->address
+                    : '',
+                'organization_address2' => isset($bible_fileset->organization->address2)
+                    ? $bible_fileset->organization->address2
+                    : '',
+                'organization_city'     => isset($bible_fileset->organization->city)
+                    ? $bible_fileset->organization->city
+                    : '',
+                'organization_state'    => isset($bible_fileset->organization->state)
+                    ? $bible_fileset->organization->state
+                    : '',
+                'organization_country'  => isset($bible_fileset->organization->country)
+                    ? $bible_fileset->organization->country
+                    : '',
+                'organization_zip'      => isset($bible_fileset->organization->zip)
+                    ? $bible_fileset->organization->zip
+                    : '',
+                'organization_phone'    => isset($bible_fileset->organization->phone)
+                    ? $bible_fileset->organization->phone
+                    : '',
             ];
         }
         return $output;
@@ -93,9 +116,9 @@ class LibraryMetadataTransformer extends TransformerAbstract
         $mark_types = ['Audio', 'Text', 'Video'];
         foreach ($mark_types as $type) {
             if (!$mark) {
-                $mark = optional(explode('Audio:', $copyright))[1];
+                $mark = optional(explode($type.':', $copyright))[1];
             }
-        }     
+        }
         return $mark ? $mark : $copyright;
     }
 }

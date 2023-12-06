@@ -4,11 +4,10 @@ namespace App\Models\User\Study;
 
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
-use App\Models\Bible\BibleFileset;
-use App\Models\Bible\BibleVerse;
-use App\Models\Bible\Book;
+use App\Services\Bibles\BibleFilesetService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Awobaz\Compoships\Compoships;
 
 /**
  * App\Models\User\Study
@@ -17,8 +16,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property string $book_id
  * @property int $chapter
- * @property int $verse_start
+ * @property string $verse_start
  * @property string $user_id
+ * @property int $verse_sequence
  * @property string $bible_id
  * @property Carbon $created_at
  * @property Carbon $updated_at
@@ -40,17 +40,21 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Bookmark extends Model
 {
+    use Compoships;
+    use UserAnnotationTrait;
+
     protected $connection = 'dbp_users';
     protected $table = 'user_bookmarks';
     protected $fillable = [
-    'id',
-    'bible_id',
-    'v2_id',
-    'user_id',
-    'book_id',
-    'chapter',
-    'verse_start'
-  ];
+        'id',
+        'bible_id',
+        'v2_id',
+        'user_id',
+        'book_id',
+        'chapter',
+        'verse_start',
+        'verse_sequence',
+    ];
 
     /**
      *
@@ -80,6 +84,12 @@ class Bookmark extends Model
      * @OA\Property(ref="#/components/schemas/BibleFile/properties/verse_start")
      */
     protected $verse_start;
+
+    /**
+     *
+     * @OA\Property(ref="#/components/schemas/BibleFile/properties/verse_sequence")
+     */
+    protected $verse_sequence;
 
     /**
      *
@@ -126,9 +136,14 @@ class Bookmark extends Model
     public function book()
     {
         return $this->hasOne(BibleBook::class, 'book_id', 'book_id')->where(
-      'bible_id',
-      $this['bible_id']
-    );
+            'bible_id',
+            $this['bible_id']
+        );
+    }
+
+    public function bibleBook()
+    {
+        return $this->hasOne(BibleBook::class, ['book_id', 'bible_id'], ['book_id', 'bible_id']);
     }
 
     public function bible()
@@ -143,33 +158,30 @@ class Bookmark extends Model
 
     public function getVerseTextAttribute()
     {
-        $bookmark = $this->toArray();
-        $chapter = $bookmark['chapter'];
-        $verse_start = $bookmark['verse_start'];
-        $bible = Bible::where('id', $bookmark['bible_id'])->first();
+        $chapter = $this['chapter'];
+        $verse_start = $this['verse_start'];
+        $bible = $this->bible;
+
         if (!$bible) {
             return '';
         }
-        $fileset = BibleFileset::join(
-      'bible_fileset_connections as connection',
-      'connection.hash_id',
-      'bible_filesets.hash_id'
-    )
-      ->where('bible_filesets.set_type_code', 'text_plain')
-      ->where('connection.bible_id', $bible->id)
-      ->first();
-        if (!$fileset) {
+
+        $testament = $this->bibleBook && $this->bibleBook->book
+        ? $this->bibleBook->book->book_testament
+        : '';
+
+        $text_fileset = $this->getTextFilesetRelatedByTestament($testament);
+
+        if (!$text_fileset) {
             return '';
         }
-        $verses = BibleVerse::withVernacularMetaData($bible)
-      ->where('hash_id', $fileset->hash_id)
-      ->where('bible_verses.book_id', $bookmark['book_id'])
-      ->where('verse_start', $verse_start)
-      ->where('chapter', $chapter)
-      ->orderBy('verse_start')
-      ->select(['bible_verses.verse_text'])
-      ->get()
-      ->pluck('verse_text');
-        return implode(' ', $verses->toArray());
+
+        return BibleFilesetService::getVerseTextFilterBy(
+            $bible,
+            $text_fileset->hash_id,
+            $this['book_id'],
+            $verse_start,
+            $chapter
+        );
     }
 }

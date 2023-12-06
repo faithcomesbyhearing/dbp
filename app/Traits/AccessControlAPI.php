@@ -2,10 +2,15 @@
 
 namespace App\Traits;
 
-use App\Models\User\AccessGroupKey;
+use App\Models\User\AccessGroup;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Illuminate\Support\Collection;
 use App\Models\User\AccessGroupFileset;
 use App\Models\User\AccessType;
 use App\Models\User\Key;
+use App\Models\Bible\BibleFileset;
+use App\Exceptions\ResponseException as Response;
+use App\Support\AccessGroupsCollection;
 use DB;
 
 trait AccessControlAPI
@@ -18,135 +23,140 @@ trait AccessControlAPI
      *
      * @return object
      */
-    public function accessControl($api_key, $control_table = 'filesets')
+    public function accessControl(AccessGroupsCollection $access_groups, $control_table = 'filesets')
     {
-        return cacheRemember('access_control:', [$control_table, $api_key], now()->addDay(), function () use ($api_key, $control_table) {
-            $user_location = geoip(request()->ip());
-            $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
-            $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
+        return cacheRemember(
+            'access_control:',
+            [$control_table, $access_groups->toString()],
+            now()->addDay(),
+            function () use ($access_groups) {
+                $user_location = geoip(request()->ip());
+                $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
+                $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
 
-            // Defaults to type 'api' because that's the only access type; needs modification once there are multiple
-            $access_type = AccessType::where('name', 'api')
-                ->where(function ($query) use ($country_code) {
-                    $query->where('country_id', $country_code);
-                })
-                ->where(function ($query) use ($continent) {
-                    $query->where('continent_id', $continent);
-                })
-                ->first();
-            if (!$access_type) {
-                return (object) ['identifiers' => [], 'string' => ''];
+                // Defaults to type 'api' because that's the only access type; needs modification once
+                // there are multiple
+                $access_type = AccessType::findOneByCountryCodeAndContinent($country_code, $continent);
+
+                if (!$access_type) {
+                    return (object) ['identifiers' => [], 'string' => ''];
+                }
+
+                // Access Control has historically been tied to fileset hashes.
+                $accessGroups = AccessGroup::select('id', 'name')
+                    ->whereIn('id', $access_groups)
+                    ->where('name', '!=', 'RESTRICTED')
+                    ->get()
+                ;
+                // Use Eloquent everywhere except for this giant request
+                $identifiers = AccessGroupFileset::select('hash_id as identifier')
+                    ->whereIn('access_group_id', $access_groups)->distinct()->get();
+
+                return (object) [
+                    'identifiers' => collect($identifiers)->pluck('identifier')->toArray(),
+                    'string' => $accessGroups->pluck('name')->implode('-'),
+                ];
             }
-
-            $key = Key::select('id')->where('key', $api_key)->first();
-            $accessGroups = AccessGroupKey::where('key_id', $key->id)
-            ->get()
-            ->pluck('access')
-            ->where('name', '!=', 'RESTRICTED')
-            ->map(function ($access) {
-                return collect($access->toArray())
-                    ->only(['id', 'name'])
-                    ->all();
-            });
-
-            // Access Control has historically been tied to fileset hashes.
-            // As the number of filesets grows, this has been affected query
-            // performance for endpoints such as Languages (and similarly for  Bibles),
-            // which return a list of Languages associated with any fileset
-            // content associated with the API key. For this case, the query has been optimized,
-            // and returns a list of language ids instead of a list of fileset hashes
-            $dbp_users = config('database.connections.dbp_users.database');
-            $dbp_prod = config('database.connections.dbp.database');
-            switch ($control_table) {
-                case 'languages':
-                    $identifiers = DB::select(
-                        DB::raw(
-                            'select distinct l.id identifier
-                            from ' . $dbp_users . '.user_keys uk
-                            join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                            join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                            join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                            join ' . $dbp_prod . '.bibles b on bfc.bible_id = b.id
-                            join ' . $dbp_prod . '.languages l on l.id = b.language_id
-                            where uk.id = ?'
-                        ), [$key->id]
-                    );
-                    break; 
-                case 'bibles':
-                    $identifiers = DB::select(
-                        DB::raw(
-                            'select distinct bfc.bible_id identifier
-                            from ' . $dbp_users . '.user_keys uk
-                            join ' . $dbp_users . '.access_group_api_keys agak on agak.key_id = uk.id
-                            join ' . $dbp_prod . '.access_group_filesets agf on agf.access_group_id = agak.access_group_id
-                            join ' . $dbp_prod . '.bible_fileset_connections bfc on agf.hash_id = bfc.hash_id
-                            where uk.id = ?'
-                        ), [$key->id]
-                    );
-                    break;
-                default:
-                    // Use Eloquent everywhere except for this giant request
-                    $identifiers = AccessGroupFileset::select('hash_id as identifier')
-                        ->whereIn('access_group_id', $accessGroups->pluck('id'))->distinct()->get();
-                    break;
-            }
-
-            return (object) [
-                'identifiers' => collect($identifiers)->pluck('identifier')->toArray(),
-                'string' => $accessGroups->pluck('name')->implode('-'),
-            ];
-        });
+        );
     }
 
-    private function bulkAccessControl($api_key, $fileset_hash)
-    {
-        $cache_params = [$api_key, $fileset_hash];
-        return cacheRemember('bulk_access_control', $cache_params, now()->addMinutes(40), function () use ($api_key, $fileset_hash) {
-            $user_location = geoip(request()->ip());
-            $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
-            $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
+    private function genericAccessControl(
+        AccessGroupsCollection $access_groups,
+        ?string $fileset_hash,
+        array $access_group_ids = []
+    ) {
+        $cache_params = [$access_groups->toString(), $fileset_hash, join('', $access_group_ids)];
+        return cacheRemember(
+            'bulk_access_control',
+            $cache_params,
+            now()->addMinutes(40),
+            function () use ($access_groups, $fileset_hash, $access_group_ids) {
+                $user_location = geoip(request()->ip());
+                $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
+                $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
 
-            // Defaults to type 'api' because that's the only access type; needs modification once there are multiple
-            $access_type = AccessType::where('name', 'api')
-                ->where(function ($query) use ($country_code) {
-                    $query->where('country_id', $country_code);
-                })
-                ->where(function ($query) use ($continent) {
-                    $query->where('continent_id', $continent);
-                })
-                ->first();
+                // Defaults to type 'api' because that's the only access type;
+                // needs modification once there are multiple
+                $access_type = AccessType::findOneByCountryCodeAndContinent($country_code, $continent);
 
-            if (!$access_type) {
-                return (object) ['identifiers' => [], 'string' => ''];
+                if (!$access_type) {
+                    return [];
+                }
+
+                if (empty($access_groups)) {
+                    return [];
+                }
+
+                return AccessGroupFileset::select('hash_id')
+                    ->whereIn('access_group_id', $access_groups)
+                    ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
+                        $query->whereIn('access_group_id', $access_group_ids);
+                    })
+                    ->where('hash_id', $fileset_hash)
+                    ->get();
             }
-
-            $dbp_database = config('database.connections.dbp.database');
-            $key = Key::select('id')->where('key', $api_key)->first();
-            $allowed_fileset =
-                AccessGroupKey::join($dbp_database . '.access_group_filesets as acc_filesets', function ($join) use ($key, $fileset_hash) {
-                    $join->on('access_group_api_keys.access_group_id', '=', 'acc_filesets.access_group_id')
-                        ->where('key_id', $key->id)
-                        ->where('hash_id', $fileset_hash);
-                })->get();
-            
-            return $allowed_fileset;
-        });
+        );
     }
 
-    public function blockedByAccessControl($fileset)
+    /**
+     * Validate if an api key belongs to the Bible.is client
+     *
+     * @param string $api_key
+     *
+     * @return string
+     */
+    private function doesApiKeyBelongToBibleis(string $api_key) : bool
     {
-        $access_control = $this->accessControl($this->key);
-        if (!\in_array($fileset->hash_id, $access_control->identifiers, true)) {
-            return $this->setStatusCode(403)->replyWithError(trans('api.bible_fileset_errors_401'));
+        return config('auth.compat_users.api_keys.bibleis') === $api_key;
+    }
+
+    public function allowedByAccessControl(BibleFileset $fileset)
+    {
+        $access_groups = getAccessGroups();
+        $access_control = $this->genericAccessControl($access_groups, $fileset->hash_id);
+        if (sizeof($access_control) === 0) {
+            return $this->setStatusCode(HttpResponse::HTTP_FORBIDDEN)
+                ->replyWithError(trans('api.bible_fileset_errors_401'));
         }
-        return false;
+        return true;
     }
 
-    public function allowedByBulkAccessControl($fileset)
+    public function allowedByBulkAccessControl(BibleFileset $fileset)
     {
-        $allowed_fileset = $this->bulkAccessControl($this->key, $fileset->hash_id);
+        $access_groups = getAccessGroups();
+        $allowed_fileset = $this->genericAccessControl($access_groups, $fileset->hash_id);
         if (sizeof($allowed_fileset) === 0) {
-            return $this->setStatusCode(404)->replyWithError('Not found');
+            return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError('Not found');
+        }
+        return true;
+    }
+
+    public function allowedForDownload(BibleFileset $fileset)
+    {
+        $access_groups = getAccessGroups();
+
+        // Note that in the future, this constraint should be updated to account for
+        // whether the user is logged in or not.
+        // if ($this->doesApiKeyBelongToBibleis($this->key) && isUserLoggedIn()) {
+
+        // If the API key belongs to bible.is DBP will utilize the bible.is access group list else,
+        // the system will utilize the generic access group list instead.
+        if ($this->doesApiKeyBelongToBibleis($this->key)) {
+            $download_access_groups = optional($access_groups)->toArray();
+        } else {
+            $download_access_groups = getDownloadAccessGroupList();
+        }
+
+        $allowed_fileset_for_download = $this->genericAccessControl(
+            $access_groups,
+            $fileset->hash_id,
+            $download_access_groups
+        );
+
+        if (sizeof($allowed_fileset_for_download) === 0) {
+            return $this
+                ->setStatusCode(Response::HTTP_FORBIDDEN)
+                ->replyWithError(Response::getStatusTextByCode(Response::HTTP_FORBIDDEN));
         }
         return true;
     }

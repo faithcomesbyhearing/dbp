@@ -4,12 +4,12 @@ namespace App\Models\User\Study;
 
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
-use App\Models\Bible\BibleFileset;
-use App\Models\Bible\BibleVerse;
 use App\Models\User\User;
+use App\Services\Bibles\BibleFilesetService;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
+use Awobaz\Compoships\Compoships;
 
 /**
  * App\Models\User\Note
@@ -18,7 +18,8 @@ use Illuminate\Support\Facades\Crypt;
  * @property int $id
  * @property string $book_id
  * @property int $chapter
- * @property int $verse_start
+ * @property string $verse_start
+ * @property int $verse_sequence
  * @property int|null $verse_end
  * @property string $user_id
  * @property string $bible_id
@@ -37,22 +38,26 @@ use Illuminate\Support\Facades\Crypt;
  */
 class Note extends Model
 {
+    use Compoships;
+    use UserAnnotationTrait;
+
     protected $connection = 'dbp_users';
     protected $table = 'user_notes';
     protected $hidden = ['user_id'];
     protected $fillable = [
-    'id',
-    'v2_id',
-    'user_id',
-    'bible_id',
-    'book_id',
-    'chapter',
-    'verse_start',
-    'verse_end',
-    'notes',
-    'created_at',
-    'updated_at'
-  ];
+        'id',
+        'v2_id',
+        'user_id',
+        'bible_id',
+        'book_id',
+        'chapter',
+        'verse_start',
+        'verse_sequence',
+        'verse_end',
+        'notes',
+        'created_at',
+        'updated_at'
+    ];
     protected $appends = ['bible_name', 'verse_text'];
 
     /**
@@ -81,6 +86,13 @@ class Note extends Model
      * @method static Note whereChapter($value)
      */
     protected $chapter;
+
+    /**
+     *
+     * @OA\Property(ref="#/components/schemas/BibleFile/properties/verse_sequence")
+     * @method static Note whereVerseSequence($value)
+     */
+    protected $verse_sequence;
 
     /**
      *
@@ -165,9 +177,11 @@ class Note extends Model
         try {
             return Crypt::decrypt($note);
         } catch (DecryptException $e) {
+            \Log::channel('errorlog')->error($e->getMessage());
             return '';
         }
     }
+
 
     /**
      *
@@ -177,6 +191,11 @@ class Note extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function bible()
+    {
+        return $this->belongsTo(Bible::class);
     }
 
     /**
@@ -192,9 +211,14 @@ class Note extends Model
     public function book()
     {
         return $this->hasOne(BibleBook::class, 'book_id', 'book_id')->where(
-      'bible_id',
-      $this['bible_id']
-    );
+            'bible_id',
+            $this['bible_id']
+        );
+    }
+
+    public function bibleBook()
+    {
+        return $this->hasOne(BibleBook::class, ['book_id', 'bible_id'], ['book_id', 'bible_id']);
     }
 
     /**
@@ -210,32 +234,30 @@ class Note extends Model
         $chapter = $this['chapter'];
         $verse_start = $this['verse_start'];
         $verse_end = $this['verse_end'] ? $this['verse_end'] : $verse_start;
-        $bible = Bible::where('id', $this['bible_id'])->first();
+        $bible = $this->bible;
+
         if (!$bible) {
             return '';
         }
-        $fileset = BibleFileset::join(
-      'bible_fileset_connections as connection',
-      'connection.hash_id',
-      'bible_filesets.hash_id'
-    )
-      ->where('bible_filesets.set_type_code', 'text_plain')
-      ->where('connection.bible_id', $bible->id)
-      ->first();
-        if (!$fileset) {
+
+        $testament = $this->bibleBook && $this->bibleBook->book
+            ? $this->bibleBook->book->book_testament
+            : '';
+
+        $text_fileset = $this->getTextFilesetRelatedByTestament($testament);
+
+        if (!$text_fileset) {
             return '';
         }
-        $verses = BibleVerse::withVernacularMetaData($bible)
-      ->where('hash_id', $fileset->hash_id)
-      ->where('bible_verses.book_id', $this['book_id'])
-      ->where('verse_start', '>=', $verse_start)
-      ->where('verse_end', '<=', $verse_end)
-      ->where('chapter', $chapter)
-      ->orderBy('verse_start')
-      ->select(['bible_verses.verse_text'])
-      ->get()
-      ->pluck('verse_text');
-        return implode(' ', $verses->toArray());
+
+        return BibleFilesetService::getRangeVersesTextFilterBy(
+            $bible,
+            $text_fileset->hash_id,
+            $this['book_id'],
+            $verse_start,
+            $verse_end,
+            $chapter
+        );
     }
 
     /**
@@ -248,7 +270,7 @@ class Note extends Model
      */
     public function getBibleNameAttribute()
     {
-        $bible = Bible::whereId($this['bible_id'])->with(['translations', 'books.book'])->first();
+        $bible = $this->bible;
         if (!$bible) {
             return '';
         }

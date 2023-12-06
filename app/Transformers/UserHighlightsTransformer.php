@@ -51,10 +51,12 @@ class UserHighlightsTransformer extends TransformerAbstract
             'id'                => (int) $highlight->id,
             'bible_id'          => (string) $highlight->bible_id,
             'book_id'           => (string) $highlight->book_id,
-            'book_name'         => (string) optional($highlight->book)->name,
+            'book_name'         => (string) optional($highlight->bibleBook)->name,
             'chapter'           => (int) $highlight->chapter,
-            'verse_start'       => (int) $highlight->verse_start,
-            'verse_end'         => (int) $highlight->verse_end,
+            'verse_start'       => $highlight->verse_sequence,
+            'verse_start_alt'   => $highlight->verse_start,
+            'verse_end'         => $highlight->verse_end ? (int) $highlight->verse_end : null,
+            'verse_end_alt'     => (string) $highlight->verse_end,
             'verse_text'        => (string) $verse_text,
             'highlight_start'   => (int) $highlight->highlight_start,
             'highlighted_words' => $highlight->highlighted_words,
@@ -64,17 +66,9 @@ class UserHighlightsTransformer extends TransformerAbstract
         ];
     }
 
-    private function checkColorPreference($highlight)
+    protected function checkColorPreference($highlight)
     {
         $color_preference = checkParam('prefer_color') ?? 'rgba';
-        if ($color_preference === 'hex') {
-            $highlight->color = '#' . $highlight->color->hex;
-        }
-        if ($color_preference === 'rgb') {
-            $highlight->color = 'rgb(' . $highlight->color->red . ',' . $highlight->color->green . ',' . $highlight->color->blue . ')';
-        }
-        if ($color_preference === 'rgba') {
-            $highlight->color = 'rgba(' . $highlight->color->red . ',' . $highlight->color->green . ',' . $highlight->color->blue . ',' . $highlight->color->opacity . ')';
-        }
+        $highlight->color = Highlight::checkAndReturnColorPreference($highlight, $color_preference);
     }
 }

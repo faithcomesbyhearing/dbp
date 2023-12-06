@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Bible;
 
+use Illuminate\Database\Query\Expression;
 use App\Http\Controllers\APIController;
-
 use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Bible\BibleFile;
@@ -52,9 +52,15 @@ class AudioController extends APIController
     public function availableTimestamps()
     {
         $filesets = cacheRemember('audio_timestamp_filesets', [], now()->addMinutes(80), function () {
-            $hashes = BibleFile::has('timestamps')->select('hash_id')->distinct()->get()->values('hash_id');
-            $filesets_id = BibleFileset::whereIn('hash_id', $hashes)->select('id as fileset_id')->get();
-            return $filesets_id;
+            $hashes = BibleFile::query()
+                ->select('bible_files.hash_id')
+                ->joinBibleFileTimestamps()
+                ->groupBy('bible_files.hash_id')
+                ->get()
+                ->values('hash_id');
+            return BibleFileset::whereIn('hash_id', $hashes)
+                ->select('id as fileset_id')
+                ->get();
         });
         if ($filesets->count() === 0) {
             return $this->setStatusCode(204)->replyWithError('No timestamps are available at this time');
@@ -92,8 +98,8 @@ class AudioController extends APIController
         $chapter  = checkParam('chapter_id|chapter_number', true, $chapter_url_param);
 
         // Fetch Fileset & Files
-        $fileset = BibleFileset::uniqueFileset($id, 'audio', true)->first();  // BWF suggest removing audio and true. For audio, the filesetid is unique
-        //$fileset = BibleFileset::uniqueFileset($id)->first();
+        // BWF suggest removing audio and true. For audio, the filesetid is unique
+        $fileset = BibleFileset::uniqueFileset($id, 'audio', true)->first();
         if (!$fileset) {
             return $this->setStatusCode(404)->replyWithError(trans('api.bible_fileset_errors_404', ['id' => $id]));
         }
@@ -107,12 +113,22 @@ class AudioController extends APIController
             })->get();
 
         // Fetch Timestamps
-        $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))->orderBy('verse_start')->get();
+        $audioTimestamps = BibleFileTimestamp::whereIn(
+            'bible_file_id',
+            $bible_files->pluck('id')
+        )
+        ->with('bibleFile')
+        ->orderBy('verse_sequence')
+        ->get();
 
 
-        if ($audioTimestamps->isEmpty() && ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream')) {
+        if ($audioTimestamps->isEmpty() &&
+            ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream')
+        ) {
             $audioTimestamps = [];
-            $bible_files = BibleFile::with('streamBandwidth.transportStreamBytes')->where([
+            $bible_files = BibleFile::with(['streamBandwidth.transportStreamBytes' => function ($query) {
+                $query->with('timestamp');
+            }])->where([
                 'hash_id' => $fileset->hash_id,
                 'book_id' => $book,
             ])
@@ -121,9 +137,11 @@ class AudioController extends APIController
                 ->get();
             foreach ($bible_files as $bible_file) {
                 $currentBandwidth = $bible_file->streamBandwidth->first();
-                foreach ($currentBandwidth->transportStreamBytes as $stream) {
-                    if ($stream->timestamp) {
-                        $audioTimestamps[] = $stream->timestamp;
+                if ($currentBandwidth && $currentBandwidth->transportStreamBytes) {
+                    foreach ($currentBandwidth->transportStreamBytes as $stream) {
+                        if ($stream->timestamp) {
+                            $audioTimestamps[] = $stream->timestamp;
+                        }
                     }
                 }
             }
@@ -178,8 +196,9 @@ class AudioController extends APIController
 
         // Create Sophia Query
         $query  = \DB::connection()->getPdo()->quote('+' . str_replace(' ', ' +', $query));
+        $expression = new Expression("MATCH (verse_text) AGAINST($query IN NATURAL LANGUAGE MODE)");
         $verses = BibleVerse::where('hash_id', $text_fileset->hash_id)
-            ->whereRaw(\DB::raw("MATCH (verse_text) AGAINST($query IN NATURAL LANGUAGE MODE)"))
+            ->whereRaw($expression->getValue(\DB::connection()->getQueryGrammar()))
             ->when($book_id, function ($query) use ($book_id) {
                 return $query->where('book_id', $book_id);
             })

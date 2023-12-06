@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Playlist;
 
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Spatie\Fractalistic\ArraySerializer;
 use App\Traits\AccessControlAPI;
 use App\Http\Controllers\APIController;
 use App\Models\Bible\Bible;
@@ -13,14 +15,28 @@ use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
 use App\Models\Playlist\PlaylistFollower;
 use App\Models\Playlist\PlaylistItems;
+use App\Models\User\Study\Note;
+use App\Models\User\Study\Highlight;
+use App\Models\User\Study\Bookmark;
 use App\Traits\CallsBucketsTrait;
 use App\Traits\CheckProjectMembership;
+use App\Transformers\PlaylistTransformer;
+use App\Transformers\PlaylistItemsTransformer;
+use App\Transformers\PlaylistNotesTransformer;
+use App\Transformers\PlaylistHighlightsTransformer;
+use App\Transformers\PlaylistBookmarksTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
+use Illuminate\Database\QueryException;
+use League\Fractal\Pagination\IlluminatePaginatorAdapter;
+use App\Services\Plans\PlaylistService;
+use App\Services\Bibles\BibleFilesetService;
+use App\Exceptions\MySQLErrorCode;
 
 class PlaylistsController extends APIController
 {
@@ -29,6 +45,13 @@ class PlaylistsController extends APIController
     use CallsBucketsTrait;
 
     protected $items_limit = 1000;
+    private $playlist_service;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->playlist_service = new PlaylistService();
+    }
 
     /**
      * Display a listing of the resource.
@@ -100,7 +123,9 @@ class PlaylistsController extends APIController
 
         // Validate Project / User Connection
         if (!empty($user) && !$this->compareProjects($user->id, $this->key)) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(Response::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $sort_by    = checkParam('sort_by') ?? 'name';
@@ -110,77 +135,157 @@ class PlaylistsController extends APIController
         $featured = checkBoolean('featured') || empty($user);
         $limit    = (int) (checkParam('limit') ?? 25);
 
-
-
         $show_details = checkBoolean('show_details');
         $show_text = checkBoolean('show_text');
         if ($show_text) {
             $show_details = $show_text;
         }
 
-        $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
-            return optional(Language::where('iso', $iso)->select('id')->first())->id;
-        });
-
+        $language_id = null;
+        if ($iso !== null) {
+            $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
+                return optional(Language::where('iso', $iso)->select('id')->first())->id;
+            });
+        }
+        
         if ($featured) {
             $cache_params = [$show_details, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id];
-            $playlists = cacheRemember('v4_playlist_index', $cache_params, now()->addDay(), function () use ($show_details, $user, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id) {
-                return $this->getPlaylists($show_details, $user, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id);
-            });
-            return $this->reply($playlists);
+            $playlists = cacheRemember(
+                'v4_playlist_index',
+                $cache_params,
+                now()->addDay(),
+                function () use (
+                    $show_details,
+                    $user,
+                    $featured,
+                    $sort_by,
+                    $sort_dir,
+                    $limit,
+                    $show_text,
+                    $language_id
+                ) {
+                    return $this->getPlaylists(
+                        $show_details,
+                        $user,
+                        $featured,
+                        $sort_by,
+                        $sort_dir,
+                        $limit,
+                        $show_text,
+                        $language_id
+                    );
+                }
+            );
+            return $this->reply(fractal(
+                $playlists->getCollection(),
+                new PlaylistTransformer(
+                    [
+                        'user' => $user,
+                        'v' => $this->v,
+                        'key' => $this->key,
+                    ]
+                )
+            )->paginateWith(new IlluminatePaginatorAdapter($playlists)));
         }
 
+        $playlists = $this->getPlaylists(
+            $show_details,
+            $user,
+            $featured,
+            $sort_by,
+            $sort_dir,
+            $limit,
+            $show_text,
+            $language_id
+        );
 
-        return $this->reply($this->getPlaylists($show_details, $user, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id));
+        return $this->reply(fractal(
+            $playlists->getCollection(),
+            new PlaylistTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key,
+                ]
+            )
+        )->paginateWith(new IlluminatePaginatorAdapter($playlists)));
     }
 
-    private function getPlaylists($show_details, $user, $featured, $sort_by, $sort_dir, $limit, $show_text, $language_id)
-    {
+    private function getPlaylists(
+        $show_details,
+        $user,
+        $featured,
+        $sort_by,
+        $sort_dir,
+        $limit,
+        $show_text,
+        $language_id
+    ) {
         $has_user = !empty($user);
+        $user_id = $has_user ? $user->id : null;
         $featured = $featured || !$has_user;
 
         $select = ['user_playlists.*'];
 
         $following_playlists = [];
         if ($has_user) {
-            $following_playlists = PlaylistFollower::where('user_id', $user->id)->get();
+            $following_playlists = PlaylistFollower::where('user_id', $user_id)->pluck('playlist_id', 'playlist_id');
         }
+
+        $playlist_ids = Playlist::getFeaturedListIds($featured, $limit, $user_id, $language_id, $following_playlists);
+        $unique_filesets = PlaylistItems::getUniqueFilesetsByPlaylistIds($playlist_ids);
+        $valid_filesets = BibleFilesetService::getValidFilesets($unique_filesets);
 
         $playlists = Playlist::with('user')
-            ->where('draft', 0)
-            ->where('plan_id', 0)
-            ->when($show_details, function ($query) {
-                $query->with('items');
+            ->when($show_details, function ($query) use ($user, $valid_filesets) {
+                $query->with(['items' => function ($qitems) use ($user, $valid_filesets) {
+                    if (!empty($user)) {
+                        $qitems->withPlaylistItemCompleted($user->id);
+                    }
+                    $qitems->with(['fileset' => function ($qfileset) {
+                        $qfileset->with(['bible' => function ($qbible) {
+                            $qbible->with(['translations', 'books.book']);
+                        }]);
+                    }])->whereIn('fileset_id', $valid_filesets);
+                }]);
             })
-            ->when($language_id, function ($q) use ($language_id) {
-                $q->where('user_playlists.language_id', $language_id);
-            })
-            ->when($featured, function ($q) {
-                $q->where('user_playlists.featured', '1');
-            })
-            ->unless($featured, function ($q) use ($user, $following_playlists) {
-                $q->where('user_playlists.user_id', $user->id)
-                    ->orWhereIn('user_playlists.id', $following_playlists->pluck('playlist_id'));
+            ->unless($show_details, function ($query) use ($user, $valid_filesets) {
+                $query->with(['items' => function ($qitems) use ($user, $valid_filesets) {
+                    if (!empty($user)) {
+                        $qitems->withPlaylistItemCompleted($user->id);
+                    }
+                    $qitems
+                        ->with('fileset')
+                        ->whereIn('fileset_id', $valid_filesets);
+                }]);
             })
             ->select($select)
+            ->withFeaturedListIds($featured, $user_id, $language_id, $following_playlists)
             ->orderBy($sort_by, $sort_dir)->paginate($limit);
 
-        if ($has_user) {
-            $following_playlists = $following_playlists->pluck('playlist_id', 'playlist_id');
-        }
+        $playlist_ids = [];
 
         foreach ($playlists->getCollection() as $playlist) {
-            if ($show_details) {
-                $playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $playlist->id, 'v' => $this->v, 'key' => $this->key]);
-            }
             if ($show_text && isset($playlist->items)) {
                 foreach ($playlist->items as $item) {
                     $item->verse_text = $item->getVerseText();
                 }
             }
-            $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
+
             $playlist->following = $following_playlists[$playlist->id] ?? false;
+            $playlist_ids[] = $playlist->id;
         }
+
+        if (!empty($playlist_ids)) {
+            $duration_by_playlist = $this->playlist_service->getDurationByIds($playlist_ids);
+
+            foreach ($playlists->getCollection() as $playlist) {
+                if (isset($duration_by_playlist[$playlist->id])) {
+                    $playlist->total_duration = $duration_by_playlist[$playlist->id]->duration;
+                }
+            }
+        }
+
         return $playlists;
     }
 
@@ -213,7 +318,9 @@ class PlaylistsController extends APIController
         $user_is_member = $this->compareProjects($user->id, $this->key);
 
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $name = checkParam('name', true);
@@ -250,34 +357,13 @@ class PlaylistsController extends APIController
             $playlist_items = array_slice($playlist_items, 0, $allowed_size);
         }
 
-        $playlist_items_to_create = [];
-        $order = 1;
+        $playlist_items_object = [];
 
         foreach ($playlist_items as $playlist_item) {
-            $playlist_item = (object) $playlist_item;
-            $playlist_item_data = [
-                'playlist_id'       => $playlist->id,
-                'fileset_id'        => $playlist_item->fileset_id,
-                'book_id'           => $playlist_item->book_id,
-                'chapter_start'     => $playlist_item->chapter_start,
-                'chapter_end'       => $playlist_item->chapter_end,
-                'verse_start'       => $playlist_item->verse_start ?? null,
-                'verse_end'         => $playlist_item->verse_end ?? null,
-                'verses'            => $playlist_items->verses ?? 0,
-                'order_column'      => $order
-            ];
-            $playlist_items_to_create[] = $playlist_item_data;
-            $order += 1;
+            $playlist_items_object[] = (object) $playlist_item;
         }
-        PlaylistItems::insert($playlist_items_to_create);
-        $created_playlist_items = PlaylistItems::where('playlist_id', $playlist->id)->orderBy('order_column')->get();
-        foreach ($created_playlist_items as $created_playlist_item) {
-            $created_playlist_item->calculateDuration()->save();
-            if (!$created_playlist_item->verses) {
-                $created_playlist_item->calculateVerses()->save();
-            }
-        }
-        return $created_playlist_items;
+
+        return $this->playlist_service->createPlaylistItems($playlist->id, $playlist_items_object);
     }
 
     /**
@@ -310,7 +396,9 @@ class PlaylistsController extends APIController
 
         // Validate Project / User Connection
         if (!empty($user) && !$this->compareProjects($user->id, $this->key)) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $playlist = $this->getPlaylist($user, $playlist_id);
@@ -364,10 +452,13 @@ class PlaylistsController extends APIController
 
         // Validate Project / User Connection
         if (!empty($user) && !$this->compareProjects($user->id, $this->key)) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
-        $playlist = $this->getPlaylist($user, $playlist_id);
+        $user_id = $user ? $user->id : 0;
+        $playlist = Playlist::withUserAndItemsById($playlist_id, $user_id)->first();
 
         if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
@@ -375,17 +466,26 @@ class PlaylistsController extends APIController
         
         if ($show_text && isset($playlist->items)) {
             $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist_id);
-            
+
             foreach ($playlist->items as $item) {
                 $item->verse_text = $item->getVerseText($playlist_text_filesets);
                 $item->item_timestamps = $item->getTimestamps();
             }
         }
 
-        $playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $playlist_id, 'v' => $this->v, 'key' => $this->key]);
-        $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist_id)->sum('duration');
+        $playlist->total_duration = $playlist->items->sum('duration');
 
-        return $this->reply($playlist);
+        return $this->reply(fractal(
+            $playlist,
+            new PlaylistTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     /**
@@ -420,7 +520,9 @@ class PlaylistsController extends APIController
         $user_is_member = $this->compareProjects($user->id, $this->key);
 
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $playlist = Playlist::with('items')
@@ -460,7 +562,19 @@ class PlaylistsController extends APIController
         }
 
         $playlist = $this->getPlaylist($user, $playlist_id);
-        return $this->reply($playlist);
+        $playlist->total_duration = $playlist->items->sum('duration');
+
+        return $this->reply(fractal(
+            $playlist,
+            new PlaylistTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     /**
@@ -491,13 +605,17 @@ class PlaylistsController extends APIController
         $user_is_member = $this->compareProjects($user->id, $this->key);
 
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $playlist = Playlist::where('user_id', $user->id)->where('id', $playlist_id)->first();
 
         if (!$playlist) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)
+                ->replyWithError('Playlist Not Found');
         }
 
         $playlist->delete();
@@ -530,13 +648,17 @@ class PlaylistsController extends APIController
         $user_is_member = $this->compareProjects($user->id, $this->key);
 
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $playlist = Playlist::where('id', $playlist_id)->first();
 
         if (!$playlist) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)
+                ->replyWithError('Playlist Not Found');
         }
 
         $follow = checkBoolean('follow');
@@ -544,8 +666,8 @@ class PlaylistsController extends APIController
 
         if ($follow) {
             $follower = PlaylistFollower::firstOrNew([
-                'user_id'               => $user->id,
-                'playlist_id'               => $playlist->id
+                'user_id'     => $user->id,
+                'playlist_id' => $playlist->id
             ]);
             $follower->save();
         } else {
@@ -555,7 +677,20 @@ class PlaylistsController extends APIController
         }
 
         $playlist = $this->getPlaylist($user, $playlist_id);
-        return $this->reply($playlist);
+
+        $playlist->total_duration = $playlist->items->sum('duration');
+
+        return $this->reply(fractal(
+            $playlist,
+            new PlaylistTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     /**
@@ -608,7 +743,9 @@ class PlaylistsController extends APIController
         $user_is_member = $this->compareProjects($user->id, $this->key);
 
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $playlist = Playlist::with('items')
@@ -617,24 +754,43 @@ class PlaylistsController extends APIController
             ->where('id', $playlist_id)->first();
 
         if (!$playlist) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Not Found');
         }
 
         $playlist_items = json_decode($request->getContent());
         $single_item = checkParam('fileset_id');
 
-        if ($single_item) {
+        if (!$single_item && !is_array($playlist_items)) {
+            return $this->setStatusCode(SymfonyResponse::HTTP_BAD_REQUEST)->replyWithError("fileset_id is required");
+        }
+
+        if ($single_item && !is_array($playlist_items)) {
             $playlist_items = [$playlist_items];
         }
-        $created_playlist_items = $this->createPlaylistItems($playlist, $playlist_items);
 
-        return $this->reply($single_item ? $created_playlist_items[0] : $created_playlist_items);
+        $created_playlist_items = !empty($playlist_items)
+            ? $this->createPlaylistItems($playlist, $playlist_items)
+            : [];
+
+        $final_response = fractal(
+            $created_playlist_items,
+            new PlaylistItemsTransformer(),
+            new ArraySerializer()
+        );
+
+        if ($single_item) {
+            $final_response_array = $final_response->toArray();
+
+            if (!empty($final_response_array)) {
+                return $final_response_array[0];
+            }
+        }
+
+        return $final_response;
     }
 
     private function createPlaylistItems($playlist, $playlist_items)
     {
-        $created_playlist_items = [];
-
         $current_items_size = sizeof($playlist->items);
         $new_items_size = sizeof($playlist_items);
 
@@ -643,60 +799,7 @@ class PlaylistsController extends APIController
             $playlist_items = array_slice($playlist_items, 0, $allowed_size);
         }
 
-        foreach ($playlist_items as $playlist_item) {
-            $verses = $playlist_items->verses ?? 0;
-            $playlist_item = (object) $playlist_item;
-            $created_playlist_item = PlaylistItems::create([
-                'playlist_id'       => $playlist->id,
-                'fileset_id'        => $playlist_item->fileset_id,
-                'book_id'           => $playlist_item->book_id,
-                'chapter_start'     => $playlist_item->chapter_start,
-                'chapter_end'       => $playlist_item->chapter_end,
-                'verse_start'       => $playlist_item->verse_start ?? null,
-                'verse_end'         => $playlist_item->verse_end ?? null,
-                'verses'            => $verses
-            ]);
-            $created_playlist_item->calculateDuration()->save();
-            if (!$verses) {
-                $created_playlist_item->calculateVerses()->save();
-            }
-            $created_playlist_items[] = $created_playlist_item;
-        }
-
-        return $created_playlist_items;
-    }
-
-    public function createTranslatedPlaylistItems($playlist, $playlist_items)
-    {
-        $playlist_items_to_create = [];
-        $order = 1;
-        foreach ($playlist_items as $playlist_item) {
-            $playlist_item = (object) $playlist_item;
-            $playlist_item_data = [
-                'playlist_id'       => $playlist->id,
-                'fileset_id'        => $playlist_item->fileset_id,
-                'book_id'           => $playlist_item->book_id,
-                'chapter_start'     => $playlist_item->chapter_start,
-                'chapter_end'       => $playlist_item->chapter_end,
-                'verse_start'       => $playlist_item->verse_start ?? null,
-                'verse_end'         => $playlist_item->verse_end ?? null,
-                'verses'            => $playlist_items->verses ?? 0,
-                'order_column'      => $order
-            ];
-            $playlist_items_to_create[] = $playlist_item_data;
-            $order += 1;
-        }
-
-        PlaylistItems::insert($playlist_items_to_create);
-        $new_items = PlaylistItems::where('playlist_id', $playlist->id)->orderBy('order_column')->get();
-        $created_playlist_items = [];
-        foreach ($new_items as $key => $playlist_item) {
-            $playlist_item->translated_id = $playlist_items[$key]->translated_id;
-
-            $created_playlist_items[] = $playlist_item;
-        }
-
-        return $created_playlist_items;
+        return $this->playlist_service->createPlaylistItems($playlist->id, $playlist_items);
     }
 
     /**
@@ -727,49 +830,61 @@ class PlaylistsController extends APIController
      */
     public function completeItem(Request $request, $item_id)
     {
-        // Validate Project / User Connection
-        $user = $request->user();
-        $user_is_member = $this->compareProjects($user->id, $this->key);
-
-        if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
-        }
-
-        $playlist_item = PlaylistItems::where('id', $item_id)->first();
-
-        if (!$playlist_item) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Item Not Found');
-        }
-
-        $user_plan = UserPlan::join('plans', function ($join) use ($user) {
-            $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
-        })
-            ->join('plan_days', function ($join) use ($playlist_item) {
-                $join->on('plan_days.plan_id', '=', 'plans.id')->where('plan_days.playlist_id', $playlist_item->playlist_id);
-            })
-            ->select('user_plans.*')
-            ->first();
-
-        if (!$user_plan) {
-            return $this->setStatusCode(404)->replyWithError('User Plan Not Found');
-        }
-
         $complete = checkParam('complete') ?? true;
-        $complete = $complete && $complete !== 'false';
 
-        if ($complete) {
-            $playlist_item->complete();
-        } else {
-            $playlist_item->unComplete();
-        }
+        return DB::transaction(function () use ($request, $item_id, $complete) {
+            // Validate Project / User Connection
+            $user = $request->user();
+            $user_is_member = $this->compareProjects($user->id, $this->key);
 
-        $result = $complete ? 'completed' : 'not completed';
-        $user_plan->calculatePercentageCompleted()->save();
+            if (!$user_is_member) {
+                return $this
+                    ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                    ->replyWithError(trans('api.projects_users_not_connected'));
+            }
 
-        return $this->reply([
-            'percentage_completed' => $user_plan->percentage_completed,
-            'message' => 'Playlist Item ' . $result
-        ]);
+            $playlist_item = PlaylistItems::where('id', $item_id)->first();
+
+            if (!$playlist_item) {
+                return $this
+                    ->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)
+                    ->replyWithError('Playlist Item Not Found');
+            }
+
+            $user_plan = UserPlan::getByPlaylistIdAndUserId($playlist_item->playlist_id, $user->id);
+
+            if (!$user_plan) {
+                return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('User Plan Not Found');
+            }
+
+            $result = null;
+
+            try {
+                $complete = $complete && $complete !== 'false';
+
+                if ($complete) {
+                    $playlist_item->complete();
+                } else {
+                    $playlist_item->unComplete();
+                }
+            } catch(QueryException $e) {
+                // Catch only the error code for a duplicate entry
+                if ($e->getCode() == MySQLErrorCode::DUPLICATE_ENTRY) {
+                    \Log::info("Exception to complete Playlist Item [user: {$user->id} item id: {$item_id}]");
+                }  else {
+                    throw $e;
+                }
+            }
+
+            $result = $complete ? 'completed' : 'not completed';
+
+            $user_plan->calculatePercentageCompleted()->save();
+
+            return $this->reply([
+                'percentage_completed' => (int) $user_plan->percentage_completed,
+                'message' => 'Playlist Item ' . $result
+            ]);
+        });
     }
 
     /**
@@ -815,7 +930,9 @@ class PlaylistsController extends APIController
 
         // Validate Project / User Connection
         if ($compare_projects && !empty($user) && !$this->compareProjects($user->id, $this->key)) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $show_details = checkBoolean('show_details');
@@ -825,93 +942,35 @@ class PlaylistsController extends APIController
         });
 
         if (!$bible) {
-            return $this->setStatusCode(404)->replyWithError('Bible Not Found');
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Bible Not Found');
         }
 
-        $playlist = $this->getPlaylist(false, $playlist_id);
+        $playlist = Playlist::findOne((int) $playlist_id);
+
         if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Not Found');
         }
 
-        $audio_fileset_types = collect(['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama']);
-        $bible_audio_filesets = $bible->filesets->whereIn('set_type_code', $audio_fileset_types);
-
-        $translated_items = [];
-        $metadata_items = [];
-        $total_translated_items = 0;
-        if (isset($playlist->items)) {
-            foreach ($playlist->items as $item) {
-                if (isset($item->fileset, $item->fileset->set_type_code)) {
-                    $item->fileset = formatFilesetMeta($item->fileset);
-                    $ordered_types = $audio_fileset_types->filter(function ($type) use ($item) {
-                        return $type !== $item->fileset->set_type_code;
-                    })->prepend($item->fileset->set_type_code);
-
-                    $preferred_fileset = $ordered_types->map(function ($type) use ($bible_audio_filesets, $item) {
-                        return $this->getFileset($bible_audio_filesets, $type, $item->fileset->set_size_code);
-                    })->firstWhere('id');
-                    $has_translation = isset($preferred_fileset);
-                    $is_streaming = true;
-
-                    if ($has_translation) {
-                        $item->fileset_id = $preferred_fileset->id;
-                        $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' || $preferred_fileset->set_type_code === 'audio_drama_stream';
-                        $translated_items[] = (object)[
-                            'translated_id' => $item->id,
-                            'fileset_id' => $item->fileset_id,
-                            'book_id' => $item->book_id,
-                            'chapter_start' => $item->chapter_start,
-                            'chapter_end' => $item->chapter_end,
-                            'verse_start' => $is_streaming ? $item->verse_start : null,
-                            'verse_end' => $is_streaming ? $item->verse_end : null,
-                        ];
-                        $total_translated_items += 1;
-                    }
-                    $metadata_items[] = $item;
-                }
-            }
-            $translated_percentage = sizeof($playlist->items) ? $total_translated_items / sizeof($playlist->items) : 0;
-        }
-        $playlist_data = [
-            'user_id'           => $user->id,
-            'name'              => $playlist->name . ': ' . $bible->language->name . ' ' . substr($bible->id, -3),
-            'external_content'  => $playlist->external_content,
-            'featured'          => false,
-            'draft'             => true,
-            'plan_id'           => $plan_id
-        ];
-
-
-        $playlist = Playlist::create($playlist_data);
-        $items = collect($this->createTranslatedPlaylistItems($playlist, $translated_items));
-
-
-        foreach ($metadata_items as $item) {
-            $new_item = $items->first(function ($new_item) use ($item) {
-                return $new_item->translated_id === $item->id;
-            });
-            if ($new_item) {
-                unset($new_item->translated_id);
-                $item->translation_item = $new_item;
-            }
-        }
-
-        $playlist = $this->getPlaylist($user, $playlist->id);
-        $playlist->path = route('v4_internal_playlists.hls', ['playlist_id'  => $playlist->id, 'v' => $this->v, 'key' => $this->key]);
-        $playlist->total_duration = PlaylistItems::where('playlist_id', $playlist->id)->sum('duration');
+        $playlist = $this->playlist_service->translate($playlist_id, $bible, $user->id);
 
         if ($show_details && isset($playlist->items)) {
-            $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist->id);
             foreach ($playlist->items as $item) {
-                $item->verse_text = $item->getVerseText($playlist_text_filesets);
+                $item->verse_text = $item->getVerseText([]);
                 $item->item_timestamps = $item->getTimestamps();
             }
         }
 
-        $playlist->translation_data = $metadata_items;
-        $playlist->translated_percentage = $translated_percentage * 100;
-
-        return $this->reply($playlist);
+        return $this->reply(fractal(
+            $playlist,
+            new PlaylistTransformer(
+                [
+                    'user' => $user,
+                    'v' => $this->v,
+                    'key' => $this->key
+                ]
+            ),
+            new ArraySerializer()
+        ));
     }
 
     /**
@@ -937,13 +996,15 @@ class PlaylistsController extends APIController
         $user_is_member = $this->compareProjects($user->id, $this->key);
 
         if (!$user_is_member) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $playlist = Playlist::where('user_id', $user->id)->where('id', $playlist_id)->first();
 
         if (!$playlist) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Not Found');
         }
 
         $draft = checkBoolean('draft');
@@ -956,86 +1017,56 @@ class PlaylistsController extends APIController
 
     public function getFileset($filesets, $type, $size)
     {
-        $available_filesets = [];
-
-        // This code avoids using filesets that have audio, but are not usable for translations i.e opus
-        $valid_filesets = $filesets->filter(function ($fileset) {
-            $valid_item = isset($fileset->set_type_code);
-            $codec_meta = $this->getCodecMetadata($fileset);
-            $is_mp3 = isset($codec_meta['description']) && $codec_meta['description'] === 'mp3';
-            $is_audio_stream =
-              str_contains($fileset->set_type_code, 'audio') &&
-              str_contains($fileset->set_type_code, 'stream');
-            $is_audio_fileset = $is_mp3 || $is_audio_stream;
-            return ($valid_item && $is_audio_fileset);
-        });
-        $valid_filesets = collect($valid_filesets);
-
-        $complete_fileset = $valid_filesets->where('set_type_code', $type)->where('set_size_code', 'C')->first();
-        if ($complete_fileset) {
-            $available_filesets[] = $complete_fileset;
-        }
-
-        $size_filesets = $valid_filesets->where('set_type_code', $type)->where('set_size_code', $size)->first();
-        if ($size_filesets) {
-            $available_filesets[] = $size_filesets;
-        }
-
-        $size__partial_filesets = $valid_filesets->filter(function ($item) use ($type, $size) {
-            $valid_item = isset($item->set_type_code) && isset($item->set_size_code);
-            return (
-                $valid_item &&
-                is_string($size) &&
-                $item->set_type_code === $type &&
-                strpos($item->set_size_code, $size . 'P') !== false
-            );
-        })->first();
-        if ($size__partial_filesets) {
-            $available_filesets[] = $size__partial_filesets;
-        }
-
-        $partial_fileset = $valid_filesets->where('set_type_code', $type)->where('set_size_code', 'P')->first();
-        if ($partial_fileset) {
-            $available_filesets[] = $partial_fileset;
-        }
-
-        if (!empty($available_filesets)) {
-            $available_filesets =
-                collect($available_filesets)->sortBy(function ($item) {
-                    return strpos($item->id, '16');
-                });
-            
-            return $available_filesets->first();
-        }
-
-        return false;
+        return $this->playlist_service->getFileset($filesets, $type, $size);
     }
 
-    private function getCodecMetadata($fileset)
-    {
-        if (isset($fileset->meta)) {
-            $codec_meta = $fileset->meta->filter(function ($metadata) {
-                return $metadata['name'] === 'codec';
-            })->first();
-
-            return $codec_meta;
-        }
-        return null;
-    }
-
-    public function itemHls(Response $response, $playlist_item_id, $book_id = null, $chapter = null, $verse_start = null, $verse_end = null)
-    {
+    /**
+     *  @OA\Post(
+     *     path="/playlists/{fileset_id}-{book_id}-{chapter}-{verse_start}-{verse_end}/item-hls",
+     *     path="/playlists/{playlist_item_id}/item-hls",
+     *     tags={"Playlists"},
+     *     summary="Get item hls.",
+     *     operationId="v4_internal_playlists_item.hls",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="fileset_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id")),
+     *     @OA\Parameter(name="book_id", in="path", @OA\Schema(ref="#/components/schemas/Book/properties/id")),
+     *     @OA\Parameter(name="chapter", in="path", @OA\Schema(ref="#/components/schemas/BibleFile/properties/chapter_start")),
+     *     @OA\Parameter(name="verse_start", in="path", @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_start")),
+     *     @OA\Parameter(name="verse_end", in="path", @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_end")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
+     *     )
+     * )
+     */
+    public function itemHls(
+        Response $response,
+        $playlist_item_id,
+        $book_id = null,
+        $chapter = null,
+        $verse_start = null,
+        $verse_end = null
+    ) {
         $download = checkBoolean('download');
 
-        $playlist_item = $this->getPlaylistItemFromLocation($playlist_item_id, $book_id, $chapter, $verse_start, $verse_end);
+        $playlist_item = $this->getPlaylistItemFromLocation(
+            $playlist_item_id,
+            $book_id,
+            $chapter,
+            $verse_start,
+            $verse_end
+        );
         if (!$playlist_item) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Item Not Found');
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Item Not Found');
         }
 
-        $hls_playlist = $this->getHlsPlaylist($response, [$playlist_item], $download);
+        $hls_playlist = $this->getHlsPlaylist([$playlist_item], $download);
 
         if ($download) {
-            return $this->reply(['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]);
+            return $this->reply(
+                ['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]
+            );
         }
 
         return response($hls_playlist['file_content'], 200, [
@@ -1077,7 +1108,7 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
         }
 
-        $hls_playlist = $this->getHlsPlaylist($response, $playlist->items, $download);
+        $hls_playlist = $this->getHlsPlaylist($playlist->items, $download);
 
         if ($download) {
             return $this->reply(['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]);
@@ -1096,18 +1127,37 @@ class PlaylistsController extends APIController
         foreach ($bible_files as $bible_file) {
             if (isset($bible_file->streamBandwidth) && isset($bible_file->fileset)) {
                 $currentBandwidth = $bible_file->streamBandwidth->first();
-                $transportStream = sizeof($currentBandwidth->transportStreamBytes) ? $currentBandwidth->transportStreamBytes : $currentBandwidth->transportStreamTS;
+                $transportStream = $currentBandwidth->transportStreamBytes &&
+                    sizeof($currentBandwidth->transportStreamBytes) > 0
+                    ? $currentBandwidth->transportStreamBytes
+                    : $currentBandwidth->transportStreamTS;
     
                 // Fix verse audio stream starting from different initial verses causing audio missmatch
                 if (isset($item->verse_end) && isset($item->verse_start)) {
                     if (isset($transportStream[0]->timestamp)) {
-                        $timestamps_count = BibleFileTimestamp::where('bible_file_id', $transportStream[0]->timestamp->bible_file_id)->count();
-                        if ($timestamps_count === $transportStream->count() && $transportStream[0]->timestamp->verse_start !== 0) {
+                        $timestamps_count = BibleFileTimestamp::where(
+                            'bible_file_id',
+                            $transportStream[0]->timestamp->bible_file_id
+                        )->count();
+                        if ($timestamps_count === $transportStream->count() &&
+                            (int) $transportStream[0]->timestamp->verse_start !== 0
+                        ) {
                             $transportStream->prepend((object)[]);
                         }
                     }
-    
-                    $transportStream = $this->processVersesOnTransportStream($item, $transportStream, $bible_file);
+
+                    if ($this->hasTransportStreamVerseRange($transportStream)) {
+                        $transportStream = $this->fillVerseRangeOnTransportStream($transportStream);
+                    }
+
+                    $transportStream = PlaylistItems::processVersesOnTransportStream(
+                        $item->chapter_start,
+                        $item->chapter_end,
+                        (int) $item->verse_start,
+                        (int) $item->verse_end,
+                        $transportStream,
+                        $bible_file
+                    );
                 }
     
                 $fileset = $bible_file->fileset;
@@ -1120,7 +1170,7 @@ class PlaylistsController extends APIController
                         $fileset = $stream->timestamp->bibleFile->fileset;
                         $stream->file_name = $stream->timestamp->bibleFile->file_name;
                     }
-                    $bible_path = $bible_file->fileset->bible->first()->id;
+                    $bible_path = $fileset->bible->first()->id;
                     $file_path = 'audio/' . $bible_path . '/' . $fileset->id . '/' . $stream->file_name;
                     if (!isset($signed_files[$file_path])) {
                         $signed_files[$file_path] = $this->signedUrl($file_path, $fileset->asset_id, $transaction_id);
@@ -1167,33 +1217,63 @@ class PlaylistsController extends APIController
         return (object) ['hls_items' => $hls_items, 'signed_files' => $signed_files, 'durations' => $durations];
     }
 
-    private function processVersesOnTransportStream($item, $transportStream, $bible_file)
+    /**
+     * The function returns the result of a comparison between the "verse_start" and "verse_end" properties of
+     * the "timestamp" that belongs to a transport_stream record. If they are not equal, the function returns
+     * true, indicating that the transport stream has a range of verses. If they are equal, the function returns
+     * false, indicating that the transport stream has a single verse.
+     *
+     * @param Collection $transport_stream
+     *
+     * @return bool
+     */
+    private function hasTransportStreamVerseRange(Collection $transport_stream) : bool
     {
-        if ($item->chapter_end  === $item->chapter_start) {
-            $transportStream = $transportStream->splice(1, $item->verse_end)->all();
-            return collect($transportStream)->slice($item->verse_start - 1)->all();
-        }
-
-        $transportStream = $transportStream->splice(1)->all();
-        if ($bible_file->chapter_start === $item->chapter_start) {
-            return collect($transportStream)->slice($item->verse_start - 1)->all();
-        }
-        if ($bible_file->chapter_start === $item->chapter_end) {
-            return collect($transportStream)->splice(0, $item->verse_end)->all();
-        }
-
-        return $transportStream;
+        return $transport_stream->search(function ($stream) {
+            // To ensure accurate processing, it is important to validate the
+            // stream object as it may be an empty object that has been included
+            // to imitate a transport stream linked with a timestamp with
+            // verse_start set to 0
+            $timestamp = optional($stream)->timestamp;
+            return $timestamp &&
+                !is_null($timestamp->verse_end) &&
+                (int)$timestamp->verse_start !== (int)$timestamp->verse_end;
+        });
     }
 
-    private function getHlsPlaylist($response, $items, $download)
+    private function fillVerseRangeOnTransportStream(Collection $transport_stream) : Collection
+    {
+        $new_transport_stream = collect();
+
+        foreach ($transport_stream as $stream_idx => $stream) {
+            $new_transport_stream->push($stream);
+            $timestamp = optional($stream)->timestamp;
+            $next_timestamp = optional($transport_stream->get($stream_idx + 1))->timestamp;
+
+            if ($timestamp && $next_timestamp) {
+                $current_verse_start = (int)$timestamp->verse_start;
+                $next_timestamp_verse_start = (int)$next_timestamp->verse_start;
+                $diff_between_verses = $next_timestamp_verse_start - $current_verse_start;
+
+                if ($diff_between_verses > 1) {
+                    for ($idx = 1; $idx < $diff_between_verses; $idx++) {
+                        // To fill the gap, it will utilize the current transport_stream record
+                        // as it is likely that the transport_stream for the current timestamp
+                        // includes both the audio of the current and missed timestamps
+                        $new_transport_stream->push($stream);
+                    }
+                }
+            }
+        }
+
+        return $new_transport_stream;
+    }
+
+    private function getHlsPlaylist($items, $download)
     {
         $signed_files = [];
         $transaction_id = random_int(0, 10000000);
-        try {
-            apiLogs(request(), $response->getStatusCode(), $transaction_id);
-        } catch (\Exception $e) {
-            Log::error($e);
-        }
+
         $durations = [];
         $hls_items = [];
 
@@ -1204,7 +1284,9 @@ class PlaylistsController extends APIController
                 if (!Str::contains($fileset->set_type_code, 'audio')) {
                     continue;
                 }
-                $bible_files = BibleFile::with('streamBandwidth.transportStreamTS')->with('streamBandwidth.transportStreamBytes')->where([
+                $bible_files = BibleFile::with('streamBandwidth.transportStreamTS')
+                ->with('streamBandwidth.transportStreamBytes.timestamp.bibleFile')
+                ->where([
                     'hash_id' => $fileset->hash_id,
                     'book_id' => $item->book_id,
                 ])
@@ -1290,32 +1372,14 @@ class PlaylistsController extends APIController
 
     public function getPlaylist($user, $playlist_id)
     {
-        $select = ['user_playlists.*', DB::Raw('IF(playlists_followers.user_id, true, false) as following')];
-        $playlist = Playlist::with('items')
-            ->with('user')
-            ->leftJoin('playlists_followers as playlists_followers', function ($join) use ($user) {
-                $user_id = empty($user) ? 0 : $user->id;
-                $join->on('playlists_followers.playlist_id', '=', 'user_playlists.id')->where('playlists_followers.user_id', $user_id);
-            })
-            ->where('user_playlists.id', $playlist_id)
-            ->select($select)
-            ->first();
+        $user_id = empty($user) ? 0 : $user->id;
+
+        $playlist = Playlist::withUserAndItemsById($playlist_id, $user_id)->first();
 
         if (!$playlist) {
-            return $this->setStatusCode(404)->replyWithError('No playlist could be found for: ' . $playlist_id);
-        }
-
-        if (isset($playlist->items)) {
-            $playlist->items = $playlist->items->map(function ($item) {
-                if (isset($item->fileset, $item->fileset->bible)) {
-                    $bible = $item->fileset->bible->first();
-                    if ($bible) {
-                        $item->bible_id = $bible->id;
-                    }
-                }
-                unset($item->fileset);
-                return $item;
-            });
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)
+                ->replyWithError('No playlist could be found for: ' . $playlist_id);
         }
 
         return $playlist;
@@ -1353,6 +1417,7 @@ class PlaylistsController extends APIController
                 $fileset_text_info[$fileset] = $text_filesets[$bible_id] ?? null;
             }
         }
+
         return $fileset_text_info;
     }
 
@@ -1366,17 +1431,18 @@ class PlaylistsController extends APIController
         $fileset = BibleFileset::whereId($fileset_id)->first();
 
         if (!$fileset) {
-            return $this->setStatusCode(404)->replyWithError('Fileset Not Found');
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Fileset Not Found');
         }
 
         $playlist_item = new PlaylistItems();
+        $playlist_item->setRelation('fileset', $fileset);
         $playlist_item->setAttribute('id', rand());
         $playlist_item->setAttribute('fileset_id', $fileset_id);
         $playlist_item->setAttribute('book_id', $book_id);
         $playlist_item->setAttribute('chapter_start', $chapter);
         $playlist_item->setAttribute('chapter_end', $chapter);
         $playlist_item->setAttribute('verse_start', $verse_start);
-        $playlist_item->setAttribute('verse_end',  $verse_end);
+        $playlist_item->setAttribute('verse_end', $verse_end);
         $playlist_item->calculateVerses();
         $playlist_item->calculateDuration();
 
@@ -1386,5 +1452,224 @@ class PlaylistsController extends APIController
             'duration' => $playlist_item->duration,
             'timestamps' => $playlist_item->getTimestamps(),
         ]);
+    }
+
+    /**
+     *
+     * @OA\Get(
+     *     path="/playlists/{playlist_id}/{book_id}/notes",
+     *     tags={"Playlists", "Notes"},
+     *     summary="Get Note records related to playlist and book",
+     *     operationId="v4_internal_playlists.notes",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(
+     *          name="playlist_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Playlist/properties/id")
+     *     ),
+     *     @OA\Parameter(
+     *          name="bookd_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_notes")
+     *         )
+     *     ),
+     * )
+     *
+     * @param Request $request
+     * @param int $playlist_id
+     * @param string $book_id
+     *
+     * @return JsonResponse
+     */
+    public function notes(Request $request, int $playlist_id, string $book_id) : JsonResponse
+    {
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $notes = Note::select([
+            'user_notes.id',
+            'user_notes.user_id',
+            'user_notes.bible_id',
+            'user_notes.book_id',
+            'user_notes.chapter',
+            'user_notes.verse_start',
+            'user_notes.verse_sequence',
+            'user_notes.verse_end',
+            'user_notes.notes',
+        ])
+        ->whereBelongPlaylistAndBook($playlist_id, $book_id)
+        ->where('user_notes.user_id', $user->id)
+        ->with('tags')
+        ->get();
+
+        return $this->reply(fractal(
+            $notes,
+            new PlaylistNotesTransformer(),
+        ));
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/playlists/{playlist_id}/{book_id}/highlights",
+     *     tags={"Playlists", "Highlights"},
+     *     summary="Get Highlight records related to playlist and book",
+     *     operationId="v4_internal_playlists.highlights",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(
+     *          name="playlist_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Playlist/properties/id")
+     *     ),
+     *     @OA\Parameter(
+     *          name="bookd_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
+     *     ),
+     *     @OA\Parameter(
+     *          name="prefer_color",
+     *          in="query",
+     *          @OA\Schema(type="string",default="rgba",enum={"hex","rgba","rgb","full"}),
+     *          description="Choose the format that highlighted colors will be returned in. If no color
+     *          is not specified than the default is a six letter hexadecimal color."
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_highlights")
+     *         )
+     *     )
+     * )
+     *
+     * @param Request $request
+     * @param int $playlist_id
+     * @param string $book_id
+     *
+     * @return JsonResponse
+     */
+    public function highlights(Request $request, int $playlist_id, string $book_id) : JsonResponse
+    {
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $notes = Highlight::select([
+            'user_highlights.id',
+            'user_highlights.user_id',
+            'user_highlights.bible_id',
+            'user_highlights.book_id',
+            'user_highlights.chapter',
+            'user_highlights.verse_start',
+            'user_highlights.verse_end',
+            'user_highlights.verse_sequence',
+            'user_highlights.highlight_start',
+            'user_highlights.highlighted_words',
+            'user_highlights.highlighted_color',
+        ])
+        ->whereBelongPlaylistAndBook($playlist_id, $book_id)
+        ->where('user_highlights.user_id', $user->id)
+        ->with(['tags', 'color'])
+        ->get();
+
+        return $this->reply(fractal(
+            $notes,
+            new PlaylistHighlightsTransformer()
+        ));
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/playlists/{playlist_id}/{book_id}/bookmarks",
+     *     tags={"Playlists"},
+     *     summary="Get Bookmarks records related to playlist and book",
+     *     operationId="v4_internal_playlists.bookmarks",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(
+     *          name="playlist_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Playlist/properties/id")
+     *     ),
+     *     @OA\Parameter(
+     *          name="bookd_id",
+     *          in="path",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
+     *     ),
+     *     @OA\Parameter(
+     *          name="prefer_color",
+     *          in="query",
+     *          @OA\Schema(type="string",default="rgba",enum={"hex","rgba","rgb","full"}),
+     *          description="Choose the format that highlighted colors will be returned in. If no color
+     *          is not specified than the default is a six letter hexadecimal color."
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(
+     *              mediaType="application/json",
+     *              @OA\Schema(ref="#/components/schemas/v4_internal_playlist_user_bookmarks")
+     *         )
+     *     ),
+     * )
+     *
+     * @param Request $request
+     * @param int $playlist_id
+     * @param string $book_id
+     *
+     * @return JsonResponse
+     */
+    public function bookmarks(Request $request, int $playlist_id, string $book_id) : JsonResponse
+    {
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)
+                ->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $notes = Bookmark::select([
+            'user_bookmarks.id',
+            'user_bookmarks.user_id',
+            'user_bookmarks.bible_id',
+            'user_bookmarks.book_id',
+            'user_bookmarks.chapter',
+            'user_bookmarks.verse_start',
+            'user_bookmarks.verse_sequence',
+        ])
+        ->whereBelongPlaylistAndBook($playlist_id, $book_id)
+        ->where('user_bookmarks.user_id', $user->id)
+        ->with('tags')
+        ->get();
+
+        return $this->reply(fractal(
+            $notes,
+            new PlaylistBookmarksTransformer()
+        ));
     }
 }

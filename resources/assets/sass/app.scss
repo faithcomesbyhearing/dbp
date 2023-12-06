@@ -101,3 +101,9 @@ small {
 .hit time                     {position: absolute;bottom:5px;right:5px}
 .hit .iso                     {position: absolute;bottom:5px;left:5px}
 .hit em                       {font-style: normal;background:$primary;color:#FFF}
+
+.breadcrumb {
+  font-size: 1rem;
+  white-space: nowrap;
+  background-color: #757763;
+}

@@ -46,7 +46,8 @@ class LanguageTransformer extends BaseTransformer
                     'language_family_iso_1'     => ($language->parent ? $language->parent->iso1 : $language->iso1) ?? '',
                     'media'                     => ['text'],
                     'delivery'                  => ['mobile', 'web', 'subsplash'],
-                    'resolution'                => []
+                    'resolution'                => [],
+                    'language_rolv_code'        => $language->rolv_code
                 ];
 
             default:
@@ -60,11 +61,30 @@ class LanguageTransformer extends BaseTransformer
                     'language_iso_1'       => $language->iso1,
                     'language_iso_name'    => $language->name,
                     'language_family_code' => $language->iso,
+                    'language_rolv_code'   => $language->rolv_code
                 ];
         }
     }
 
     /**
+     * @OA\Response(
+     *   response="v4_languages.one",
+     *   description="The Full alphabet return for the single alphabet route",
+     *   @OA\MediaType(
+     *     mediaType="application/json",
+     *     @OA\Schema(ref="#/components/schemas/Language")
+     *   )
+     * )
+     *
+     * @OA\Response(
+     *   response="v4_languages.all",
+     *   description="The minimized language return for the single language route",
+     *   @OA\MediaType(
+     *     mediaType="application/json",
+     *     @OA\Schema(ref="#/components/schemas/Language")
+     *   )
+     * )
+     *
      * @param Language $language
      *
      * @return array
@@ -72,21 +92,16 @@ class LanguageTransformer extends BaseTransformer
     public function transformForV4(Language $language)
     {
         /**
-         * @OA\Response(
-         *   response="v4_languages.one",
-         *   description="The Full alphabet return for the single alphabet route",
-         *   @OA\MediaType(
-         *     mediaType="application/json",
-         *     @OA\Schema(ref="#/components/schemas/Language")
-         *   )
-         * )
+         * response="v4_languages.one"
          */
         switch ($this->route) {
             case 'v4_languages.one':
                 return [
                     'id'                   => $language->id,
                     'name'                 => $language->name,
-                    'description'          => optional($language->translations->where('iso_translation', $this->i10n)->first())->description,
+                    'description'          => optional(
+                        $language->translations->where('iso_translation', $this->i10n)->first()
+                    )->description,
                     'autonym'              => $language->autonym ? $language->autonym->name : '',
                     'glotto_id'            => $language->glotto_id,
                     'iso'                  => $language->iso,
@@ -96,23 +111,29 @@ class LanguageTransformer extends BaseTransformer
                     'country_id'           => $language->country_id,
                     'country_name'         => $language->primaryCountry->name ?? '',
                     'codes'                => $language->codes->pluck('code', 'source') ?? '',
-                    'alternativeNames'     => array_unique(Arr::flatten($language->translations->pluck('name')->ToArray())) ?? '',
+                    'alternativeNames'     => array_unique(
+                        Arr::flatten($language->translations->pluck('name')->ToArray())
+                    ) ?? '',
                     'dialects'             => $language->dialects->pluck('name') ?? '',
                     'classifications'      => $language->classifications->pluck('name', 'classification_id') ?? '',
                     'bibles'               => $language->bibles,
-                    'resources'            => $language->resources
+                    'resources'            => $language->resources,
+                    'rolv_code'            => $language->rolv_code
                 ];
 
-                /**
-                 * @OA\Response(
-                 *   response="v4_languages.all",
-                 *   description="The minimized language return for the single language route",
-                 *   @OA\MediaType(
-                 *     mediaType="application/json",
-                 *     @OA\Schema(ref="#/components/schemas/Language")
-                 *   )
-                 * )
-                 */
+            /**
+             * response="v4_languages.all"
+             */
+            case 'v4_languages.search':
+                return [
+                    'id'         => $language->id,
+                    'glotto_id'  => $language->glotto_id,
+                    'iso'        => $language->iso,
+                    'name'       => $language->name ?? $language->backup_name,
+                    'autonym'    => $language->autonym,
+                    'bibles'     => $language->bibles->count(),
+                    'rolv_code'  => $language->rolv_code
+                ];
             default:
             case 'v4_languages.all':
                 $show_bibles = checkBoolean('show_bibles');
@@ -124,6 +145,7 @@ class LanguageTransformer extends BaseTransformer
                     'autonym'    => $language->autonym,
                     'bibles'     => $show_bibles ? $language->bibles : $language->bibles->count(),
                     'filesets'   => $language->filesets_count,
+                    'rolv_code'  => $language->rolv_code
                 ];
                 
                 if ($language->country_population) {

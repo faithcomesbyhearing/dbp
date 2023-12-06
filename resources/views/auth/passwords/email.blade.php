@@ -12,14 +12,16 @@
         <div class="columns">
             <form class="column is-half is-offset-one-quarter" method="POST" action="{{ route('password.email') }}">
                 {{ csrf_field() }}
-                <div class="box">
+                <div class="box column is-12">
                     <input class="input" type="hidden" name="project_id" value="{{ $project->id ?? null }}" required>
                     <div class="field">
                         <label class="label" for="email">{{ __('E-Mail Address') }}</label>
                         <div class="control"><input class="input" type="email" autocomplete="email" name="email" value="{{ old('email') }}" required autofocus placeholder="Email"></div>
                         @if($errors->has('email')) <p class="help is-danger">{{ $errors->first('email') }}</p> @endif
                     </div>
-                    <button type="submit" class="button">{{ __('Send Password Reset Link') }}</button>
+                    <div class="control buttons mt5">
+                        <button type="submit" class="button is-centered">{{ __('Send Password Reset Link') }}</button>
+                    </div>
                 </div>
             </form>
         </div>

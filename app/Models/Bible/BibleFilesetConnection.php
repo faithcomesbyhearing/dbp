@@ -3,6 +3,8 @@
 namespace App\Models\Bible;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 /**
  * App\Models\Bible\BibleFilesetConnection
@@ -71,5 +73,15 @@ class BibleFilesetConnection extends Model
     public function type()
     {
         return $this->belongsTo(BibleFilesetType::class);
+    }
+
+    public function scopeIsContentAvailable(Builder $query, Collection $access_group_ids)
+    {
+        return $query->whereExists(function ($query) use ($access_group_ids) {
+            return $query->select(\DB::raw(1))
+                ->from('access_group_filesets as agf')
+                ->whereColumn('agf.hash_id', '=', 'bible_fileset_connections.hash_id')
+                ->whereIn('agf.access_group_id', $access_group_ids);
+        });
     }
 }

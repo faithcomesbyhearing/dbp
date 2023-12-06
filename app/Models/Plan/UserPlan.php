@@ -4,6 +4,11 @@ namespace App\Models\Plan;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Traits\ModelBase;
+use App\Models\Playlist\PlaylistItems;
+use App\Models\Playlist\PlaylistItemsComplete;
+use App\Models\Plan\PlanDayComplete;
 
 /**
  * @OA\Schema (
@@ -14,6 +19,8 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class UserPlan extends Model
 {
+    use ModelBase;
+
     protected $connection = 'dbp_users';
     protected $primaryKey = ['user_id', 'plan_id'];
     public $incrementing = false;
@@ -50,7 +57,7 @@ class UserPlan extends Model
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function setKeysForSaveQuery(Builder $query)
+    protected function setKeysForSaveQuery($query)
     {
         $keys = $this->getKeyName();
         if (!is_array($keys)) {
@@ -82,27 +89,81 @@ class UserPlan extends Model
 
         return $this->getAttribute($keyName);
     }
-
-    public function calculatePercentageCompleted()
+   
+    public function calculatePercentageCompleted() : UserPlan
     {
-        $completed_per_day = PlanDay::where('plan_id', $this->plan_id)->get()
-            ->map(function ($plan_day) {
-                $completed = $plan_day->verifyDayCompleted();
-                return $completed;
-            });
-        $this->attributes['percentage_completed'] = $completed_per_day->sum('total_items') ? $completed_per_day->sum('total_items_completed') / $completed_per_day->sum('total_items') * 100 : 0;
+        $completed_per_day = PlanDay::summaryItemsCompletedByPlanId($this->plan_id, $this->user_id)->get();
+
+        $this->attributes['percentage_completed'] = $completed_per_day->sum('total_items')
+            ? $completed_per_day->sum('total_items_completed') / $completed_per_day->sum('total_items') * 100
+            : 0;
         return $this;
     }
 
-    public function reset($start_date = null)
+    /**
+     * Reset the user plan according the given start date. If the save progress flag is true the
+     * plan progress will be removed.
+     *
+     * @param string $start_date
+     * @param bool   $save_progress
+     * @param int    $user_id
+     *
+     * @return Array
+     */
+    public function reset(string $start_date = null, bool $save_progress = false, ?int $user_id = null) : UserPlan
     {
-        PlanDay::where('plan_id', $this->plan_id)->get()
-            ->each(function ($plan_day) {
-                $plan_day->unComplete();
-            });
-        $this->attributes['percentage_completed'] = 0;
+        if ($save_progress === false) {
+            if (is_null($user_id)) {
+                $user = Auth::user();
+                $user_id = $user->id;
+            }
+
+            self::removePlanDaysCompleteByPlanId($this->plan_id, $user_id);
+            $this->attributes['percentage_completed'] = 0;
+        }
+
         $this->attributes['start_date'] = $start_date;
 
         return $this;
+    }
+
+    /**
+     * Remove the Plan Days Completed records attached to a Plan and an User
+     *
+     * @param int $plan_id
+     * @param int $user_id
+     *
+     * @return Array
+     */
+    public static function removePlanDaysCompleteByPlanId(int $plan_id, int $user_id) : void
+    {
+        \DB::transaction(function () use ($plan_id, $user_id) {
+            $playlist_ids_by_plan = PlanDay::getPlaylistIdsByPlanAndUser($plan_id, $user_id);
+            PlaylistItemsComplete::removeItemsByPlayListsAndUser($playlist_ids_by_plan, $user_id);
+            PlanDayComplete::removeDaysByPlanAndUser($plan_id, $user_id);
+        });
+    }
+
+    public static function getByPlaylistIdAndUserId(int $playlist_id, int $user_id) : ?UserPlan
+    {
+        return UserPlan::join('plans', function ($join) use ($user_id) {
+            $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user_id);
+        })
+            ->join('plan_days', function ($join) use ($playlist_id) {
+                $join
+                    ->on('plan_days.plan_id', '=', 'plans.id')
+                    ->where('plan_days.playlist_id', $playlist_id);
+            })
+            ->select('user_plans.*')
+            ->first();
+    }
+
+    public static function getByPlanIdAndUserId(int $plan_id, int $user_id) : ?UserPlan
+    {
+        return UserPlan::join('plans', function ($join) use ($user_id) {
+            $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user_id);
+        })->where('user_plans.plan_id', $plan_id)
+            ->select('user_plans.*')
+            ->first();
     }
 }

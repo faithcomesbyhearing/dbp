@@ -15,19 +15,22 @@ class KeysController extends APIController
             return view('api_key.request_key');
         }
         $rules = [
-          'name' => 'required|string',
-          'email' => 'required|email',
-          'description' => 'required|string',
-          'question' => 'string',
-          'agreement' => 'required'
+            'name' => 'required|string',
+            'application_name' => 'required|string',
+            'application_url' => 'required|string',
+            'email' => 'required|email',
+            'description' => 'required|string',
+            'question' => 'string',
+            'agreement' => 'required',
+            'g-recaptcha-response' => 'recaptcha'
         ];
   
         $validator = Validator::make(request()->all(), $rules);
         if ($validator->fails()) {
             return redirect()
-        ->back()
-        ->withErrors($validator)
-        ->withInput();
+                ->back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
         $key_request = UserKeyRequest::make(request()->all());

@@ -1,60 +1,57 @@
 {
     "name": "laravel/laravel",
-    "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "description": "The Laravel Framework",
+    "keywords": [
+        "framework",
+        "laravel"
+    ],
     "license": "MIT",
     "type": "project",
     "require": {
-        "php": "^7.1.3",
-        "algolia/algoliasearch-client-php": "^1.27",
-        "appstract/laravel-opcache": "^2.0",
-        "aws/aws-sdk-php-laravel": "^3.1",
-        "bugsnag/bugsnag-laravel": "^2.0",
-        "curl/curl": "^1.9",
-        "doctrine/dbal": "^2.5",
-        "fideloper/proxy": "^4.0",
-        "geoip2/geoip2": "^2.9",
-        "google/recaptcha": "^1.1",
-        "guzzlehttp/guzzle": "~6.0",
-        "intervention/image": "^2.4",
-        "intouch/laravel-newrelic": "~2.0",
-        "josiasmontag/laravel-localization": "^0.5.0",
-        "laravel/framework": "5.8.*",
-        "laravel/slack-notification-channel": "^2.0",
-        "laravel/socialite": "^3.2",
-        "laravel/tinker": "^1.0",
-        "league/flysystem-aws-s3-v3": "~1.0",
-        "maennchen/zipstream-php": "^0.5.1",
-        "pusher/pusher-php-server": "^3.0",
-        "sentry/sentry-laravel": "^1.3",
-        "soapbox/laravel-formatter": "^2.0",
-        "socialiteproviders/generators": "^2.0",
-        "socialiteproviders/google": "^3.0",
-        "spatie/array-to-xml": "^2.7",
-        "spatie/eloquent-sortable": "^3.6",
-        "spatie/laravel-fractal": "^5.2",
-        "sunra/php-simple-html-dom-parser": "^1.5",
-        "symfony/process": "^4.1",
-        "symfony/psr-http-message-bridge": "^1.0",
-        "symfony/yaml": "^4.1",
-        "tom-lingham/searchy": "2.*",
-        "torann/geoip": "^1.0",
-        "yosymfony/toml": "^1.0",
-        "zircote/swagger-php": "^3.0"
+        "php": "<=8.2.13",
+        "algolia/algoliasearch-client-php": "3.4.1",
+        "awobaz/compoships": "^2.2",
+        "aws/aws-sdk-php": "3.293.3",
+        "biscolab/laravel-recaptcha": "6.0.0",
+        "bugsnag/bugsnag-laravel": "2.26.0",
+        "caneara/quest": "4.0.0",
+        "curl/curl": "2.5.0",
+        "doctrine/dbal": "3.7.2",
+        "geoip2/geoip2": "2.13.0",
+        "google/recaptcha": "1.3.0",
+        "guzzlehttp/guzzle": "7.8.1",
+        "intervention/image": "2.7.2",
+        "laravel/framework": "10.34.2",
+        "laravel/slack-notification-channel": "3.1.0",
+        "laravel/socialite": "5.10.0",
+        "laravel/tinker": "2.8.2",
+        "maennchen/zipstream-php": "3.1.0",
+        "mcamara/laravel-localization": "1.8",
+        "socialiteproviders/generators": "4.6.3",
+        "socialiteproviders/google": "4.1.0",
+        "spatie/array-to-xml": "3.2.2",
+        "spatie/eloquent-sortable": "4.0.2",
+        "spatie/laravel-fractal": "6.0.3",
+        "sunra/php-simple-html-dom-parser": "1.5.2",
+        "symfony/http-client": "7.0.0",
+        "symfony/psr-http-message-bridge": "7.0.0",
+        "symfony/yaml": "7.0.0",
+        "torann/geoip": "3.0.5",
+        "yosymfony/toml": "1.0.4",
+        "zircote/swagger-php": "4.7.16"
     },
     "require-dev": {
-        "barryvdh/laravel-debugbar": "^3.2",
-        "barryvdh/laravel-ide-helper": "^2.5",
-        "codedungeon/phpunit-result-printer": "^0.23.3",
-        "filp/whoops": "^2.0",
-        "friendsofphp/php-cs-fixer": "^2.13",
-        "fzaninotto/faker": "^1.4",
-        "itsgoingd/clockwork": "^3.0",
-        "mockery/mockery": "^1.2",
-        "nunomaduro/collision": "^2.0",
-        "phpunit/phpunit": "^7.5",
-        "spatie/laravel-tail": "^3.2",
-        "squizlabs/php_codesniffer": "^3.3"
+        "barryvdh/laravel-debugbar": "3.9.2",
+        "barryvdh/laravel-ide-helper": "2.13.0",
+        "fakerphp/faker": "1.23.0",
+        "filp/whoops": "2.15.4",
+        "friendsofphp/php-cs-fixer": "3.40.2",
+        "itsgoingd/clockwork": "5.1.12",
+        "laravel/legacy-factories": "1.3.2",
+        "mockery/mockery": "1.6.6",
+        "phpunit/phpunit": "10.5.1",
+        "spatie/laravel-tail": "4.4.2",
+        "squizlabs/php_codesniffer": "3.7.2"
     },
     "autoload": {
         "classmap": [
@@ -64,9 +61,9 @@
         "psr-4": {
             "App\\": "app/"
         },
-		"files": [
-			"app/Helpers/Helpers.php"
-		]
+        "files": [
+            "app/Helpers/Helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
@@ -75,31 +72,26 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": [
-            ]
+            "dont-discover": []
         }
     },
     "scripts": {
-        "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
-        ],
         "post-create-project-cmd": [
             "@php artisan key:generate"
         ],
-        "post-autoload-dump": [
-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover"
+        "cs": [
+            "php-cs-fixer fix --dry-run"
         ],
-	  	"cs": [
-		  	"php-cs-fixer fix --dry-run"
-	  	],
-	  	"cs-fix": [
-		  	"php-cs-fixer fix"
-	  	]
+        "cs-fix": [
+            "php-cs-fixer fix"
+        ]
     },
     "config": {
         "preferred-install": "dist",
         "sort-packages": true,
-        "optimize-autoloader": true
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "php-http/discovery": false
+        }
     }
 }

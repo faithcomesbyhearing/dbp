@@ -2,11 +2,15 @@
 
 namespace App\Models\Bible;
 
+use DB;
 use App\Models\Country\Country;
+use App\Models\Country\CountryLanguage;
 use App\Models\Language\Alphabet;
 use App\Models\Language\NumeralSystem;
 use App\Models\Organization\Organization;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use App\Models\Language\Language;
 
 /**
@@ -14,10 +18,9 @@ use App\Models\Language\Language;
  * @mixin \Eloquent
  *
  * @property-read \App\Models\Language\Alphabet $alphabet
- * @property-read \App\Models\Bible\BibleBook[] $books
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Bible\BibleBook[] $books
  * @property-read BibleFile[] $files
- * @property-read BibleFileset[] $filesets
- * @property-read BibleEquivalent[] $hasType
+ * @property-read \Illuminate\Database\Eloquent\Collection|BibleFileset[] $filesets
  * @property-read \App\Models\Language\Language $language
  * @property-read BibleLink[] $links
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Organization\Organization[] $organizations
@@ -232,21 +235,6 @@ class Bible extends Model
         return $this->hasMany(BibleBook::class);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Equivalents
-    |--------------------------------------------------------------------------
-    |
-    | All of these relationships are focused upon the bible equivalents table
-    | they handle external bible API connections to our different partners
-    | like the Digital Bible Platform and the Digital Bible Library ect
-    |
-    */
-    public function equivalents()
-    {
-        return $this->hasMany(BibleEquivalent::class);
-    }
-
     public function filesetConnections()
     {
         return $this->hasMany(BibleFilesetConnection::class);
@@ -254,10 +242,27 @@ class Bible extends Model
 
     public function filesets()
     {
-        return $this->hasManyThrough(BibleFileset::class, BibleFilesetConnection::class, 'bible_id', 'hash_id', 'id', 'hash_id')
-        ->with(['meta' => function ($subQuery) {
-            $subQuery->where('admin_only', 0);
-        }]);
+        return $this->hasManyThrough(
+            BibleFileset::class,
+            BibleFilesetConnection::class,
+            'bible_id',
+            'hash_id',
+            'id',
+            'hash_id'
+        )
+        ->with('meta');
+    }
+
+    public function filesetsWithoutMeta()
+    {
+        return $this->hasManyThrough(
+            BibleFileset::class,
+            BibleFilesetConnection::class,
+            'bible_id',
+            'hash_id',
+            'id',
+            'hash_id'
+        );
     }
 
     public function files()
@@ -280,6 +285,18 @@ class Bible extends Model
         return $this->belongsTo(Language::class);
     }
 
+    public function countryLanguage()
+    {
+        return $this->hasManyThrough(
+            Country::class,
+            CountryLanguage::class,
+            'language_id',
+            'id',
+            'language_id',
+            'country_id'
+        )->select(['countries.id as country_id','countries.continent','countries.name']);
+    }
+
     public function country()
     {
         return $this->hasManyThrough(Country::class, Language::class, 'id', 'id', 'language_id', 'country_id')->select(['countries.id as country_id','countries.continent','countries.name']);
@@ -300,47 +317,56 @@ class Bible extends Model
         return $this->hasMany(Video::class)->orderBy('order', 'asc');
     }
 
-    public function scopeWithRequiredFilesets($query, $type_filters)
-    {   
-        $permitted_filesets = $type_filters['access_control']->identifiers;
-
-        if ($type_filters['tag_exclude']) {
-            $opus_filesets = BibleFilesetTag::select('hash_id')->where('description', $type_filters['tag_exclude'])->pluck('hash_id')->toArray();
-            $permitted_filesets = array_diff($type_filters['access_control']->identifiers, $opus_filesets);
+    private function setConditionFilesets($query, $type_filters)
+    {
+        if ($type_filters['media']) {
+            $query->where('bible_filesets.set_type_code', $type_filters['media']);
         }
+        if ($type_filters['media_exclude']) {
+            $query->where('bible_filesets.set_type_code', '!=', $type_filters['media_exclude']);
+        }
+        if ($type_filters['size']) {
+            $query->where('bible_filesets.set_size_code', '=', $type_filters['size']);
+        }
+        if ($type_filters['size_exclude']) {
+            $query->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
+        }
+    }
 
-        $queryIn = sprintf("bible_filesets.hash_id IN ('" . implode("', '", $permitted_filesets) . "')");
-        return $query->whereHas('filesets', function ($q) use ($type_filters, $queryIn) {
-            $q->whereRaw($queryIn);
+    private function setConditionTagExclude($quey, $type_filters)
+    {
+        $quey->whereDoesntHave('meta', function ($query_meta) use ($type_filters) {
+            $query_meta->where('bible_fileset_tags.description', $type_filters['tag_exclude']);
+        });
+    }
+
+    /**
+     * Filter bible records according if they has filesets attached
+     *
+     * @param Builder $query
+     * @param array $type_filters
+     */
+    public function scopeWithRequiredFilesets(Builder $query, array $type_filters) : Builder
+    {
+        return $query->whereHas('filesets', function ($q) use ($type_filters) {
             if ($type_filters['media']) {
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
-            if ($type_filters['media_exclude']) {
-                $q->where('bible_filesets.set_type_code', '!=', $type_filters['media_exclude']);
-            }
-            if ($type_filters['size']) {
-                $q->where('bible_filesets.set_size_code', '=', $type_filters['size']);
-            }
-            if ($type_filters['size_exclude']) {
-                $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
-            }
-        })->with(['filesets' => function ($q) use ($type_filters, $queryIn) {
+
+            $q->select(\DB::raw(1));
+            $q->isContentAvailable($type_filters['access_group_ids']);
+            $this->setConditionFilesets($q, $type_filters);
+            $this->setConditionTagExclude($q, $type_filters);
+        })->with(['filesets' => function ($q) use ($type_filters) {
             $q->with(['meta' => function ($subQuery) {
-              $subQuery->where('admin_only', 0);
+                $subQuery->where('admin_only', 0);
             }]);
-            $q->whereRaw($queryIn);
-            if ($type_filters['media']) {
-                $q->where('bible_filesets.set_type_code', $type_filters['media']);
-            }
-            if ($type_filters['media_exclude']) {
-                $q->where('bible_filesets.set_type_code', '!=', $type_filters['media_exclude']);
-            }
-            if ($type_filters['size']) {
-                $q->where('bible_filesets.set_size_code', '=', $type_filters['size']);
-            }
-            if ($type_filters['size_exclude']) {
-                $q->where('bible_filesets.set_size_code', '!=', $type_filters['size_exclude']);
-            }
+            $q->isContentAvailable($type_filters['access_group_ids'])
+                ->conditionToExcludeOldTextFormat()
+                ->conditionToExcludeOldDA16Format()
+                ;
+            $this->setConditionFilesets($q, $type_filters);
+            $this->setConditionTagExclude($q, $type_filters);
         }]);
     }
 
@@ -351,5 +377,89 @@ class Bible extends Model
             $languages = Language::whereIn('iso', $language_codes)->orWhereIn('id', $language_codes)->get();
             $q->whereIn('bibles.language_id', $languages->pluck('id'));
         });
+    }
+
+    public function scopeMatchByFulltextSearch($query, $search_text)
+    {
+        // If the search_text is a single word the pattern will be e.g. +contain*
+        // and it will find rows that contain words such as 'contain', 'contains',
+        // 'containskey' etc.
+
+        // If the search_text contains two words the pattern will be e.g. +next contain*
+        // and it will find rows that contain both words but the first word should exact
+        // and the other just contains the word such as 'next contain', 'next contains',
+        // 'next containskey'
+        $formatted_search = "+$search_text*";
+
+        return $query
+            ->select(['ver_title.bible_id', 'ver_title.name', 'ver_title.language_id'])
+            ->join(
+                'bible_translations as ver_title',
+                function ($join) use ($formatted_search) {
+                    $join->on('ver_title.bible_id', '=', 'bibles.id')
+                    ->whereRaw(
+                        'match (ver_title.name) against (? IN BOOLEAN MODE)',
+                        [$formatted_search]
+                    );
+                }
+            )->orderByRaw(
+                'match (ver_title.name) against (? IN BOOLEAN MODE) DESC',
+                [$formatted_search]
+            );
+    }
+
+     /**
+     * Add join related to the bible_translations and searching by ID
+     *
+     * @param Builder $query
+     * @param string $bible_id_query
+     *
+     * @return Builder
+     */
+    public function scopeMatchByBibleVersion(Builder $query, string $version)
+    {
+        $formatted_search = "%$version";
+
+        return $query
+            ->select(['ver_title.bible_id', 'ver_title.name', 'ver_title.language_id'])
+            ->join(
+                'bible_translations as ver_title',
+                function ($join) use ($formatted_search) {
+                    $join->on('ver_title.bible_id', '=', 'bibles.id')
+                        ->where('ver_title.bible_id', 'LIKE', $formatted_search);
+                }
+            );
+    }
+
+    public function scopeIsContentAvailable(Builder $query, Collection $access_group_ids)
+    {
+        return $query->whereExists(function ($query) use ($access_group_ids) {
+            return $query->select(\DB::raw(1))
+                ->from('access_group_filesets as agf')
+                ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                ->whereColumn('bibles.id', '=', 'bfc.bible_id')
+                ->whereIn('agf.access_group_id', $access_group_ids);
+        });
+    }
+    public function scopeIsTimingInformationAvailable($query)
+    {
+        $timestamps_counts = BibleFileTimestamp::select('bible_file_timestamps.bible_file_id')
+            ->distinct();
+
+        $files_timestamps = BibleFile::select('bible_files.hash_id')
+            ->distinct()
+            ->joinSub($timestamps_counts, 'timestamps_counts', function ($join) {
+                $join->on('timestamps_counts.bible_file_id', '=', 'bible_files.id');
+            });
+
+        $bibles_ids_with_timestamps = BibleFilesetConnection::select('bible_fileset_connections.bible_id')
+            ->distinct()
+            ->joinSub($files_timestamps, 'files_timestamps', function ($join) {
+                $join->on('bible_fileset_connections.hash_id', '=', 'files_timestamps.hash_id');
+            })
+            ->get()
+            ->pluck('bible_id');
+
+        return $query->whereIn('bibles.id', $bibles_ids_with_timestamps);
     }
 }

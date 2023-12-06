@@ -12,9 +12,9 @@ return [
     | any other location as required by the application or its packages.
     */
 
-    'name'        => env('APP_NAME', 'Laravel'),
-    'server_name' => env('APP_SERVER_NAME'),
-    'contact'     => env('APP_SITE_CONTACT'),
+    'name'        => env('APP_NAME', 'digital_bible_platform'),
+    'server_name' => env('APP_SERVER_NAME', 'Biblebrain dev'),
+    'contact'     => env('APP_SITE_CONTACT', 'info@fcbhmail.net'),
 
     /*
     |--------------------------------------------------------------------------
@@ -27,7 +27,7 @@ return [
     |
     */
 
-    'env' => env('APP_ENV', 'production'),
+    'env' => env('APP_ENV', 'prod'),
 
     /*
     |--------------------------------------------------------------------------
@@ -53,8 +53,8 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
-    'url_podcast' => env('APP_URL_PODCAST', 'https://dbp4.org'),
+    'url' => env('APP_URL', 'https://4.dbt.io'),
+    'url_podcast' => env('APP_URL_PODCAST', 'https://4.dbt.io'),
     'api_url' => env('API_URL', 'https://b4.dbt.io'),
     'get_started_url' => env('GET_STARTED_URL', 'https://github.com/faithcomesbyhearing/dbp/blob/master/doc/STARTING.md'),
 
@@ -163,7 +163,7 @@ return [
         App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        // Laravel\Socialite\SocialiteServiceProvider::class,
+        App\Providers\IAMAPIProvider::class,
         SocialiteProviders\Manager\ServiceProvider::class,
         SocialiteProviders\Generators\GeneratorsServiceProvider::class,
         Illuminate\Notifications\NotificationServiceProvider::class,
@@ -171,7 +171,8 @@ return [
         Intervention\Image\ImageServiceProvider::class,
         App\Providers\LocalEnvironmentServiceProvider::class,
         Bugsnag\BugsnagLaravel\BugsnagServiceProvider::class,
-        Sentry\Laravel\ServiceProvider::class,
+        Biscolab\ReCaptcha\ReCaptchaServiceProvider::class,
+        Mcamara\LaravelLocalization\LaravelLocalizationServiceProvider::class,
     ],
 
     /*
@@ -222,10 +223,11 @@ return [
         'Socialite'    => Laravel\Socialite\Facades\Socialite::class,
         'Input'        => Illuminate\Support\Facades\Input::class,
         'Image'        => Intervention\Image\Facades\Image::class,
-        'Localization' => Lunaweb\Localization\Facades\Localization::class,
-        'i18n'         => Lunaweb\Localization\Facades\Localization::class,
+        'i18n'         => Mcamara\LaravelLocalization\Facades\LaravelLocalization::class,
+        'LaravelLocalization' => Mcamara\LaravelLocalization\Facades\LaravelLocalization::class,
         'Bugsnag'      => Bugsnag\BugsnagLaravel\Facades\Bugsnag::class,
-        'Sentry' => Sentry\Laravel\Facade::class,
+        'Sentry'       => Sentry\Laravel\Facade::class,
+        'ReCaptcha'    => Biscolab\ReCaptcha\Facades\ReCaptcha::class
     ],
 
 ];

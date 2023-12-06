@@ -3,6 +3,13 @@
 namespace App\Models\Bible;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Expression;
+use App\Models\Bible\BibleVerse;
+use App\Models\Bible\BibleFileset;
+use App\Models\Bible\BibleBook;
+use App\Models\Bible\BibleFilesetSize;
 
 /**
  * App\Models\Bible\Book
@@ -24,26 +31,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $id_osis
  * @method static Book whereProtestantOrder($value)
  * @property int $protestant_order
- * @method static Book whereLutherOrder($value)
- * @property int $luther_order
- * @method static Book whereSynodalOrder($value)
- * @property int $synodal_order
- * @method static Book whereGermanOrder($value)
- * @property int $german_order
- * @method static Book whereKjvaOrder($value)
- * @property int $kjva_order
- * @method static Book whereVulgateOrder($value)
- * @property int $vulgate_order
- * @method static Book whereLxxOrder($value)
- * @property int $lxx_order
- * @method static Book whereOrthodoxOrder($value)
- * @property int $orthodox_order
- * @method static Book whereNrsvaOrder($value)
- * @property int $nrsva_order
- * @method static Book whereCatholicOrder($value)
- * @property int $catholic_order
- * @method static Book whereFinnishOrder($value)
- * @property int $finnish_order
  * @method static Book whereBookOrder($value)
  * @property int $testament_order
  * @method static Book whereBookTestament($value)
@@ -78,6 +65,7 @@ class Book extends Model
     protected $table = 'books';
     public $incrementing = false;
     public $hidden = ['description','created_at','updated_at','notes'];
+    protected $keyType = 'string';
 
     /**
      *
@@ -134,136 +122,6 @@ class Book extends Model
      *
      */
     protected $protestant_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="luther_order",
-     *   type="integer",
-     *   description="The standard book order for the `luther_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $luther_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="synodal_order",
-     *   type="integer",
-     *   description="The standard book order for the `synodal_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $synodal_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="german_order",
-     *   type="integer",
-     *   description="The standard book order for the `german_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $german_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="kjva_order",
-     *   type="integer",
-     *   description="The standard book order for the `kjva_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $kjva_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="vulgate_order",
-     *   type="integer",
-     *   description="The standard book order for the `vulgate_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $vulgate_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="lxx_order",
-     *   type="integer",
-     *   description="The standard book order for the `lxx_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $lxx_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="orthodox_order",
-     *   type="integer",
-     *   description="The standard book order for the `orthodox_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $orthodox_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="nrsva_order",
-     *   type="integer",
-     *   description="The standard book order for the `nrsva_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $nrsva_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="catholic_order",
-     *   type="integer",
-     *   description="The standard book order for the `catholic_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $catholic_order;
-
-    /**
-     *
-     * @OA\Property(
-     *   title="finnish_order",
-     *   type="integer",
-     *   description="The standard book order for the `finnish_order` in ascending order from Genesis onwards",
-     *   minimum=0
-     * )
-     *
-     *
-     */
-    protected $finnish_order;
 
     /**
      *
@@ -401,13 +259,26 @@ class Book extends Model
     public function scopeFilterByTestament($query, $testament)
     {
         $query->when($testament, function ($q) use ($testament) {
-            if (\in_array('NT', $testament)) {
-                $q->where('books.book_testament', 'NT');
+            if (\in_array(BibleFilesetSize::SIZE_NEW_TESTAMENT, $testament)) {
+                $q->where('books.book_testament', BibleFilesetSize::SIZE_NEW_TESTAMENT);
             }
-            if (\in_array('OT', $testament)) {
-                $q->where('books.book_testament', 'OT');
+            if (\in_array(BibleFilesetSize::SIZE_OLD_TESTAMENT, $testament)) {
+                $q->where('books.book_testament', BibleFilesetSize::SIZE_OLD_TESTAMENT);
             }
         });
+    }
+
+    public function getTestamentFirstLetter($book_testament = null)
+    {
+        if (is_null($book_testament)) {
+            $book_testament = $this->book_testament;
+        }
+
+        if (!empty($book_testament)) {
+            return substr($book_testament, 0, 1);
+        }
+
+        return null;
     }
 
     public function translations()
@@ -438,5 +309,101 @@ class Book extends Model
     public function bibleBooks()
     {
         return $this->hasMany(BibleBook::class);
+    }
+
+    /**
+     * Validate if the Book entity has a given column
+     *
+     * @param string $versification
+     *
+     * @return bool
+     */
+    public static function hasVersificationColumn(string $versification) : bool
+    {
+        return \Schema::connection('dbp')->hasColumn('books', $versification . '_order');
+    }
+
+    /**
+     * Get the Book records from a given fileset object
+     *
+     * @param BibleFileset $fileset
+     * @param string $versification
+     * @param string $fileset_type
+     *
+     * @return Collection
+     */
+    public static function getActiveBooksFromFileset(
+        BibleFileset $fileset,
+        string $versification,
+        string $fileset_type = null
+    ) : Collection {
+        $book_order_column = self::hasVersificationColumn($versification)
+            ? $versification
+            : 'protestant';
+
+        $is_plain_text = BibleVerse::where('hash_id', $fileset->hash_id)->exists();
+
+        return \DB::connection('dbp')
+            ->table('bible_filesets as fileset')
+            ->where('fileset.id', $fileset->id)
+            ->leftJoin(
+                'bible_fileset_connections as connection',
+                'connection.hash_id',
+                'fileset.hash_id'
+            )
+            ->leftJoin('bibles', 'bibles.id', 'connection.bible_id')
+            ->when($fileset_type, function ($q) use ($fileset_type) {
+                $q->where('set_type_code', $fileset_type);
+            })
+            ->join('bible_books', function ($join) {
+                $join->on('bible_books.bible_id', 'bibles.id');
+            })
+            ->rightJoin('books', 'books.id', 'bible_books.book_id')
+            ->when(!$is_plain_text, function ($query) use ($fileset) {
+                $query = self::compareFilesetToFileTableBooks($query, $fileset->hash_id);
+            })
+            ->where(function ($query) {
+                $expression = new Expression("fileset.set_size_code LIKE CONCAT('%', books.book_testament, '%')");
+                // The set_size_code value in the fileset column must be either equal to "C" (COMPLETE) or have the
+                // book_testament value from the book column contained within it. For example, if the book_testament
+                // value is "NT" and the set_size_code value is "NTP".
+                $query->orWhereColumn('fileset.set_size_code', '=', 'books.book_testament')
+                    ->orWhere('fileset.set_size_code', BibleFilesetSize::SIZE_COMPLETE)
+                    ->orWhereRaw($expression->getValue(\DB::connection()->getQueryGrammar()));
+            })
+            ->select([
+                'books.id',
+                'books.id_usfx',
+                'books.id_osis',
+                'books.book_testament',
+                'books.testament_order',
+                'books.book_group',
+                'bible_books.chapters',
+                'bible_books.name',
+                'bible_books.name_short',
+                'books.protestant_order',
+                BibleBook::getBookOrderSelectColumnExpressionRaw($book_order_column)
+            ])
+            ->orderBy(BibleBook::BOOK_ORDER_COLUMN)
+            ->get();
+    }
+
+    /**
+     *
+     * @param $query
+     * @param $hashId
+     */
+    public static function compareFilesetToFileTableBooks(Builder $query, string $hashId) : Builder
+    {
+        // If the fileset referencesade dbp.bible_files from that table
+        $fileset_book_ids = \DB::connection('dbp')
+            ->table('bible_files')
+            ->where('hash_id', $hashId)
+            ->select(['book_id'])
+            ->distinct()
+            ->get()
+            ->pluck('book_id');
+
+        return $query->whereIn('bible_books.book_id', $fileset_book_ids);
     }
 }

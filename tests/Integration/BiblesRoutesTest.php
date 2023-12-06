@@ -2,7 +2,6 @@
 
 namespace Tests\Integration;
 
-use App\Models\Bible\BibleEquivalent;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
 use App\Traits\AccessControlAPI;
@@ -178,48 +177,6 @@ class BiblesRoutesTest extends ApiV4Test
         $response = $this->withHeaders($this->params)->get($path);
         $response->assertSuccessful();
     }
-
-    /**
-     * @category V4_API
-     * @category Route Name: v4_bible_equivalents.all
-     * @category Route Path: https://api.dbp.test/bible/equivalents?v=4&key={key}
-     * @see      \App\Http\Controllers\Bible\BibleEquivalentsController::index
-     * @group    BibleRoutes
-     * @group    V4
-     * @group    travis
-     * @test
-     */
-    public function bibleEquivalentsAll()
-    {
-        $path = route('v4_bible_equivalents.all', $this->params);
-        echo "\nTesting: $path";
-        $response = $this->withHeaders($this->params)->get($path);
-        $response->assertSuccessful();
-    }
-
-    /*     * @group    travis
-     * @test */
-    public function bibleEquivalentsCanBeFilteredByBible()
-    {
-        $bible_path = route('v4_bible_equivalents.all', array_merge(['bible_id' => 'ENGESV'], $this->params));
-        $response = $this->withHeaders($this->params)->get($bible_path);
-        $response->assertSuccessful();
-    }
-
-    /*     * @group    travis
-     * @test */
-    public function bibleEquivalentsCanBeFilteredByOrganization()
-    {
-        $bible_equivalents = BibleEquivalent::inRandomOrder()->first();
-        $org_path = route('v4_bible_equivalents.all', array_merge(['organization_id' => $bible_equivalents->organization_id], $this->params));
-        $response = $this->withHeaders($this->params)->get($org_path);
-        $response->assertSuccessful();
-
-        $content = collect(json_decode($response->getContent()))->pluck('organization_id')->unique();
-        $this->assertEquals($content->count(), 1);
-        $this->assertEquals($content[0], $bible_equivalents->organization_id);
-    }
-
 
     /**
      * @category V4_API

@@ -28,19 +28,32 @@ class LanguageListingTransformer extends BaseTransformer
      * @param Language $language
      * @return array
      */
+    private $params = [];
+
+    public function __construct($params = [])
+    {
+        parent::__construct();
+        $this->params = $params;
+    }
+
     public function transform($language)
     {
+        $language_v2 = optional($this->params)['language_v2'];
+        $code = $language_v2->v2Code ?? strtoupper($language->iso);
+        $name = $language_v2->name ?? $language->name;
+        $english_name = $language_v2->english_name ?? $language->name;
+        
         switch ($this->route) {
             case 'v2_library_volumeLanguage':
                 return [
                     'language_name'             => $language->autonym ?? '',
-                    'english_name'              => (string) $language->name,
-                    'language_code'             => strtoupper($language->iso),
+                    'english_name'              => (string) $english_name,
+                    'language_code'             => $code,
                     'language_iso'              => (string) $language->iso ?? '',
                     'language_iso_2B'           => (string) $language->iso2B ?? '',
                     'language_iso_2T'           => (string) $language->iso2T ?? '',
                     'language_iso_1'            => (string) $language->iso1 ?? '',
-                    'language_iso_name'         => (string) $language->name ?? '',
+                    'language_iso_name'         => (string) $name ?? '',
                     'language_family_code'      => strtoupper(optional($language->parent)->iso) ?? '',
                     'language_family_name'      => optional($language->parent)->autonym ?? '',
                     'language_family_english'   => optional($language->parent)->name ?? '',
@@ -75,7 +88,7 @@ class LanguageListingTransformer extends BaseTransformer
              */
             case 'v2_library_volumeLanguageFamily':
                 return [
-                    'language_family_code'    => strtoupper($language->iso),
+                    'language_family_code'    => $code,
                     'language_family_name'    => (string) $language->autonym,
                     'language_family_english' => (string) $language->name,
                     'language_family_iso'     => (string) $language->iso,
@@ -90,9 +103,9 @@ class LanguageListingTransformer extends BaseTransformer
 
             default:
                 return [
-                    'language_code'        => strtoupper($language->iso),
-                    'language_name'        => $language->name,
-                    'english_name'         => $language->name,
+                    'language_code'        => strtoupper($language->code),
+                    'language_name'        => $language->name_v2 ?? $language->name,
+                    'english_name'         => $language->english_name_v2 ?? $language->name,
                     'language_iso'         => (string) $language->iso ?? '',
                     'language_iso_2B'      => $language->iso2B ?? '',
                     'language_iso_2T'      => $language->iso2B ?? '',
