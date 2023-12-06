@@ -62,6 +62,7 @@ return [
     'sendResetLink' => 'Send Password Reset Link',
     'resetPassword' => 'Reset Password',
     'loggedIn'      => 'You are logged in!',
+    'sessionExpired'=> 'Your session seems to have expired. Please try again.',
 
     // email links
     'pleaseActivate'    => 'Please activate your account.',

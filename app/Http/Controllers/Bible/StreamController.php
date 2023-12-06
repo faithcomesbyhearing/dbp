@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Bible;
 
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Http\Controllers\APIController;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileset;
 use App\Traits\CallsBucketsTrait;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 
 class StreamController extends APIController
 {
@@ -24,16 +23,20 @@ class StreamController extends APIController
      */
     public function index($id = null, $file_id_location = null)
     {
-        $cache_params = [$id, $file_id_location];
+        $cache_params = $this->removeSpaceFromCacheParameters(
+            [$id, $file_id_location]
+        );
 
         $current_file = cacheRemember('stream_master_index', $cache_params, now()->addHours(12), function () use ($id, $file_id_location) {
             $fileset = BibleFileset::uniqueFileset($id)->select('hash_id', 'id', 'asset_id')->first();
             if (!$fileset) {
-                return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                    ->replyWithError('No fileset found for the provided params');
             }
 
             $is_multiple_mp3 = $this->isMultipleMp3($file_id_location);
-            
+
             if ($is_multiple_mp3) {
                 return $this->generateMultipleMp3HLS($id, $file_id_location);
             }
@@ -41,17 +44,24 @@ class StreamController extends APIController
             $file = $this->getFileFromLocation($fileset, $file_id_location);
 
             if (!$file) {
-                return $this->replyWithError(trans('api.bible_file_errors_404', ['id' => $file_id_location]));
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                    ->replyWithError(trans('api.bible_file_errors_404', ['id' => $file_id_location]));
             }
             $asset_id = $fileset->asset_id;
             $current_file = '#EXTM3U';
             foreach ($file->streamBandwidth as $bandwidth) {
                 $current_file .= "\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=$bandwidth->bandwidth";
 
-                $transportStream = sizeof($bandwidth->transportStreamBytes) ? $bandwidth->transportStreamBytes : $bandwidth->transportStreamTS;
+                $transportStream = sizeof($bandwidth->transportStreamBytes)
+                    ? $bandwidth->transportStreamBytes
+                    : $bandwidth->transportStreamTS;
 
                 $extra_args = '';
-                if (sizeof($transportStream) && isset($transportStream[0]->timestamp) && $transportStream[0]->timestamp->verse_start === 0) {
+                if (sizeof($transportStream) &&
+                    isset($transportStream[0]->timestamp) &&
+                    $transportStream[0]->timestamp->verse_start === 0
+                ) {
                     $extra_args = '&v0=0';
                 }
                 if ($bandwidth->resolution_width) {
@@ -82,23 +92,31 @@ class StreamController extends APIController
      * @return $this
      * @throws \Exception
      */
-    public function transportStream(Response $response, $fileset_id = null, $file_id_location = null, $file_name = null)
+    public function transportStream($fileset_id = null, $file_id_location = null, $file_name = null)
     {
-        $cache_params = [$fileset_id, $file_id_location, $file_name];
+        $cache_params = $this->removeSpaceFromCacheParameters(
+            [$fileset_id, $file_id_location, $file_name]
+        );
 
-        $current_file = cacheRemember('stream_bandwidth', $cache_params, now()->addHours(12), function () use ($response, $fileset_id, $file_id_location, $file_name) {
-            $video_fileset = BibleFileset::uniqueFileset($fileset_id, 'video_stream')->select('hash_id', 'id', 'asset_id')->first();
-            $audio_fileset = BibleFileset::uniqueFileset($fileset_id, 'audio', true)->select('hash_id', 'id', 'asset_id')->first();
-            if (!$video_fileset && !$audio_fileset) {
-                return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
-            }
+        $current_file = cacheRemember('stream_bandwidth', $cache_params, now()->addHours(12), function () use ($fileset_id, $file_id_location, $file_name) {
+            $fileset = BibleFileset::uniqueFileset($fileset_id, 'audio', true)
+                ->select('hash_id', 'id', 'asset_id')
+                ->first();
 
-            if ($audio_fileset) {
-                $fileset = $audio_fileset;
-                $fileset_type = 'audio';
-            } else {
-                $fileset = $video_fileset;
-                $fileset_type = 'video';
+            $fileset_type = BibleFileset::AUDIO;
+
+            if (empty($fileset)) {
+                $fileset = BibleFileset::uniqueFileset($fileset_id, 'video_stream')
+                    ->select('hash_id', 'id', 'asset_id')
+                    ->first();
+
+                if (empty($fileset)) {
+                    return $this
+                        ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                        ->replyWithError('No fileset found for the provided params');
+                }
+
+                $fileset_type = BibleFileset::VIDEO;
             }
 
             $file = $this->getFileFromLocation($fileset, $file_id_location);
@@ -111,15 +129,15 @@ class StreamController extends APIController
 
             $currentBandwidth = $file->streamBandwidth->where('file_name', $file_name)->first();
             if (!$currentBandwidth) {
-                return $this->setStatusCode(404)->replyWithError(trans('api.file_errors_404_size'));
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                    ->replyWithError(trans('api.file_errors_404_size'));
             }
             $transaction_id = random_int(0, 10000000);
-            try {
-                apiLogs(request(), $response->getStatusCode(), $transaction_id);
-            } catch (\Exception $e) {
-                Log::error($e);
-            }
-            $currentBandwidth->transportStream = sizeof($currentBandwidth->transportStreamBytes) ? $currentBandwidth->transportStreamBytes : $currentBandwidth->transportStreamTS;
+
+            $currentBandwidth->transportStream = sizeof($currentBandwidth->transportStreamBytes)
+                ? $currentBandwidth->transportStreamBytes
+                : $currentBandwidth->transportStreamTS;
 
             $current_file = "#EXTM3U\n";
             $current_file .= '#EXT-X-TARGETDURATION:' . ceil($currentBandwidth->transportStream->sum('runtime')) . "\n";
@@ -127,6 +145,8 @@ class StreamController extends APIController
             $current_file .= '#EXT-X-MEDIA-SEQUENCE:0';
 
             $signed_files = [];
+
+            $client = $this->getCloudFrontClientFromAssetId($fileset->asset_id);
 
             foreach ($currentBandwidth->transportStream as $stream) {
                 $current_file .= "\n#EXTINF:$stream->runtime,";
@@ -137,7 +157,7 @@ class StreamController extends APIController
                 }
                 $file_path = $fileset_type . '/' . $bible_path . $fileset->id . '/' . $stream->file_name;
                 if (!isset($signed_files[$file_path])) {
-                    $signed_files[$file_path] = $this->signedUrl($file_path, $fileset->asset_id, $transaction_id);
+                    $signed_files[$file_path] = $this->signedUrlUsingClient($client, $file_path, $transaction_id);
                 }
                 $current_file .= "\n" . $signed_files[$file_path];
             }
@@ -156,7 +176,19 @@ class StreamController extends APIController
     {
         $parts = explode('-', $file_id_location);
         if (sizeof($parts) === 1) {
-            return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)->where('id', $parts[0])->first();
+            return BibleFile::with([
+                    'streamBandwidth' => function ($query_stream) {
+                        $query_stream->with([
+                            'transportStreamTS',
+                            'transportStreamBytes',
+                            'transportStreamBytes.timestamp',
+                            'transportStreamBytes.timestamp.bibleFile'
+                        ]);
+                    }
+                ])
+                ->where('hash_id', $fileset->hash_id)
+                ->where('id', $parts[0])
+                ->first();
         }
 
         $where = [
@@ -169,22 +201,51 @@ class StreamController extends APIController
             $where['verse_end'] = $parts[3];
         }
 
-        return BibleFile::with('streamBandwidth')->where('hash_id', $fileset->hash_id)
-            ->where($where)->first();
+        return BibleFile::with([
+                'streamBandwidth' => function ($query_stream) {
+                    $query_stream->with([
+                        'transportStreamTS',
+                        'transportStreamBytes',
+                        'transportStreamBytes.timestamp',
+                        'transportStreamBytes.timestamp.bibleFile'
+                    ]);
+                }
+            ])
+            ->where('hash_id', $fileset->hash_id)
+            ->where($where)
+            ->first();
     }
 
     private function generateMultipleMp3HLS($fileset_id, $file_id_location)
     {
         $parts = explode('-', $file_id_location);
-        $asset_id = checkParam('asset_id') ?? config('filesystems.disks.s3_fcbh_video.bucket');
 
-        $audio_fileset = BibleFileset::uniqueFileset($fileset_id, 'audio', true)->select('hash_id', 'id', 'asset_id')->first();
+        $audio_fileset = BibleFileset::uniqueFileset($fileset_id, 'audio', true)
+            ->select('hash_id', 'id', 'asset_id')
+            ->first();
 
-        $bible_files = BibleFile::where([
-            'hash_id' => $audio_fileset->hash_id,
-            'book_id' => $parts[0],
-            'chapter_start' => $parts[1]
-        ])->get();
+        if (!$audio_fileset) {
+            return $this->setStatusCode(404)->replyWithError('No Audio fileset found for the provided params');
+        }
+
+        // The implementation of the new download endpoint has caused a route collision on
+        // route: /api/bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start?}-{verse_end?}/playlist.m3u8.
+        // Route name: v4_media_stream
+        // Example: http://APP_ROOT_PATH/api/bible/filesets/SVCWBTS2DA/MAT---/playlist.m3u8
+        // The existing route has a required chapter identifier, which is not present when called by the download route.
+        // This logic will return all mp3 files if no chapter is provided.
+        if ($parts[1]) {
+            $bible_files = BibleFile::where([
+                'hash_id' => $audio_fileset->hash_id,
+                'book_id' => $parts[0],
+                'chapter_start' => $parts[1]
+            ])->get();
+        } else {
+            $bible_files = BibleFile::where([
+                'hash_id' => $audio_fileset->hash_id,
+                'book_id' => $parts[0],
+            ])->whereNull('chapter_start')->get();
+        }
 
         $transaction_id = random_int(0, 10000000);
         $current_file = "#EXTM3U\n";
@@ -194,13 +255,14 @@ class StreamController extends APIController
 
         $signed_files = [];
         $bible_path =  $audio_fileset->bible->first()->id . '/';
+        $client = $this->getCloudFrontClientFromAssetId($audio_fileset->asset_id);
 
         foreach ($bible_files as $bible_file) {
             $current_file .= "\n#EXTINF:$bible_file->duration,";
 
             $file_path = 'audio/' . $bible_path . $audio_fileset->id . '/' . $bible_file->file_name;
             if (!isset($signed_files[$file_path])) {
-                $signed_files[$file_path] = $this->signedUrl($file_path, $audio_fileset->asset_id, $transaction_id);
+                $signed_files[$file_path] = $this->signedUrlUsingClient($client, $file_path, $transaction_id);
             }
             $current_file .= "\n" . $signed_files[$file_path];
         }
@@ -211,7 +273,6 @@ class StreamController extends APIController
             'Content-Disposition' => 'attachment; filename="' . $fileset_id . $file_id_location . '.m3u8"',
             'Content-Type'        => 'application/x-mpegURL'
         ]);
-        ;
     }
 
     private function isMultipleMp3($file_id_location)

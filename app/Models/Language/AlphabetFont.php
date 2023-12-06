@@ -44,7 +44,7 @@ class AlphabetFont extends Model
     protected $script_id;
 
     /**
-    * @property string $fontName
+    * @property string $font_name
     * @method static AlphabetFont whereFontName($value)
     *
     * @OA\Property(
@@ -56,11 +56,11 @@ class AlphabetFont extends Model
     * )
     *
     */
-    protected $fontName;
+    protected $font_name;
 
     /**
-    * @property string $fontFileName
-    * @method static AlphabetFont whereFontFileName($value)
+    * @property string $font_filename
+    * @method static AlphabetFont whereFontFilename($value)
     *
     * @OA\Property(
     *     title="Alphabet Font File Name",
@@ -71,10 +71,10 @@ class AlphabetFont extends Model
     * )
     *
     */
-    protected $fontFileName;
+    protected $font_filename;
 
     /**
-    * @property int|null $fontWeight
+    * @property int|null $font_weight
     * @method static AlphabetFont whereFontWeight($value)
     *
     * @OA\Property(
@@ -87,7 +87,7 @@ class AlphabetFont extends Model
     * )
     *
     */
-    protected $fontWeight;
+    protected $font_weight;
 
     /**
     * @property string|null $copyright
@@ -152,5 +152,18 @@ class AlphabetFont extends Model
     public function alphabet()
     {
         return $this->belongsTo(Alphabet::class);
+    }
+
+    public function scopeFilterById($query, $id)
+    {
+        return $query->when($id, function ($q) use ($id) {
+            $q->whereId($id);
+        });
+    }
+    public function scopeFilterByFileName($query, $font_name)
+    {
+        return $query->when($font_name, function ($q) use ($font_name) {
+            $q->whereFontName($font_name);
+        });
     }
 }

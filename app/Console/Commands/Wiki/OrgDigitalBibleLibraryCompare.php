@@ -7,7 +7,6 @@ use Illuminate\Console\Command;
 use App\Models\Organization\Organization;
 use App\Models\Organization\OrganizationRelationship;
 use App\Models\Organization\OrganizationTranslation;
-use TomLingham\Searchy\Facades\Searchy;
 
 class OrgDigitalBibleLibraryCompare extends Command
 {
@@ -62,7 +61,7 @@ class OrgDigitalBibleLibraryCompare extends Command
     {
         $translationMatchExists    = OrganizationTranslation::where('name', $dbl_org->full_name)->first();
         $relationshipAlreadyExists = OrganizationRelationship::where('organization_parent_id', $this->dbl_id)
-                                                             ->where('relationship_id', $dbl_org->id)->first();
+                                                             ->first();
         if ($relationshipAlreadyExists || $this->dbl_id === $dbl_org->id) {
             return true;
         }
@@ -72,7 +71,6 @@ class OrgDigitalBibleLibraryCompare extends Command
                 'type'                   => 'Member',
                 'organization_child_id'  => $translationMatchExists->organization->id,
                 'organization_parent_id' => $this->dbl_id,
-                'relationship_id'        => $dbl_org->id
             ]);
             return true;
         }
@@ -83,7 +81,10 @@ class OrgDigitalBibleLibraryCompare extends Command
     private function fuzzySearchOrgs($dbl_org)
     {
         // Otherwise Fuzzy Search for Provider Name
-        $organizations = Searchy::driver('ufuzzy')->search(config('database.connections.dbp.database').'.organization_translations')->fields('name')->query($dbl_org->full_name)->getQuery()->limit(5)->get();
+        $organizations = OrganizationTranslation::whereFuzzy('name', $dbl_org->full_name)
+            ->getQuery()
+            ->limit(5)
+            ->get();
         if (!isset($organizations)) {
             $missing[] = $dbl_org->full_name;
             return false;
@@ -95,7 +96,9 @@ class OrgDigitalBibleLibraryCompare extends Command
 
         // Present Data to User
         $this->comment("\n\n==========$dbl_org->full_name==========");
-        $this->info(json_encode($organizations->pluck('name', 'organization_id'), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $this->info(
+            json_encode($organizations->pluck('name', 'organization_id'), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+        );
 
         // Get User Input
         $organization_id = $this->ask('Please enter the number of the Closest Match, if none just hit 0');
@@ -108,7 +111,6 @@ class OrgDigitalBibleLibraryCompare extends Command
             'type'                   => 'Member',
             'organization_child_id'  => $organization_id,
             'organization_parent_id' => $this->dbl_id,
-            'relationship_id'        => $dbl_org->id
         ]);
     }
 

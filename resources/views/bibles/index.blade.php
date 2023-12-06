@@ -3,7 +3,6 @@
 @section('head')
     <title>{{ trans('app.bibles_title') }}</title>
     <meta type="description" property="og:description" content="{{ trans('app.bibles_description') }}" />
-    @include('layouts.partials.ogp')
 @endsection
 
 @section('content')

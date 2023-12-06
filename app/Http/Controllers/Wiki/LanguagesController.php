@@ -8,6 +8,8 @@ use App\Models\Language\Language;
 use App\Transformers\LanguageTransformer;
 use App\Traits\AccessControlAPI;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
+use App\Models\User\Key;
+use Symfony\Component\HttpFoundation\Response;
 
 class LanguagesController extends APIController
 {
@@ -61,6 +63,8 @@ class LanguagesController extends APIController
      *
      * @OA\Schema(
      *   schema="v4_languages.all",
+     *   description= "Display a listing of the resource.
+     *                 Fetches the records from the database > passes them through fractal for transforming.",
      *   type="object",
      *   @OA\Property(property="data", type="array",
      *      @OA\Items(
@@ -86,67 +90,188 @@ class LanguagesController extends APIController
         $code                  = checkParam('code|iso|language_code');
         $include_translations  = checkParam('include_translations|include_alt_names');
         $name                  = checkParam('name|language_name');
-        $show_bibles           = checkBoolean('show_bibles');
         $limit                 = (int) (checkParam('limit') ?? 50);
         $limit                 = min($limit, 150);
         $page                  = checkParam('page') ?? 1;
+        $set_type_code         = checkParam('set_type_code');
+        $media                 = checkParam('media');
 
         // note: this two commented changes can be removed when bibleis and gideons no longer require a non-paginated response
         // remove pagination for bibleis and gideons (temporal fix)
         list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
-        // instead of returning hashes, accessControl will return language ids associated with the hashes
-        $access_control =  $this->accessControl($this->key, 'languages');
-        $cache_params = [
-            $this->v,  
-            $country, 
-            $code, 
-            $GLOBALS['i18n_id'], 
-            $name, 
-            $include_translations, 
-            $access_control->string, 
-            $limit, 
+        $access_group_ids = getAccessGroups();
+
+        $cache_params = $this->removeSpaceFromCacheParameters([
+            $this->v,
+            $country,
+            $code,
+            $GLOBALS['i18n_id'],
+            $name,
+            $include_translations,
+            $access_group_ids->toString(),
+            $limit,
             $page,
             $is_bibleis_gideons,
-        ];
+            $set_type_code,
+            $media,
+        ]);
 
-        $order = $country ? 'country_population.population' : 'ifnull(current_translation.name, languages.name)';
-        $order_dir = $country ? 'desc' : 'asc';
         $select_country_population = $country ? 'country_population.population' : 'null';
-        $languages = cacheRemember('languages_all', $cache_params, now()->addDay(), function () use ($country, $include_translations, $code, $name, $access_control, $order, $order_dir, $select_country_population, $limit, $page) {
-            $languages = Language::includeCurrentTranslation()
-                ->includeAutonymTranslation()
-                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers))
-                ->includeExtraLanguageTranslations($include_translations)
-                ->includeCountryPopulation($country)
-                ->filterableByCountry($country)
-                ->filterableByIsoCode($code)
-                ->filterableByName($name)
-                ->select([
-                    'languages.id',
-                    'languages.glotto_id',
-                    'languages.iso',
-                    'languages.name as backup_name',
-                    'current_translation.name as name',
-                    'autonym.name as autonym',
-                    \DB::raw($select_country_population . ' as country_population')
-                ])
-                ->with(['bibles' => function ($query) {
-                    $query->whereHas('filesets');
-                }])
-                ->withCount([
-                    'filesets'
-                ]);
+        $languages = cacheRemember(
+            'languages_all',
+            $cache_params,
+            now()->addDay(),
+            function () use (
+                $country,
+                $include_translations,
+                $code,
+                $name,
+                $access_group_ids,
+                $select_country_population,
+                $limit,
+                $media,
+                $set_type_code
+            ) {
+                $languages = Language::isContentAvailable($access_group_ids)
+                    ->includeCurrentTranslation()
+                    ->includeAutonymTranslation()
+                    ->includeExtraLanguageTranslations($include_translations)
+                    ->includeCountryPopulation($country)
+                    ->includeOrderByCountryPopulation()
+                    ->filterableByCountry($country)
+                    ->filterableByIsoCode($code)
+                    ->filterableByName($name)
+                    ->filterableByMedia($media)
+                    ->filterableBySetTypeCode($set_type_code)
+                    ->select([
+                        'languages.id',
+                        'languages.glotto_id',
+                        'languages.iso',
+                        'languages.name as backup_name',
+                        'current_translation.name as name',
+                        'autonym.name as autonym',
+                        'languages.rolv_code',
+                        \DB::raw($select_country_population . ' as country_population')
+                    ])
+                    ->with(['bibles' => function ($query) {
+                        $query->whereHas('filesets');
+                    }])
+                    ->withCount([
+                        'filesets'
+                    ]);
 
-            $languages = $languages->paginate($limit);
-            $languages_return = fractal(
-                $languages->getCollection(),
-                LanguageTransformer::class,
-                $this->serializer
-            );
+                $languages = $languages->paginate($limit);
+                $languages_return = fractal(
+                    $languages->getCollection(),
+                    LanguageTransformer::class,
+                    $this->serializer
+                );
 
-            return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
-        });
+                return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
+            }
+        );
 
+        return $this->reply($languages);
+    }
+
+    /**
+     * @param $search_text
+     *
+     * @OA\Get(
+     *     path="/languages/search/{search_text}",
+     *     tags={"Languages"},
+     *     summary="Returns languages related to this search",
+     *     description="Returns paginated languages that have search text in its name or country",
+     *     operationId="v4_languages.search",
+     *     @OA\Parameter(
+     *          name="search_text",
+     *          in="path",
+     *          description="The language text to search by",
+     *          required=true,
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/name", ref="#/components/schemas/LanguageTranslation/properties/name")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_languages.one"))
+     *     )
+     * )
+     *
+     * @OA\Schema(
+     *   schema="v4_languages.search",
+     *   type="object",
+     *   @OA\Property(property="data", type="object",
+     *      ref="#/components/schemas/Language"
+     *   )
+     * )
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|mixed
+     */
+    public function search($search_text)
+    {
+        $page  = checkParam('page') ?? 1;
+        $limit = (int) (checkParam('limit') ?? 15);
+        $limit = min($limit, 50);
+        $set_type_code = checkParam('set_type_code');
+        $media = checkParam('media');
+        $access_group_ids = getAccessGroups();
+        $formatted_search = $this->transformQuerySearchText($search_text);
+        $formatted_search_cache = str_replace(' ', '', $search_text);
+
+        if ($formatted_search_cache === '' || !$formatted_search_cache || empty($formatted_search)) {
+            return $this->setStatusCode(400)->replyWithError(trans('api.search_errors_400'));
+        }
+
+        $cache_params = [
+                $this->v,
+                $formatted_search_cache,
+                $limit,
+                $page,
+                $GLOBALS['i18n_id'],
+                $access_group_ids->toString(),
+                $media,
+                $set_type_code
+            ]
+        ;
+        $cache_key = generateCacheSafeKey('languages_search', $cache_params);
+
+        $languages = cacheRememberByKey(
+            $cache_key,
+            now()->addDay(),
+            function () use ($formatted_search, $limit, $access_group_ids, $set_type_code, $media) {
+                $bible_fileset_filters = [];
+
+                if ($set_type_code) {
+                    $bible_fileset_filters['set_type_code'] = $set_type_code;
+                }
+
+                if ($media) {
+                    $bible_fileset_filters['media'] = $media;
+                }
+
+                $languages = Language::filterableByNameAndAccessGroup(
+                    $formatted_search,
+                    $access_group_ids,
+                    $bible_fileset_filters
+                )
+                    ->select([
+                        'languages.id',
+                        'languages.glotto_id',
+                        'languages.iso',
+                        'languages.name as backup_name',
+                        'current_translation.name as name',
+                        'autonym.name as autonym',
+                        'languages.rolv_code',
+                    ])
+                    ->with('bibles');
+                $languages = $languages->paginate($limit);
+                $languages_return = fractal(
+                    $languages->getCollection(),
+                    LanguageTransformer::class,
+                    $this->serializer
+                );
+                return $languages_return->paginateWith(new IlluminatePaginatorAdapter($languages));
+            }
+        );
         return $this->reply($languages);
     }
 
@@ -185,15 +310,15 @@ class LanguagesController extends APIController
      */
     public function show($id)
     {
-        // instead of returning hashes, accessControl will return language ids associated with the hashes
-        $access_control = $this->accessControl($this->key, 'languages');
-        $cache_params = [$id, $access_control->string];
-        $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $access_control) {
+        $access_group_ids = getAccessGroups();
+        $cache_params = [$id, $access_group_ids->toString()];
+
+        $language = cacheRemember('language', $cache_params, now()->addDay(), function () use ($id, $access_group_ids) {
             $language = Language::where('id', $id)->orWhere('iso', $id)
-                ->includeExtraLanguages(arrayToCommaSeparatedValues($access_control->identifiers))
+                ->isContentAvailable($access_group_ids)
                 ->first();
             if (!$language) {
-                return $this->setStatusCode(404)->replyWithError("Language not found for ID: $id");
+                return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError("Language not found for ID: $id");
             }
             $language->load(
                 'translations',

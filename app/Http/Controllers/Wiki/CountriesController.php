@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Wiki;
 
 use App\Http\Controllers\APIController;
-
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Models\Country\JoshuaProject;
 use App\Models\Country\Country;
 use App\Transformers\CountryTransformer;
@@ -57,17 +57,30 @@ class CountriesController extends APIController
         $limit     = min($limit, 50);
         $page      = checkParam('page') ?? 1;
 
-        list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
-        $cache_params = [$GLOBALS['i18n_iso'], $languages, $limit, $page, $is_bibleis_gideons];
+        $access_group_ids = getAccessGroups();
 
-        $countries = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($languages, $limit, $page) {
+        list($limit, $is_bibleis_gideons) = forceBibleisGideonsPagination($this->key, $limit);
+
+        $cache_params = [
+            $GLOBALS['i18n_iso'],
+            $languages,
+            $limit,
+            $page, $is_bibleis_gideons,
+            $access_group_ids->toString()
+        ];
+        $cache_key = generateCacheSafeKey('countries_list', $cache_params);
+
+        $countries = cacheRememberByKey($cache_key, now()->addDay(), function () use ($languages, $limit, $access_group_ids) {
             $countries = Country::with('currentTranslation')
-            ->whereHas('languages.bibles.filesets')
+            ->hasFilesetsAvailable()
             ->paginate($limit);
+
             if ($languages) {
                 $countries->load([
-                    'languagesFiltered' => function ($query) use ($languages) {
-                        $query->orderBy('country_language.population', 'desc');
+                    'languagesFiltered' => function ($query) use ($access_group_ids) {
+                        $query
+                            ->IsContentAvailable($access_group_ids)
+                            ->orderBy('country_language.population', 'desc');
                     },
                 ]);
             }
@@ -78,6 +91,82 @@ class CountriesController extends APIController
                 $this->serializer
             );
 
+            return $countries_return->paginateWith(new IlluminatePaginatorAdapter($countries));
+        });
+        return $this->reply($countries);
+    }
+
+    /**
+     * Returns Countries
+     *
+     * @version 4
+     * @category v4_countries.search
+     *
+     * @return mixed $countries string - A JSON string that contains the status code and error messages if applicable.
+     *
+     * @OA\Get(
+     *     path="/countries/search/{search_text}",
+     *     tags={"Countries"},
+     *     summary="Returns Countries",
+     *     description="Returns the List of Countries filtered by names",
+     *     operationId="v4_countries.search",
+     *     @OA\Parameter(
+     *          name="search_text",
+     *          in="path",
+     *          @OA\Schema(ref="#/components/schemas/Country/properties/name", ref="#/components/schemas/Country/properties/iso_a3"),
+     *          description="Search countries by name",
+     *          required=true
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(
+     *            mediaType="application/json"),
+     *            @OA\Schema(ref="#/components/schemas/v4_countries.all")
+     *         )
+     *     )
+     * )
+     *
+     *
+     */
+    public function search($search_text = '')
+    {
+        $limit     = (int) (checkParam('limit') ?? 15);
+        $limit     = min($limit, 50);
+        $page      = checkParam('page') ?? 1;
+        $formatted_search = $this->transformQuerySearchText($search_text);
+        $formatted_search_cache = str_replace(' ', '', $search_text);
+
+        if ($formatted_search_cache === '' || !$formatted_search_cache || empty($formatted_search)) {
+            return $this->setStatusCode(HttpResponse::HTTP_BAD_REQUEST)->replyWithError(trans('api.search_errors_400'));
+        }
+
+        $access_group_ids = getAccessGroups();
+
+        $cache_params = [
+            $GLOBALS['i18n_iso'],
+            $limit,
+            $page,
+            $formatted_search_cache,
+            $access_group_ids->toString()
+        ];
+        $cache_key = generateCacheSafeKey('countries', $cache_params);
+
+        $countries = cacheRememberByKey($cache_key, now()->addDay(), function () use ($limit, $formatted_search, $access_group_ids) {
+            $countries = Country::with('currentTranslation')
+                ->filterableByNameOrIso($formatted_search)
+                ->whereHas('languages.bibles', function ($query) use ($access_group_ids) {
+                    $query->whereHas('filesets', function ($subquery) use ($access_group_ids) {
+                        return $subquery->isContentAvailable($access_group_ids);
+                    });
+                })
+                ->paginate($limit);
+
+            $countries_return = fractal(
+                $countries->getCollection(),
+                CountryTransformer::class,
+                $this->serializer
+            );
             return $countries_return->paginateWith(new IlluminatePaginatorAdapter($countries));
         });
         return $this->reply($countries);
@@ -146,11 +235,19 @@ class CountriesController extends APIController
      */
     public function show($id)
     {
-        $cache_params = [$id, $GLOBALS['i18n_iso']];
-        $country = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($id) {
-            $country = Country::with('languagesFiltered.bibles.translations')->find($id);
+        $access_group_ids = getAccessGroups();
+
+        $cache_params = [$id, $GLOBALS['i18n_iso'], $access_group_ids->toString()];
+        $country = cacheRemember('countries', $cache_params, now()->addDay(), function () use ($id, $access_group_ids) {
+            $country = Country::with(['languagesFiltered' => function ($query) use ($access_group_ids) {
+                $query->IsContentAvailable($access_group_ids)
+                    ->with('bibles.translations');
+            }])
+                ->find($id);
             if (!$country) {
-                return $this->setStatusCode(404)->replyWithError(trans('api.countries_errors_404', ['id' => $id]));
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_NOT_FOUND)
+                    ->replyWithError(trans('api.countries_errors_404', ['id' => $id]));
             }
             return $country;
         });

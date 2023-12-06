@@ -2,8 +2,12 @@
 
 namespace App\Models\Bible;
 
+use DB;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Language\Language;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\Bible\BibleBook;
+use App\Models\Bible\Bible;
 
 /**
  * App\Models\Bible\BibleFile
@@ -91,6 +95,21 @@ class BibleFile extends Model
      *
      */
     protected $chapter_start;
+    /**
+     *
+     * @OA\Property(
+     *   title="verse_sequence",
+     *   type="integer",
+     *   example=10,
+     *   description="The starting verse for the bible file but with format = integer",
+     *   minimum=1
+     * )
+     *
+     * @method static BibleFileTimestamp whereVerseSequence($value)
+     * @property int|null $verse_sequence
+     *
+     */
+    protected $verse_sequence;
     /**
      *
      * @OA\Property(
@@ -201,7 +220,14 @@ class BibleFile extends Model
 
     public function book()
     {
-        return $this->belongsTo(Book::class, 'book_id', 'id')->orderBy('protestant_order');
+        if ((int) checkParam('v', false) < 4) {
+            return $this->belongsTo(Book::class, 'book_id', 'id')->orderBy('protestant_order');
+        }
+
+        $versification = optional($this->bible()->first())->versification;
+        return $this->belongsTo(Book::class, 'book_id', 'id')
+            ->join('bible_books', 'bible_books.book_id', 'books.id')
+            ->orderByRaw(BibleBook::getBookOrderExpressionRaw($versification));
     }
 
     public function testament()
@@ -222,5 +248,129 @@ class BibleFile extends Model
     public function streamBandwidth()
     {
         return $this->hasMany(StreamBandwidth::class);
+    }
+
+    public function scopeJoinBibleFileTimestamps($query)
+    {
+        return $query->join(
+            DB::raw(
+                '(  SELECT distinct_timestamps.bible_file_id
+                    FROM (  SELECT DISTINCT bible_file_timestamps.bible_file_id
+                            FROM bible_file_timestamps ) AS distinct_timestamps
+                    GROUP BY distinct_timestamps.bible_file_id
+                ) AS timestamps_counts'
+            ),
+            function ($join) {
+                $join->on('timestamps_counts.bible_file_id', '=', 'bible_files.id');
+            }
+        );
+    }
+
+    /**
+     * Add join related to the bible_file_tags entity
+     *
+     * @param Builder $query
+     * @param string $book_id
+     *
+     * @return Builder
+     */
+    public function scopeJoinFileTag(Builder $query) : Builder
+    {
+        return $query->leftJoin('bible_file_tags', function ($left_query) {
+            $left_query
+                ->on('bible_file_tags.file_id', 'bible_files.id')
+                ->where('bible_file_tags.tag', BibleFileTag::TAG_YOUTUBE_VIDEO);
+        });
+    }
+
+    /**
+     * Add join related to the bible_fileset_tags entity
+     *
+     * @param Builder $query
+     * @param string $book_id
+     *
+     * @return Builder
+     */
+    public function scopeJoinFilesetTags(Builder $query, string $book_id) : Builder
+    {
+        return $query->leftJoin('bible_fileset_tags', function ($left_query) use ($book_id) {
+            $left_query
+                ->on('bible_fileset_tags.hash_id', 'bible_files.hash_id')
+                ->where('bible_fileset_tags.name', BibleFileTag::TAG_YOUTUBE_PLAYLIST.':'.$book_id);
+        });
+    }
+
+    /**
+     * Add join related to the bible_books entity
+     *
+     * @param Builder $query
+     * @param string $fileset_hash_id
+     * @param string $bible_id
+     * @param string|null $chapter_id
+     * @param string|null $book_id
+     *
+     * @return Builder
+     */
+    public function scopeByHashIdJoinBooks(
+        Builder $query,
+        string $fileset_hash_id,
+        Bible $bible,
+        ?string $chapter_id,
+        ?string $book_id
+    ) : Builder {
+        $bible_id = optional($bible)->id;
+
+        $select_columns = [
+            'bible_files.duration',
+            'bible_files.hash_id',
+            'bible_files.id',
+            'bible_files.book_id',
+            'bible_files.chapter_start',
+            'bible_files.chapter_end',
+            'bible_files.verse_start',
+            'bible_files.verse_end',
+            'bible_files.verse_sequence',
+            'bible_files.file_name',
+            'bible_files.file_size',
+            'bible_books.name as book_name',
+            BibleBook::getBookOrderSelectColumnExpressionRaw($bible->versification, 'book_order'),
+            'bible_file_tags.value as bible_tag_value',
+        ];
+
+        if ($book_id) {
+            $select_columns[] = 'bible_fileset_tags.description as bible_fileset_tag_value';
+        }
+
+        return $query
+            ->where('bible_files.hash_id', $fileset_hash_id)
+            ->join(
+                'bible_books',
+                function ($q) use ($bible_id) {
+                    $q
+                        ->on(
+                            'bible_books.book_id',
+                            'bible_files.book_id'
+                        )
+                        ->where('bible_books.bible_id', $bible_id);
+                }
+            )
+            ->join(
+                'books',
+                'books.id',
+                'bible_files.book_id'
+            )
+            ->joinFileTag()
+            ->when(!is_null($chapter_id), function ($query) use ($chapter_id) {
+                return $query->where(
+                    'bible_files.chapter_start',
+                    (int) $chapter_id
+                );
+            })
+            ->when($book_id, function ($query) use ($book_id) {
+                return $query
+                    ->where('bible_files.book_id', $book_id)
+                    ->joinFilesetTags($book_id);
+            })
+            ->select($select_columns);
     }
 }

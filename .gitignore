@@ -24,6 +24,7 @@
 /storage/s3/
 /storage/bibles/
 /vendor
+/public/downloads
 
 # Locally Generated Development Files
 *.log
@@ -39,8 +40,10 @@ _ide_helper.php
 _ide_helper_models.php
 .phpunit.result.cache
 .php_cs.cache
+.php-cs-fixer.cache
 fixers/tmp
 .elasticbeanstalk/*
+.phpunit.cache/
 
 # The Mac
 .DS_STORE
@@ -56,3 +59,7 @@ fixers/tmp
 tools/permissionValidation/results/**
 tools/permissionValidation/myconfig.py
 tools/permissionValidation/runlog*
+
+# Codebuild
+/artifacts/
+codebuild_build.sh

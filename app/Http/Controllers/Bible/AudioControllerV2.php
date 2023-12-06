@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Bible;
 
+use Symfony\Component\HttpFoundation\Response;
 use App\Http\Controllers\APIController;
 
 use App\Models\Bible\Book;
@@ -78,36 +79,44 @@ class AudioControllerV2 extends APIController
         $chapter_id = checkParam('chapter_id');
 
         $cache_params = [$fileset_id, $book_id, $chapter_id];
+        $cache_key = generateCacheSafeKey('audio_index', $cache_params);
 
-        $audioChapters = cacheRemember('audio_index', $cache_params, now()->addDay(), function () use ($fileset_id, $book_id, $chapter_id) {
-            // Account for various book ids
+        $audioChapters = cacheRememberByKey(
+            $cache_key,
+            now()->addDay(),
+            function () use ($fileset_id, $book_id, $chapter_id) {
+                // Account for various book ids
 
-            $book_id = optional(Book::where('id_osis', $book_id)->first())->id;
+                $book_id = optional(Book::where('id_osis', $book_id)->first())->id;
 
-            // Fetch the Fileset
-            $hash_id = optional(BibleFileset::uniqueFileset($fileset_id, 'audio', true)->select('hash_id')->first())->hash_id;
-            if (!$hash_id) {
-                return $this->setStatusCode(404)->replyWithError('No Audio Fileset could be found for: ' . $hash_id);
+                // Fetch the Fileset
+                $hash_id = optional(
+                    BibleFileset::uniqueFileset($fileset_id, 'audio', true)->select('hash_id')->first()
+                )->hash_id;
+
+                if (!$hash_id) {
+                    return $this
+                        ->setStatusCode(Response::HTTP_NOT_FOUND)
+                        ->replyWithError('No Audio Fileset could be found for: ' . $hash_id);
+                }
+
+                // Fetch The files
+                $response = BibleFile::with('book', 'bible')->where('hash_id', $hash_id)
+                    ->when($chapter_id, function ($query) use ($chapter_id) {
+                        return $query->where('chapter_start', $chapter_id);
+                    })->when($book_id, function ($query) use ($book_id) {
+                        return $query->where('book_id', $book_id);
+                    })->orderBy('file_name');
+
+                return $response->get();
             }
+        );
 
-            // Fetch The files
-            $response = BibleFile::with('book', 'bible')->where('hash_id', $hash_id)
-                ->when($chapter_id, function ($query) use ($chapter_id) {
-                    return $query->where('chapter_start', $chapter_id);
-                })->when($book_id, function ($query) use ($book_id) {
-                    return $query->where('book_id', $book_id);
-                })->orderBy('file_name');
-
-            return $response->get();
-        });
-
-        // Transaction id to be passed to signedUrl
-        $transaction_id = random_int(0, 10000000);
         foreach ($audioChapters as $key => $audio_chapter) {
-            $audioChapters[$key]->file_name = $this->signedUrl('audio/' . $audio_chapter->bible->first()->id . '/' . $fileset_id . '/' . $audio_chapter->file_name, 'dbp-prod', $transaction_id);
+            $audioChapters[$key]->file_name = $fileset_id . '/' . $audio_chapter->file_name;
         }
 
-        return $this->reply(fractal($audioChapters, new AudioTransformer(), $this->serializer), [], $transaction_id);
+        return $this->reply(fractal($audioChapters, new AudioTransformer(), $this->serializer), []);
     }
 
     /**
@@ -159,7 +168,9 @@ class AudioControllerV2 extends APIController
             })->get();
 
         // Fetch Timestamps
-        $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))->orderBy('verse_start')->get();
+        $audioTimestamps = BibleFileTimestamp::whereIn('bible_file_id', $bible_files->pluck('id'))
+        ->orderBy('verse_sequence')
+        ->get();
 
 
         if ($audioTimestamps->isEmpty() && ($fileset->set_type_code === 'audio_stream' || $fileset->set_type_code === 'audio_drama_stream')) {
@@ -231,9 +242,16 @@ class AudioControllerV2 extends APIController
     {
         return $this->reply([
             [
-                'server'    => config('services.cdn.server'),
-                'root_path' => '/audio',
+                'server'    => config('services.cdn.server_v2'),
+                'root_path' => '/mp3audiobibles2',
                 'protocol'  => 'https',
+                'CDN'       => '1',
+                'priority'  => '1',
+            ],
+            [
+                'server'    => config('services.cdn.server_v2'),
+                'root_path' => '/mp3audiobibles2',
+                'protocol'  => 'http',
                 'CDN'       => '1',
                 'priority'  => '5',
             ],

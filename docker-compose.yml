@@ -1,0 +1,53 @@
+version: '3.7'
+services:
+  db8:
+    image: mysql:8.0.28
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+      - MYSQL_DATABASE=${DB_CONNECTION}
+    ports:
+      - '${DBP_PORT}:3306'
+    volumes:
+      - 'mysql_data8:/var/lib/mysql'
+
+  dbpusers8:
+    image: mysql:8.0.33
+    container_name: dbpusers8
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+      - MYSQL_DATABASE=${DB_USERS_CONNECTION}
+    ports:
+      - '${DBP_USERS_PORT}:3306'
+    volumes:
+      - 'mysql_dbpusers8:/var/lib/mysql'
+
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: on-failure
+    volumes:
+      - './:/opt/app'
+      - ./docker/php/phpSettings.conf:/usr/local/etc/php-fpm.d/zzz-phpSettings.conf
+    depends_on:
+      - db8
+      - dbpusers8
+
+  server:
+    image: nginx:stable-alpine
+    volumes:
+      - './public/:/opt/app'
+      - './docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro'
+    ports:
+      - '${APP_PORT}:80'
+    depends_on:
+      - php
+
+  memcached:
+    image: memcached:1.6-alpine
+    ports:
+      - '${MEMCACHED_PORT}:11211'
+
+volumes:
+  mysql_data8:
+  mysql_dbpusers8:

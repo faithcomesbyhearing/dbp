@@ -1,7 +1,6 @@
 {
-  "/js/app.js": "/js/app.js",
-  "/css/app.css": "/css/app.css",
-  "/css/app_api_key.css": "/css/app_api_key.css",
-  "/js/docs.js": "/js/docs.js",
-  "/js/bulma.js": "/js/bulma.js"
+    "/js/app.js": "/js/app.js",
+    "/css/app_api_key.css": "/css/app_api_key.css",
+    "/css/style.css": "/css/style.css",
+    "/css/app.css": "/css/app.css"
 }

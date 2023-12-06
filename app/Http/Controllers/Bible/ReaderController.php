@@ -25,19 +25,18 @@ class ReaderController extends APIController
     public function languages()
     {
         $languages = cacheRemember('Bible_is_languages', [], now()->addDay(), function () {
-            $project_key = optional(Key::where('name', 'bible.is')->first())->key;
-            $access_control = $this->accessControl($project_key);
+            $project_key = optional(Key::where('name', 'new bible.is mobile app')->first())->key;
             return Language::select(['languages.id', 'languages.name', 'autonym.name as autonym'])
                 ->leftJoin('language_translations as autonym', function ($join) {
                     $join->on('autonym.language_source_id', 'languages.id');
                     $join->on('autonym.language_translation_id', 'languages.id');
                     $join->orderBy('autonym.priority', 'desc');
                 })
-                ->whereHas('filesets', function ($query) use ($access_control) {
-                    $query->whereIn('hash_id', $access_control->identifiers);
+                ->whereHas('filesets', function ($query) use ($project_key) {
                     $query->whereHas('fileset', function ($query) {
                         $query->where('set_type_code', 'text_plain')->where('asset_id', 'dbp-prod');
                     });
+                    $query->isContentAvailable($project_key);
                 })->withCount('bibles')->get();
         });
 
@@ -51,9 +50,6 @@ class ReaderController extends APIController
      */
     public function bibles($language_id)
     {
-        $project_key = Key::where('name', 'bible.is')->first();
-        $access_control = $this->accessControl($project_key->key);
-
         $filesets = BibleFileset::with('bible.translations')
             ->whereHas('bible', function ($query) use ($language_id) {
                 $query->where('language_id', $language_id);
@@ -97,10 +93,16 @@ class ReaderController extends APIController
      */
     public function chapter($bible_id, $book_id, $chapter)
     {
-        $fileset = BibleFileset::with('bible')->where('id', $bible_id)->where('asset_id', 'dbp-prod')->where('set_type_code', 'text_plain')->firstOrFail();
+        $fileset = BibleFileset::with('bible')
+            ->where('id', $bible_id)
+            ->where('asset_id', 'dbp-prod')
+            ->where('set_type_code', 'text_plain')
+            ->firstOrFail();
 
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)->where('book_id', $book_id)
-            ->where('chapter', $chapter)->orderBy('verse_start')->get();
+            ->where('chapter', $chapter)
+            ->orderBy('verse_sequence')
+            ->get();
         return view('bibles.reader.verses', compact('verses'));
     }
 }

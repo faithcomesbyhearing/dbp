@@ -53,14 +53,14 @@ class FilmsController extends APIController
     {
         return $this->reply([
             [
-                'server'    => config('services.cdn.video_server'),
+                'server'    => config('services.cdn.server'),
                 'root_path' => 'video',
                 'protocol'  => 'https',
                 'CDN'       => 0,
                 'priority'  => 5,
             ],
             [
-                'server'    => 'video.dbt.io',
+                'server'    => config('services.cdn.video_server_v2'),
                 'root_path' => '',
                 'protocol'  => 'http',
                 'CDN'       => 1,

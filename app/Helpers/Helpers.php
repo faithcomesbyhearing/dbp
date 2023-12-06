@@ -1,6 +1,68 @@
 <?php
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Carbon;
+use Symfony\Component\HttpFoundation\Response;
+use App\Support\AccessGroupsCollection;
+use App\Models\Bible\BibleFilesetSize;
+
+function getAccessGroups() : AccessGroupsCollection
+{
+    $group_ids = request()->input('middleware_access_group_ids');
+
+    if (empty($group_ids)) {
+        \Log::channel('errorlog')->error(["Missing access group ids", Response::HTTP_UNPROCESSABLE_ENTITY]);
+        abort(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            "Missing parameter access group ids."
+        );
+    }
+
+    return new AccessGroupsCollection($group_ids);
+}
+
+/**
+ * Get param from request object and check that the param is set if param is required
+ *
+ * @param string $param_name
+ * @param bool $required
+ * @param Array|string|int|null|bool $init_value
+ *
+ * @return array|bool|null|string
+ */
+function getAndCheckParam(
+    string $param_name,
+    bool $required = false,
+    Array|string|int|null|bool $init_value = null
+) : Array|string|int|null {
+    $parameter_value = $init_value;
+    $parameter_value = removeSpaceAndCntrlParameter($parameter_value);
+
+    if (!is_null($init_value) && $parameter_value !== '') {
+        return $init_value;
+    }
+
+    foreach (explode('|', $param_name) as $current_param) {
+        if (request()->has($current_param)) {
+            $parameter_value = request()->input($current_param);
+        } elseif (session()->has($current_param)) {
+            $parameter_value = request()->get($current_param);
+        } elseif (request()->hasHeader($current_param)) {
+            $parameter_value = request()->header($current_param);
+        }
+    }
+
+    if ($required && empty($parameter_value)) {
+        Log::channel('errorlog')->error(["Missing Param '$param_name", 422]);
+        abort(
+            422,
+            "You need to provide the missing parameter '$param_name'. Please append it to the url or the request Header."
+        );
+    }
+
+    return $parameter_value;
+}
 
 /**
  * Check query parameters for a given parameter name, and check the headers for the same parameter name;
@@ -42,7 +104,10 @@ function checkParam(string $paramName, $required = false, $inPathValue = null)
 
     if ($required) {
         Log::channel('errorlog')->error(["Missing Param '$paramName", 422]);
-        abort(422, "You need to provide the missing parameter '$paramName'. Please append it to the url or the request Header.");
+        abort(
+            422,
+            "You need to provide the missing parameter '$paramName'. Please append it to the url or the request Header."
+        );
     }
 }
 
@@ -73,74 +138,157 @@ function cacheGet($cache_key)
     return Cache::get($cache_key);
 }
 
-function cacheRemember($cache_key, $cache_args = [], $duration, $callback)
+function createCacheLock($cache_key, $lock_timeout = 10)
 {
-    $cache_string = generateCacheString($cache_key, $cache_args);
-    return Cache::remember($cache_string, $duration, $callback);
+    return Cache::lock($cache_key . '_lock', $lock_timeout);
 }
 
-// used for the non paginated enndpoints used by bibleis/gideons backward compatibility
-function cacheRememberForHeavyCalls($cache_key, $cache_args = [], $duration, $callback)
+/**
+ * Set and get the result of callback into cache storage. The key will create from the cache_args array
+ *
+ * @param string $key
+ * @param Array $cache_args
+ * @param Carbon $ttl
+ * @param Closure $callback
+ * @return mixed
+ */
+function cacheRemember($cache_key, $cache_args, $ttl, $callback)
 {
-    $cache_string = generateCacheString($cache_key, $cache_args);
-    $current_cache = Cache::get($cache_string);
-    if ($current_cache && $current_cache !== 'PENDING') {
-      Log::error('Got cache at first and returned' . $cache_string);
-      return $current_cache;
-    }
-
-    if ($current_cache !== 'PENDING') {
-        Cache::put($cache_string, 'PENDING', $duration);
-        Log::error('adding pending on ' . $cache_string);
-        $current_cache = $callback();
-        Cache::put($cache_string, $current_cache, $duration);
-        Log::error('This thread finished loading sql' . $cache_string);
-        return $current_cache;
-    }
-
-    while ($current_cache === 'PENDING') {
-        sleep(1);
-        Log::error('waiting for the cache on the state:' . json_encode($current_cache));
-        $current_cache = Cache::get($cache_string);
-    }
-
-    $current_cache = Cache::get($cache_string);
-    Log::error('Done on cache remember for heave calls for:' . $cache_string);
-    return $current_cache;
+    $key = generateCacheString($cache_key, $cache_args);
+    return cacheRememberByKey($key, $ttl, $callback);
 }
 
+/**
+ * Set and get the result of callback into cache storage usign a given key
+ *
+ * @param string $key
+ * @param Carbon $ttl
+ * @param Closure $callback
+ * @return mixed
+ */
+function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
+{
+    // if something fails on the callback, release the lock
+    // 20 seconds was selected to allow for the longest query to complete.
+    // This is not based on any empirical evidence.
+    $lock_timeout = 20;
+    $value = Cache::get($key);
+
+    if (!is_null($value)) {
+        // got the cached value, return it
+        return $value;
+    }
+
+    // cache not set. try to acquire lock to gain access to the callback
+    $lock = createCacheLock($key);
+    if ($lock->acquire()) {
+        try {
+            // lock acquired. access resource via callback
+            $value = $callback();
+            if (!is_null($value)) {
+                Cache::put($key, $value, $ttl);
+            } else {
+                Log::error("CacheRemember. callback returned null for key: " . $key);
+            }
+            $lock->release();
+            return $value;
+        } catch (Exception $exception) {
+            $lock->release();
+            Log::error("Exception trying to acquire lock for key [".$key."]");
+            Log::error($exception);
+            throw $exception;
+        }
+    } else {
+        try {
+            // couldn't get the lock, another is executing the callback. block waiting for lock
+            // or until the lock is released by the lock timeout
+            $lock->block($lock_timeout + 1);
+            // Lock acquired, which should mean the cache is set
+            $value = Cache::get($key);
+            if (is_null($value)) {
+                // !!! **** my assumption about when the cache value will be available is not valid
+                throw new Exception("Exception when the cache value is null for key [".$key."]");
+            }
+            return $value ;
+        } catch (LockTimeoutException $e) {
+            // Unable to acquire lock...
+            Log::error("Lock Timeout Exception for key [".$key."]");
+            Log::error($e);
+        } finally {
+            optional($lock)->release();
+        }
+
+        throw new \UnexpectedValueException("Undefined Error for key [".$key."]");
+    }
+}
+
+/**
+ * Remove special characters and all spaces. If the phrase has two or more words,
+ * it will leave a space between each word.
+ *
+ * @param string $search_text
+ *
+ * @return string
+ */
+function transformQuerySearchText(string $search_text): string
+{
+    $formatted_search = urldecode($search_text);
+    $formatted_search = preg_replace('/[+\-><\(\)~*\"@%]+/', ' ', $formatted_search);
+    $formatted_search = preg_replace('!\s+!', ' ', $formatted_search);
+    return trim($formatted_search);
+}
 
 function cacheRememberForever($cache_key, $callback)
 {
     return Cache::rememberForever($cache_key, $callback);
 }
 
-function apiLogs($request, $status_code, $s3_string = false, $ip_address = null)
+/**
+ * Get a valid formed cache key
+ *
+ * @param string $key
+ * @param string $args
+ *
+ * @return string
+ */
+function generateCacheSafeKey(string $key, Array $args = []) : string
 {
-    $log_string = time() . '∞' . config('app.server_name') . '∞' . $status_code . '∞' . $request->path() . '∞';
-    $log_string .= '"' . $request->header('User-Agent') . '"' . '∞';
-    foreach ($_GET as $header => $value) {
-        $log_string .= ($value !== '') ? $header . '=' . $value . '|' : $header . '|';
-    }
-    $log_string = rtrim($log_string, '|');
-    $log_string .= '∞' . $ip_address . '∞';
-    if ($s3_string) {
-        $log_string .= $s3_string;
+    $new_args = removeSpaceAndCntrlFromCacheParameters($args);
+    $cache_string =  strtolower(array_reduce($new_args, function ($carry, $item) {
+        return $carry .= ':' . $item;
+    }, $key));
+
+    $key_cache_string = base64_encode($cache_string);
+
+    $key_string_length = strlen($key_cache_string);
+
+    // cache key max out at 230 bytes, so we use sha512 to avoid it from maxing out
+    // in lock we add 5-10 more characters so we max out at 230
+    if ($key_string_length > 230) {
+        // we try to avoid hash collisions using sha512 hash algorithm and additionally using the key length
+        return hash("sha512", $key_cache_string).$key_string_length;
     }
 
-    if (config('app.env') !== 'local') {
-        App\Jobs\SendApiLogs::dispatch($log_string);
-    }
+    return $key_cache_string;
 }
 
 function generateCacheString($key, $args = [])
 {
-    return strtolower(array_reduce($args, function ($carry, $item) {
+    $new_args = removeSpaceAndCntrlFromCacheParameters($args);
+    $cache_string =  strtolower(array_reduce($new_args, function ($carry, $item) {
         return $carry .= ':' . $item;
     }, $key));
+
+    // cache key max out at 230 bytes, so we use sha512 to avoid it from maxing out
+    // in lock we add 5-10 more characters so we max out at 230
+    if (strlen($cache_string) > 230) {
+        $cache_string = md5($cache_string);
+    }
+
+    return $cache_string;
 }
 
-function isBibleisOrGideon($key)
+function getBackwardCompatibilityInfo($key)
 {
     $bibleis_compat_keys = config('auth.compat_users.api_keys.bibleis');
     $bibleis_compat_keys = explode(',', $bibleis_compat_keys);
@@ -152,10 +300,16 @@ function isBibleisOrGideon($key)
     ];
     if (in_array($key, $bibleis_compat_keys)) {
         $compat_keys_response['isBibleis'] = true;
-    } else if (in_array($key, $gid_compat_keys)) {
+    } elseif (in_array($key, $gid_compat_keys)) {
         $compat_keys_response['isGideons'] = true;
     }
     return $compat_keys_response;
+}
+
+function isBackwardCompatible($key)
+{
+    $app_compat_keys = getBackwardCompatibilityInfo($key);
+    return $app_compat_keys['isBibleis'] === true || $app_compat_keys['isGideons'] === true;
 }
 
 function forceBibleisGideonsPagination($key, $limit_param)
@@ -166,37 +320,37 @@ function forceBibleisGideonsPagination($key, $limit_param)
 
     if (shouldUseBibleisBackwardCompat($key)) {
         $limit = PHP_INT_MAX - 10;
-        $is_bibleis_gideons = 'bibleis-gideons';
+        $is_bibleis_gideons = 'b-g';
     }
     return [$limit, $is_bibleis_gideons];
 }
 
 function storagePath(
-  $bible,
-  $fileset,
-  $fileset_chapter,
-  $secondary_file_name = null
+    $bible,
+    $fileset,
+    $fileset_chapter,
+    $secondary_file_name = null
 ) {
     switch ($fileset->set_type_code) {
-      case 'audio_drama':
-      case 'audio':
-          $fileset_type = 'audio';
-          break;
-      case 'text_plain':
-      case 'text_format':
-          $fileset_type = 'text';
-          break;
-      case 'video_stream':
-      case 'video':
-          $fileset_type = 'video';
-          break;
-      case 'app':
-          $fileset_type = 'app';
-          break;
-      default:
-          $fileset_type = 'text';
-          break;
-  }
+        case 'audio_drama':
+        case 'audio':
+            $fileset_type = 'audio';
+            break;
+        case 'text_plain':
+        case 'text_format':
+            $fileset_type = 'text';
+            break;
+        case 'video_stream':
+        case 'video':
+            $fileset_type = 'video';
+            break;
+        case 'app':
+            $fileset_type = 'app';
+            break;
+        default:
+            $fileset_type = 'text';
+            break;
+    }
     return $fileset_type .
       '/' .
       ($bible ? $bible . '/' : '') .
@@ -218,8 +372,13 @@ function formatAppVersion($app_version)
     ];
 }
 
-function logDeprecationInfo($key, $app_name, $should_use_backward_compat, $app_version = null, $deprecation_version = null)
-{
+function logDeprecationInfo(
+    $key,
+    $app_name,
+    $should_use_backward_compat,
+    $app_version = null,
+    $deprecation_version = null
+) {
     // log data to be sure this deprecation method is working correctly
     $log_data = [
         'key' => $key,
@@ -239,14 +398,16 @@ function shouldUseBibleisBackwardCompat($key)
     $should_use_backward_compat = false;
     $app_name = '';
     $app_version = '';
-    $app_compat_keys = isBibleisOrGideon($key);
+    $app_compat_keys = getBackwardCompatibilityInfo($key);
     $deprecation_version = null;
 
+    $backward_compatibility = config('settings.backward_compatibility.app_name');
+
     if ($app_compat_keys['isBibleis']) {
-        $app_name = 'Bible.is';
+        $app_name = $backward_compatibility['bibleis'];
         $deprecation_version = config('settings.deprecate_from_version.bibleis');
     } elseif ($app_compat_keys['isGideons']) {
-        $app_name = 'Gideons';
+        $app_name = $backward_compatibility['gideons'];
         $deprecation_version = config('settings.deprecate_from_version.gideons');
     }
 
@@ -266,7 +427,7 @@ function shouldUseBibleisBackwardCompat($key)
             $app_version = formatAppVersion($app_version);
             if ($app_version['major_version'] < $deprecation_version['major_version']) {
                 $should_use_backward_compat = true;
-            } else if ($app_version['major_version'] === $deprecation_version['major_version']) {
+            } elseif ($app_version['major_version'] === $deprecation_version['major_version']) {
                 if ($app_version['minor_version'] < $deprecation_version['minor_version']) {
                     $should_use_backward_compat = true;
                 }
@@ -336,7 +497,16 @@ if (!function_exists('unique_random')) {
             }
 
             // Check if it is unique in the database
-            $count = DB::table($table)->where($col, '=', $random)->count();
+            $parameters_connection = \explode('.', $table);
+
+            if (!empty($parameters_connection) && sizeof($parameters_connection) > 1) {
+                $connection = $parameters_connection[0];
+                $table = $parameters_connection[1];
+    
+                $count = \DB::connection($connection)->table($table)->where($col, '=', $random)->count();
+            } else {
+                $count = \DB::table($table)->where($col, '=', $random)->count();
+            }
 
             // Store the random character in the tested array
             // To keep track which ones are already tested
@@ -474,17 +644,141 @@ if (!function_exists('arrayToCommaSeparatedValues')) {
     }
 }
 
-if (!function_exists('formatFilesetMeta')) {
-    function formatFilesetMeta($fileset)
+
+if (!function_exists('getTestamentString')) {
+    function getTestamentString($id)
     {
-        if (isset($fileset->meta)) {
-            foreach ($fileset->meta as $metadata) {
-                if (isset($metadata['name'], $metadata['description'])) {
-                    $fileset[$metadata['name']] = $metadata['description'];
-                }
-            }
-            unset($fileset->meta);
+        $testament_pivot_word = 6;
+
+        $substring = '';
+        if (strlen($id) > $testament_pivot_word) {
+            $substring = $id[$testament_pivot_word];
         }
-        return $fileset;
+        switch ($substring) {
+            case 'O':
+                $testament = [BibleFilesetSize::SIZE_OLD_TESTAMENT, BibleFilesetSize::SIZE_COMPLETE];
+                break;
+
+            case 'N':
+                $testament = [BibleFilesetSize::SIZE_NEW_TESTAMENT, BibleFilesetSize::SIZE_COMPLETE];
+                break;
+
+            case 'P':
+                $testament = [
+                    BibleFilesetSize::SIZE_NEW_TESTAMENT_OLD_TESTAMENT_PORTION,
+                    BibleFilesetSize::SIZE_NEW_TESTAMENT_PORTION,
+                    BibleFilesetSize::SIZE_NEW_TESTAMENT_PORTION_OLD_TESTAMENT_PORTION,
+                    BibleFilesetSize::SIZE_OLD_TESTAMENT_NEW_TESTAMENT_PORTION,
+                    BibleFilesetSize::SIZE_OLD_TESTAMENT_PORTION,
+                    BibleFilesetSize::SIZE_PORTION
+                ];
+                break;
+            default:
+                $testament = [];
+        }
+        return $testament;
+    }
+}
+
+/**
+ * Remove space and cntrl for each value that belongs to cache params array
+ *
+ * @param array $cache_params
+ *
+ * @return array
+ */
+if (!function_exists('removeSpaceAndCntrlFromCacheParameters')) {
+    function removeSpaceAndCntrlFromCacheParameters(array $cache_params): array
+    {
+        return array_map(
+            function ($param) {
+                return removeSpaceAndCntrlParameter($param);
+            },
+            $cache_params
+        );
+    }
+}
+
+/**
+ * Remove space and cntrl for a value
+ *
+ * @param string|int|Array|bool|null $param
+ *
+ * @return string|int|Array|bool|null
+ */
+if (!function_exists('removeSpaceAndCntrlParameter')) {
+    function removeSpaceAndCntrlParameter(string|int|Array|bool|null $param): string|int|Array|bool|null
+    {
+        return is_string($param)
+            ? preg_replace('/[[:cntrl:]]/', '', str_replace(' ', '', $param))
+            : $param;
+    }
+}
+
+/**
+ * Get the full Youtube URL given segment and playlist values
+ *
+ * @param string $file_tag
+ * @param string|null $playlist_id
+ *
+ * @return string
+ */
+if (!function_exists('getYoutubePlaylistURL')) {
+    function getYoutubePlaylistURL(string $file_tag, ?string $playlist_id): string
+    {
+        return $playlist_id
+            ? sprintf('%swatch?v=%s&list=%s', config('settings.youtube_url'), $file_tag, $playlist_id)
+            : sprintf('%swatch?v=%s', config('settings.youtube_url'), $file_tag);
+    }
+}
+
+/**
+ * Get Download AccessGroup list
+ *
+ * @return array
+ */
+if (!function_exists('getDownloadAccessGroupList')) {
+    function getDownloadAccessGroupList(): array
+    {
+        return array_map('intval', explode(',', config('settings.download_access_group_list')));
+    }
+}
+
+/**
+ * Retrieve the user object from the request and verify if it has been initialized or set.
+ *
+ * @return bool
+ */
+if (!function_exists('isUserLoggedIn')) {
+    function isUserLoggedIn() : bool
+    {
+        $user = request()->user();
+        return !empty($user) && optional($user)->id > 0;
+    }
+}
+
+if (!function_exists('getAliasOrTableName')) {
+    function getAliasOrTableName(string $table_name) : string
+    {
+        $alias = \explode('as', $table_name);
+        if (sizeof($alias) === 1) {
+            $alias = \explode('AS', $table_name);
+        }
+
+        return \trim($alias[sizeof($alias) - 1]);
+    }
+}
+
+if (!function_exists('constraintExists')) {
+    function constraintExists($db, string $table, string $constraint)
+    {
+        $connection = $db->getDatabaseName();
+        $count = $db->table('information_schema.table_constraints')
+                ->where('constraint_schema', $connection)
+                ->where('table_name', $table)
+                ->where('constraint_name', $constraint)
+                ->count();
+
+        return $count > 0;
     }
 }

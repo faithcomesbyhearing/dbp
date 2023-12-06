@@ -120,18 +120,19 @@ class BooksTransformer extends BaseTransformer
     public function transformForV4($book)
     {
         switch ($this->route) {
-            case 'v4_bible_books_all':
-                return [
-                    'book_id'         => $book->id,
-                    'book_id_usfx'    => $book->id_usfx,
-                    'book_id_osis'    => $book->id_osis,
-                    'name'            => $book->name,
-                    'testament'       => $book->book_testament,
-                    'testament_order' => $book->testament_order,
-                    'book_order'      => $book->protestant_order,
-                    'book_group'      => $book->book_group,
-                    'chapters'        => $book->chapters,
-                ];
+            // this action is commented, so we have commented this transformer as well
+            // case 'v4_bible_books_all':
+            //     return [
+            //         'book_id'         => $book->id,
+            //         'book_id_usfx'    => $book->id_usfx,
+            //         'book_id_osis'    => $book->id_osis,
+            //         'name'            => $book->name,
+            //         'testament'       => $book->book_testament,
+            //         'testament_order' => $book->testament_order,
+            //         'book_order'      => $book->protestant_order,
+            //         'book_group'      => $book->book_group,
+            //         'chapters'        => $book->chapters,
+            //     ];
 
             case 'v4_bible.books':
                 $result = [
@@ -141,8 +142,9 @@ class BooksTransformer extends BaseTransformer
                     'name'            => $book->name,
                     'testament'       => $book->book->book_testament,
                     'testament_order' => $book->book->testament_order,
-                    'book_order'      => $book->book->protestant_order,
+                    'book_order'      => $book->book_order_column,
                     'book_group'      => $book->book->book_group,
+                    'name_short'      => $book->name_short,
                     'chapters'        => array_map('\intval', explode(',', $book->chapters)),
                 ];
                 if ($book->content_types) {

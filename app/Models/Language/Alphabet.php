@@ -405,7 +405,7 @@ class Alphabet extends Model
 
     public function regular()
     {
-        return $this->hasOne(AlphabetFont::class, 'script_id', 'script')->where('fontWeight', 400);
+        return $this->hasOne(AlphabetFont::class, 'script_id', 'script')->where('font_weight', 400);
     }
 
     public function bibles()
@@ -415,6 +415,13 @@ class Alphabet extends Model
 
     public function numerals()
     {
-        return $this->hasManyThrough(NumeralSystemGlyph::class, AlphabetNumeralSystem::class);
+        return $this->hasManyThrough(
+            NumeralSystemGlyph::class,
+            AlphabetNumeralSystem::class,
+            'script_id',
+            'numeral_system_id',
+            'script',
+            'numeral_system_id'
+        );
     }
 }

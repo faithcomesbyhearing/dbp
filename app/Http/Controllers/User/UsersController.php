@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Http\Controllers\APIController;
 use App\Mail\ProjectVerificationEmail;
 
@@ -14,7 +15,6 @@ use App\Models\User\User;
 use App\Models\User\Profile;
 use App\Models\User\Key;
 use App\Models\User\Study\Note;
-use App\Models\Country\Country;
 
 use App\Traits\CheckProjectMembership;
 use App\Transformers\UserTransformer;
@@ -23,10 +23,12 @@ use Illuminate\Support\Str;
 
 use Log;
 use Mail;
-use Validator;
+use Illuminate\Support\Facades\Validator;
+use App\Validators\AccountValidator;
 use Illuminate\Support\Facades\Auth;
 
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
+use App\Exceptions\ResponseException as Response;
 
 class UsersController extends APIController
 {
@@ -63,19 +65,20 @@ class UsersController extends APIController
         $limit = checkParam('limit') ?? 100;
         $project_id = checkParam('project_id');
 
-        $users = \DB::table('dbp_users.users')
-            ->join('dbp_users.project_members', function ($join) use (
-                $project_id
-            ) {
-                $join
-                    ->on('users.id', 'project_members.user_id')
-                    ->where('project_members.project_id', $project_id);
-            })
-            ->select(['id', 'name', 'email'])
+        $users_by_project = \DB::table('dbp_users.project_members')
+            ->select(['user_id'])
+            ->where('dbp_users.project_members.project_id', $project_id)
+            ->distinct()
             ->paginate($limit);
 
-        $userCollection = $users->getCollection();
-        $userPagination = new IlluminatePaginatorAdapter($users);
+        $users_by_project_ids = $users_by_project->pluck('user_id')->toArray();
+
+        $userCollection = \DB::table('dbp_users.users')
+            ->whereIn('id', $users_by_project_ids)
+            ->select(['id', 'name', 'email'])
+            ->get();
+
+        $userPagination = new IlluminatePaginatorAdapter($users_by_project);
         return $this->reply(
             fractal(
                 $userCollection,
@@ -202,7 +205,7 @@ class UsersController extends APIController
             $user = $this->loginWithEmail($email, $password);
         }
 
-        if (!$user) {
+        if (!isset($user) || !$user) {
             return $this->setStatusCode(401)->replyWithError(
                 trans('auth.failed')
             );
@@ -408,7 +411,10 @@ class UsersController extends APIController
             'name' => $request->name,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
-            'token' => unique_random('dbp_users.users', 'token'),
+            'token' => unique_random(
+                config('database.connections.dbp_users.database') . '.users',
+                'token'
+            ),
             'activated' => 0,
             'notes' => $request->notes,
             'password' => \Hash::make($request->password)
@@ -513,7 +519,7 @@ class UsersController extends APIController
             ->whereId($id)
             ->first();
         if (!$user) {
-            return $this->setStatusCode(404)->replyWithError(
+            return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
                 trans(
                     'api.users_errors_404_email',
                     ['email' => request()->email],
@@ -541,7 +547,7 @@ class UsersController extends APIController
             ->pluck('project_id');
 
         if (!$developer_projects->contains(request()->project_id)) {
-            return $this->setStatusCode(401)->replyWithError(
+            return $this->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)->replyWithError(
                 trans(
                     'api.projects_developer_not_a_member',
                     [],
@@ -553,7 +559,7 @@ class UsersController extends APIController
         if ($developer_projects->intersect($user_projects)->count() === 0) {
             $project = Project::where('id', request()->project_id)->first();
             if (!$project) {
-                return $this->setStatusCode(404)->replyWithError(
+                return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
                     trans('api.projects_404')
                 );
             }
@@ -572,7 +578,7 @@ class UsersController extends APIController
             Mail::to($user->email)->send(
                 new ProjectVerificationEmail($connection, $project)
             );
-            return $this->setStatusCode(401)->replyWithError(
+            return $this->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)->replyWithError(
                 trans(
                     'api.projects_users_needs_to_connect',
                     [],
@@ -596,13 +602,13 @@ class UsersController extends APIController
         if ($request->profile) {
             $user->profile->fill($request->profile);
             if (isset($user->profile['country_id'])) {
-                $valid_country = $this->validUserCountry($user->profile);
-                if (!$valid_country) {
-                    return $this->setStatusCode(400)->replyWithError(
+                $valid_country_id = Profile::IsValidCountry($user->profile['country_id']);
+                if (!$valid_country_id) {
+                    return $this->setStatusCode(HttpResponse::HTTP_BAD_REQUEST)->replyWithError(
                         trans('api.countries_errors_404')
                     );
                 }
-                $user->profile['country_id'] = $valid_country;
+                $user->profile['country_id'] = $valid_country_id;
             }
             
             $user->profile->save();
@@ -839,7 +845,8 @@ class UsersController extends APIController
         $rules = [
             'project_id' => 'required|exists:dbp_users.projects,id',
             'social_provider_id' => 'required_with:social_provider_user_id',
-            'social_provider_user_id' => 'required_with:social_provider_id',
+            'social_provider_user_id'
+                => 'unique_social_provider:dbp_users.user_accounts,social_provider_user_id,social_provider_id',
             'name' => 'string|max:191|nullable',
             'first_name' => 'string|max:64|nullable',
             'last_name' => 'string|max:64|nullable',
@@ -852,13 +859,15 @@ class UsersController extends APIController
         ];
 
         if ($validate_email) {
-            $rules['email'] = 'required|unique:dbp_users.users,email';
+            $rules['email'] = 'required_without:social_provider_user_id|unique:dbp_users.users,email';
         }
+
+        Validator::extend('unique_social_provider', AccountValidator::class);
 
         $validator = Validator::make(request()->all(), $rules);
 
         if ($validator->fails()) {
-            return $this->setStatusCode(422)->replyWithError(
+            return $this->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY)->replyWithError(
                 $validator->errors()
             );
         }
@@ -886,24 +895,6 @@ class UsersController extends APIController
         return false;
     }
 
-    private function validUserCountry($profile)
-    {
-      $country_id = strtoupper($profile['country_id']);
-      $country_id = preg_replace('/[^a-zA-Z]+/', '', $country_id);
-      // checks for data issues to get US errors
-      if ($country_id === 'USA') {
-          $country_id = 'US';
-      } elseif (str_contains($country_id, 'UNITEDSTATES')) {
-          $country_id = 'US';
-      }
-
-      $valid_country_id = Country::select('id')->where('id', $country_id)->first();
-      if (!$valid_country_id) {
-          return false;
-      }
-      return $valid_country_id['id'];
-    }
-
     public function adminLogin(Request $request)
     {
         if (!$this->api && $request->method() !== 'POST') {
@@ -911,7 +902,6 @@ class UsersController extends APIController
                 return redirect()->to(route('api_key.dashboard'));
             }
             return view('api_key.login');
-            //return view('auth.login');
         }
 
         $email = checkParam('email');

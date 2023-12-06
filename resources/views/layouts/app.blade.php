@@ -19,6 +19,7 @@
     
     <!-- Bible.is CSS -->
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/app.css">
     
     <!-- Bible brain CSS -->
     <link href="https://assets.website-files.com/5e73b0590a912b0d2533e44f/css/fcbh.b94faf5c0.min.css" rel="stylesheet" type="text/css">
@@ -36,7 +37,7 @@
       </section>
     </div>
 
-    <div class="container">
+    <div class="container" id="app">
         <!-- Left Side Navigation -->
         <div class="col-3 nav-column">
           @yield('left-nav')
@@ -58,6 +59,7 @@
           </div>
         </section>
       </div>
+      <script src="/js/app.js"></script>
     </footer>
 
   </body>

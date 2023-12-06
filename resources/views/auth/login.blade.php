@@ -13,6 +13,9 @@
             </ul>
         </div>
         <form method="POST" action="{{ route('login') }}">
+            @if($errors->has('auth.sessionExpired'))
+                <div>{{ $errors->first('auth.sessionExpired') }}</div>
+            @endif
             <input name="_token" value="{{ csrf_token() }}" type="hidden" />
             <div class="field">
                 <label class="label" for="email">{{ __('E-Mail Address') }}</label>
@@ -20,7 +23,7 @@
                 @if($errors->has('email')) <p class="help is-danger">{{ $errors->first('email') }}</p> @endif
             </div>
             <div class="field">
-                <label class="label" for="email">{{ __('Password') }}</label>
+                <label class="label" for="password">{{ __('Password') }}</label>
                 <div class="control"><input class="input" id="password" type="password" name="password" required placeholder="Password"></div>
                 @if($errors->has('password')) <p class="help is-danger">{{ $errors->first('password') }}</p> @endif
             </div>

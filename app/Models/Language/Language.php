@@ -4,11 +4,16 @@ namespace App\Models\Language;
 
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFilesetConnection;
+use App\Models\Bible\BibleFileset;
 use App\Models\Bible\Video;
 use App\Models\Country\CountryLanguage;
 use App\Models\Country\CountryRegion;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use App\Models\Country\Country;
+use App\Models\User\AccessGroupFileset;
 use App\Models\Resource\Resource;
 
 /**
@@ -52,6 +57,7 @@ use App\Models\Resource\Resource;
  * @property string $longitude
  * @property string $status
  * @property string $country_id
+ * @property string $rolv_code
  *
  * @method static Language whereId($value)
  * @method static Language whereGlottoId($value)
@@ -72,6 +78,7 @@ use App\Models\Resource\Resource;
  * @method static whereLongitude($value)
  * @method static whereStatus($value)
  * @method static whereCountryId($value)
+ * @method static whereRolvCode($value)
  *
  * @OA\Schema (
  *     type="object",
@@ -83,10 +90,39 @@ use App\Models\Resource\Resource;
  */
 class Language extends Model
 {
+    const ENGLISH_ID = 6414;
+
     protected $connection = 'dbp';
     public $table = 'languages';
-    //protected $hidden = ['pivot'];
-    protected $fillable = ['glotto_id','iso','name','maps','development','use','location','area','population','population_notes','notes','typology','writing','description','family_pk','father_pk','child_dialect_count','child_family_count','child_language_count','latitude','longitude','pk','status_id','status_notes','country_id','scope'];
+    protected $fillable = [
+        'glotto_id',
+        'iso',
+        'name',
+        'maps',
+        'development',
+        'use',
+        'location',
+        'area',
+        'population',
+        'population_notes',
+        'notes',
+        'typology',
+        'writing',
+        'description',
+        'family_pk',
+        'father_pk',
+        'child_dialect_count',
+        'child_family_count',
+        'child_language_count',
+        'latitude',
+        'longitude',
+        'pk',
+        'status_id',
+        'status_notes',
+        'country_id',
+        'scope',
+        'rolv_code',
+    ];
 
     /**
      * ID
@@ -341,14 +377,24 @@ class Language extends Model
      */
     protected $country_id;
 
+    /**
+     * @OA\Property(
+     *     title="rolv_code",
+     *     description="",
+     *     type="string",
+     *     example=""
+     * )
+     *
+     */
+    protected $rolv_code;
+
     public function scopeIncludeAutonymTranslation($query)
     {
         $query->leftJoin('language_translations as autonym', function ($join) {
             $priority_q = \DB::raw('(select max(`priority`) FROM language_translations WHERE language_translation_id = languages.id AND language_source_id = languages.id LIMIT 1)');
             $join->on('autonym.language_source_id', '=', 'languages.id')
               ->on('autonym.language_translation_id', '=', 'languages.id')
-              ->where('autonym.priority', '=', $priority_q)
-              ->orderBy('autonym.priority', 'desc')->limit(1);
+              ->where('autonym.priority', '=', $priority_q);
         });
     }
 
@@ -357,9 +403,8 @@ class Language extends Model
         $query->leftJoin('language_translations as current_translation', function ($join) {
             $priority_q = \DB::raw('(select max(`priority`) from language_translations WHERE language_source_id = languages.id LIMIT 1)');
             $join->on('current_translation.language_source_id', 'languages.id')
-            ->where('current_translation.language_translation_id', '=', $GLOBALS['i18n_id'])
-            ->where('current_translation.priority', '=', $priority_q)
-            ->orderBy('current_translation.priority', 'desc')->limit(1);
+                ->where('current_translation.language_translation_id', '=', $GLOBALS['i18n_id'])
+                ->where('current_translation.priority', '=', $priority_q);
         });
     }
 
@@ -371,7 +416,7 @@ class Language extends Model
     }
 
     public function scopeIncludeExtraLanguages($query, $access_control_identifiers)
-    {  
+    {
         return $query->whereRaw('languages.id in (' . $access_control_identifiers . ')');
     }
 
@@ -409,14 +454,101 @@ class Language extends Model
         });
     }
 
-    public function scopeFilterBySearch($query, $search_text)
+    public function scopeFilterableByNameOrAutonym($query, $name)
     {
-        $name_expression = $full_word ? $name : '%'.$name.'%';
-        return $query->when($name, function ($query) use ($name, $name_expression) {
-            $query->where('languages.name', 'like', $search_text)->orWhere();
+        $formatted_name = "+$name*";
+
+        return $query->when($name, function ($query) use ($formatted_name) {
+            $query->whereRaw('match (languages.name) against (? IN BOOLEAN MODE)', [$formatted_name]);
+            $query->orWhereRaw('match (autonym.name) against (? IN BOOLEAN MODE)', [$formatted_name]);
         });
     }
 
+    public function scopeFilterableByNameAndAccessGroup(
+        Builder $query,
+        string $name,
+        Collection $access_group_ids,
+        array $bible_fileset_filters = []
+    ) : Builder {
+        $formatted_name = "+$name*";
+
+        $lang = Language::from('languages', 'lang')
+            ->select('lang.id as id')
+            ->whereRaw('MATCH (lang.name) against (? IN BOOLEAN MODE)', [$formatted_name])
+            ->isContentAvailable($access_group_ids, $bible_fileset_filters);
+
+        $lang_trans = LanguageTranslation::from('language_translations', 'lang_trans')
+            ->select('lang_trans.language_source_id as id')
+            ->whereRaw('MATCH (lang_trans.name) against (? IN BOOLEAN MODE)', [$formatted_name])
+            ->isContentAvailable($access_group_ids, $bible_fileset_filters)
+            ->hasPriority();
+
+        $lang_union_query = \DB::table($lang)
+            ->unionAll($lang_trans);
+
+        $lang_union_all_group = \DB::table($lang_union_query, 'lang_and_trans_group')
+            ->groupBy('lang_and_trans_group.id');
+
+        return $query->joinSub(
+            $lang_union_all_group,
+            'languages_and_translations',
+            function ($join) {
+                $join->on(
+                    'languages_and_translations.id',
+                    '=',
+                    'languages.id'
+                );
+            }
+        )
+        ->leftJoin('language_translations as autonym', function ($join) {
+            $join->on('autonym.language_source_id', '=', 'languages.id')
+                ->on('autonym.language_translation_id', '=', 'languages.id')
+                ->where('autonym.priority', '=', function ($autonym_query) {
+                    $autonym_query->select(\DB::raw('MAX(`priority`)'))
+                        ->from('language_translations')
+                        ->whereColumn('language_translation_id', '=', 'languages.id')
+                        ->whereColumn('language_source_id', '=', 'languages.id')
+                        ->limit(1);
+                });
+        })->leftJoin('language_translations as current_translation', function ($join) {
+            $join->on('current_translation.language_source_id', 'languages.id')
+                ->where('current_translation.language_translation_id', $GLOBALS['i18n_id'])
+                ->where('current_translation.priority', '=', function ($current_translation_query) {
+                    $current_translation_query->select(\DB::raw('MAX(`priority`)'))
+                        ->from('language_translations')
+                        ->whereColumn('language_source_id', '=', 'languages.id')
+                        ->limit(1);
+                });
+        });
+    }
+
+    public function scopeWithRequiredFilesets(Builder $query, array $type_filters) : Builder
+    {
+        $organization_id = $type_filters['organization_id'];
+        $media = $type_filters['media'];
+        $access_group_ids = $type_filters['access_group_ids'];
+
+        return $query->whereHas(
+            'filesets',
+            function ($query_filesets) use ($access_group_ids, $organization_id, $media) {
+                if ($organization_id) {
+                    $query_filesets->whereHas('copyright', function ($query_filesets) use ($organization_id) {
+                        $query_filesets->where('organization_id', $organization_id);
+                    });
+                }
+                $query_filesets->join('bible_filesets', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id');
+                $query_filesets->where('bible_filesets.asset_id', 'dbp-prod');
+                if ($media) {
+                    $query_filesets->where('bible_filesets.set_type_code', 'LIKE', $media . '%');
+                } else {
+                    $query_filesets->where('bible_filesets.set_type_code', '!=', 'text_format');
+                }
+
+                $query_filesets->isContentAvailable($access_group_ids);
+            }
+        );
+    }
+    
     public function population()
     {
         return CountryLanguage::where('language_id', $this->id)->select('language_id', 'population')->count();
@@ -424,7 +556,7 @@ class Language extends Model
 
     public function alphabets()
     {
-        return $this->belongsToMany(Alphabet::class, 'alphabet_language', 'script', 'id')->distinct();
+        return $this->belongsToMany(Alphabet::class, 'alphabet_language', 'language_id', 'script_id')->distinct();
     }
 
     /**
@@ -525,5 +657,140 @@ class Language extends Model
     public function parent()
     {
         return $this->hasOne(LanguageDialect::class, 'dialect_id', 'id');
+    }
+
+    public function scopeIsContentAvailable(
+        Builder $query,
+        Collection $access_group_ids,
+        array $bible_fileset_filters = []
+    ) : Builder {
+        $from_table = getAliasOrTableName($query->getQuery()->from);
+
+        return $query->whereExists(
+            function (QueryBuilder $query) use ($access_group_ids, $from_table, $bible_fileset_filters) {
+                $query->select(\DB::raw(1))
+                    ->from('access_group_filesets as agf')
+                    ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                    ->join('bibles as b', 'bfc.bible_id', 'b.id');
+
+                if (!empty($bible_fileset_filters)) {
+                    $has_filesets = BibleFileset::from('bible_filesets', 'bfst')
+                        ->select(\DB::raw(1))
+                        ->filterBy($bible_fileset_filters)
+                        ->whereColumn('bfst.hash_id', 'bfc.hash_id');
+
+                    $query->addWhereExistsQuery($has_filesets->getQuery());
+                }
+
+                return $query->whereColumn($from_table.'.id', '=', 'b.language_id')
+                    ->whereIn('agf.access_group_id', $access_group_ids);
+            }
+        );
+    }
+
+    public function scopeFilterableByMedia($query, $media)
+    {
+        $set_type_code_array = BibleFileset::getsetTypeCodeFromMedia($media);
+
+        if (!empty($media) && !empty($set_type_code_array)) {
+            $query->whereHas('filesets', function ($query_fileset) use ($set_type_code_array) {
+                $query_fileset->whereHas('fileset', function ($query_fileset_single) use ($set_type_code_array) {
+                    $query_fileset_single->whereIn('set_type_code', $set_type_code_array);
+                });
+            });
+        }
+    }
+
+    public function scopeFilterableBySetTypeCode($query, $set_type_code)
+    {
+        if (!empty($set_type_code)) {
+            $query->whereHas('filesets', function ($query_fileset) use ($set_type_code) {
+                $query_fileset->whereHas('fileset', function ($query_fileset_single) use ($set_type_code) {
+                    $query_fileset_single->where('set_type_code', $set_type_code);
+                });
+            });
+        }
+    }
+
+    public function scopeLanguageListingv2($query, $code)
+    {
+        $subquery_code_v2 = Language::select(
+            [
+                'languages.id',
+                'languages.iso2B',
+                'language_codes_v2.id as code',
+                'language_codes_v2.language_ISO_639_3_id as iso',
+                'language_codes_v2.name',
+                'language_codes_v2.english_name'
+            ]
+        )
+        ->join('language_codes_v2', function ($join_codes_v2) {
+            $join_codes_v2->on('language_codes_v2.language_ISO_639_3_id', 'languages.iso');
+        })
+        ->when($code, function ($subquery) use ($code) {
+            return $subquery->where('language_codes_v2.id', '=', $code);
+        });
+
+        $subquery_lang = Language::select(
+            [
+                'languages.id',
+                'languages.iso2B',
+                'languages.iso',
+                'languages.iso as code',
+                'languages.name',
+                'languages.name as english_name'
+            ]
+        )
+        ->when($code, function ($subquery) use ($code) {
+            return $subquery->where('languages.iso', '=', $code);
+        });
+
+        $subquery_code_v2_sql = $subquery_code_v2->toSql();
+        $subquery_lang_sql = $subquery_lang->toSql();
+
+        $db_connection_name = $query->getConnection()->getName() ?? $this->connection;
+
+        $new_language_query = \DB::connection($db_connection_name)
+            ->table(
+                \DB::connection($db_connection_name)->raw(
+                    "(
+                    $subquery_code_v2_sql
+                    UNION ALL
+                    $subquery_lang_sql
+                    ) as languages"
+                )
+            )->select([
+                'languages.id',
+                'languages.iso2B',
+                'languages.iso',
+                'languages.code',
+                'languages.name',
+                'languages.english_name',
+            ])
+            ->whereRaw('EXISTS (
+                SELECT 1 FROM bible_fileset_connections
+                INNER JOIN bibles ON bibles.id = bible_fileset_connections.bible_id
+                WHERE languages.id = bibles.language_id
+            )');
+
+        if (!empty($code)) {
+            $new_language_query->addBinding($code)
+                ->addBinding($code);
+        }
+
+        return $new_language_query;
+    }
+
+    /**
+     * Sort the languages records by country_population
+     *
+     * @param Builder $query
+     * @see scopeIncludeCountryPopulation
+     *
+     * @return Builder
+     */
+    public function scopeIncludeOrderByCountryPopulation(Builder $query) : Builder
+    {
+        return $query->orderBy('country_population', 'DESC');
     }
 }
