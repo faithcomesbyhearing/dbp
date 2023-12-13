@@ -63,7 +63,7 @@ class SyncFeaturedPlansDuration extends Command
             ->where('playlist_items.duration', 0)
             ->where('plans.featured', 1)
             ->whereNull('plans.deleted_at')
-            ->limit(2)
+            ->limit(25)
             ->get()
             ->each(function ($plan) {
                 $plan->name = "\u{202D}" . $plan->name . "\u{202C}";
