@@ -5,23 +5,18 @@ set -a
 source /var/app/staging/.env
 set +a
 
-curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=$NEW_RELIC_API_KEY NEW_RELIC_ACCOUNT_ID=$NEW_RELIC_ACCOUNT_ID /usr/local/bin/newrelic install -y
+# Install New Relic Agent
+curl -Ls -o newrelic-php5.tar.gz https://download.newrelic.com/php_agent/archive/10.14.0.3/newrelic-php5-10.14.0.3-linux.tar.gz
+gzip -dc newrelic-php5.tar.gz | tar xf -
+cd newrelic-php5-*
+env NR_INSTALL_SILENT=1 ./newrelic-install install
+# Clean up
+rm -rf newrelic-php5-*
+rm newrelic-php5.tar.gz
 
-echo newrelic.enabled=true  >> /etc/php.d/newrelic.ini
-echo newrelic.loglevel=debug  >> /etc/php.d/newrelic.ini
-
-sed -i 's/newrelic.appname/;newrelic.appname/g' /etc/php.d/newrelic.ini
-echo newrelic.appname=\"$NEW_RELIC_APP_NAME\" >> /etc/php.d/newrelic.ini
-
-# # Install New Relic Agent
-# echo "deb http://apt.newrelic.com/debian/ newrelic non-free" | tee /etc/apt/sources.list.d/newrelic.list
-# wget -O - https://download.newrelic.com/548C16BF.gpg | apt-key add -
-# apt-get update && apt-get install -y newrelic-php5
-# export NR_INSTALL_SILENT=1
-# newrelic-install install
-
-# sed -i -e "s/REPLACE_WITH_REAL_KEY/${NEW_RELIC_LICENSE_KEY}/" \
-#     -e "s/newrelic.appname[[:space:]]=[[:space:]].*/newrelic.appname=\"${NEW_RELIC_APP_NAME}\"/" \
-#     $(php -r "echo(PHP_CONFIG_FILE_SCAN_DIR);")/newrelic.ini
-# echo "newrelic.enabled=true"  >> $(php -r "echo(PHP_CONFIG_FILE_SCAN_DIR);")/newrelic.ini
-# echo "newrelic.loglevel=debug"  >> $(php -r "echo(PHP_CONFIG_FILE_SCAN_DIR);")/newrelic.ini
+# Configure newrelic.ini
+echo extension=newrelic.so | tee /etc/php.d/newrelic.ini
+echo newrelic.enabled=true | tee -a /etc/php.d/newrelic.ini
+echo newrelic.loglevel=debug | tee -a /etc/php.d/newrelic.ini
+echo newrelic.license=\"$NEW_RELIC_LICENSE_KEY\" | tee -a /etc/php.d/newrelic.ini
+echo newrelic.appname=\"$NEW_RELIC_APP_NAME\" | tee -a /etc/php.d/newrelic.ini
