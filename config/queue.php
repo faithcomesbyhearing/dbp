@@ -49,15 +49,6 @@ return [
             'retry_after' => 90,
         ],
 
-        'sqs' => [
-            'driver' => 'sqs',
-            'key'    => env('AWS_SQS_KEY'),
-            'secret' => env('AWS_SQS_SECRET'),
-            'prefix' => env('AWS_SQS_PREFIX'),
-            'queue'  => env('AWS_SQS_QUEUE'),
-            'region' => env('AWS_SQS_REGION') ?? 'us-east-1',
-        ],
-
         'redis' => [
             'driver'      => 'redis',
             'connection'  => 'default',
