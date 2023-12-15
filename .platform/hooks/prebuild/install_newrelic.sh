@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Export variables from .env
+# Export variables from .env to staging
 set -a
 source /var/app/staging/.env
 set +a
