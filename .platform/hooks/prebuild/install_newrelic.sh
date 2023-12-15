@@ -6,6 +6,7 @@ source /var/app/staging/.env
 set +a
 
 # Install New Relic Agent
+cd /opt
 curl -Ls -o newrelic-php5.tar.gz https://download.newrelic.com/php_agent/archive/10.14.0.3/newrelic-php5-10.14.0.3-linux.tar.gz
 gzip -dc newrelic-php5.tar.gz | tar xf -
 cd newrelic-php5-*
