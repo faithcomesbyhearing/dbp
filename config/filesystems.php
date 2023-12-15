@@ -66,15 +66,6 @@ return [
             'visibility' => 'public',
         ],
 
-        's3' => [
-            'driver' => 's3',
-            'arn'    => env('AWS_ARN_ROLE'),
-            'key'    => env('AWS_KEY'),
-            'secret' => env('AWS_SECRET'),
-            'region' => env('AWS_REGION') ?? 'us-west-2',
-            'bucket' => env('AWS_BUCKET') ?? 'dbp-prod',
-        ],
-
         'cloudfront' => [
             'driver' => 'cloudfront',
             'key'    => env('AWS_CLOUDFRONT_KEY_ID'),
@@ -96,23 +87,6 @@ return [
             'region' => env('FCBH_AWS_REGION') ?? 'us-west-2',
             'bucket' => env('FCBH_AWS_BUCKET', 'dbp-prod'),
         ],
-
-        's3_fcbh_stream' => [
-            'driver' => 's3',
-            'key'    => env('FCBH_AWS_KEY'),
-            'secret' => env('FCBH_AWS_SECRET'),
-            'region' => env('FCBH_AWS_REGION') ?? 'us-west-2',
-            'bucket' => env('FCBH_AWS_BUCKET'),
-            'url'    => 'rtmp://stream.bible.build/cfx/st',
-        ],
-
-        's3_fcbh_video' => [
-            'driver' => 's3',
-            'key'    => env('FCBH_AWS_VIDEO_KEY') ?? env('FCBH_AWS_KEY'),
-            'secret' => env('FCBH_AWS_VIDEO_SECRET') ?? env('FCBH_AWS_SECRET'),
-            'region' => env('FCBH_AWS_VIDEO_REGION') ?? env('FCBH_AWS_REGION'),
-            'bucket' => env('FCBH_AWS_VIDEO_BUCKET')
-        ]
 
     ],
 
