@@ -49,7 +49,7 @@ class LibraryController extends APIController
     public function metadata()
     {
         $fileset_id = checkParam('dam_id') ?? false;
-        $asset_id  = checkParam('bucket|bucket_id|asset_id') ?? config('filesystems.disks.s3_fcbh.bucket');
+        $asset_id  = checkParam('bucket|bucket_id|asset_id') ?? 'dbp-prod';
 
         if ($fileset_id) {
             // avoids using filesets with more than 7 characters
