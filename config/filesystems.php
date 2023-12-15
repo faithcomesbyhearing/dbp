@@ -71,23 +71,6 @@ return [
             'key'    => env('AWS_CLOUDFRONT_KEY_ID'),
             'secret' => env('AWS_CLOUDFRONT_KEY_SECRET')
         ],
-
-        'dbp-web' => [
-            'driver' => 's3',
-            'key'    => env('FCBH_AWS_KEY'),
-            'secret' => env('FCBH_AWS_SECRET'),
-            'region' => env('FCBH_AWS_REGION') ?? 'us-west-2',
-            'bucket' => env('FCBH_AWS_BUCKET', 'dbp-prod'),
-        ],
-
-        's3_fcbh' => [
-            'driver' => 's3',
-            'key'    => env('FCBH_AWS_KEY'),
-            'secret' => env('FCBH_AWS_SECRET'),
-            'region' => env('FCBH_AWS_REGION') ?? 'us-west-2',
-            'bucket' => env('FCBH_AWS_BUCKET', 'dbp-prod'),
-        ],
-
     ],
 
 ];
