@@ -14,8 +14,7 @@ export NR_INSTALL_KEY=$NEW_RELIC_LICENSE_KEY
 ./newrelic-install install
 
 # Clean up
-cd .. && rm -rf newrelic-php5-*
-rm newrelic-php5.tar.gz
+cd .. && rm newrelic-php5.tar.gz
 
 # Configure newrelic.ini
 echo extension=newrelic.so | tee /etc/php.d/newrelic.ini
