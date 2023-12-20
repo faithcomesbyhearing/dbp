@@ -11,6 +11,7 @@ use Illuminate\Http\Response;
 use Illuminate\Database\Query\Expression;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\Book;
+use App\Models\Bible\BibleBook;
 use App\Models\Language\AlphabetFont;
 use App\Traits\AccessControlAPI;
 use App\Traits\CheckProjectMembership;
@@ -165,6 +166,7 @@ class TextController extends APIController
      *     @OA\Parameter(name="limit",  in="query", description="The number of search results to return",
      *          @OA\Schema(type="integer",default=15)),
      *     @OA\Parameter(ref="#/components/parameters/page"),
+     *     @OA\Parameter(ref="#/components/parameters/sort_by"),
      *     @OA\Parameter(name="books",  in="query", description="The usfm book ids to search through separated by a comma",
      *          @OA\Schema(type="string",example="GEN,EXO,MAT")),
      *     @OA\Response(
@@ -196,6 +198,7 @@ class TextController extends APIController
         $book_id    = checkParam('book|book_id|books');
         $limit      = checkParam('limit') ?? 15;
         $page       = checkParam('page');
+        $sort_by    = checkParam('sort_by');
 
         $fileset = BibleFileset::with('bible')->uniqueFileset($fileset_id, 'text_plain')->first();
         if (!$fileset) {
@@ -226,6 +229,11 @@ class TextController extends APIController
             })
             ->where('bible_verses.verse_text', 'like', $search_text);
         
+        if ($sort_by === 'book_order') {
+            $select_columns[] = BibleBook::getBookOrderSelectColumnExpressionRaw($bible->versification, 'book_order');
+            $verses->orderBy('book_order');
+        }
+
         if ($bible && $bible->numeral_system_id) {
             $select_columns_extra = array_merge(
                 $select_columns,
@@ -242,10 +250,17 @@ class TextController extends APIController
 
         if ($page) {
             $verses  = $verses->paginate($limit);
-            return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses->getCollection(), TextTransformer::class)->paginateWith(new IlluminatePaginatorAdapter($verses))]);
+            return $this->reply([
+                'audio_filesets' => $audio_filesets,
+                'verses' => fractal($verses->getCollection(), TextTransformer::class)
+                    ->paginateWith(new IlluminatePaginatorAdapter($verses))
+            ]);
         }
         $verses  = $verses->limit($limit)->get();
-        return $this->reply(['audio_filesets' => $audio_filesets, 'verses' => fractal($verses, new TextTransformer(), $this->serializer)]);
+        return $this->reply([
+            'audio_filesets' => $audio_filesets,
+            'verses' => fractal($verses, new TextTransformer(), $this->serializer)
+        ]);
     }
     /**
      *
