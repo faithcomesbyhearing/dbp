@@ -20,6 +20,6 @@ cd .. && rm newrelic-php5.tar.gz
 # Configure newrelic.ini
 echo extension=newrelic.so | tee /etc/php.d/newrelic.ini
 echo newrelic.enabled=true | tee -a /etc/php.d/newrelic.ini
-echo newrelic.loglevel=debug | tee -a /etc/php.d/newrelic.ini
+echo newrelic.loglevel=info | tee -a /etc/php.d/newrelic.ini
 echo newrelic.license=\"$NEW_RELIC_LICENSE_KEY\" | tee -a /etc/php.d/newrelic.ini
 echo newrelic.appname=\"$NEW_RELIC_APP_NAME\" | tee -a /etc/php.d/newrelic.ini
