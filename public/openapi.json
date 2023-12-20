@@ -894,6 +894,9 @@
                         "$ref": "#/components/parameters/page"
                     },
                     {
+                        "$ref": "#/components/parameters/sort_by"
+                    },
+                    {
                         "name": "books",
                         "in": "query",
                         "description": "The usfm book ids to search through separated by a comma",
@@ -1744,7 +1747,8 @@
                             "total_days": {
                                 "type": "integer"
                             }
-                        }
+                        },
+                        "type": "object"
                     }
                 ]
             },
@@ -1809,7 +1813,8 @@
                                     "$ref": "#/components/schemas/PlanDay"
                                 }
                             }
-                        }
+                        },
+                        "type": "object"
                     }
                 ]
             },
@@ -1903,7 +1908,8 @@
                                     "$ref": "#/components/schemas/PlaylistItemDetail"
                                 }
                             }
-                        }
+                        },
+                        "type": "object"
                     }
                 ]
             },
