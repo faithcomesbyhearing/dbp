@@ -14,7 +14,7 @@
     },
     "devDependencies": {
         "@prettier/plugin-php": "^0.17.5",
-        "browser-sync": "^2.27.12",
+        "browser-sync": "^3.0.2",
         "browser-sync-webpack-plugin": "^2.3.0",
         "cross-env": "5.2.1",
         "laravel-mix": "^6.0.49",
