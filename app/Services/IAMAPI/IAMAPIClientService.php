@@ -10,6 +10,7 @@ class IAMAPIClientService implements IAMAPIClientInterface
 {
     protected string $api_url;
     protected string $is_enabled;
+    protected string $service_timeout;
     protected CurlHttpClient $client;
 
     public function __construct(string $api_url, bool $is_enabled = false, int $service_timeout = 5)
@@ -30,9 +31,7 @@ class IAMAPIClientService implements IAMAPIClientInterface
         string $path,
         string $user_key
     ) : string {
-        $new_path = $base_url.$path.'?userKey='.$user_key;
-
-        return $new_path;
+        return $base_url.$path.'?userKey='.$user_key;
     }
 
     public function getAccessGroupIdsByUserKey(string $user_key) : mixed
