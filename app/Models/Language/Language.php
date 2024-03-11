@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use App\Models\Country\Country;
-use App\Models\User\AccessGroupFileset;
 use App\Models\Resource\Resource;
 
 /**
@@ -779,18 +778,5 @@ class Language extends Model
         }
 
         return $new_language_query;
-    }
-
-    /**
-     * Sort the languages records by country_population
-     *
-     * @param Builder $query
-     * @see scopeIncludeCountryPopulation
-     *
-     * @return Builder
-     */
-    public function scopeIncludeOrderByCountryPopulation(Builder $query) : Builder
-    {
-        return $query->orderBy('country_population', 'DESC');
     }
 }
