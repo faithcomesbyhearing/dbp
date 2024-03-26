@@ -9,7 +9,7 @@ use App\Models\Bible\BibleVerse;
 use App\Models\Bible\StreamBandwidth;
 use App\Models\Playlist\PlaylistItems;
 
-class PlaylistItemService 
+class PlaylistItemService
 {
     /**
      * Get the bible filesets attached to the fileset attached to each palylist item
@@ -138,7 +138,7 @@ class PlaylistItemService
         foreach ($playlist_items_to_create as &$item_to_create) {
             $bible_fileset_attached = $bible_filesets[$item_to_create['fileset_id']];
 
-            $duration = null;
+            $duration = 0;
 
             if (isset($bible_files_indexed[$bible_fileset_attached->hash_id][$item_to_create['book_id']])) {
                 $hash_id = $bible_fileset_attached->hash_id;

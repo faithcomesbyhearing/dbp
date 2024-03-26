@@ -8,8 +8,9 @@ use App\Models\Language\Language;
 use App\Transformers\LanguageTransformer;
 use App\Traits\AccessControlAPI;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
-use App\Models\User\Key;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Str;
 
 class LanguagesController extends APIController
 {
@@ -95,6 +96,22 @@ class LanguagesController extends APIController
         $page                  = checkParam('page') ?? 1;
         $set_type_code         = checkParam('set_type_code');
         $media                 = checkParam('media');
+        $sort_by   = checkParam('sort_by') ?? null;
+        $sort_dir  = checkParam('sort_dir') ?? 'asc';
+
+        if (!in_array(Str::lower($sort_dir), ['asc', 'desc'])) {
+            $sort_dir = 'asc';
+        }
+
+        if ($sort_by) {
+            $columns = getColumnListing('languages', 'dbp');
+
+            if (!isset($columns[$sort_by])) {
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_BAD_REQUEST)
+                    ->replyWithError(trans('api.sort_errors_400'));
+            }
+        }
 
         // note: this two commented changes can be removed when bibleis and gideons no longer require a non-paginated response
         // remove pagination for bibleis and gideons (temporal fix)
@@ -114,9 +131,17 @@ class LanguagesController extends APIController
             $is_bibleis_gideons,
             $set_type_code,
             $media,
+            $sort_by,
+            $sort_dir,
         ]);
 
         $select_country_population = $country ? 'country_population.population' : 'null';
+
+        if ($country) {
+            $sort_by = "country_population";
+            $sort_dir = "desc";
+        }
+
         $languages = cacheRemember(
             'languages_all',
             $cache_params,
@@ -130,14 +155,15 @@ class LanguagesController extends APIController
                 $select_country_population,
                 $limit,
                 $media,
-                $set_type_code
+                $set_type_code,
+                $sort_by,
+                $sort_dir,
             ) {
                 $languages = Language::isContentAvailable($access_group_ids)
                     ->includeCurrentTranslation()
                     ->includeAutonymTranslation()
                     ->includeExtraLanguageTranslations($include_translations)
                     ->includeCountryPopulation($country)
-                    ->includeOrderByCountryPopulation()
                     ->filterableByCountry($country)
                     ->filterableByIsoCode($code)
                     ->filterableByName($name)
@@ -158,7 +184,10 @@ class LanguagesController extends APIController
                     }])
                     ->withCount([
                         'filesets'
-                    ]);
+                    ])
+                    ->when($sort_by, function ($subquery) use($sort_by, $sort_dir) {
+                        return $subquery->orderBy($sort_by, $sort_dir);
+                    });
 
                 $languages = $languages->paginate($limit);
                 $languages_return = fractal(
