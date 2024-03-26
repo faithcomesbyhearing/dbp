@@ -240,17 +240,15 @@ class BibleFileset extends Model
         Builder $query,
         \Illuminate\Support\Collection $access_group_ids
     ) : Builder {
-        return $query->whereExists(function (QueryBuilder $query) use ($access_group_ids) {
-            return $query->select(\DB::raw(1))
-                ->from('access_group_filesets as agf')
-                ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id')
-                ->whereExists(function (QueryBuilder $subquery) use ($access_group_ids) {
-                    return $subquery->select(\DB::raw(1))
-                        ->from('access_group_filesets as agf2')
-                        ->whereColumn('agf.hash_id', '=', 'agf2.hash_id')
-                        ->whereIn('agf2.access_group_id', $access_group_ids);
-                });
-        });
+        return $query
+            ->where('bible_filesets.content_loaded', true)
+            ->where('bible_filesets.archived', false)
+            ->whereExists(function (QueryBuilder $query) use ($access_group_ids) {
+                return $query->select(\DB::raw(1))
+                    ->from('access_group_filesets as agf')
+                    ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id')
+                    ->whereIn('agf.access_group_id', $access_group_ids);
+            });
     }
 
     public static function getsetTypeCodeFromMedia($media)
