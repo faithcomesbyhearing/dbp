@@ -658,6 +658,38 @@ class Language extends Model
         return $this->hasOne(LanguageDialect::class, 'dialect_id', 'id');
     }
 
+    /**
+     * Build the common query logic for checking content availability.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  \Illuminate\Support\Collection  $access_group_ids
+     * @param  array  $bible_fileset_filters
+     * @return \Illuminate\Database\Query\Builder
+     */
+    public static function buildContentAvailabilityQuery(
+        QueryBuilder $query,
+        Collection $access_group_ids,
+        array $bible_fileset_filters
+    ) {
+        return $query->select(\DB::raw(1))
+            ->from('access_group_filesets as agf')
+            ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+            ->join('bibles as b', 'bfc.bible_id', 'b.id')
+            ->join(
+                'bible_filesets as abf',
+                function ($join) use ($bible_fileset_filters) {
+                    $join->on('abf.hash_id', '=', 'bfc.hash_id')
+                        ->where('abf.content_loaded', true)
+                        ->where('abf.archived', false);
+
+                    if (!empty($bible_fileset_filters)) {
+                        $join->filterBy($bible_fileset_filters);
+                    }
+                }
+            )
+            ->whereIn('agf.access_group_id', $access_group_ids);
+    }
+
     public function scopeIsContentAvailable(
         Builder $query,
         Collection $access_group_ids,
@@ -667,19 +699,7 @@ class Language extends Model
 
         return $query->whereExists(
             function (QueryBuilder $query) use ($access_group_ids, $from_table, $bible_fileset_filters) {
-                $query->select(\DB::raw(1))
-                    ->from('access_group_filesets as agf')
-                    ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
-                    ->join('bibles as b', 'bfc.bible_id', 'b.id');
-
-                if (!empty($bible_fileset_filters)) {
-                    $has_filesets = BibleFileset::from('bible_filesets', 'bfst')
-                        ->select(\DB::raw(1))
-                        ->filterBy($bible_fileset_filters)
-                        ->whereColumn('bfst.hash_id', 'bfc.hash_id');
-
-                    $query->addWhereExistsQuery($has_filesets->getQuery());
-                }
+                $query = self::buildContentAvailabilityQuery($query, $access_group_ids, $bible_fileset_filters);
 
                 return $query->whereColumn($from_table.'.id', '=', 'b.language_id')
                     ->whereIn('agf.access_group_id', $access_group_ids);
