@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use App\Models\Bible\BibleFileset;
+use App\Models\Language\Language;
 
 /**
  * App\Models\Language\LanguageTranslation
@@ -180,19 +180,7 @@ class LanguageTranslation extends Model
 
         return $query->whereExists(
             function (QueryBuilder $query) use ($access_group_ids, $from_table, $bible_fileset_filters) {
-                $query->select(\DB::raw(1))
-                    ->from('access_group_filesets as agf')
-                    ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
-                    ->join('bibles as b', 'bfc.bible_id', 'b.id');
-
-                if (!empty($bible_fileset_filters)) {
-                    $query->addWhereExistsQuery(
-                        BibleFileset::from('bible_filesets', 'bfst')
-                            ->select(\DB::raw(1))
-                            ->filterBy($bible_fileset_filters)
-                            ->whereColumn('bfst.hash_id', 'bfc.hash_id')->getQuery()
-                    );
-                }
+                $query = Language::buildContentAvailabilityQuery($query, $access_group_ids, $bible_fileset_filters);
 
                 return $query->whereColumn(
                     $from_table.'.language_source_id',

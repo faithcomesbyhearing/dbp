@@ -35,6 +35,8 @@ class PlaylistService
         $metadata_items = [];
         $total_translated_items = 0;
         if (isset($playlist->items)) {
+            $books_target_bible = $bible->books->keyBy('book_id');
+
             foreach ($playlist->items as $item) {
                 if (isset($item->fileset, $item->fileset->set_type_code)) {
                     $item->fileset->addMetaRecordsAsAttributes();
@@ -48,7 +50,10 @@ class PlaylistService
                     $has_translation = isset($preferred_fileset);
                     $is_streaming = true;
 
-                    if ($has_translation) {
+                    if ($has_translation &&
+                        $books_target_bible->has($item->book_id) &&
+                        $preferred_fileset->hasFileRelatedBookAndChapter($item->book_id, $item->chapter_start)
+                    ) {
                         $item->fileset_id = $preferred_fileset->id;
                         $is_streaming = $preferred_fileset->set_type_code === 'audio_stream' ||
                             $preferred_fileset->set_type_code === 'audio_drama_stream';
