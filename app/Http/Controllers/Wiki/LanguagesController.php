@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Wiki;
 use App\Http\Controllers\APIController;
 
 use App\Models\Language\Language;
+use App\Models\Bible\BibleFileset;
 use App\Transformers\LanguageTransformer;
 use App\Traits\AccessControlAPI;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
@@ -273,8 +274,10 @@ class LanguagesController extends APIController
                     $bible_fileset_filters['set_type_code'] = $set_type_code;
                 }
 
-                if ($media) {
-                    $bible_fileset_filters['media'] = $media;
+                // If the media is audio, video, or text, it will retrieve the set_type_code values
+                // associated with the type of media
+                if ($media && in_array($media, [BibleFileset::AUDIO, BibleFileset::TEXT, BibleFileset::VIDEO])) {
+                    $bible_fileset_filters['set_type_code'] = BibleFileset::getsetTypeCodeFromMedia($media);
                 }
 
                 $languages = Language::filterableByNameAndAccessGroup(
