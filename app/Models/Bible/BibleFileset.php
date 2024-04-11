@@ -430,6 +430,8 @@ class BibleFileset extends Model
                 return $subquery->select(\DB::raw(1))
                     ->from('bible_filesets', 'bfctext')
                     ->where('bfctext.set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
+                    ->where('bfctext.content_loaded', true)
+                    ->where('bfctext.archived', false)
                     ->whereColumn('bfctext.set_type_code', '=', $from_table.'.set_type_code')
                     ->where(
                         DB::raw(\sprintf('CHAR_LENGTH(%s.id)', $from_table)),
