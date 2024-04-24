@@ -199,8 +199,13 @@ class BibleFileset extends Model
             });
     }
 
-    public function scopeUniqueFileset($query, $id = null, $fileset_type = null, $ambigious_fileset_type = false, $testament_filter = null)
-    {
+    public function scopeUniqueFileset(
+        $query,
+        $id = null,
+        $fileset_type = null,
+        $ambigious_fileset_type = false,
+        $testament_filter = null
+    ) {
         $version = (int) checkParam('v');
         return $query->when($id, function ($query) use ($id, $version) {
             $query->where(function ($query) use ($id, $version) {
@@ -210,15 +215,7 @@ class BibleFileset extends Model
                         ->orWhere('bible_filesets.id', 'like', substr($id, 0, 6))
                         ->orWhere('bible_filesets.id', 'like', substr($id, 0, -2) . '%');
                 } else {
-                    $query->where('bible_filesets.id', $id)
-                        ->orWhere(function ($query) use ($id) {
-                            $query->whereIn('bible_filesets.hash_id', function ($sub_query) use ($id) {
-                                $sub_query
-                                    ->select('hash_id')
-                                    ->from('bible_fileset_connections')
-                                    ->where('bible_id', 'LIKE', $id . '%');
-                            });
-                        });
+                    $query->where('bible_filesets.id', $id);
                 }
             });
         })
@@ -233,7 +230,9 @@ class BibleFileset extends Model
             } else {
                 $query->where('bible_filesets.set_type_code', $fileset_type);
             }
-        });
+        })
+        ->where('bible_filesets.content_loaded', true)
+        ->where('bible_filesets.archived', false);
     }
 
     public function scopeIsContentAvailable(
@@ -430,6 +429,8 @@ class BibleFileset extends Model
                 return $subquery->select(\DB::raw(1))
                     ->from('bible_filesets', 'bfctext')
                     ->where('bfctext.set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
+                    ->where('bfctext.content_loaded', true)
+                    ->where('bfctext.archived', false)
                     ->whereColumn('bfctext.set_type_code', '=', $from_table.'.set_type_code')
                     ->where(
                         DB::raw(\sprintf('CHAR_LENGTH(%s.id)', $from_table)),
