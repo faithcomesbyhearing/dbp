@@ -682,9 +682,15 @@ class Language extends Model
                         ->where('abf.content_loaded', true)
                         ->where('abf.archived', false);
 
-                    if (!empty($bible_fileset_filters)) {
-                        $join->filterBy($bible_fileset_filters);
-                    }
+                        if (!empty($bible_fileset_filters)) {
+                            foreach($bible_fileset_filters as $column => $value) {
+                                if (is_array($value)) {
+                                    $join->whereIn($column, $value);
+                                } else {
+                                    $join->where($column, $value);
+                                }
+                            }
+                        }
                 }
             )
             ->whereIn('agf.access_group_id', $access_group_ids);
