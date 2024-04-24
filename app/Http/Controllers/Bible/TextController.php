@@ -232,6 +232,7 @@ class TextController extends APIController
         if ($sort_by === 'book_order') {
             $select_columns[] = BibleBook::getBookOrderSelectColumnExpressionRaw($bible->versification, 'book_order');
             $verses->orderBy('book_order')
+                ->orderBy('bible_verses.chapter')
                 ->orderBy('bible_verses.verse_sequence');
         }
 
