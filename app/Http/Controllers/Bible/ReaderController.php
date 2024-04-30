@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Bible;
 
 use App\Http\Controllers\APIController;
-
+use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleVerse;
@@ -69,8 +69,9 @@ class ReaderController extends APIController
      */
     public function books($bible_id)
     {
-        $fileset = BibleFileset::with('bible')->where('id', $bible_id)->where('asset_id', 'dbp-prod')->where('set_type_code', 'text_plain')->first();
-        $language_id = $fileset->bible->first()->language_id;
+        $bible = Bible::where('id', $bible_id)->first();
+        $fileset = $bible->filesetTypeTextPlainAssociated();
+        $language_id = $bible->language_id;
         $sophia_books = BibleVerse::where('hash_id', $fileset->hash_id)->select('book_id')->distinct()->get();
         $books = Book::whereIn('id', $sophia_books->pluck('book_id')->toArray())->orderBy('protestant_order', 'asc')->get();
         $bible_books = BibleBook::where('bible_id', $bible_id)->whereIn('book_id', $books->pluck('id')->toArray())->get();

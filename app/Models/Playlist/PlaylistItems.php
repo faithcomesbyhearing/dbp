@@ -358,7 +358,7 @@ class PlaylistItems extends Model implements Sortable
         // Try to get the verse count from the bible_verses table
         if (!$verses) {
             $text_fileset = $fileset
-                ? $fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first()
+                ? BibleFileset::filesetTypeTextPlainAssociated($fileset->id)
                 : null;
             if ($text_fileset) {
                 $verses =  BibleVerse::where('hash_id', $text_fileset->hash_id)
@@ -384,8 +384,8 @@ class PlaylistItems extends Model implements Sortable
         }
 
         if (empty($text_fileset)) {
-            $text_fileset = $this->fileset
-                ? $this->fileset->bible->first()->filesets->where('set_type_code', 'text_plain')->first()
+            $text_fileset = $this['fileset_id']
+                ? BibleFileset::filesetTypeTextPlainAssociated($this['fileset_id'])
                 : null;
         }
 

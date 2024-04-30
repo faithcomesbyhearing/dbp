@@ -7,6 +7,13 @@
     "docker-compose.yml",
     "package.json"
   ],
+  "description": "Fixed php version to 8.2.15",
+  "ignoreDeps": [
+    "php"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "docker": {
     "enabled": false
   },

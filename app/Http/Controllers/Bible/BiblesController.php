@@ -562,7 +562,7 @@ class BiblesController extends APIController
                     $cache_params,
                     now()->addDay(),
                     function () use ($books, $bible) {
-                        $text_fileset = $bible->filesets->where('set_type_code', 'text_plain')->first();
+                        $text_fileset = $bible->filesetTypeTextPlainAssociated();
                         if (!$text_fileset) {
                             return $books;
                         }

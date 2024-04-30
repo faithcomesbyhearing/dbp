@@ -470,4 +470,21 @@ class Bible extends Model
 
         return $query->whereIn('bibles.id', $bibles_ids_with_timestamps);
     }
+
+    /**
+     * Retrieves an associated fileset of type 'text plain' based on set type code.
+     *
+     * This method initially tries to find a fileset with a specific set type code.
+     *
+     * @return BibleFileset|null The associated BibleFileset if found, or null otherwise.
+     */
+    public function filesetTypeTextPlainAssociated() : BibleFileset|null
+    {
+        // Attempt to retrieve the first bible and its relevant filesets.
+        return $this->filesets
+            ->where('set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
+            ->where('archived', false)
+            ->where('content_loaded', true)
+            ->first();
+    }
 }
