@@ -5,6 +5,7 @@ namespace App\Models\Bible;
 use App\Models\Organization\Asset;
 use App\Models\Organization\Organization;
 use App\Models\User\AccessGroupFileset;
+use App\Models\Bible\BibleFilesetSize;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -163,6 +164,42 @@ class BibleFileset extends Model
         return $this->hasManyThrough(Font::class, BibleFilesetFont::class, 'hash_id', 'id', 'hash_id', 'font_id');
     }
 
+    /**
+     * Retrieves an associated fileset of type 'text plain' based on set size codes.
+     *
+     * This method initially tries to find a fileset with a specific set size code.
+     * If no matching fileset is found, it defaults to a fileset with a 'complete' size.
+     *
+     * @return BibleFileset|null The associated BibleFileset if found, or null otherwise.
+     */
+    public static function filesetTypeTextPlainAssociated(?string $fileset_id) : BibleFileset|null
+    {
+        $filset_associated = BibleFileset::select(['hash_id', 'id', 'set_size_code'])
+            ->with('bible')
+            ->where("id", $fileset_id)
+            ->first();
+
+        $query = BibleFileset::select('bible_filesets.*')
+            ->join('bible_fileset_connections as connection', 'connection.hash_id', 'bible_filesets.hash_id')
+            ->where('connection.bible_id', $filset_associated->bible->first()->id)
+            ->where('set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
+            ->where('archived', false)
+            ->where('content_loaded', true);
+
+        $fileset = $query
+            ->where('set_size_code', $filset_associated["set_size_code"])
+            ->first();
+
+        if ($fileset && $fileset["id"]) {
+            return $fileset;
+        }
+
+        // If no specific fileset is found, default to SIZE_COMPLETE (six character fileset)
+        return $query
+            ->where('set_size_code', BibleFilesetSize::SIZE_COMPLETE)
+            ->first();
+    }
+
     public function scopeWithBible($query, $bible_name, $language_id, $organization)
     {
         return $query
@@ -215,7 +252,14 @@ class BibleFileset extends Model
                         ->orWhere('bible_filesets.id', 'like', substr($id, 0, 6))
                         ->orWhere('bible_filesets.id', 'like', substr($id, 0, -2) . '%');
                 } else {
-                    $query->where('bible_filesets.id', $id);
+                    $query->where('bible_filesets.id', $id)
+                        ->whereExists(function ($query) use ($id) {
+                            return $query
+                                ->select(\DB::raw(1))
+                                ->from('bible_fileset_connections')
+                                ->where('bible_filesets.id', $id)
+                                ->whereColumn('bible_filesets.hash_id', '=', 'bible_fileset_connections.hash_id');
+                        });
                 }
             });
         })

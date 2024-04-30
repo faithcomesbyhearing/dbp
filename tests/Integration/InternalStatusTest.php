@@ -3,7 +3,7 @@
 namespace Tests\Integration;
 
 use App\Http\Controllers\ApiMetadataController;
-use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Request;
 
 class InternalStatusTest extends ApiV4Test
 {
@@ -14,7 +14,7 @@ class InternalStatusTest extends ApiV4Test
      */
     public function ensureStatusChecksAreSuccessful()
     {
-        Input::replace($this->params);
+        Request::replace($this->params);
 
         $metaController = new ApiMetadataController();
         $response = $metaController->getStatus();
