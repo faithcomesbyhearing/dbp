@@ -174,20 +174,29 @@ class BibleFileset extends Model
      */
     public static function filesetTypeTextPlainAssociated(?string $fileset_id) : BibleFileset|null
     {
-        $filset_associated = BibleFileset::select(['hash_id', 'id', 'set_size_code'])
+        $fileset_associated = BibleFileset::select(['hash_id', 'id', 'set_size_code'])
             ->with('bible')
             ->where("id", $fileset_id)
             ->first();
 
         $query = BibleFileset::select('bible_filesets.*')
             ->join('bible_fileset_connections as connection', 'connection.hash_id', 'bible_filesets.hash_id')
-            ->where('connection.bible_id', $filset_associated->bible->first()->id)
+            ->where('connection.bible_id', $fileset_associated->bible->first()->id)
             ->where('set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
             ->where('archived', false)
             ->where('content_loaded', true);
 
         $fileset = $query
-            ->where('set_size_code', $filset_associated["set_size_code"])
+            ->where('set_size_code', $fileset_associated["set_size_code"])
+            ->first();
+
+        if ($fileset && $fileset["id"]) {
+            return $fileset;
+        }
+
+        // E.g fileset_associated = NT and text plain = NTP
+        $fileset = $query
+            ->whereLike('set_size_code', 'LIKE', '%'.$fileset_associated["set_size_code"].'%')
             ->first();
 
         if ($fileset && $fileset["id"]) {
