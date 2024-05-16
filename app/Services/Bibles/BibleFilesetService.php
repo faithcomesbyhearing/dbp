@@ -4,6 +4,7 @@ namespace App\Services\Bibles;
 
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFileset;
+use App\Models\Bible\BibleFilesetConnection;
 use App\Models\Bible\BibleVerse;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -58,12 +59,6 @@ class BibleFilesetService
     ) : bool|BibleFileset {
         $available_filesets = [];
 
-        $complete_fileset = $valid_filesets->where('set_type_code', $type)->where('set_size_code', 'C')->first();
-
-        if ($complete_fileset) {
-            $available_filesets[] = $complete_fileset;
-        }
-
         $size_filesets = $valid_filesets->where('set_type_code', $type)->where('set_size_code', $testament)->first();
 
         if ($size_filesets) {
@@ -93,6 +88,12 @@ class BibleFilesetService
 
         if ($partial_fileset) {
             $available_filesets[] = $partial_fileset;
+        }
+
+        $complete_fileset = $valid_filesets->where('set_type_code', $type)->where('set_size_code', 'C')->first();
+
+        if ($complete_fileset) {
+            $available_filesets[] = $complete_fileset;
         }
 
         if (!empty($available_filesets)) {
@@ -157,5 +158,71 @@ class BibleFilesetService
             ->where('verse_start', $verse_start)
             ->get()
             ->implode('verse_text', ' ');
+    }
+
+
+    /**
+     * Match filesets with text filesets based on size code.
+     *
+     * This method iterates over a collection of filesets and matches them with corresponding text filesets
+     * from a separate collection. The matching is based on the size code of the filesets. It looks for text
+     * filesets whose size code is either identical to or contains the size code of the current fileset.
+     *
+     * @param \Illuminate\Support\Collection $filesets The collection of filesets to be matched.
+     * @param \Illuminate\Support\Collection $text_filesets The collection of text filesets to match against.
+     * @param \Illuminate\Support\Collection $bible_hashes A collection mapping fileset hash IDs to bible IDs.
+     *
+     * @return array An associative array where the keys are fileset IDs and the values are arrays of matching text filesets.
+     *
+     */
+    public static function matchFilesetsByTextSize(
+        Collection $filesets,
+        Collection $text_filesets,
+        Collection $bible_hashes
+    ) : Array {
+        $fileset_text_info = [];
+        foreach ($filesets as $fileset) {
+            $bibleId = $bible_hashes[$fileset->hash_id] ?? null;
+            if ($bibleId && isset($text_filesets[$bibleId])) {
+                foreach ($text_filesets[$bibleId] as $plain_fileset) {
+                    // Check if the set size code of the text fileset matches the current fileset's size code
+                    // or if the text fileset's size code contains the current fileset's size code.
+                    // E.g fileset = NT and text plain = NT OR text plain = NTP
+                    if ($plain_fileset->set_size_code === $fileset->set_size_code ||
+                        str_contains($plain_fileset->set_size_code, $fileset->set_size_code)
+                    ) {
+                        $fileset_text_info[$fileset->id][] = $plain_fileset;
+                    }
+                }
+            }
+        }
+
+        return $fileset_text_info;
+    }
+
+    public static function getFilesetsByIds(Collection $ids) : Collection
+    {
+        return BibleFileset::select(['hash_id', 'id', 'set_size_code'])
+            ->whereIn('id', $ids)
+            ->get();
+    }
+
+    public static function getTextFilesetsByBibleIds(Collection $bible_ids) : Collection
+    {
+        return BibleFilesetConnection::join('bible_filesets as f', 'f.hash_id', '=', 'bible_fileset_connections.hash_id')
+            ->select(['f.*', 'bible_fileset_connections.bible_id'])
+            ->where('f.set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
+            ->where('f.content_loaded', true)
+            ->where('f.archived', false)
+            ->whereIn('bible_fileset_connections.bible_id', $bible_ids)
+            ->get()
+            ->groupBy('bible_id');
+    }
+
+    public static function getBibleFilesetConnectionByHashIds(Collection $hash_ids) : Collection
+    {
+        return BibleFilesetConnection::select(['hash_id', 'bible_id'])
+            ->whereIn('hash_id', $hash_ids)
+            ->get();
     }
 }

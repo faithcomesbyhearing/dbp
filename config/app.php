@@ -221,12 +221,10 @@ return [
         'Validator'    => Illuminate\Support\Facades\Validator::class,
         'View'         => Illuminate\Support\Facades\View::class,
         'Socialite'    => Laravel\Socialite\Facades\Socialite::class,
-        'Input'        => Illuminate\Support\Facades\Input::class,
         'Image'        => Intervention\Image\Facades\Image::class,
         'i18n'         => Mcamara\LaravelLocalization\Facades\LaravelLocalization::class,
         'LaravelLocalization' => Mcamara\LaravelLocalization\Facades\LaravelLocalization::class,
         'Bugsnag'      => Bugsnag\BugsnagLaravel\Facades\Bugsnag::class,
-        'Sentry'       => Sentry\Laravel\Facade::class,
         'ReCaptcha'    => Biscolab\ReCaptcha\Facades\ReCaptcha::class
     ],
 

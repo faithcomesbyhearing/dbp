@@ -5,6 +5,7 @@ namespace App\Models\Bible;
 use App\Models\Organization\Asset;
 use App\Models\Organization\Organization;
 use App\Models\User\AccessGroupFileset;
+use App\Models\Bible\BibleFilesetSize;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -163,6 +164,59 @@ class BibleFileset extends Model
         return $this->hasManyThrough(Font::class, BibleFilesetFont::class, 'hash_id', 'id', 'hash_id', 'font_id');
     }
 
+    protected static function subqueryFilesetTypeTextPlainAssociated(?string $bible_id) : Builder
+    {
+        return BibleFileset::select('bible_filesets.*')
+            ->join('bible_fileset_connections as connection', 'connection.hash_id', 'bible_filesets.hash_id')
+            ->where('connection.bible_id', $bible_id)
+            ->where('set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
+            ->where('archived', false)
+            ->where('content_loaded', true);
+    }
+    /**
+     * Retrieves an associated fileset of type 'text plain' based on set size codes.
+     *
+     * This method initially tries to find a fileset with a specific set size code.
+     * If no matching fileset is found, it defaults to a fileset with a 'complete' size.
+     *
+     * @return BibleFileset|null The associated BibleFileset if found, or null otherwise.
+     */
+    public static function filesetTypeTextPlainAssociated(?string $fileset_id) : BibleFileset|null
+    {
+        $fileset_associated = BibleFileset::select(['hash_id', 'id', 'set_size_code'])
+            ->with('bible')
+            ->where("id", $fileset_id)
+            ->first();
+
+        $bible_id = $fileset_associated->bible->first()->id;
+
+        $query = self::subqueryFilesetTypeTextPlainAssociated($bible_id);
+
+        $fileset = $query
+            ->where('set_size_code', $fileset_associated["set_size_code"])
+            ->first();
+
+        if ($fileset && $fileset["id"]) {
+            return $fileset;
+        }
+
+        // E.g fileset_associated = NT and text plain = NTP
+        $query = self::subqueryFilesetTypeTextPlainAssociated($bible_id);
+        $fileset = $query
+            ->where('set_size_code', 'LIKE', '%'.$fileset_associated["set_size_code"].'%')
+            ->first();
+
+        if ($fileset && $fileset["id"]) {
+            return $fileset;
+        }
+
+        // If no specific fileset is found, default to SIZE_COMPLETE (six character fileset)
+        $query = self::subqueryFilesetTypeTextPlainAssociated($bible_id);
+        return $query
+            ->where('set_size_code', BibleFilesetSize::SIZE_COMPLETE)
+            ->first();
+    }
+
     public function scopeWithBible($query, $bible_name, $language_id, $organization)
     {
         return $query
@@ -199,8 +253,13 @@ class BibleFileset extends Model
             });
     }
 
-    public function scopeUniqueFileset($query, $id = null, $fileset_type = null, $ambigious_fileset_type = false, $testament_filter = null)
-    {
+    public function scopeUniqueFileset(
+        $query,
+        $id = null,
+        $fileset_type = null,
+        $ambigious_fileset_type = false,
+        $testament_filter = null
+    ) {
         $version = (int) checkParam('v');
         return $query->when($id, function ($query) use ($id, $version) {
             $query->where(function ($query) use ($id, $version) {
@@ -211,13 +270,12 @@ class BibleFileset extends Model
                         ->orWhere('bible_filesets.id', 'like', substr($id, 0, -2) . '%');
                 } else {
                     $query->where('bible_filesets.id', $id)
-                        ->orWhere(function ($query) use ($id) {
-                            $query->whereIn('bible_filesets.hash_id', function ($sub_query) use ($id) {
-                                $sub_query
-                                    ->select('hash_id')
-                                    ->from('bible_fileset_connections')
-                                    ->where('bible_id', 'LIKE', $id . '%');
-                            });
+                        ->whereExists(function ($query) use ($id) {
+                            return $query
+                                ->select(\DB::raw(1))
+                                ->from('bible_fileset_connections')
+                                ->where('bible_filesets.id', $id)
+                                ->whereColumn('bible_filesets.hash_id', '=', 'bible_fileset_connections.hash_id');
                         });
                 }
             });
@@ -233,24 +291,24 @@ class BibleFileset extends Model
             } else {
                 $query->where('bible_filesets.set_type_code', $fileset_type);
             }
-        });
+        })
+        ->where('bible_filesets.content_loaded', true)
+        ->where('bible_filesets.archived', false);
     }
 
     public function scopeIsContentAvailable(
         Builder $query,
         \Illuminate\Support\Collection $access_group_ids
     ) : Builder {
-        return $query->whereExists(function (QueryBuilder $query) use ($access_group_ids) {
-            return $query->select(\DB::raw(1))
-                ->from('access_group_filesets as agf')
-                ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id')
-                ->whereExists(function (QueryBuilder $subquery) use ($access_group_ids) {
-                    return $subquery->select(\DB::raw(1))
-                        ->from('access_group_filesets as agf2')
-                        ->whereColumn('agf.hash_id', '=', 'agf2.hash_id')
-                        ->whereIn('agf2.access_group_id', $access_group_ids);
-                });
-        });
+        return $query
+            ->where('bible_filesets.content_loaded', true)
+            ->where('bible_filesets.archived', false)
+            ->whereExists(function (QueryBuilder $query) use ($access_group_ids) {
+                return $query->select(\DB::raw(1))
+                    ->from('access_group_filesets as agf')
+                    ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id')
+                    ->whereIn('agf.access_group_id', $access_group_ids);
+            });
     }
 
     public static function getsetTypeCodeFromMedia($media)
@@ -417,6 +475,23 @@ class BibleFileset extends Model
         ];
     }
 
+    protected function subqueryConditionToExcludeOldTextFormat(QueryBuilder $subquery, string $from_table) : QueryBuilder
+    {
+        return $subquery->select(DB::raw(1))
+            ->from('bible_filesets', 'bfctext')
+            ->where('bfctext.set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
+            ->where('bfctext.content_loaded', true)
+            ->where('bfctext.archived', false)
+            ->whereColumn('bfctext.set_type_code', '=', $from_table.'.set_type_code')
+            ->where(DB::raw(\sprintf('CHAR_LENGTH(%s.id)', $from_table)), '=', self::OLD_TEXT_PLAIN_FILESET_LENGTH)
+            ->where(DB::raw('CHAR_LENGTH(bfctext.id)'), '=', self::NEW_TEXT_PLAIN_FILESET_LENGTH)
+            ->whereColumn(
+                DB::raw(\sprintf('SUBSTRING(bfctext.id, %d, %d)', 1, self::OLD_TEXT_PLAIN_FILESET_LENGTH)),
+                '=',
+                $from_table.'.id'
+            );
+    }
+
     /**
      * Filter bible fileset records to avoid pulling the old six character text_plain fileset
      * when a ten character fileset id exists.
@@ -429,21 +504,36 @@ class BibleFileset extends Model
 
         return $query
             ->whereNotExists(function (QueryBuilder $subquery) use ($from_table) {
-                return $subquery->select(\DB::raw(1))
-                    ->from('bible_filesets', 'bfctext')
-                    ->where('bfctext.set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
-                    ->whereColumn('bfctext.set_type_code', '=', $from_table.'.set_type_code')
-                    ->where(
-                        DB::raw(\sprintf('CHAR_LENGTH(%s.id)', $from_table)),
-                        '=',
-                        self::OLD_TEXT_PLAIN_FILESET_LENGTH
-                    )
-                    ->where(DB::raw('CHAR_LENGTH(bfctext.id)'), '=', self::NEW_TEXT_PLAIN_FILESET_LENGTH)
-                    ->whereColumn(
-                        DB::raw(\sprintf('SUBSTRING(bfctext.id, %d, %d)', 1, self::OLD_TEXT_PLAIN_FILESET_LENGTH)),
-                        '=',
-                        $from_table.'.id'
-                    );
+                // Check for the existence of the same text format for both the six-character fileset and
+                // the 10-character fileset.
+                return $this->subqueryConditionToExcludeOldTextFormat($subquery, $from_table)
+                    ->whereColumn('bfctext.set_size_code', '=', $from_table.'.set_size_code');
+            })->whereNot(function (Builder $subquery) use ($from_table) {
+                // Check for the existence of a complete text format for the six-character fileset, which
+                // includes NT and OT sizes of the 10-character fileset. It will ensure that both NT and
+                // OT exist to avoid returning the six-character fileset.
+                return $subquery->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
+                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
+                        ->where($from_table.'.set_size_code', '=', BibleFilesetSize::SIZE_COMPLETE)
+                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_NEW_TESTAMENT.'%');
+                })->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
+                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
+                        ->where($from_table.'.set_size_code', '=', BibleFilesetSize::SIZE_COMPLETE)
+                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_OLD_TESTAMENT.'%');
+                });
+            })->whereNot(function (Builder $subquery) use ($from_table) {
+                // Check for the existence of partial text formats for the six-character fileset
+                // (e.g., size_type=NTOTP) with NT and OT sizes of the 10-character fileset. It will ensure
+                // that both NT and OT exist to avoid returning the six-character fileset.
+                return $subquery->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
+                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
+                        ->where($from_table.'.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_NEW_TESTAMENT.'%')
+                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_NEW_TESTAMENT.'%');
+                })->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
+                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
+                        ->where($from_table.'.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_OLD_TESTAMENT.'%')
+                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_OLD_TESTAMENT.'%');
+                });
             });
     }
 

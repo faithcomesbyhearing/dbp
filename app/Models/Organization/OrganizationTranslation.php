@@ -131,4 +131,16 @@ class OrganizationTranslation extends Model
     {
         return $this->belongsTo(Organization::class);
     }
+
+    /**
+     * Search articles based on fuzzy search.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $searchTerm
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeWhereFuzzy($query, string $column, string $searchTerm)
+    {
+        return $query->where($column, 'LIKE', "%{$searchTerm}%");
+    }
 }

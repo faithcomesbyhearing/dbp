@@ -8,6 +8,7 @@ use App\Models\Country\JoshuaProject;
 use App\Models\Country\Country;
 use App\Transformers\CountryTransformer;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
+use Illuminate\Support\Str;
 
 class CountriesController extends APIController
 {
@@ -56,6 +57,22 @@ class CountriesController extends APIController
         $limit     = (int) (checkParam('limit') ?? 50);
         $limit     = min($limit, 50);
         $page      = checkParam('page') ?? 1;
+        $sort_by   = checkParam('sort_by') ?? null;
+        $sort_dir  = checkParam('sort_dir') ?? 'asc';
+
+        if (!in_array(Str::lower($sort_dir), ['asc', 'desc'])) {
+            $sort_dir = 'asc';
+        }
+
+        if ($sort_by) {
+            $columns = getColumnListing('countries', 'dbp');
+
+            if (!isset($columns[$sort_by])) {
+                return $this
+                    ->setStatusCode(HttpResponse::HTTP_BAD_REQUEST)
+                    ->replyWithError(trans('api.sort_errors_400'));
+            }
+        }
 
         $access_group_ids = getAccessGroups();
 
@@ -65,34 +82,44 @@ class CountriesController extends APIController
             $GLOBALS['i18n_iso'],
             $languages,
             $limit,
-            $page, $is_bibleis_gideons,
+            $page,
+            $is_bibleis_gideons,
+            $sort_by,
+            $sort_dir,
             $access_group_ids->toString()
         ];
         $cache_key = generateCacheSafeKey('countries_list', $cache_params);
 
-        $countries = cacheRememberByKey($cache_key, now()->addDay(), function () use ($languages, $limit, $access_group_ids) {
-            $countries = Country::with('currentTranslation')
-            ->hasFilesetsAvailable()
-            ->paginate($limit);
+        $countries = cacheRememberByKey(
+            $cache_key,
+            now()->addDay(),
+            function () use ($languages, $limit, $access_group_ids, $sort_by, $sort_dir) {
+                $countries = Country::with('currentTranslation')
+                    ->hasFilesetsAvailable()
+                    ->when($sort_by, function ($subquery) use($sort_by, $sort_dir) {
+                        return $subquery->orderBy($sort_by, $sort_dir);
+                    })
+                    ->paginate($limit);
 
-            if ($languages) {
-                $countries->load([
-                    'languagesFiltered' => function ($query) use ($access_group_ids) {
-                        $query
-                            ->IsContentAvailable($access_group_ids)
-                            ->orderBy('country_language.population', 'desc');
-                    },
-                ]);
+                if ($languages) {
+                    $countries->load([
+                        'languagesFiltered' => function ($query) use ($access_group_ids) {
+                            $query
+                                ->IsContentAvailable($access_group_ids)
+                                ->orderBy('country_language.population', 'desc');
+                        },
+                    ]);
+                }
+
+                $countries_return = fractal(
+                    $countries->getCollection(),
+                    CountryTransformer::class,
+                    $this->serializer
+                );
+
+                return $countries_return->paginateWith(new IlluminatePaginatorAdapter($countries));
             }
-
-            $countries_return = fractal(
-                $countries->getCollection(),
-                CountryTransformer::class,
-                $this->serializer
-            );
-
-            return $countries_return->paginateWith(new IlluminatePaginatorAdapter($countries));
-        });
+        );
         return $this->reply($countries);
     }
 

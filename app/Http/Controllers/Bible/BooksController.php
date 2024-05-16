@@ -97,7 +97,12 @@ class BooksController extends APIController
 
     public function getActiveBooksFromFileset($id, $fileset_type)
     {
-        $fileset = BibleFileset::with('bible')->where('id', $id)->where('set_type_code', $fileset_type)->first();
+        $fileset = BibleFileset::with('bible')
+            ->where('id', $id)
+            ->where('set_type_code', $fileset_type)
+            ->where('archived', false)
+            ->where('content_loaded', true)
+            ->first();
         if (!$fileset) {
             return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError('Fileset Not Found'); // BWF: shouldn't reply like this, as it masks error later on
         }

@@ -132,8 +132,7 @@ class BibleFilesetLookup extends Model
             ->whereIn('id', $access_group_by_user_key)
             ->whereIn('id', getDownloadAccessGroupList())
             ->get()
-            ->pluck('id')
-            ->toArray();
+            ->pluck('id');
 
         return BibleFileset::select([
             'bible_filesets.id AS filesetid',
@@ -162,7 +161,7 @@ class BibleFilesetLookup extends Model
         })
         ->whereNotIn('bible_filesets.set_type_code', ['text_format'])
         ->where('bible_filesets.id', 'NOT LIKE', '%DA16')
-        ->hasAccessGroup($download_access_group_array_ids)
+        ->isContentAvailable($download_access_group_array_ids)
         ->orderBy('bible_filesets.id')
         ->paginate($limit);
     }
