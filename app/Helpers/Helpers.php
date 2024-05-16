@@ -3,9 +3,11 @@
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 use App\Support\AccessGroupsCollection;
 use App\Models\Bible\BibleFilesetSize;
+use Illuminate\Support\Facades\Schema;
 
 function getAccessGroups() : AccessGroupsCollection
 {
@@ -780,5 +782,27 @@ if (!function_exists('constraintExists')) {
                 ->count();
 
         return $count > 0;
+    }
+}
+
+/**
+ * Get Column name list of the user_notes entity
+ *
+ * @return Collection
+ */
+if (!function_exists('getColumnListing')) {
+    function getColumnListing(string $table_name, string $database_name) : null|Collection
+    {
+        return cacheRemember(
+            $table_name.'_columns',
+            [],
+            now()->addDay(),
+            function () use ($table_name, $database_name) {
+                return collect(Schema::connection($database_name)->getColumnListing($table_name))
+                    ->mapWithKeys(function ($item) {
+                        return [$item => true];
+                    });
+            }
+        );
     }
 }

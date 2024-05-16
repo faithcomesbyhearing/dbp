@@ -437,6 +437,14 @@ class Bible extends Model
             return $query->select(\DB::raw(1))
                 ->from('access_group_filesets as agf')
                 ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                ->join(
+                    'bible_filesets as abf',
+                    function ($join) {
+                        $join->on('abf.hash_id', '=', 'bfc.hash_id')
+                            ->where('abf.content_loaded', true)
+                            ->where('abf.archived', false);
+                    }
+                )
                 ->whereColumn('bibles.id', '=', 'bfc.bible_id')
                 ->whereIn('agf.access_group_id', $access_group_ids);
         });
@@ -461,5 +469,22 @@ class Bible extends Model
             ->pluck('bible_id');
 
         return $query->whereIn('bibles.id', $bibles_ids_with_timestamps);
+    }
+
+    /**
+     * Retrieves an associated fileset of type 'text plain' based on set type code.
+     *
+     * This method initially tries to find a fileset with a specific set type code.
+     *
+     * @return BibleFileset|null The associated BibleFileset if found, or null otherwise.
+     */
+    public function filesetTypeTextPlainAssociated() : BibleFileset|null
+    {
+        // Attempt to retrieve the first bible and its relevant filesets.
+        return $this->filesets
+            ->where('set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
+            ->where('archived', false)
+            ->where('content_loaded', true)
+            ->first();
     }
 }
