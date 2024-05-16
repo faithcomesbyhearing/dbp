@@ -45,7 +45,7 @@
         "barryvdh/laravel-ide-helper": "3.0.0",
         "fakerphp/faker": "1.23.1",
         "filp/whoops": "2.15.4",
-        "friendsofphp/php-cs-fixer": "3.41.1",
+        "friendsofphp/php-cs-fixer": "3.46.0",
         "itsgoingd/clockwork": "5.1.12",
         "laravel/legacy-factories": "1.4.0",
         "mockery/mockery": "1.6.7",
