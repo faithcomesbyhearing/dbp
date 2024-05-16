@@ -27,7 +27,6 @@ use App\Transformers\PlaylistHighlightsTransformer;
 use App\Transformers\PlaylistBookmarksTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
@@ -461,11 +460,11 @@ class PlaylistsController extends APIController
         $playlist = Playlist::withUserAndItemsById($playlist_id, $user_id)->first();
 
         if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Not Found');
         }
         
         if ($show_text && isset($playlist->items)) {
-            $playlist_text_filesets = $this->getPlaylistTextFilesets($playlist_id);
+            $playlist_text_filesets = $this->getPlaylistTextFilesets((int) $playlist_id);
 
             foreach ($playlist->items as $item) {
                 $item->verse_text = $item->getVerseText($playlist_text_filesets);
@@ -1385,40 +1384,26 @@ class PlaylistsController extends APIController
         return $playlist;
     }
 
-    public function getPlaylistTextFilesets($playlist_id)
+    public function getPlaylistTextFilesets(int $playlist_id) : Array
     {
-        $filesets = Arr::pluck(DB::connection('dbp_users')
-            ->select('select DISTINCT(fileset_id) from playlist_items where playlist_id = ?', [$playlist_id]), 'fileset_id');
+        // Step 1: Fetch distinct fileset IDs from playlist items
+        $fileset_ids = PlaylistItems::getUniqueFilesetsByPlaylistIds([$playlist_id]);
 
-        $filesets_hashes = DB::connection('dbp')
-            ->table('bible_filesets')
-            ->select(['hash_id', 'id'])
-            ->whereIn('id', $filesets)->get();
+        // Step 2: Fetch filesets with their hash IDs and size codes
+        $filesets_hashes = BibleFilesetService::getFilesetsByIds($fileset_ids);
 
-        $hashes_bibles = DB::connection('dbp')
-            ->table('bible_fileset_connections')
-            ->select(['hash_id', 'bible_id'])
-            ->whereIn('hash_id', $filesets_hashes->pluck('hash_id'))->get();
+        // Step 3: Fetch bible IDs associated with the fileset hash IDs
+        $bible_hashes = BibleFilesetService::getBibleFilesetConnectionByHashIds($filesets_hashes->pluck('hash_id'));
 
-        $text_filesets = DB::connection('dbp')
-            ->table('bible_fileset_connections as fc')
-            ->join('bible_filesets as f', 'f.hash_id', '=', 'fc.hash_id')
-            ->select(['f.*', 'fc.bible_id'])
-            ->where('f.set_type_code', 'text_plain')
-            ->whereIn('fc.bible_id', $hashes_bibles->pluck('bible_id'))->get()->groupBy('bible_id');
+        // Step 4: Fetch text filesets that are not archived and have content loaded
+        $text_filesets = BibleFilesetService::getTextFilesetsByBibleIds($bible_hashes->pluck('bible_id'));
 
+        // Step 5: Match filesets with text filesets based on size code
+        $bible_hash = $bible_hashes->pluck('bible_id', 'hash_id');
 
-        $fileset_text_info = $filesets_hashes->pluck('hash_id', 'id');
-        $bible_hash = $hashes_bibles->pluck('bible_id', 'hash_id');
-
-        foreach ($filesets as $fileset) {
-            if (isset($fileset_text_info[$fileset])) {
-                $bible_id = $bible_hash[$fileset_text_info[$fileset]];
-                $fileset_text_info[$fileset] = $text_filesets[$bible_id] ?? null;
-            }
-        }
-
-        return $fileset_text_info;
+        return $filesets_hashes->isNotEmpty() && $text_filesets->isNotEmpty()
+            ? BibleFilesetService::matchFilesetsByTextSize($filesets_hashes, $text_filesets, $bible_hash)
+            : [];
     }
 
     public function itemMetadata()
