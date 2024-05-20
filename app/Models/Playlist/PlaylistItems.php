@@ -790,9 +790,9 @@ class PlaylistItems extends Model implements Sortable
     /**
      * Get unique filesets using given playlist ids
      *
-     * @param Illuminate\Support\Collection $playlist_ids
+     * @param \Illuminate\Support\Collection $playlist_ids
      *
-     * @return Illuminate\Support\Collection
+     * @return \Illuminate\Support\Collection
      */
     public static function getUniqueFilesetsByPlaylistIds(Array|SupCollection $playlist_ids) : SupCollection
     {

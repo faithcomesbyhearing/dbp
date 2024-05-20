@@ -207,7 +207,7 @@ class PlaylistService
     }
 
     /**
-     * Check a given playlist items if each items has a valid filset ID and return a valid playlist items array
+     * Check a given playlist items if each items has a valid fileset ID and return a valid playlist items array
      *
      * @param array $playlist_items
      * @return array
