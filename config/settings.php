@@ -60,7 +60,7 @@ return [
    * Api Key access groups assigned for permissions
    */
 
-  'apiKeyAccessGroups' => env('API_KEY_ACCESS_GROUPS', '121,123,125'),
+  'apiKeyAccessGroups' => env('API_KEY_ACCESS_GROUPS', '121,123,125,191,193,1001,1003,1005'),
 
   /*
    * User restore encryption key
@@ -128,7 +128,7 @@ return [
    */
   'download_access_group_list' => env(
       'DOWNLOAD_ACCESS_GROUP_LIST',
-      '12,15,16,17,18,19,20,21,22,23,24,181,183,185,191,193,141,143,145'
+      '12,15,16,17,18,19,20,21,22,23,24,181,183,185,191,193,141,143,145,1051,1053,1055,1021,1023,1025'
   ),
   'backward_compatibility' => [
       'app_name' => [
