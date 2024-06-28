@@ -9,7 +9,6 @@
     "type": "project",
     "require": {
         "php": "<=8.2.15",
-        "algolia/algoliasearch-client-php": "3.4.1",
         "awobaz/compoships": "^2.2",
         "aws/aws-sdk-php": "3.296.1",
         "biscolab/laravel-recaptcha": "6.1.0",
