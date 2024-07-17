@@ -10,7 +10,8 @@ libzip-dev \
 libicu-dev \
 g++ \
 libpq-dev \
-libmemcached-dev
+libmemcached-dev \
+&& rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Install intl extension
 RUN docker-php-ext-configure intl \
