@@ -7,7 +7,7 @@ set +a
 
 # Install New Relic Agent to /opt directory
 cd /opt
-curl -Ls -o newrelic-php5.tar.gz https://download.newrelic.com/php_agent/archive/10.14.0.3/newrelic-php5-10.14.0.3-linux.tar.gz
+curl -Ls -o newrelic-php5.tar.gz https://download.newrelic.com/php_agent/archive/10.22.0.12/newrelic-php5-10.22.0.12-linux.tar.gz
 gzip -dc newrelic-php5.tar.gz | tar xf -
 cd newrelic-php5-*
 export NR_INSTALL_SILENT=1 
