@@ -121,6 +121,7 @@ class Language extends Model
         'country_id',
         'scope',
         'rolv_code',
+        'deleted_at',
     ];
 
     /**
@@ -386,6 +387,17 @@ class Language extends Model
      *
      */
     protected $rolv_code;
+
+    /**
+     * @OA\Property(
+     *     title="deleted_at",
+     *     description="",
+     *     type="string",
+     *     example=""
+     * )
+     *
+     */
+    protected $deleted_at;
 
     public function scopeIncludeAutonymTranslation($query)
     {

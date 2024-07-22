@@ -118,7 +118,8 @@ class LanguageTransformer extends BaseTransformer
                     'classifications'      => $language->classifications->pluck('name', 'classification_id') ?? '',
                     'bibles'               => $language->bibles,
                     'resources'            => $language->resources,
-                    'rolv_code'            => $language->rolv_code
+                    'rolv_code'            => $language->rolv_code,
+                    'deleted_at'           => $language->deleted_at
                 ];
 
             /**
@@ -132,7 +133,8 @@ class LanguageTransformer extends BaseTransformer
                     'name'       => $language->name ?? $language->backup_name,
                     'autonym'    => $language->autonym,
                     'bibles'     => $language->bibles->count(),
-                    'rolv_code'  => $language->rolv_code
+                    'rolv_code'  => $language->rolv_code,
+                    'deleted_at' => $language->deleted_at
                 ];
             default:
             case 'v4_languages.all':
@@ -145,7 +147,8 @@ class LanguageTransformer extends BaseTransformer
                     'autonym'    => $language->autonym,
                     'bibles'     => $show_bibles ? $language->bibles : $language->bibles->count(),
                     'filesets'   => $language->filesets_count,
-                    'rolv_code'  => $language->rolv_code
+                    'rolv_code'  => $language->rolv_code,
+                    'deleted_at' => $language->deleted_at
                 ];
                 
                 if ($language->country_population) {
