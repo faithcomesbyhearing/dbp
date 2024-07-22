@@ -47,7 +47,6 @@ trait UserAnnotationTrait
             ->get();
 
         $fileset_ids = [];
-        $fileset_and_chapters = [];
 
         foreach ($items as $item) {
             $fileset_ids[$item->fileset_id] = true;
@@ -83,7 +82,17 @@ trait UserAnnotationTrait
             ->whereIn(\DB::raw("CONCAT($this->table.bible_id, '', $this->table.chapter)"), $bible_per_chapter);
     }
 
-    public function getTextFilesetRelatedByTestament(string $testament)
+    /**
+     * Get the related text fileset by testament.
+     *
+     * This method returns the first text fileset that matches the specified testament.
+     * It filters the filesets collection based on the testament provided.
+     *
+     * @param string $testament The testament to filter by (e.g., 'NT', 'OT').
+     *
+     * @return BibleFileset|null Returns the matching BibleFileset or null if no match is found or the bible property is not set.
+     */
+    public function getTextFilesetRelatedByTestament(string $testament) : ?BibleFileset
     {
         // Check if the bible property is set, return null if not
         if (!$this->bible) {
@@ -94,6 +103,10 @@ trait UserAnnotationTrait
         // The method filters the filesets collection based on the testament
         return $this->bible->filesets->when($testament !== '', function (Collection $collection) use ($testament) {
             return $collection->filter(function (BibleFileset $value) use ($testament) {
+                // Filter the filesets that have not been loaded
+                if (!$value->content_loaded || $value->archived) {
+                    return false;
+                }
                 // Check if the fileset is either complete or matches the specified testament
                 // The check includes cases where the set_size_code contains the testament as a substring
                 if ($value->set_size_code === BibleFilesetSize::SIZE_COMPLETE || $testament == $value->set_size_code) {
