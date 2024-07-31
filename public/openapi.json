@@ -3494,6 +3494,12 @@
                         "description": "",
                         "type": "string",
                         "example": ""
+                    },
+                    "deleted_at": {
+                        "title": "deleted_at",
+                        "description": "",
+                        "type": "string",
+                        "example": ""
                     }
                 },
                 "type": "object",
