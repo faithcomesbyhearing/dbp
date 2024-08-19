@@ -514,6 +514,7 @@ class PlansController extends APIController
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Parameter(name="days", in="query", required=true, @OA\Schema(type="integer"), description="Number of days to add to the plan"),
+     *     @OA\Parameter(name="add_to_end", in="query", required=false, @OA\Schema(type="true"), description="If new days to add should be added to end of list of days")
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -566,10 +567,14 @@ class PlansController extends APIController
             ->where('plan_id', $plan->id)
             ->where('user_id', $user->id)
             ->get()->pluck('id');
-        $plan_days_data = $new_playlists->map(function ($item) use ($plan) {
+
+        $add_to_end = checkParam('add_to_end') ?? false;
+
+        $plan_days_data = $new_playlists->map(function ($item, $index) use ($plan, $add_to_end, $current_days_size) {
             return [
                 'plan_id'               => $plan->id,
                 'playlist_id'           => $item,
+                'order_column' => $add_to_end ? $current_days_size + ($index + 1) : 0,
             ];
         })->toArray();
         Playlist::whereIn('id', $new_playlists)->update(['name' => '', 'updated_at' => 'created_at']);
