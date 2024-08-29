@@ -416,6 +416,9 @@ Route::name('v4_internal_plans_days.complete')
 Route::name('v4_internal_plans.draft')
     ->middleware('APIToken:check')
     ->post('plans/{plan_id}/draft', 'Plan\PlansController@draft');
+Route::name('v4_internal_plans_days.delete')
+    ->middleware('APIToken:check')
+    ->delete('plans/{plan_id}/day', 'Plan\PlansController@deleteDays');
 
 // VERSION 4 | Accounts (bible.is private)
 Route::name('v4_internal_user_accounts.index')->get(

@@ -514,6 +514,7 @@ class PlansController extends APIController
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Parameter(name="days", in="query", required=true, @OA\Schema(type="integer"), description="Number of days to add to the plan"),
+     *     @OA\Parameter(name="add_to_end", in="query", required=false, @OA\Schema(type="true"), description="If new days to add should be added to end of list of days")
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -566,10 +567,14 @@ class PlansController extends APIController
             ->where('plan_id', $plan->id)
             ->where('user_id', $user->id)
             ->get()->pluck('id');
-        $plan_days_data = $new_playlists->map(function ($item) use ($plan) {
+
+        $add_to_end = checkParam('add_to_end') ?? false;
+
+        $plan_days_data = $new_playlists->map(function ($item, $index) use ($plan, $add_to_end, $current_days_size) {
             return [
                 'plan_id'               => $plan->id,
                 'playlist_id'           => $item,
+                'order_column' => $add_to_end ? $current_days_size + ($index + 1) : 0,
             ];
         })->toArray();
         Playlist::whereIn('id', $new_playlists)->update(['name' => '', 'updated_at' => 'created_at']);
@@ -669,6 +674,65 @@ class PlansController extends APIController
             'message' => 'Plan Day ' . $result
         ]);
     }
+
+    /**
+     * Delete days from a plan.
+     *
+     *  @OA\Delete(
+     *     path="/plans/{plan_id}/day",
+     *     tags={"Plans"},
+     *     summary="Delete days from a plan",
+     *     description="",
+     *     operationId="v4_internal_plans_days.delete'",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
+     *     )
+     * )
+     *
+     * @param  int $plan_id
+     *
+     */
+
+    public function deleteDays(Request $request, $plan_id)
+    {
+        // Validate Project / User Connection
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this->setStatusCode(SymfonyResponse::HTTP_UNAUTHORIZED)->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $plan = Plan::where('id', $plan_id)->first();
+
+        if (!$plan) {
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Plan Not Found');
+        }
+
+        $user_plan = UserPlan::where('plan_id', $plan->id)->where('user_id', $user->id)->first();
+
+        if (!$user_plan) {
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('User Plan Not Found');
+        }
+        
+        $days = checkParam('days', true);
+        $days_ids = explode(',', $days);
+
+        if(count($days_ids) > 20){
+            return $this->setStatusCode(SymfonyResponse::HTTP_BAD_REQUEST)->replyWithError('Too many days provided. Maximum is 20.');
+        }
+
+        if (!PlanDay::removePlanDaysByPlanId($plan->id, $days_ids)) {
+            return $this->setStatusCode(SymfonyResponse::HTTP_INTERNAL_SERVER_ERROR)->replyWithError("Plan Days can't be deleted");
+        }
+
+        return $this->reply('Plan days were succesfully deleted');
+    }
+
     /**
      * Reset the specified plan.
      *

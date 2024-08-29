@@ -408,4 +408,29 @@ class PlanDay extends Model implements Sortable
             });
         }]);
     }
+
+    /**
+     * Remove the Plan Days records attached to a Plan
+     *
+     * @param int $plan_id
+     * @param array $plan_day_ids
+     *
+     * @return bool
+     */
+    public static function removePlanDaysByPlanId(int $plan_id, array $plan_day_ids): bool
+    {
+        try {
+            \DB::transaction(function () use ($plan_id, $plan_day_ids) {
+                $deleted_days = PlanDay::whereIn('id', $plan_day_ids)->where('plan_id', $plan_id);
+                $playlists_ids = $deleted_days->pluck('playlist_id')->unique();
+                $playlists = Playlist::whereIn('id', $playlists_ids);
+                $deleted_days->delete();
+                $playlists->delete();
+            });
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('Failed to remove plan days', ['plan_id' => $plan_id, 'plan_day_ids' => $plan_day_ids, 'exception' => $e]);
+            return false;
+        }
+    }
 }
