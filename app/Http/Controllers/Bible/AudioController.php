@@ -127,7 +127,9 @@ class AudioController extends APIController
         ) {
             $audioTimestamps = [];
             $bible_files = BibleFile::with(['streamBandwidth.transportStreamBytes' => function ($query) {
-                $query->with('timestamp');
+                $query->with(['timestamp' => function ($timestamp) {
+                    $timestamp->with('bibleFile');
+                }]);
             }])->where([
                 'hash_id' => $fileset->hash_id,
                 'book_id' => $book,
@@ -144,6 +146,12 @@ class AudioController extends APIController
                         }
                     }
                 }
+            }
+            if (!empty($audioTimestamps)) {
+                usort($audioTimestamps, function ($a, $b) {
+                    // order by verse_sequence ASC
+                    return (int)$a->verse_sequence <=> (int)$b->verse_sequence;
+                });
             }
         }
 
