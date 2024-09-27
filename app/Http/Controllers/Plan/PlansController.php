@@ -129,17 +129,34 @@ class PlansController extends APIController
     {
         $plans = Plan::with('days')
             ->with('user')
-            ->where('draft', 0)
+            ->where('plans.draft', 0)
             ->when($language_id, function ($q) use ($language_id) {
                 $q->where('plans.language_id', $language_id);
             })
             ->when($featured || empty($user), function ($q) {
                 $q->where('plans.featured', '1');
-            })->unless($featured, function ($q) use ($user) {
+            })->unless($featured, function ($q) use ($user, $sort_by) {
                 $q->join('user_plans', function ($join) use ($user) {
                     $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
                 });
-                $q->select(['plans.*', 'user_plans.start_date', 'user_plans.percentage_completed']);
+
+                if ($sort_by === 'last_interaction') {
+                    $q->leftJoin('user_playlists', function ($join) use ($user) {
+                        $join->on('user_playlists.plan_id', '=', 'plans.id')->where('user_playlists.user_id', $user->id);
+                    });
+
+                    $q->leftJoin('playlist_items_completed', function ($join) use ($user) {
+                        $join->on('playlist_items_completed.playlist_item_id', '=', 'user_playlists.id')->where('playlist_items_completed.user_id', $user->id);
+                    });
+
+                    // Select the latest interaction timestamp
+                    $q->addSelect(DB::raw('GREATEST(
+                        COALESCE(user_plans.updated_at, "1970-01-01 00:00:00"),
+                        COALESCE(user_playlists.updated_at, "1970-01-01 00:00:00"),
+                        COALESCE(playlist_items_completed.created_at, "1970-01-01 00:00:00")
+                    ) as last_interaction'));
+                }
+                $q->addSelect(['plans.*', 'user_plans.start_date', 'user_plans.percentage_completed']);
             })
             ->orderBy($sort_by, $sort_dir)->paginate($limit);
 
