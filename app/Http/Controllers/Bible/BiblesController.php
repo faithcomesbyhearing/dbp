@@ -6,6 +6,7 @@ use Symfony\Component\HttpFoundation\Response;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
 use App\Models\Bible\BibleFilesetType;
+use App\Models\Bible\BibleFilesetSize;
 use App\Models\Organization\Organization;
 use App\Transformers\BibleTransformer;
 use App\Transformers\BooksTransformer;
@@ -562,13 +563,31 @@ class BiblesController extends APIController
                     $cache_params,
                     now()->addDay(),
                     function () use ($books, $bible) {
-                        $text_fileset = $bible->filesetTypeTextPlainAssociated();
-                        if (!$text_fileset) {
+                        $text_filesets = $bible->filesetTypeTextPlainAssociated();
+
+                        if ($text_filesets->isEmpty()) {
                             return $books;
                         }
 
-                        return $books->map(function ($book) use ($text_fileset) {
+                        return $books->map(function ($book) use ($text_filesets) {
                             $verses_count = [];
+                            $book_testament  = $book->book ? $book->book->book_testament : null;
+
+                            $text_fileset = $text_filesets
+                                ->where('set_size_code', $book_testament)
+                                ->first();
+
+                            if (!$text_fileset) {
+                                $text_fileset = $text_filesets
+                                    ->where('set_size_code', 'LIKE', '%'.$book_testament.'%')
+                                    ->first();
+
+                                if (!$text_fileset) {
+                                    $text_fileset = $text_filesets
+                                        ->where('set_size_code', BibleFilesetSize::SIZE_COMPLETE)
+                                        ->first();
+                                }
+                            }
 
                             $verses_by_book = BibleVerse::where('hash_id', $text_fileset->hash_id)
                                 ->where('book_id', $book->book_id)
