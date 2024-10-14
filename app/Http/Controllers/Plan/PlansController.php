@@ -115,6 +115,10 @@ class PlansController extends APIController
         $sort_dir   = checkParam('sort_dir') ?? 'asc';
         $iso = checkParam('iso');
 
+        if($featured && $sort_by === 'last_interaction') {
+            return $this->setStatusCode(SymfonyResponse::HTTP_BAD_REQUEST)->replyWithError('Sort by last_interaction is not supported for featured plans');
+        }
+
         $language_id = null;
         if ($iso !== null) {
             $language_id = cacheRemember('v4_language_id_from_iso', [$iso], now()->addDay(), function () use ($iso) {
@@ -129,17 +133,22 @@ class PlansController extends APIController
     {
         $plans = Plan::with('days')
             ->with('user')
-            ->where('draft', 0)
+            ->where('plans.draft', 0)
             ->when($language_id, function ($q) use ($language_id) {
                 $q->where('plans.language_id', $language_id);
             })
             ->when($featured || empty($user), function ($q) {
                 $q->where('plans.featured', '1');
-            })->unless($featured, function ($q) use ($user) {
+            })->unless($featured, function ($q) use ($user, $sort_by) {
                 $q->join('user_plans', function ($join) use ($user) {
                     $join->on('user_plans.plan_id', '=', 'plans.id')->where('user_plans.user_id', $user->id);
                 });
-                $q->select(['plans.*', 'user_plans.start_date', 'user_plans.percentage_completed']);
+
+                if ($sort_by === 'last_interaction') {
+                    $q->sortByLastInteraction($user);
+                }
+
+                $q->addSelect(['plans.*', 'user_plans.start_date', 'user_plans.percentage_completed']);
             })
             ->orderBy($sort_by, $sort_dir)->paginate($limit);
 
