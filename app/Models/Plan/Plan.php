@@ -2,11 +2,14 @@
 
 namespace App\Models\Plan;
 
+use App\Models\Playlist\Playlist;
+use App\Models\Playlist\PlaylistItemsComplete;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
 use App\Models\User\User;
+use Illuminate\Database\Query\JoinClause;
 
 /**
  * App\Models\Plan
@@ -264,5 +267,63 @@ class Plan extends Model
     public function countUsers() : int
     {
         return UserPlan::where('plan_id', $this['id'])->count();
+    }
+
+    # Method
+/**
+     * Get the plan query sorting by last interaction User.
+     *
+     * @param Builder $query
+     * @param int $user_id
+     *
+     * @return Builder
+     */
+    public function scopeSortByLastInteraction(Builder $query, User $user) : Builder
+    {
+        $playlist_items_completed_subquery = PlaylistItemsComplete::select(
+                'user_playlists.plan_id',
+                \DB::raw('MAX(playlist_items_completed.created_at) AS max_created_at')
+            )
+            ->join('user_playlists', 'user_playlists.id', 'playlist_items_completed.playlist_item_id')
+            ->where('playlist_items_completed.user_id', $user->id)
+            ->groupBy('user_playlists.plan_id');
+
+        $query->leftJoinSub(
+            $playlist_items_completed_subquery,
+            'item_completed_interation',
+            function (JoinClause $join) {
+                $join->on(
+                    'item_completed_interation.plan_id',
+                    '=',
+                    'user_plans.plan_id'
+                );
+            }
+        );
+
+        $user_playlists_subquery = Playlist::select(
+                'user_playlists.plan_id',
+                \DB::raw('MAX(user_playlists.updated_at) AS max_updated_at')
+            )
+            ->where('user_playlists.user_id', $user->id)
+            ->groupBy('user_playlists.plan_id');
+
+        $query->leftJoinSub(
+            $user_playlists_subquery,
+            'user_playlists_interation',
+            function (JoinClause $join) {
+                $join->on(
+                    'user_playlists_interation.plan_id',
+                    '=',
+                    'user_plans.plan_id'
+                );
+            }
+        );
+
+        return $query->addSelect(\DB::raw('GREATEST(
+            COALESCE(user_plans.updated_at, "1970-01-01 00:00:00"),
+            COALESCE(item_completed_interation.max_created_at, "1970-01-01 00:00:00"),
+            COALESCE(user_playlists_interation.max_updated_at, "1970-01-01 00:00:00"),
+            COALESCE(plans.updated_at, "1970-01-01 00:00:00")
+        ) as last_interaction'));
     }
 }
