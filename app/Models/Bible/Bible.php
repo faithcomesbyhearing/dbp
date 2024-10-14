@@ -478,13 +478,12 @@ class Bible extends Model
      *
      * @return BibleFileset|null The associated BibleFileset if found, or null otherwise.
      */
-    public function filesetTypeTextPlainAssociated() : BibleFileset|null
+    public function filesetTypeTextPlainAssociated() : Collection
     {
         // Attempt to retrieve the first bible and its relevant filesets.
         return $this->filesets
             ->where('set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
             ->where('archived', false)
-            ->where('content_loaded', true)
-            ->first();
+            ->where('content_loaded', true);
     }
 }
