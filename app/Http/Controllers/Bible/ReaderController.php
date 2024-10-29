@@ -70,18 +70,31 @@ class ReaderController extends APIController
     public function books($bible_id)
     {
         $bible = Bible::where('id', $bible_id)->first();
-        $fileset = $bible->filesetTypeTextPlainAssociated();
-        $language_id = $bible->language_id;
-        $sophia_books = BibleVerse::where('hash_id', $fileset->hash_id)->select('book_id')->distinct()->get();
-        $books = Book::whereIn('id', $sophia_books->pluck('book_id')->toArray())->orderBy('protestant_order', 'asc')->get();
-        $bible_books = BibleBook::where('bible_id', $bible_id)->whereIn('book_id', $books->pluck('id')->toArray())->get();
 
-        foreach ($books as $book) {
-            $currentBook = $bible_books->where('book_id', $book->id)->first();
-            $book->vernacular_title = $currentBook ? $currentBook->name : null;
-            $book->existing_chapters = $currentBook ? $currentBook->chapters : null;
+        $books = collect();
+        $language_id = null;
+
+        if ($bible) {
+            $book_included = [];
+            $language_id = $bible->language_id;
+            $filesets = $bible->filesetTypeTextPlainAssociated();
+
+            foreach ($filesets as $fileset) {
+                $sophia_books = BibleVerse::where('hash_id', $fileset->hash_id)->select('book_id')->distinct()->get();
+                $books_fileset = Book::whereIn('id', $sophia_books->pluck('book_id')->toArray())->orderBy('protestant_order', 'asc')->get();
+                $bible_books = BibleBook::where('bible_id', $bible_id)->whereIn('book_id', $books_fileset->pluck('id')->toArray())->get();
+
+                foreach ($books_fileset as $book) {
+                    $currentBook = $bible_books->where('book_id', $book->id)->first();
+                    $book->vernacular_title = $currentBook ? $currentBook->name : null;
+                    $book->existing_chapters = $currentBook ? $currentBook->chapters : null;
+                    if (!isset($book_included[$book->id])) {
+                        $books->push($book);
+                        $book_included[$book->id] = true;
+                    }
+                }
+            }
         }
-
         return view('bibles.reader.books', compact('books', 'bible_id', 'language_id'));
     }
 
