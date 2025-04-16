@@ -33,16 +33,17 @@ trait BibleFileSetsTrait
             $bible,
             $chapter_id,
             $book ? $book->id : null
+        // We need to ensure we pull the correct files. The video_stream fileset can have multiple associated files,
+        // but it specifically requires the m3u8 format. Meanwhile, the audio fileset works differently because m3u8
+        // Bible files are not stored in the database, so the audio fileset needs mp3 Bible files.
+        )->filterBySetTypeCode(
+            $fileset->set_type_code,
+        // the files will be ordered according the given type from the request
+        // and not the fileset type
+        )->orderBySetTypeCode(
+            $type
         );
 
-        if ($type === 'video_stream') {
-            $query
-                ->orderByRaw(
-                    "FIELD(bible_files.book_id, 'MAT', 'MRK', 'LUK', 'JHN') ASC"
-                )
-                ->orderBy('chapter_start', 'ASC')
-                ->orderBy('verse_sequence', 'ASC');
-        }
         if ($limit !== null) {
             $fileset_chapters_paginated = $query->paginate($limit);
             $filesets_pagination = new IlluminatePaginatorAdapter($fileset_chapters_paginated);
@@ -82,11 +83,9 @@ trait BibleFileSetsTrait
             $fileset_return->addMeta($fileset_chapters->metadata);
         }
 
-        return (
-          $limit !== null ?
+        return $limit !== null ?
           $fileset_return->paginateWith($filesets_pagination) :
-          $fileset_return
-        );
+          $fileset_return;
     }
 
     private function showTextFilesetChapter(
@@ -160,11 +159,10 @@ trait BibleFileSetsTrait
             $this->serializer
         );
 
-        return (
-            $limit !== null ?
+        return $limit !== null ?
             $fileset_return->paginateWith($filesets_pagination) :
             $fileset_return
-        );
+        ;
     }
 
     private function generateSecondaryFiles(

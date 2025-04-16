@@ -301,6 +301,47 @@ class BibleFile extends Model
     }
 
     /**
+     * Add filter related to the bible_files entity and the set_type_code
+     *
+     * @param Builder $query
+     * @param string $book_id
+     *
+     * @return Builder
+     */
+    public function scopeFilterBySetTypeCode(Builder $query, ?string $set_type_code) : Builder
+    {
+        if ($set_type_code === 'video_stream') {
+            // we want to filter out the m3u8 files because they are the files that are used for the video stream
+            return $query->where('bible_files.file_name', 'like', '%m3u8');
+        }
+        // The audio fileset won't have the m3u8 file stored in the database because it only requires the mp3 files
+
+        return $query;
+    }
+
+    /**
+     * Add order by related to the bible_files entity and the set_type_code
+     *
+     * @param Builder $query
+     * @param string $type
+     *
+     * @return Builder
+     */
+    public function scopeOrderBySetTypeCode(Builder $query, ?string $set_type_code) : Builder
+    {
+        if ($set_type_code === 'video_stream') {
+            return $query
+                ->orderByRaw(
+                    "FIELD(bible_files.book_id, 'MAT', 'MRK', 'LUK', 'JHN') ASC"
+                )
+                ->orderBy('chapter_start', 'ASC')
+                ->orderBy('verse_sequence', 'ASC');
+        }
+
+        return $query;
+    }
+
+    /**
      * Add join related to the bible_books entity
      *
      * @param Builder $query
