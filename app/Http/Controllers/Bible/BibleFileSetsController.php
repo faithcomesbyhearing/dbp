@@ -93,7 +93,7 @@ class BibleFileSetsController extends APIController
                 }
                 $asset_id = $fileset->asset_id;
                 $bible = optional($fileset->bible)->first();
-                
+
                 return $this->showAudioVideoFilesets(
                     null,
                     $bible,
