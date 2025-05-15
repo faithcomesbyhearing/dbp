@@ -3,11 +3,9 @@
 namespace App\Traits;
 
 use App\Models\User\AccessGroup;
+use App\Models\User\SysLicenseGroupAccessGroups;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-use Illuminate\Support\Collection;
-use App\Models\User\AccessGroupFileset;
 use App\Models\User\AccessType;
-use App\Models\User\Key;
 use App\Models\Bible\BibleFileset;
 use App\Exceptions\ResponseException as Response;
 use App\Support\AccessGroupsCollection;
@@ -48,9 +46,15 @@ trait AccessControlAPI
                     ->where('name', '!=', 'RESTRICTED')
                     ->get()
                 ;
-                // Use Eloquent everywhere except for this giant request
-                $identifiers = AccessGroupFileset::select('hash_id as identifier')
-                    ->whereIn('access_group_id', $access_groups)->distinct()->get();
+
+                if ($accessGroups->isEmpty()) {
+                    return (object) ['identifiers' => [], 'string' => ''];
+                }
+
+                // Get the fileset hashes for the access groups
+                $identifiers = SysLicenseGroupAccessGroups::select('bible_filesets.hash_id as identifier')
+                    ->join('bible_filesets', 'sys_license_group_access_groups_view.lg_id', '=', 'bible_filesets.license_group_id')
+                    ->whereIn('sys_license_group_access_groups_view.access_group_id', $access_groups)->distinct()->get();
 
                 return (object) [
                     'identifiers' => collect($identifiers)->pluck('identifier')->toArray(),
@@ -87,12 +91,13 @@ trait AccessControlAPI
                     return [];
                 }
 
-                return AccessGroupFileset::select('hash_id')
-                    ->whereIn('access_group_id', $access_groups)
+                return SysLicenseGroupAccessGroups::select('bible_filesets.hash_id')
+                    ->join('bible_filesets', 'sys_license_group_access_groups_view.lg_id', '=', 'bible_filesets.license_group_id')
+                    ->whereIn('sys_license_group_access_groups_view.access_group_id', $access_groups)
                     ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
-                        $query->whereIn('access_group_id', $access_group_ids);
+                        $query->whereIn('sys_license_group_access_groups_view.access_group_id', $access_group_ids);
                     })
-                    ->where('hash_id', $fileset_hash)
+                    ->where('bible_filesets.hash_id', $fileset_hash)
                     ->get();
             }
         );
