@@ -103,6 +103,14 @@ class BibleFileset extends Model
     protected $updated_at;
 
     protected $bible_files_indexed_by_book_and_chapter;
+    /**
+     * @OA\Property(
+     *   title="license_group_id",
+     *   type="integer",
+     *   description="The liceense group id",
+     * )
+     */
+    protected $license_group_id;
 
     public function copyright()
     {
@@ -305,9 +313,9 @@ class BibleFileset extends Model
             ->where('bible_filesets.archived', false)
             ->whereExists(function (QueryBuilder $query) use ($access_group_ids) {
                 return $query->select(\DB::raw(1))
-                    ->from('access_group_filesets as agf')
-                    ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id')
-                    ->whereIn('agf.access_group_id', $access_group_ids);
+                    ->from('sys_license_group_access_groups_view as lgag')
+                    ->whereColumn('lgag.lg_id', '=', 'bible_filesets.license_group_id')
+                    ->whereIn('lgag.access_group_id', $access_group_ids);
             });
     }
 
@@ -403,26 +411,6 @@ class BibleFileset extends Model
     public function isVideo() : bool
     {
         return Str::contains($this['set_type_code'], BibleFileset::VIDEO);
-    }
-
-    /**
-     * Check if the filetset records belong an access group list
-     *
-     * @param Builder $query
-     * @param Array $access_group_list
-     *
-     * @return Builder
-     */
-    public function scopeHasAccessGroup(Builder $query, Array $access_group_list) : Builder
-    {
-        return $query->whereExists(function (QueryBuilder $query_builder) use ($access_group_list) {
-            $access_group_fileset = AccessGroupFileset::select('hash_id')
-                ->whereIn('access_group_id', $access_group_list);
-
-            $query_builder->select(DB::raw(1))
-                    ->from($access_group_fileset, 'agfv')
-                    ->whereColumn('agfv.hash_id', 'bible_filesets.hash_id');
-        });
     }
 
     /**

@@ -435,18 +435,17 @@ class Bible extends Model
     {
         return $query->whereExists(function ($query) use ($access_group_ids) {
             return $query->select(\DB::raw(1))
-                ->from('access_group_filesets as agf')
-                ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
+                ->from('sys_license_group_access_groups_view as lgag')
                 ->join(
                     'bible_filesets as abf',
                     function ($join) {
-                        $join->on('abf.hash_id', '=', 'bfc.hash_id')
+                        $join->on('abf.license_group_id', '=', 'lgag.lg_id')
                             ->where('abf.content_loaded', true)
                             ->where('abf.archived', false);
                     }
-                )
+                )->join('bible_fileset_connections as bfc', 'abf.hash_id', 'bfc.hash_id')
                 ->whereColumn('bibles.id', '=', 'bfc.bible_id')
-                ->whereIn('agf.access_group_id', $access_group_ids);
+                ->whereIn('lgag.access_group_id', $access_group_ids);
         });
     }
     public function scopeIsTimingInformationAvailable($query)
