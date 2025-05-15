@@ -684,13 +684,11 @@ class Language extends Model
         array $bible_fileset_filters
     ) {
         return $query->select(\DB::raw(1))
-            ->from('access_group_filesets as agf')
-            ->join('bible_fileset_connections as bfc', 'agf.hash_id', 'bfc.hash_id')
-            ->join('bibles as b', 'bfc.bible_id', 'b.id')
+            ->from('sys_license_group_access_groups_view as lgag')
             ->join(
                 'bible_filesets as abf',
                 function ($join) use ($bible_fileset_filters) {
-                    $join->on('abf.hash_id', '=', 'bfc.hash_id')
+                    $join->on('abf.license_group_id', '=', 'lgag.lg_id')
                         ->where('abf.content_loaded', true)
                         ->where('abf.archived', false);
 
@@ -705,7 +703,9 @@ class Language extends Model
                         }
                 }
             )
-            ->whereIn('agf.access_group_id', $access_group_ids);
+            ->join('bible_fileset_connections as bfc', 'abf.hash_id', 'bfc.hash_id')
+            ->join('bibles as b', 'bfc.bible_id', 'b.id')
+            ->whereIn('lgag.access_group_id', $access_group_ids);
     }
 
     public function scopeIsContentAvailable(
@@ -719,8 +719,7 @@ class Language extends Model
             function (QueryBuilder $query) use ($access_group_ids, $from_table, $bible_fileset_filters) {
                 $query = self::buildContentAvailabilityQuery($query, $access_group_ids, $bible_fileset_filters);
 
-                return $query->whereColumn($from_table.'.id', '=', 'b.language_id')
-                    ->whereIn('agf.access_group_id', $access_group_ids);
+                return $query->whereColumn($from_table.'.id', '=', 'b.language_id');
             }
         );
     }
