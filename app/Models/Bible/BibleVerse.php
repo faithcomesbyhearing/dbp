@@ -194,17 +194,17 @@ class BibleVerse extends Model
     {
         return $query->whereExists(function ($sub_query) use ($access_group_ids) {
             return $sub_query->select(\DB::raw(1))
-                ->from('access_group_filesets AS agf')
+                ->from('sys_license_group_access_groups_view as lgag')
                 ->join(
                     'bible_filesets as abf',
                     function ($join) {
-                        $join->on('abf.hash_id', '=', 'agf.hash_id')
+                        $join->on('abf.license_group_id', '=', 'lgag.lg_id')
                             ->where('abf.content_loaded', true)
                             ->where('abf.archived', false);
                     }
                 )
-                ->whereIn('agf.access_group_id', $access_group_ids)
-                ->whereColumn('agf.hash_id', '=', 'bible_verses.hash_id');
+                ->whereIn('lgag.access_group_id', $access_group_ids)
+                ->whereColumn('abf.hash_id', '=', 'bible_verses.hash_id');
         });
     }
 

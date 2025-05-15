@@ -186,7 +186,7 @@ class LanguageTranslation extends Model
                     $from_table.'.language_source_id',
                     '=',
                     'b.language_id'
-                )->whereIn('agf.access_group_id', $access_group_ids);
+                )->whereIn('lgag.access_group_id', $access_group_ids);
             }
         );
     }
