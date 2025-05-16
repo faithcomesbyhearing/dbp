@@ -9,7 +9,6 @@ use App\Models\User\AccessType;
 use App\Models\Bible\BibleFileset;
 use App\Exceptions\ResponseException as Response;
 use App\Support\AccessGroupsCollection;
-use DB;
 
 trait AccessControlAPI
 {
@@ -54,7 +53,9 @@ trait AccessControlAPI
                 // Get the fileset hashes for the access groups
                 $identifiers = SysLicenseGroupAccessGroups::select('bible_filesets.hash_id as identifier')
                     ->join('bible_filesets', 'sys_license_group_access_groups_view.lg_id', '=', 'bible_filesets.license_group_id')
-                    ->whereIn('sys_license_group_access_groups_view.access_group_id', $access_groups)->distinct()->get();
+                    ->whereIn('sys_license_group_access_groups_view.access_group_id', $access_groups)
+                    ->distinct()
+                    ->get();
 
                 return (object) [
                     'identifiers' => collect($identifiers)->pluck('identifier')->toArray(),
@@ -64,17 +65,27 @@ trait AccessControlAPI
         );
     }
 
+    /**
+     * Returns all accessible Bible fileset hash IDs for the current user,
+     * optionally filtered to a specific fileset hash and/or extra access groups.
+     *
+     * @param  AccessGroupsCollection  $api_user_access_groups  The authenticated user's API access groups
+     * @param  string|null             $fileset_hash            Optional single fileset hash to filter by
+     * @param  int[]                   $access_group_ids        Extra access group IDs to further restrict results
+     * @return Countable|array                                  A collection of fileset hash IDs
+
+     */
     private function genericAccessControl(
-        AccessGroupsCollection $access_groups,
-        ?string $fileset_hash,
+        AccessGroupsCollection $api_user_access_groups,
+        ?string $fileset_hash = null,
         array $access_group_ids = []
     ) {
-        $cache_params = [$access_groups->toString(), $fileset_hash, join('', $access_group_ids)];
+        $cache_params = [$api_user_access_groups->toString(), $fileset_hash, join('', $access_group_ids)];
         return cacheRemember(
             'bulk_access_control',
             $cache_params,
             now()->addMinutes(40),
-            function () use ($access_groups, $fileset_hash, $access_group_ids) {
+            function () use ($api_user_access_groups, $fileset_hash, $access_group_ids) {
                 $user_location = geoip(request()->ip());
                 $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
                 $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
@@ -87,13 +98,14 @@ trait AccessControlAPI
                     return [];
                 }
 
-                if (empty($access_groups)) {
+                if ($api_user_access_groups->isEmpty()) {
                     return [];
                 }
-
+                // Take advantage of the isContentAvailable scope to filter by access groups
+                // and fileset hash
                 return SysLicenseGroupAccessGroups::select('bible_filesets.hash_id')
                     ->join('bible_filesets', 'sys_license_group_access_groups_view.lg_id', '=', 'bible_filesets.license_group_id')
-                    ->whereIn('sys_license_group_access_groups_view.access_group_id', $access_groups)
+                    ->whereIn('sys_license_group_access_groups_view.access_group_id', $api_user_access_groups)
                     ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
                         $query->whereIn('sys_license_group_access_groups_view.access_group_id', $access_group_ids);
                     })
