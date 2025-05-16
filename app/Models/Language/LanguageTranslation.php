@@ -178,16 +178,12 @@ class LanguageTranslation extends Model
     ) : Builder {
         $from_table = getAliasOrTableName($query->getQuery()->from);
 
-        return $query->whereExists(
-            function (QueryBuilder $query) use ($access_group_ids, $from_table, $bible_fileset_filters) {
-                $query = Language::buildContentAvailabilityQuery($query, $access_group_ids, $bible_fileset_filters);
-
-                return $query->whereColumn(
-                    $from_table.'.language_source_id',
-                    '=',
-                    'b.language_id'
-                )->whereIn('lgag.access_group_id', $access_group_ids);
-            }
+        $sub = Language::buildContentAvailabilityQuery($access_group_ids, $bible_fileset_filters);
+        $sub->whereColumn(
+            $from_table.'.language_source_id',
+            '=',
+            'b.language_id'
         );
+        return $query->whereExists($sub);
     }
 }
