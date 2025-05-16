@@ -306,16 +306,44 @@ class BibleFileset extends Model
 
     public function scopeIsContentAvailable(
         Builder $query,
-        \Illuminate\Support\Collection $access_group_ids
+        \Illuminate\Support\Collection $access_groups,
+        ?array $access_group_ids = [],
     ) : Builder {
         return $query
             ->where('bible_filesets.content_loaded', true)
             ->where('bible_filesets.archived', false)
-            ->whereExists(function (QueryBuilder $query) use ($access_group_ids) {
-                return $query->select(\DB::raw(1))
-                    ->from('sys_license_group_access_groups_view as lgag')
-                    ->whereColumn('lgag.lg_id', '=', 'bible_filesets.license_group_id')
-                    ->whereIn('lgag.access_group_id', $access_group_ids);
+            ->leftJoin('license_group as lg', 'lg.id', '=', 'bible_filesets.license_group_id')
+            ->where(function (Builder $q) use ($access_groups, $access_group_ids) {
+                $q
+                    // AGF path: no pattern or pattern=100, and matching AGF record
+                    ->where(function (Builder $sub) use ($access_groups, $access_group_ids) {
+                        $sub->whereNull('lg.permission_pattern_id')
+                            ->orWhere('lg.permission_pattern_id', 100)
+                        ->whereExists(function (QueryBuilder $query) use ($access_groups, $access_group_ids) {
+                            $query->selectRaw('1')
+                                ->from('access_group_filesets', 'agf')
+                                ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id')
+                                ->whereIn('agf.access_group_id', $access_groups)
+                                ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
+                                    $query->whereIn('agf.access_group_id', $access_group_ids);
+                                });
+                        });
+                    })
+
+                    // OR PPAG path: other pattern, and matching PPAG record
+                    ->orWhere(function (Builder $sub) use ($access_groups, $access_group_ids) {
+                        $sub->whereNotNull('lg.permission_pattern_id')
+                            ->where('lg.permission_pattern_id', '<>', 100)
+                            ->whereExists(function (QueryBuilder $query) use ($access_groups, $access_group_ids) {
+                                $query->selectRaw('1')
+                                    ->from('permission_pattern_access_group', 'ppag')
+                                    ->whereColumn('ppag.permission_pattern_id', '=', 'lg.permission_pattern_id')
+                                    ->whereIn('ppag.access_groups_id', $access_groups)
+                                    ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
+                                        $query->whereIn('ppag.access_groups_id', $access_group_ids);
+                                    });
+                            });
+                    });
             });
     }
 
