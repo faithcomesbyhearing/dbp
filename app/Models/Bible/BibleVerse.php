@@ -192,20 +192,12 @@ class BibleVerse extends Model
      */
     public function scopeIsContentAvailable(Builder $query, Collection $access_group_ids) : Builder
     {
-        return $query->whereExists(function ($sub_query) use ($access_group_ids) {
-            return $sub_query->select(\DB::raw(1))
-                ->from('sys_license_group_access_groups_view as lgag')
-                ->join(
-                    'bible_filesets as abf',
-                    function ($join) {
-                        $join->on('abf.license_group_id', '=', 'lgag.lg_id')
-                            ->where('abf.content_loaded', true)
-                            ->where('abf.archived', false);
-                    }
-                )
-                ->whereIn('lgag.access_group_id', $access_group_ids)
-                ->whereColumn('abf.hash_id', '=', 'bible_verses.hash_id');
-        });
+        $sub = BibleFileset::query()
+            ->selectRaw('1')
+            ->isContentAvailable($access_group_ids)
+            ->whereColumn('bible_filesets.hash_id', 'bible_verses.hash_id');
+
+        return $query->whereExists($sub);
     }
 
     /**
