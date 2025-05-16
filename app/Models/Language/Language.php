@@ -673,39 +673,30 @@ class Language extends Model
     /**
      * Build the common query logic for checking content availability.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
      * @param  \Illuminate\Support\Collection  $access_group_ids
      * @param  array  $bible_fileset_filters
      * @return \Illuminate\Database\Query\Builder
      */
     public static function buildContentAvailabilityQuery(
-        QueryBuilder $query,
         Collection $access_group_ids,
         array $bible_fileset_filters
     ) {
-        return $query->select(\DB::raw(1))
-            ->from('sys_license_group_access_groups_view as lgag')
-            ->join(
-                'bible_filesets as abf',
-                function ($join) use ($bible_fileset_filters) {
-                    $join->on('abf.license_group_id', '=', 'lgag.lg_id')
-                        ->where('abf.content_loaded', true)
-                        ->where('abf.archived', false);
+        $sub = BibleFileset::query()
+            ->selectRaw('1')
+            ->isContentAvailable($access_group_ids)
+            ->join('bible_fileset_connections as bfc', 'bible_filesets.hash_id', 'bfc.hash_id')
+            ->join('bibles as b', 'bfc.bible_id', 'b.id');
 
-                        if (!empty($bible_fileset_filters)) {
-                            foreach($bible_fileset_filters as $column => $value) {
-                                if (is_array($value)) {
-                                    $join->whereIn($column, $value);
-                                } else {
-                                    $join->where($column, $value);
-                                }
-                            }
-                        }
+        if (!empty($bible_fileset_filters)) {
+            foreach($bible_fileset_filters as $column => $value) {
+                if (is_array($value)) {
+                    $sub->whereIn($column, $value);
+                } else {
+                    $sub->where($column, $value);
                 }
-            )
-            ->join('bible_fileset_connections as bfc', 'abf.hash_id', 'bfc.hash_id')
-            ->join('bibles as b', 'bfc.bible_id', 'b.id')
-            ->whereIn('lgag.access_group_id', $access_group_ids);
+            }
+        }
+        return $sub;
     }
 
     public function scopeIsContentAvailable(
@@ -715,13 +706,10 @@ class Language extends Model
     ) : Builder {
         $from_table = getAliasOrTableName($query->getQuery()->from);
 
-        return $query->whereExists(
-            function (QueryBuilder $query) use ($access_group_ids, $from_table, $bible_fileset_filters) {
-                $query = self::buildContentAvailabilityQuery($query, $access_group_ids, $bible_fileset_filters);
+        $sub = self::buildContentAvailabilityQuery($access_group_ids, $bible_fileset_filters);
+        $sub->whereColumn($from_table.'.id', '=', 'b.language_id');
 
-                return $query->whereColumn($from_table.'.id', '=', 'b.language_id');
-            }
-        );
+        return $query->whereExists($sub);
     }
 
     public function scopeFilterableByMedia($query, $media)
