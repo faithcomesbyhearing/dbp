@@ -2032,6 +2032,11 @@
                 "title": "Bible",
                 "description": "Bible",
                 "properties": {
+                    "custom_font_required": {
+                        "title": "custom_font_required",
+                        "description": "Flag to mark if the bible has a custom font",
+                        "type": "boolean"
+                    },
                     "id": {
                         "title": "id",
                         "description": "The Archivist created Bible ID string. This will be between six and twelve letters usually starting with the iso639-3 code and ending with the acronym for the Bible",
@@ -4965,6 +4970,9 @@
                         },
                         "filesets": {
                             "$ref": "#/components/schemas/BibleFileset"
+                        },
+                        "custom_font_required": {
+                            "$ref": "#/components/schemas/Bible/properties/custom_font_required"
                         }
                     },
                     "type": "object"
