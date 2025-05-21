@@ -162,6 +162,7 @@ class BibleTransformer extends BaseTransformer
      *              @OA\Property(property="books",         ref="#/components/schemas/Book/properties/id"),
      *              @OA\Property(property="links",         ref="#/components/schemas/BibleLink"),
      *              @OA\Property(property="filesets",      ref="#/components/schemas/BibleFileset"),
+     *              @OA\Property(property="custom_font_required",      ref="#/components/schemas/Bible/properties/custom_font_required"),
      *     )
      *   )
      * )
@@ -293,6 +294,7 @@ class BibleTransformer extends BaseTransformer
                     'filesets'     => $bible->filesets->mapToGroups(function ($item) {
                         return [$item['asset_id'] => $this->filesetWithMeta($item)];
                     }),
+                    'custom_font_required' => $bible->custom_font_required,
                     'fonts' => $fonts
                 ];
 
