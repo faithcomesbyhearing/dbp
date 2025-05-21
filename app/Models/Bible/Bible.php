@@ -214,6 +214,35 @@ class Bible extends Model
      */
     public $incrementing = false;
 
+    /**
+     * @var array
+     */
+    protected $appends = ['custom_font_required'];
+
+    /**
+     * @OA\Property(
+     *   property="custom_font_required",
+     *   title="custom_font_required",
+     *   type="boolean",
+     *   description="Flag to mark if the bible has a custom font"
+     * )
+     */
+    public function getCustomFontRequiredAttribute() : bool
+    {
+        if (array_key_exists('custom_font_required', $this->attributes)) {
+            return (bool) $this->attributes['custom_font_required'];
+        }
+
+        $access_group_ids = getAccessGroups();
+
+        $requires_font = $this->filesets()
+            ->isContentAvailable($access_group_ids)
+            ->whereHas('fonts')
+            ->exists();
+
+        return $this->attributes['custom_font_required'] = $requires_font;
+    }
+
     public function translations()
     {
         return $this->hasMany(BibleTranslation::class)->where('name', '!=', '');
