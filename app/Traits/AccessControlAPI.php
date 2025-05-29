@@ -51,9 +51,8 @@ trait AccessControlAPI
                 }
 
                 // Get the fileset hashes for the access groups
-                $identifiers = SysLicenseGroupAccessGroups::select('bible_filesets.hash_id as identifier')
-                    ->join('bible_filesets', 'sys_license_group_access_groups_view.lg_id', '=', 'bible_filesets.license_group_id')
-                    ->whereIn('sys_license_group_access_groups_view.access_group_id', $access_groups)
+                $identifiers =  BibleFileset::select('bible_filesets.hash_id as identifier')
+                    ->isAccessGroupAvailable($access_groups, [])
                     ->distinct()
                     ->get();
 
@@ -101,15 +100,11 @@ trait AccessControlAPI
                 if ($api_user_access_groups->isEmpty()) {
                     return [];
                 }
-                // Take advantage of the isContentAvailable scope to filter by access groups
+                // Take advantage of the isAccessGroupAvailable scope to filter by access groups
                 // and fileset hash
-                return SysLicenseGroupAccessGroups::select('bible_filesets.hash_id')
-                    ->join('bible_filesets', 'sys_license_group_access_groups_view.lg_id', '=', 'bible_filesets.license_group_id')
-                    ->whereIn('sys_license_group_access_groups_view.access_group_id', $api_user_access_groups)
-                    ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
-                        $query->whereIn('sys_license_group_access_groups_view.access_group_id', $access_group_ids);
-                    })
+                return BibleFileset::select('bible_filesets.hash_id')
                     ->where('bible_filesets.hash_id', $fileset_hash)
+                    ->isAccessGroupAvailable($api_user_access_groups, $access_group_ids)
                     ->get();
             }
         );

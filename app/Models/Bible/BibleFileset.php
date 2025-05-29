@@ -313,6 +313,7 @@ class BibleFileset extends Model
             ->where('bible_filesets.content_loaded', true)
             ->where('bible_filesets.archived', false)
             ->leftJoin('license_group as lg', 'lg.id', '=', 'bible_filesets.license_group_id')
+            ->join('bible_fileset_types as bftypes', 'bftypes.set_type_code', '=', 'bible_filesets.set_type_code')
             ->where(function (Builder $q) use ($access_groups, $access_group_ids) {
                 $q
                     // AGF path: no pattern or pattern=100, and matching AGF record
@@ -322,11 +323,13 @@ class BibleFileset extends Model
                         ->whereExists(function (QueryBuilder $query) use ($access_groups, $access_group_ids) {
                             $query->selectRaw('1')
                                 ->from('access_group_filesets', 'agf')
-                                ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id')
+                                ->join('access_groups as agroups', 'agroups.id', '=', 'agf.access_group_id')
                                 ->whereIn('agf.access_group_id', $access_groups)
                                 ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
                                     $query->whereIn('agf.access_group_id', $access_group_ids);
-                                });
+                                })
+                                ->whereColumn('bftypes.mode_id', '=', 'agroups.mode_id')
+                                ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id');
                         });
                     })
 
@@ -337,11 +340,13 @@ class BibleFileset extends Model
                             ->whereExists(function (QueryBuilder $query) use ($access_groups, $access_group_ids) {
                                 $query->selectRaw('1')
                                     ->from('permission_pattern_access_group', 'ppag')
-                                    ->whereColumn('ppag.permission_pattern_id', '=', 'lg.permission_pattern_id')
+                                    ->join('access_groups as agroups', 'agroups.id', '=', 'ppag.access_groups_id')
                                     ->whereIn('ppag.access_groups_id', $access_groups)
                                     ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
                                         $query->whereIn('ppag.access_groups_id', $access_group_ids);
-                                    });
+                                    })
+                                    ->whereColumn('ppag.permission_pattern_id', '=', 'lg.permission_pattern_id')
+                                    ->whereColumn('bftypes.mode_id', '=', 'agroups.mode_id');
                             });
                     });
             });
@@ -656,5 +661,34 @@ class BibleFileset extends Model
 
         return  isset($this->bible_files_indexed_by_book_and_chapter[$book_id]) &&
                 isset($this->bible_files_indexed_by_book_and_chapter[$book_id][$chapter]);
+    }
+    /**
+     * Scope to check if license group access is available for the given access groups considering the mode_id.
+     *
+     * @param Builder $query
+     * @param \Illuminate\Support\Collection $access_groups
+     * @param array|null $access_group_ids
+     * @return Builder
+     */
+    public function scopeIsAccessGroupAvailable(
+        Builder $query,
+        \Illuminate\Support\Collection $api_user_access_groups,
+        ?array $access_group_ids = []
+    ) : Builder {
+        return $query->whereExists(function (QueryBuilder $subquery) use ($api_user_access_groups, $access_group_ids) {
+            return $subquery->selectRaw('1')
+                ->from('sys_license_group_access_groups_view', 'slicense')
+                ->join('access_groups AS agroups', 'agroups.id', '=', 'slicense.access_group_id')
+                ->join('bible_fileset_types AS ftypes', function($join) {
+                    // join ftypes to the parent bible_filesets via set_type_code, then match mode_id
+                    $join->on('ftypes.set_type_code', '=', 'bible_filesets.set_type_code')
+                        ->on('ftypes.mode_id', '=', 'agroups.mode_id');
+                })
+                ->whereColumn('slicense.lg_id', 'bible_filesets.license_group_id')
+                ->whereIn('slicense.access_group_id', $api_user_access_groups)
+                ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
+                    $query->whereIn('slicense.access_group_id', $access_group_ids);
+                });
+        });
     }
 }
