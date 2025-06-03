@@ -77,20 +77,11 @@ class BibleFilesetConnection extends Model
 
     public function scopeIsContentAvailable(Builder $query, Collection $access_group_ids)
     {
-        return $query->whereExists(function ($query) use ($access_group_ids) {
-            return $query->select(\DB::raw(1))
-                ->from('access_group_filesets as agf')
-                ->join(
-                    'bible_filesets as abf',
-                    function ($join) {
-                        $join->on('abf.hash_id', '=', 'agf.hash_id')
-                            ->where('abf.content_loaded', true)
-                            ->where('abf.archived', false)
-                            ;
-                    }
-                )
-                ->whereColumn('agf.hash_id', '=', 'bible_fileset_connections.hash_id')
-                ->whereIn('agf.access_group_id', $access_group_ids);
-        });
+        $sub = BibleFileset::query()
+            ->selectRaw('1')
+            ->isContentAvailable($access_group_ids)
+            ->whereColumn('bible_filesets.hash_id', '=', 'bible_fileset_connections.hash_id');
+
+        return $query->whereExists($sub);
     }
 }
