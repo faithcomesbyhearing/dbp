@@ -217,7 +217,7 @@ class Bible extends Model
     /**
      * @var array
      */
-    protected $appends = ['custom_font_required'];
+    protected $appends = [];
 
     /**
      * @OA\Property(
