@@ -3,15 +3,12 @@
 namespace App\Traits;
 
 use App\Models\User\AccessGroup;
+use App\Models\User\SysLicenseGroupAccessGroups;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-use Illuminate\Support\Collection;
-use App\Models\User\AccessGroupFileset;
 use App\Models\User\AccessType;
-use App\Models\User\Key;
 use App\Models\Bible\BibleFileset;
 use App\Exceptions\ResponseException as Response;
 use App\Support\AccessGroupsCollection;
-use DB;
 
 trait AccessControlAPI
 {
@@ -48,9 +45,16 @@ trait AccessControlAPI
                     ->where('name', '!=', 'RESTRICTED')
                     ->get()
                 ;
-                // Use Eloquent everywhere except for this giant request
-                $identifiers = AccessGroupFileset::select('hash_id as identifier')
-                    ->whereIn('access_group_id', $access_groups)->distinct()->get();
+
+                if ($accessGroups->isEmpty()) {
+                    return (object) ['identifiers' => [], 'string' => ''];
+                }
+
+                // Get the fileset hashes for the access groups
+                $identifiers =  BibleFileset::select('bible_filesets.hash_id as identifier')
+                    ->isAccessGroupAvailable($access_groups, [])
+                    ->distinct()
+                    ->get();
 
                 return (object) [
                     'identifiers' => collect($identifiers)->pluck('identifier')->toArray(),
@@ -60,17 +64,27 @@ trait AccessControlAPI
         );
     }
 
+    /**
+     * Returns all accessible Bible fileset hash IDs for the current user,
+     * optionally filtered to a specific fileset hash and/or extra access groups.
+     *
+     * @param  AccessGroupsCollection  $api_user_access_groups  The authenticated user's API access groups
+     * @param  string|null             $fileset_hash            Optional single fileset hash to filter by
+     * @param  int[]                   $access_group_ids        Extra access group IDs to further restrict results
+     * @return Countable|array                                  A collection of fileset hash IDs
+
+     */
     private function genericAccessControl(
-        AccessGroupsCollection $access_groups,
-        ?string $fileset_hash,
+        AccessGroupsCollection $api_user_access_groups,
+        ?string $fileset_hash = null,
         array $access_group_ids = []
     ) {
-        $cache_params = [$access_groups->toString(), $fileset_hash, join('', $access_group_ids)];
+        $cache_params = [$api_user_access_groups->toString(), $fileset_hash, join('', $access_group_ids)];
         return cacheRemember(
             'bulk_access_control',
             $cache_params,
             now()->addMinutes(40),
-            function () use ($access_groups, $fileset_hash, $access_group_ids) {
+            function () use ($api_user_access_groups, $fileset_hash, $access_group_ids) {
                 $user_location = geoip(request()->ip());
                 $country_code = (!isset($user_location->iso_code)) ? $user_location->iso_code : null;
                 $continent = (!isset($user_location->continent)) ? $user_location->continent : null;
@@ -83,16 +97,14 @@ trait AccessControlAPI
                     return [];
                 }
 
-                if (empty($access_groups)) {
+                if ($api_user_access_groups->isEmpty()) {
                     return [];
                 }
-
-                return AccessGroupFileset::select('hash_id')
-                    ->whereIn('access_group_id', $access_groups)
-                    ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
-                        $query->whereIn('access_group_id', $access_group_ids);
-                    })
-                    ->where('hash_id', $fileset_hash)
+                // Take advantage of the isAccessGroupAvailable scope to filter by access groups
+                // and fileset hash
+                return BibleFileset::select('bible_filesets.hash_id')
+                    ->where('bible_filesets.hash_id', $fileset_hash)
+                    ->isAccessGroupAvailable($api_user_access_groups, $access_group_ids)
                     ->get();
             }
         );
