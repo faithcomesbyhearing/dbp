@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Bible;
 
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Str;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
 use App\Models\Bible\BibleFilesetType;
@@ -578,15 +579,19 @@ class BiblesController extends APIController
                                 ->first();
 
                             if (!$text_fileset) {
-                                $text_fileset = $text_filesets
-                                    ->where('set_size_code', 'LIKE', '%'.$book_testament.'%')
-                                    ->first();
+                                $text_fileset = $text_filesets->first(function($item) use ($book_testament) {
+                                    return Str::contains($item->set_size_code, $book_testament);
+                                });
 
                                 if (!$text_fileset) {
                                     $text_fileset = $text_filesets
                                         ->where('set_size_code', BibleFilesetSize::SIZE_COMPLETE)
                                         ->first();
                                 }
+                            }
+
+                            if (!$text_fileset) {
+                                return $book;
                             }
 
                             $verses_by_book = BibleVerse::where('hash_id', $text_fileset->hash_id)
