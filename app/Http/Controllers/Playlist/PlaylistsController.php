@@ -1160,22 +1160,39 @@ class PlaylistsController extends APIController
                 }
     
                 $fileset = $bible_file->fileset;
-    
+
+                $hls_file_path_map = [];
+
                 foreach ($transportStream as $stream) {
-                    $durations[] = $stream->runtime;
-                    $hls_items .= "\n#EXTINF:$stream->runtime," . $item->id;
+                    // Start building the HLS item stream
+                    $hls_items_stream = "\n#EXTINF:$stream->runtime,$item->id";
+
                     if (isset($stream->timestamp)) {
-                        $hls_items .= "\n#EXT-X-BYTERANGE:$stream->bytes@$stream->offset";
+                        $hls_items_stream .= "\n#EXT-X-BYTERANGE:$stream->bytes@$stream->offset";
                         $fileset = $stream->timestamp->bibleFile->fileset;
                         $stream->file_name = $stream->timestamp->bibleFile->file_name;
                     }
+                    // Get the bible path from the first bible in the collection
                     $bible_path = $fileset->bible->first()->id;
-                    $file_path = 'audio/' . $bible_path . '/' . $fileset->id . '/' . $stream->file_name;
+
+                    // Construct the file path
+                    $file_path = "audio/$bible_path/{$fileset->id}/{$stream->file_name}";
+
+                    // Check if the file path has already been signed
                     if (!isset($signed_files[$file_path])) {
                         $signed_files[$file_path] = $this->signedUrl($file_path, $fileset->asset_id, $transaction_id);
                     }
                     $hls_file_path = $download ? $file_path : $signed_files[$file_path];
-                    $hls_items .= "\n" . $hls_file_path;
+
+                    // Generate a unique key to check for duplicate streams
+                    $key = "{$stream->id}{$stream->runtime}{$item->id}{$stream->bytes}@{$stream->offset}{$file_path}{$fileset->asset_id}{$transaction_id}";
+
+                    if (!isset($hls_file_path_map[$key])) {
+                        $hls_items_stream .= "\n" . $hls_file_path;
+                        $hls_items .= $hls_items_stream;
+                        $durations[] = $stream->runtime;
+                        $hls_file_path_map[$key] = true;
+                    }
                 }
             }
         }
