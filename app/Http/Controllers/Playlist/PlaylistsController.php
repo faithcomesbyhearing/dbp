@@ -1160,7 +1160,6 @@ class PlaylistsController extends APIController
                 }
     
                 $fileset = $bible_file->fileset;
-
                 $hls_file_path_map = [];
 
                 foreach ($transportStream as $stream) {
