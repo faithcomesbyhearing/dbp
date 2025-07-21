@@ -485,11 +485,13 @@ class Language extends Model
 
         $lang = Language::from('languages', 'lang')
             ->select('lang.id as id')
+            // ->selectRaw('lang.id as id, (MATCH (lang.name) against (? IN BOOLEAN MODE) + IF(lang.name LIKE ?, 1000, 0)) as score', [$name, "$name%"])
             ->whereRaw('MATCH (lang.name) against (? IN BOOLEAN MODE)', [$formatted_name])
             ->isContentAvailable($access_group_ids, $bible_fileset_filters);
 
         $lang_trans = LanguageTranslation::from('language_translations', 'lang_trans')
             ->select('lang_trans.language_source_id as id')
+            // ->selectRaw('lang_trans.language_source_id as id, (MATCH (lang_trans.name) against (? IN BOOLEAN MODE) + IF(lang_trans.name LIKE ?, 1000, 0)) as score', [$name, "$name%"])
             ->whereRaw('MATCH (lang_trans.name) against (? IN BOOLEAN MODE)', [$formatted_name])
             ->isContentAvailable($access_group_ids, $bible_fileset_filters)
             ->hasPriority();
@@ -498,7 +500,9 @@ class Language extends Model
             ->unionAll($lang_trans);
 
         $lang_union_all_group = \DB::table($lang_union_query, 'lang_and_trans_group')
-            ->groupBy('lang_and_trans_group.id');
+            ->groupBy('lang_and_trans_group.id')
+            // ->orderBy('lang_and_trans_group.score', 'DESC')
+            ;
 
         return $query->joinSub(
             $lang_union_all_group,
