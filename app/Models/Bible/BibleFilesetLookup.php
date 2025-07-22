@@ -136,7 +136,8 @@ class BibleFilesetLookup extends Model
             'bible_filesets.id AS filesetid',
             'bible_filesets.set_type_code AS type',
             'languages.name AS language',
-            'organization_translations.name AS licensor'
+            'organization_translations.name AS licensor',
+            'organization_translations.organization_id AS licensorid'
         ])
         ->join(
             'bible_fileset_copyright_organizations',
