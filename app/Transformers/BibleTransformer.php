@@ -4,12 +4,14 @@ namespace App\Transformers;
 
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFileset;
+use App\Transformers\Traits\OrganizationFilterTrait;
 
 use Illuminate\Support\Arr;
 
 class BibleTransformer extends BaseTransformer
 {
 
+    use OrganizationFilterTrait;
     /**
      * A Fractal transformer.
      *
@@ -267,9 +269,9 @@ class BibleTransformer extends BaseTransformer
                     'description'   => optional($currentTranslation->first())->description,
                     'vname'         => optional($bible->vernacularTranslation)->name,
                     'vdescription'  => optional($bible->vernacularTranslation)->description,
-                    'publishers'    => optional($bible->organizations)
+                    'publishers'    => optional($this->filterOrganizations($bible->organizations))
                         ->where('pivot.relationship_type', 'publisher')->all(),
-                    'providers'     => optional($bible->organizations)
+                    'providers'     => optional($this->filterOrganizations($bible->organizations))
                         ->where('pivot.relationship_type', 'provider')->all(),
                     'language'      => optional($bible->language)->name,
                     'language_id'   => optional($bible->language)->id,
