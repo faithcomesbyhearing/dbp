@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Bible;
 
 use Symfony\Component\HttpFoundation\Response;
+use Spatie\Fractalistic\ArraySerializer;
 use Illuminate\Support\Str;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
@@ -11,6 +12,7 @@ use App\Models\Bible\BibleFilesetSize;
 use App\Models\Organization\Organization;
 use App\Transformers\BibleTransformer;
 use App\Transformers\BooksTransformer;
+use App\Transformers\CopyrightTransformer;
 use App\Traits\AccessControlAPI;
 use App\Traits\CheckProjectMembership;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
@@ -740,7 +742,7 @@ class BiblesController extends APIController
                     ->get();
         });
 
-        return $this->reply($copyrights);
+        return $this->reply(fractal($copyrights, CopyrightTransformer::class, new ArraySerializer()));
     }
 
     /**
