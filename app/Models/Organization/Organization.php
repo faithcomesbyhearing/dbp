@@ -77,6 +77,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Organization extends Model
 {
+    const SIL_LICENSOR_ID = 19;
+    const USED_WITH_PERMISSION = 'used with permission';
+    const USED_WITH_PERMISSION_SLUG = 'used-with-permission';
+
     protected $connection = 'dbp';
     // The attributes excluded from the model's JSON form.
     protected $hidden = ['logo','facebook','twitter','code','created_at','updated_at','notes'];

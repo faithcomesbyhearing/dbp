@@ -3,9 +3,12 @@
 namespace App\Transformers;
 
 use App\Models\Organization\Organization;
+use App\Transformers\Traits\OrganizationFilterTrait;
 
 class OrganizationTransformer extends BaseTransformer
 {
+    use OrganizationFilterTrait;
+
     /**
      * A Fractal transformer.
      *
@@ -19,6 +22,8 @@ class OrganizationTransformer extends BaseTransformer
         $organization->name = $translation->name ?? ucwords(str_replace('-', ' ', $organization->slug));
         $organization->description = $translation->description ?? '';
         $organization->tagline = $translation->description_short ?? '';
+
+        $organization = $this->filterOrganization($organization);
 
         switch ((int) $this->version) {
             case 2:
