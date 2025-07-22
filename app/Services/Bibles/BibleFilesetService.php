@@ -34,12 +34,13 @@ class BibleFilesetService
         Collection $audio_fileset_types,
         Collection $access_group_ids
     ) : EloquentCollection {
-        return BibleFileset::whereHas('bible', function ($query) use ($bible_id) {
-            $query->where('bibles.id', $bible_id);
-        })
+        return BibleFileset::select(['bible_filesets.*'])
+            ->whereHas('bible', function ($query) use ($bible_id) {
+                $query->where('bibles.id', $bible_id);
+            })
             ->with('meta')
             ->isContentAvailable($access_group_ids)
-            ->whereIn('set_type_code', $audio_fileset_types)
+            ->whereIn('bible_filesets.set_type_code', $audio_fileset_types)
             ->get();
     }
 

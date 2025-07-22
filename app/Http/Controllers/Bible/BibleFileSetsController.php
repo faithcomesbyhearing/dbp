@@ -12,6 +12,8 @@ use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFilesetType;
 use App\Models\Bible\Book;
 use App\Models\Language\Language;
+use App\Transformers\CopyrightTransformer;
+use Spatie\Fractalistic\ArraySerializer;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
@@ -436,7 +438,7 @@ class BibleFileSetsController extends APIController
             }
         );
 
-        return $this->reply($fileset);
+        return $this->reply(fractal($fileset, CopyrightTransformer::class, new ArraySerializer()));
     }
 
     /**
