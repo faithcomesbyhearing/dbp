@@ -2,6 +2,8 @@
 
 namespace App\Transformers;
 
+use App\Models\Organization\Organization;
+
 class BibleFileSetsDownloadTransFormer extends BaseTransformer
 {
 
@@ -14,6 +16,10 @@ class BibleFileSetsDownloadTransFormer extends BaseTransformer
      */
     public function transform($fileset)
     {
+        if($fileset->licensorid == Organization::SIL_LICENSOR_ID) {
+            $fileset->licensor = Organization::USED_WITH_PERMISSION;
+        }
+
         switch ($this->route) {
             case 'v4_bible_filesets_download.list':
                 return [

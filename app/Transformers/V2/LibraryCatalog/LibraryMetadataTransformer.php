@@ -3,7 +3,7 @@
 namespace App\Transformers\V2\LibraryCatalog;
 
 use League\Fractal\TransformerAbstract;
-
+use App\Transformers\Traits\OrganizationFilterTrait;
 /**
  * Class LibraryMetadataTransformer
  *
@@ -12,6 +12,7 @@ use League\Fractal\TransformerAbstract;
  */
 class LibraryMetadataTransformer extends TransformerAbstract
 {
+    use OrganizationFilterTrait;
     /**
      * A Fractal transformer.
      *
@@ -65,45 +66,46 @@ class LibraryMetadataTransformer extends TransformerAbstract
             'font_copyright' => null,
             'font_url'       => null
         ];
+        $organization = $this->filterOrganization($bible_fileset->organization);
 
-        if ($bible_fileset->organization) {
+        if ($organization) {
             $output['organization'][] = [
-                'organization_id'       => (string) $bible_fileset->organization->id,
-                'organization'          => isset($bible_fileset->organization->name)
-                    ? $bible_fileset->organization->name
+                'organization_id'       => (string) $organization->id,
+                'organization'          => isset($organization->name)
+                    ? $organization->name
                     : '',
-                'organization_english'  => isset($bible_fileset->organization->slug)
-                    ? $bible_fileset->organization->slug
+                'organization_english'  => isset($organization->slug)
+                    ? $organization->slug
                     : '',
-                'organization_role'     => isset($bible_fileset->organization->role_name)
-                    ? $bible_fileset->organization->role_name
+                'organization_role'     => isset($organization->role_name)
+                    ? $organization->role_name
                     : '',
-                'organization_url'      => isset($bible_fileset->organization->url_website)
-                    ? $bible_fileset->organization->url_website
+                'organization_url'      => isset($organization->url_website)
+                    ? $organization->url_website
                     : '',
-                'organization_donation' => isset($bible_fileset->organization->url_donate)
-                    ? $bible_fileset->organization->url_donate
+                'organization_donation' => isset($organization->url_donate)
+                    ? $organization->url_donate
                     : '',
-                'organization_address'  => isset($bible_fileset->organization->address)
-                    ? $bible_fileset->organization->address
+                'organization_address'  => isset($organization->address)
+                    ? $organization->address
                     : '',
-                'organization_address2' => isset($bible_fileset->organization->address2)
-                    ? $bible_fileset->organization->address2
+                'organization_address2' => isset($organization->address2)
+                    ? $organization->address2
                     : '',
-                'organization_city'     => isset($bible_fileset->organization->city)
-                    ? $bible_fileset->organization->city
+                'organization_city'     => isset($organization->city)
+                    ? $organization->city
                     : '',
-                'organization_state'    => isset($bible_fileset->organization->state)
-                    ? $bible_fileset->organization->state
+                'organization_state'    => isset($organization->state)
+                    ? $organization->state
                     : '',
-                'organization_country'  => isset($bible_fileset->organization->country)
-                    ? $bible_fileset->organization->country
+                'organization_country'  => isset($organization->country)
+                    ? $organization->country
                     : '',
-                'organization_zip'      => isset($bible_fileset->organization->zip)
-                    ? $bible_fileset->organization->zip
+                'organization_zip'      => isset($organization->zip)
+                    ? $organization->zip
                     : '',
-                'organization_phone'    => isset($bible_fileset->organization->phone)
-                    ? $bible_fileset->organization->phone
+                'organization_phone'    => isset($organization->phone)
+                    ? $organization->phone
                     : '',
             ];
         }
