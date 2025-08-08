@@ -690,9 +690,9 @@ class Language extends Model
         if (!empty($bible_fileset_filters)) {
             foreach($bible_fileset_filters as $column => $value) {
                 if (is_array($value)) {
-                    $sub->whereIn($column, $value);
+                    $sub->whereIn('bible_filesets.'.$column, $value);
                 } else {
-                    $sub->where($column, $value);
+                    $sub->where('bible_filesets.'.$column, $value);
                 }
             }
         }
@@ -719,7 +719,9 @@ class Language extends Model
         if (!empty($media) && !empty($set_type_code_array)) {
             $query->whereHas('filesets', function ($query_fileset) use ($set_type_code_array) {
                 $query_fileset->whereHas('fileset', function ($query_fileset_single) use ($set_type_code_array) {
-                    $query_fileset_single->whereIn('set_type_code', $set_type_code_array);
+                    $from_table = getAliasOrTableName($query_fileset_single->getQuery()->from);
+
+                    $query_fileset_single->whereIn($from_table.'.set_type_code', $set_type_code_array);
                 });
             });
         }
