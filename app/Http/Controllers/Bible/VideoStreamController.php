@@ -127,14 +127,20 @@ class VideoStreamController extends APIController
                 // Pass 'false' to the getHeaders method in order to handle 300-599 status codes on our end
                 $response->getHeaders(false);
             } elseif ($chunk->isLast()) {
-                $verse_key = $streaming_component_responses_keys[$response->getInfo('url')];
+                $url_key = $response->getInfo('url');
+                $verse_key = $streaming_component_responses_keys[$url_key] ?? null;
+
+                // Skip processing if we don't have a corresponding verse key
+                if (!$verse_key) {
+                    continue;
+                }
+
                 // Pass 'false' to the getContent method in order to handle 300-599 status codes on our end.
                 $streaming_component = $arclight_service->getContent($response, false);
 
                 if( $streaming_component &&
                     isset($streaming_component->streamingUrls) &&
-                    $verse_key &&
-                    $films[$verse_key]
+                    isset($films[$verse_key])
                 ) {
                     $films[$verse_key]['meta']['file_name'] = $streaming_component->streamingUrls->m3u8[0]->url;
                 }
