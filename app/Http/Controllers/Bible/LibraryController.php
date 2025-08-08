@@ -588,7 +588,7 @@ class LibraryController extends APIController
         }
 
         $bible_filesets_with_bible_id = BibleFileset::whereIn('id', array_keys($filesets_ids))
-            ->whereIn('set_type_code', ['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama'])
+            ->whereIn('bible_filesets.set_type_code', ['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama'])
             ->select(
                 \DB::raw(
                     'bible_filesets.id,
