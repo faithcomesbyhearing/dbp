@@ -478,9 +478,9 @@ class LibraryController extends APIController
                     return [];
                 }
 
-                $has_nondrama = BibleFileset::where('set_type_code', 'audio')
+                $has_nondrama = BibleFileset::where('bible_filesets.set_type_code', 'audio')
                     ->select('id')
-                    ->where('set_type_code', 'audio')
+                    ->where('bible_filesets.set_type_code', 'audio')
                     ->whereHas('permissions', function ($query) {
                         $query->whereHas('access', function ($query) {
                             $query->where('name', '!=', 'RESTRICTED');
@@ -490,7 +490,7 @@ class LibraryController extends APIController
                     ->limit(1);
 
                 $filesets = BibleFileset::with('meta', 'bible.translations')
-                    ->where('set_type_code', '!=', 'text_format')
+                    ->where('bible_filesets.set_type_code', '!=', 'text_format')
                     ->where('bible_filesets.id', 'NOT LIKE', '%16')
                     ->uniqueFileset($dam_id, $media, true)
                     ->withBible($language_name, $language_id, $organization)
