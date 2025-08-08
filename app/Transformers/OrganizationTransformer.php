@@ -50,7 +50,7 @@ class OrganizationTransformer extends BaseTransformer
      *   )
      * )
      */
-    public function transformForV2(Organization $organization)
+    public function transformForV2(Organization|\StdClass $organization)
     {
         switch ($this->route) {
             /**
@@ -69,21 +69,25 @@ class OrganizationTransformer extends BaseTransformer
 
             default:
                 return [
-                    'id'                  => $organization->id,
-                    'name'                => $organization->vernacularTranslation ? $organization->vernacularTranslation->name : '',
+                    'id'                  => $organization->id ?? '',
+                    'name'                => isset($organization->vernacularTranslation)
+                        ? $organization->vernacularTranslation->name
+                        : '',
                     'english_name'        => $organization->name ?? '',
-                    'description'         => $organization->vernacularTranslation ? $organization->vernacularTranslation->description : '',
+                    'description'         => isset($organization->vernacularTranslation)
+                        ? $organization->vernacularTranslation->description
+                        : '',
                     'english_description' => $organization->description_short ?? '',
-                    'web_url'             => $organization->url_website,
-                    'donation_url'        => $organization->url_donate,
+                    'web_url'             => $organization->url_website ?? '',
+                    'donation_url'        => $organization->url_donate ?? '',
                     'enabled'             => 'true',
-                    'address'             => $organization->address,
+                    'address'             => $organization->address ?? '',
                     'address2'            => null,
                     'city'                => null,
                     'state'               => null,
                     'country'             => null,
                     'zip'                 => null,
-                    'phone'               => $organization->phone
+                    'phone'               => $organization->phone ?? ''
                 ];
         }
     }
@@ -93,7 +97,7 @@ class OrganizationTransformer extends BaseTransformer
      *
      * @return array
      */
-    public function transformForV4(Organization $organization)
+    public function transformForV4(Organization|\StdClass $organization)
     {
         switch ($this->route) {
             case 'v4_organizations.one':

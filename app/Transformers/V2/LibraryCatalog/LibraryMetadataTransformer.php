@@ -70,7 +70,9 @@ class LibraryMetadataTransformer extends TransformerAbstract
 
         if ($organization) {
             $output['organization'][] = [
-                'organization_id'       => (string) $organization->id,
+                'organization_id'       => isset($organization->id)
+                    ? (string) $organization->id
+                    : '',
                 'organization'          => isset($organization->name)
                     ? $organization->name
                     : '',
