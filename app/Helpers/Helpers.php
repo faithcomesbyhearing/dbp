@@ -170,19 +170,39 @@ function cacheRemember($cache_key, $cache_args, $ttl, $callback)
  */
 function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
 {
+    if (config('app.env') === 'dev') {
+        // Use array cache store for dev mode to avoid Memcached minimum TTL issues
+        // ttl < 1 second
+        $dev_ttl = config('cache.dev_ttl', 1);
+        return Cache::store('array')->remember($key, $dev_ttl, $callback);
+    }
+
+    // Check if value is already cached
+    $value = Cache::get($key);
+    if (!is_null($value)) {
+        return $value;
+    }
+
+    // Value not cached, try to get it with locking mechanism
+    return getCacheValueWithLock($key, $ttl, $callback);
+}
+
+/**
+ * Get cache value with locking mechanism to prevent race conditions
+ *
+ * @param string $key
+ * @param Carbon $ttl
+ * @param Closure $callback
+ * @return mixed
+ */
+function getCacheValueWithLock(string $key, Carbon $ttl, Closure $callback)
+{
     // if something fails on the callback, release the lock
     // 20 seconds was selected to allow for the longest query to complete.
     // This is not based on any empirical evidence.
     $lock_timeout = 20;
-    $value = Cache::get($key);
-
-    if (!is_null($value)) {
-        // got the cached value, return it
-        return $value;
-    }
-
-    // cache not set. try to acquire lock to gain access to the callback
     $lock = createCacheLock($key);
+
     if ($lock->acquire()) {
         try {
             // lock acquired. access resource via callback
@@ -200,28 +220,29 @@ function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
             Log::error($exception);
             throw $exception;
         }
-    } else {
-        try {
-            // couldn't get the lock, another is executing the callback. block waiting for lock
-            // or until the lock is released by the lock timeout
-            $lock->block($lock_timeout + 1);
-            // Lock acquired, which should mean the cache is set
-            $value = Cache::get($key);
-            if (is_null($value)) {
-                // !!! **** my assumption about when the cache value will be available is not valid
-                throw new Exception("Exception when the cache value is null for key [".$key."]");
-            }
-            return $value ;
-        } catch (LockTimeoutException $e) {
-            // Unable to acquire lock...
-            Log::error("Lock Timeout Exception for key [".$key."]");
-            Log::error($e);
-        } finally {
-            optional($lock)->release();
-        }
-
-        throw new \UnexpectedValueException("Undefined Error for key [".$key."]");
     }
+
+    // couldn't get the lock, wait for it
+    try {
+        // couldn't get the lock, another is executing the callback. block waiting for lock
+        // or until the lock is released by the lock timeout
+        $lock->block($lock_timeout + 1);
+        // Lock acquired, which should mean the cache is set
+        $value = Cache::get($key);
+        if (is_null($value)) {
+            // !!! **** my assumption about when the cache value will be available is not valid
+            throw new Exception("Exception when the cache value is null for key [".$key."]");
+        }
+        return $value;
+    } catch (LockTimeoutException $e) {
+        // Unable to acquire lock...
+        Log::error("Lock Timeout Exception for key [".$key."]");
+        Log::error($e);
+    } finally {
+        optional($lock)->release();
+    }
+
+    throw new \UnexpectedValueException("Undefined Error for key [".$key."]");
 }
 
 /**
