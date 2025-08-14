@@ -81,4 +81,7 @@ return [
 
     'prefix' => env('CACHE_PREFIX'),
 
+    // Development mode TTL, it is not used in production and it is not
+    // mandatory that env parameter is set
+    'dev_ttl' => env('CACHE_DEV_TTL', 1),
 ];

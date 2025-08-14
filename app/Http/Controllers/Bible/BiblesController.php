@@ -572,45 +572,64 @@ class BiblesController extends APIController
                             return $books;
                         }
 
-                        return $books->map(function ($book) use ($text_filesets) {
-                            $verses_count = [];
-                            $book_testament  = $book->book ? $book->book->book_testament : null;
+                        // 1) Figure out, for each testament, which fileset to use
+                        $testamentFilesetMap = $books
+                            ->pluck('book.book_testament')
+                            ->unique()
+                            ->mapWithKeys(function ($testament) use ($text_filesets) {
+                                $fs = $text_filesets->firstWhere('set_size_code', $testament)
+                                ?? $text_filesets->first(fn($fs) => Str::contains($fs->set_size_code, $testament))
+                                ?? $text_filesets->firstWhere('set_size_code', BibleFilesetSize::SIZE_COMPLETE);
 
-                            $text_fileset = $text_filesets
-                                ->where('set_size_code', $book_testament)
-                                ->first();
+                                return [$testament => $fs];
+                            });
 
-                            if (!$text_fileset) {
-                                $text_fileset = $text_filesets->first(function($item) use ($book_testament) {
-                                    return Str::contains($item->set_size_code, $book_testament);
-                                });
+                        // 2) Gather all hash_ids and book_ids we’ll need
+                        $hashIds   = collect($testamentFilesetMap)->pluck('hash_id')->filter()->unique();
+                        $bookChaps = $books->mapWithKeys(function ($book) {
+                            // parse “1,2,3” -> [1,2,3]
+                            $chapters = array_map('intval', explode(',', $book->chapters ?? ''));
+                            return [$book->book_id => $chapters];
+                        });
 
-                                if (!$text_fileset) {
-                                    $text_fileset = $text_filesets
-                                        ->where('set_size_code', BibleFilesetSize::SIZE_COMPLETE)
-                                        ->first();
-                                }
-                            }
+                        // 3) One query to get counts grouped by hash_id → book_id → chapter
+                        $rawCounts = BibleVerse::whereIn('hash_id', $hashIds)
+                            ->whereIn('book_id', $bookChaps->keys())
+                            ->select(
+                                'hash_id',
+                                'book_id',
+                                'chapter',
+                                \DB::raw('COUNT(*) as verse_count')
+                            )
+                            ->groupBy('hash_id', 'book_id', 'chapter')
+                            ->get()
+                            ->groupBy('hash_id')
+                            ->map(fn($byHash) => $byHash->groupBy('book_id'));
 
-                            if (!$text_fileset) {
+                        // 4) Finally stitch it back onto your $books collection
+                        return $books->map(function ($book) use ($testamentFilesetMap, $rawCounts) {
+                            $testament   = $book->book->book_testament ?? null;
+                            $fileset     = $testamentFilesetMap[$testament] ?? null;
+
+                            // if we couldn’t pick a fileset, bail early
+                            if (! $fileset) {
                                 return $book;
                             }
 
-                            $verses_by_book = BibleVerse::where('hash_id', $text_fileset->hash_id)
-                                ->where('book_id', $book->book_id)
-                                ->whereIn('chapter', array_map('\intval', explode(',', $book->chapters)))
-                                ->select('chapter', \DB::raw('COUNT(id) as verse_count'))
-                                ->groupBy('chapter')
-                                ->get();
+                            // grab the precomputed counts (or empty)
+                            $countsForBook = $rawCounts
+                                ->get($fileset->hash_id, collect())
+                                ->get($book->book_id, collect());
 
-                            foreach ($verses_by_book as $verse) {
-                                if ($verse['verse_count']) {
-                                    $verses_count[] = [
-                                        'chapter' => $verse['chapter'], 'verses' => $verse['verse_count']
-                                    ];
-                                }
-                            }
-                            $book->verses_count = $verses_count;
+                            // reshape into your [ ['chapter'=>X,'verses'=>Y], … ]
+                            $book->verses_count = $countsForBook
+                                ->map(fn($row) => [
+                                    'chapter' => $row->chapter,
+                                    'verses'  => $row->verse_count,
+                                ])
+                                ->values()
+                                ->all();
+
                             return $book;
                         });
                     }

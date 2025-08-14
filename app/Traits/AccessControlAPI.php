@@ -3,7 +3,6 @@
 namespace App\Traits;
 
 use App\Models\User\AccessGroup;
-use App\Models\User\SysLicenseGroupAccessGroups;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Models\User\AccessType;
 use App\Models\Bible\BibleFileset;
@@ -52,7 +51,7 @@ trait AccessControlAPI
 
                 // Get the fileset hashes for the access groups
                 $identifiers =  BibleFileset::select('bible_filesets.hash_id as identifier')
-                    ->isAccessGroupAvailable($access_groups, [])
+                    ->isContentAvailable($access_groups, [])
                     ->distinct()
                     ->get();
 
@@ -100,11 +99,11 @@ trait AccessControlAPI
                 if ($api_user_access_groups->isEmpty()) {
                     return [];
                 }
-                // Take advantage of the isAccessGroupAvailable scope to filter by access groups
+                // Take advantage of the isContentAvailable scope to filter by access groups
                 // and fileset hash
                 return BibleFileset::select('bible_filesets.hash_id')
                     ->where('bible_filesets.hash_id', $fileset_hash)
-                    ->isAccessGroupAvailable($api_user_access_groups, $access_group_ids)
+                    ->isContentAvailable($api_user_access_groups, $access_group_ids)
                     ->get();
             }
         );
