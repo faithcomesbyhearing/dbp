@@ -3,11 +3,12 @@
 namespace App\Models\Organization;
 
 use App\Models\Bible\BibleFileset;
-use App\Models\Bible\BibleFilesetCopyrightOrganization;
 use App\Models\Resource\Resource;
 use App\Models\Bible\Bible;
+use App\Models\LicenseGroup\LicenseGroupLicensor;
 use App\Models\User\Role;
 use Illuminate\Database\Eloquent\Model;
+use OpenApi\Annotations\License;
 
 /**
  * App\Models\Organization\Organization
@@ -358,7 +359,14 @@ class Organization extends Model
 
     public function filesets()
     {
-        return $this->hasManyThrough(BibleFilesetCopyrightOrganization::class, BibleFileset::class, 'hash_id', 'hash_id', 'id', 'hash_id');
+        return $this->hasManyThrough(
+            BibleFileset::class,
+            LicenseGroupLicensor::class,
+            'organization_id', // Foreign key on LicenseGroupLicensor table...
+            'license_group_id', // Foreign key on BibleFileset table...
+            'id', // Local key on Organization table...
+            'license_group_id' // Local key on LicenseGroupLicensor table...
+        );
     }
 
     public function resources()
