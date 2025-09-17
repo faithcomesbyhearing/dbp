@@ -72,8 +72,9 @@ class LibraryController extends APIController
                 ->select(
                     'bible_filesets.id',
                     'bible_filesets.hash_id',
-                    'bible_fileset_copyrights.copyright',
-                    'bible_fileset_copyrights.copyright_description',
+                    'bible_filesets.mode_id',
+                    'bible_filesets.license_group_id',
+                    'license_group.copyright AS copyright_description',
                     'organizations.id as organization_id',
                     'organization_translations.name',
                     'organizations.slug',
@@ -88,25 +89,17 @@ class LibraryController extends APIController
                     'organizations.phone',
                     'organization_translations.language_id',
                     'organization_translations.vernacular',
-                    'bible_fileset_copyright_roles.name as role_name',
                 )
                 ->when($fileset_id, function ($q) use ($fileset_id) {
                     $q->where('bible_filesets.id', 'LIKE', "$fileset_id%")
                         ->orWhere('bible_filesets.id', substr($fileset_id, 0, -4))
                         ->orWhere('bible_filesets.id', substr($fileset_id, 0, -2));
                 })
-                ->join('bible_fileset_copyrights', 'bible_fileset_copyrights.hash_id', 'bible_filesets.hash_id')
-                ->join(
-                    'bible_fileset_copyright_organizations',
-                    'bible_fileset_copyright_organizations.hash_id',
-                    'bible_filesets.hash_id'
-                )
-                ->join(
-                    'bible_fileset_copyright_roles',
-                    'bible_fileset_copyright_roles.id',
-                    'bible_fileset_copyright_organizations.organization_role'
-                )
-                ->join('organizations', 'organizations.id', 'bible_fileset_copyright_organizations.organization_id')
+                ->join('license_group', function ($join) {
+                    $join->on('license_group.id', 'bible_filesets.license_group_id');
+                })
+                ->join('license_group_licensor', 'license_group_licensor.license_group_id', 'bible_filesets.license_group_id')
+                ->join('organizations', 'organizations.id', 'license_group_licensor.organization_id')
                 ->leftJoin('organization_translations', function ($query) {
                     $query->on('organizations.id', 'organization_translations.organization_id')
                     ->whereRaw(
@@ -115,7 +108,6 @@ class LibraryController extends APIController
                     )
                     ;
                 })
-                ->has('copyright')
                 ->get();
 
             $metadata_processed = $this->processMetadata($metadata);
@@ -150,8 +142,7 @@ class LibraryController extends APIController
             }
 
             $metadata_temp->id = $fileset_fetched->id;
-            $metadata_temp->copyright = $fileset_fetched->copyright;
-            $metadata_temp->copyright_description = $fileset_fetched->copyright_description;
+            $metadata_temp->copyright = $fileset_fetched->copyright_description;
 
             if (!isset($metadata_temp->organization) || $metadata_temp->organization === false) {
                 $metadata_temp->organization = $this->setOrganizationMetadata($fileset_fetched);

@@ -411,7 +411,7 @@ class BibleFileSetsController extends APIController
      *     @OA\Property(property="id", ref="#/components/schemas/BibleFileset/properties/id"),
      *     @OA\Property(property="type", ref="#/components/schemas/BibleFileset/properties/set_type_code"),
      *     @OA\Property(property="size", ref="#/components/schemas/BibleFileset/properties/set_size_code"),
-     *     @OA\Property(property="copyright", ref="#/components/schemas/BibleFilesetCopyright")
+     *     @OA\Property(property="copyright", ref="#/components/schemas/LicenseGroup/properties/copyright"),
      * )
      *
      * @param string $id
@@ -428,13 +428,23 @@ class BibleFileSetsController extends APIController
             now()->addDay(),
             function () use ($iso, $id) {
                 $language_id = optional(Language::where('iso', $iso)->select('id')->first())->id;
-                return BibleFileset::where('id', $id)->with([
+                return BibleFileset::where('bible_filesets.id', $id)
+                ->with([
                     'copyright.organizations.logos',
                     'copyright.organizations.translations' => function ($q) use ($language_id) {
                         $q->where('language_id', $language_id);
                     }
                 ])
-                    ->select(['hash_id', 'id', 'asset_id', 'set_type_code as type', 'set_size_code as size'])->first();
+                    ->select([
+                        'bible_filesets.hash_id',
+                        'bible_filesets.id',
+                        'bible_filesets.asset_id',
+                        'bible_filesets.set_type_code',
+                        'bible_filesets.mode_id as mode_id',
+                        'bible_filesets.set_type_code as type',
+                        'bible_filesets.set_size_code as size',
+                        'bible_filesets.license_group_id'
+                    ])->first();
             }
         );
 

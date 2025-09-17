@@ -46,7 +46,6 @@ class CopyrightTransformer extends BaseTransformer
         $copyrightData = [
             "copyright_date" => $copyright->copyright_date ?? null,
             "copyright" => $copyright->copyright ?? null,
-            "copyright_description" => $copyright->copyright_description ?? null,
             "created_at" => $copyright->created_at ?? null,
             "updated_at" => $copyright->updated_at ?? null,
             "open_access" => $copyright->open_access ?? false,

@@ -6,6 +6,8 @@ use App\Models\Organization\Asset;
 use App\Models\Organization\Organization;
 use App\Models\User\AccessGroupFileset;
 use App\Models\Bible\BibleFilesetSize;
+use App\Models\LicenseGroup\LicenseGroup;
+use App\Models\LicenseGroup\LicenseGroupLicensor;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -97,6 +99,14 @@ class BibleFileset extends Model
      */
     protected $set_size_code;
 
+    /**
+     *
+     * @OA\Property(ref="#/components/schemas/BibleFilesetMode/properties/id")
+     *
+     *
+     */
+    protected $mode_id;
+
 
     protected $created_at;
 
@@ -112,14 +122,27 @@ class BibleFileset extends Model
      */
     protected $license_group_id;
 
+    /**
+     * Get the copyright record associated with the fileset
+     */
     public function copyright()
     {
-        return $this->hasOne(BibleFilesetCopyright::class, 'hash_id', 'hash_id');
+        return $this->hasOne(LicenseGroup::class, 'id', 'license_group_id');
     }
 
+    /**
+     * Get the copyright organization(s) associated with the fileset
+     */
     public function copyrightOrganization()
     {
-        return $this->hasMany(BibleFilesetCopyrightOrganization::class, 'hash_id', 'hash_id');
+        return $this->hasManyThrough(
+            Organization::class,
+            LicenseGroupLicensor::class,
+            'license_group_id', // Foreign key on LicenseGroupLicensor table...
+            'id', // Foreign key on Organization table...
+            'license_group_id', // Local key on BibleFileset table...
+            'organization_id' // Local key on LicenseGroupLicensor table...
+        );
     }
 
     public function permissions()
@@ -313,7 +336,6 @@ class BibleFileset extends Model
             ->where('bible_filesets.content_loaded', true)
             ->where('bible_filesets.archived', false)
             ->leftJoin('license_group as lg', 'lg.id', '=', 'bible_filesets.license_group_id')
-            ->join('bible_fileset_types as bftypes', 'bftypes.set_type_code', '=', 'bible_filesets.set_type_code')
             ->where(function (Builder $q) use ($access_groups, $access_group_ids) {
                 $q
                     // AGF path: no pattern or pattern=100, and matching AGF record
@@ -328,7 +350,7 @@ class BibleFileset extends Model
                                 ->when(!empty($access_group_ids), function ($query) use ($access_group_ids) {
                                     $query->whereIn('agf.access_group_id', $access_group_ids);
                                 })
-                                ->whereColumn('bftypes.mode_id', '=', 'agroups.mode_id')
+                                ->whereColumn('bible_filesets.mode_id', '=', 'agroups.mode_id')
                                 ->whereColumn('agf.hash_id', '=', 'bible_filesets.hash_id');
                         });
                     })
@@ -346,7 +368,7 @@ class BibleFileset extends Model
                                         $query->whereIn('ppag.access_groups_id', $access_group_ids);
                                     })
                                     ->whereColumn('ppag.permission_pattern_id', '=', 'lg.permission_pattern_id')
-                                    ->whereColumn('bftypes.mode_id', '=', 'agroups.mode_id');
+                                    ->whereColumn('bible_filesets.mode_id', '=', 'agroups.mode_id');
                             });
                     });
             });
