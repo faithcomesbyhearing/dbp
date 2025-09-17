@@ -751,8 +751,16 @@ class BiblesController extends APIController
             $filesets_hash_ids = $bible->filesets->pluck('hash_id')->toArray();
             return empty($filesets_hash_ids)
                 ? []
-                : BibleFileset::select(['hash_id', 'id', 'set_type_code as type', 'set_size_code as size'])
-                    ->whereIn('hash_id', $filesets_hash_ids)->with([
+                : BibleFileset::select([
+                    'bible_filesets.hash_id',
+                    'bible_filesets.id',
+                    'bible_filesets.mode_id as mode_id',
+                    'bible_filesets.set_type_code as type',
+                    'bible_filesets.set_size_code as size',
+                    'bible_filesets.license_group_id'
+                ])
+                    ->whereIn('hash_id', $filesets_hash_ids)
+                    ->with([
                         'copyright.organizations.logos',
                         'copyright.organizations.translations' => function ($q) use ($language_id) {
                             $q->where('language_id', $language_id);
