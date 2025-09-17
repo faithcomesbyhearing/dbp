@@ -15,7 +15,6 @@ use App\Models\Bible\BibleFilesetTag;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleFileSecondary;
 use App\Models\Bible\BibleFile;
-use App\Models\Bible\BibleFilesetCopyrightRole;
 use App\Models\Language\Language;
 use App\Models\User\AccessGroup;
 
@@ -139,28 +138,24 @@ class BibleFilesetLookup extends Model
             'organization_translations.name AS licensor',
             'organization_translations.organization_id AS licensorid'
         ])
-        ->join(
-            'bible_fileset_copyright_organizations',
-            'bible_fileset_copyright_organizations.hash_id',
-            'bible_filesets.hash_id'
-        )->join('bible_fileset_connections', 'bible_fileset_connections.hash_id', 'bible_filesets.hash_id')
+        ->isContentAvailable($download_access_group_array_ids)
+        ->join('bible_fileset_connections', 'bible_fileset_connections.hash_id', 'bible_filesets.hash_id')
         ->join('bibles', 'bibles.id', 'bible_fileset_connections.bible_id')
         ->join('languages', 'languages.id', 'bibles.language_id')
+        ->join('license_group_licensor', 'license_group_licensor.license_group_id', 'bible_filesets.license_group_id')
         ->join('organization_translations', function (JoinClause $join) {
             $join->on(
                 'organization_translations.organization_id',
                 '=',
-                'bible_fileset_copyright_organizations.organization_id'
+                'license_group_licensor.organization_id'
             )
                 ->where('organization_translations.language_id', Language::ENGLISH_ID);
         })
-        ->where('bible_fileset_copyright_organizations.organization_role', BibleFilesetCopyrightRole::LICENSOR)
         ->when($type, function (Builder $query) use ($type) {
             $query->whereIn('bible_filesets.set_type_code', BibleFileset::getsetTypeCodeFromMedia($type));
         })
         ->whereNotIn('bible_filesets.set_type_code', ['text_format'])
         ->where('bible_filesets.id', 'NOT LIKE', '%DA16')
-        ->isContentAvailable($download_access_group_array_ids)
         ->orderBy('bible_filesets.id')
         ->paginate($limit);
     }
