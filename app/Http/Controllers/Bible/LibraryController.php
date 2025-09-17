@@ -98,10 +98,7 @@ class LibraryController extends APIController
                 ->join('license_group', function ($join) {
                     $join->on('license_group.id', 'bible_filesets.license_group_id');
                 })
-                ->join('license_group_licensor', function ($join) {
-                    $join->on('license_group_licensor.license_group_id', 'bible_filesets.license_group_id')
-                        ->whereColumn('license_group_licensor.mode_id', '=', 'bible_filesets.mode_id');
-                })
+                ->join('license_group_licensor', 'license_group_licensor.license_group_id', 'bible_filesets.license_group_id')
                 ->join('organizations', 'organizations.id', 'license_group_licensor.organization_id')
                 ->leftJoin('organization_translations', function ($query) {
                     $query->on('organizations.id', 'organization_translations.organization_id')
