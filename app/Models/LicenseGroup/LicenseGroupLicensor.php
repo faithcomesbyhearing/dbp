@@ -40,7 +40,6 @@ class LicenseGroupLicensor extends Model
 
     protected $fillable = [
         'license_group_id',
-        'mode_id',
         'organization_id'
     ];
 
@@ -66,15 +65,6 @@ class LicenseGroupLicensor extends Model
 
     /**
      * @OA\Property(
-     *   title="mode_id",
-     *   type="integer",
-     *   description="The mode id"
-     * )
-     */
-    protected $mode_id;
-
-    /**
-     * @OA\Property(
      *   title="organization_id",
      *   type="integer",
      *   description="The organization id"
@@ -88,11 +78,6 @@ class LicenseGroupLicensor extends Model
     public function licenseGroup()
     {
         return $this->belongsTo(LicenseGroup::class, 'license_group_id', 'id');
-    }
-
-    public function mode()
-    {
-        return $this->belongsTo(BibleFilesetType::class, 'mode_id', 'id');
     }
 
     public function organization()
