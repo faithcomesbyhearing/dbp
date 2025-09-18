@@ -24,8 +24,7 @@ class LibraryMetadataTransformer extends TransformerAbstract
      *     @OA\Xml(name="v2_library_metadata"),
      *     @OA\Items(
      *          @OA\Property(property="dam_id",            ref="#/components/schemas/BibleFileset/properties/id"),
-     *          @OA\Property(property="mark",              ref="#/components/schemas/BibleFilesetCopyright/properties/copyright"),
-     *          @OA\Property(property="volume_summary",    ref="#/components/schemas/BibleFilesetCopyright/properties/copyright_description"),
+     *          @OA\Property(property="mark",              ref="#/components/schemas/LicenseGroup/properties/copyright"),
      *          @OA\Property(property="font_copyright",    ref="#/components/schemas/AlphabetFont/properties/copyright"),
      *          @OA\Property(property="font_url",          ref="#/components/schemas/AlphabetFont/properties/url"),
      *          @OA\Property(property="organization",
@@ -62,7 +61,7 @@ class LibraryMetadataTransformer extends TransformerAbstract
         $output = [
             'dam_id'         => isset($bible_fileset->dam_id) ? $bible_fileset->dam_id : $bible_fileset->id,
             'mark'           => $mark,
-            'volume_summary' => $bible_fileset->copyright_description,
+            'volume_summary' => $bible_fileset->copyright,
             'font_copyright' => null,
             'font_url'       => null
         ];
