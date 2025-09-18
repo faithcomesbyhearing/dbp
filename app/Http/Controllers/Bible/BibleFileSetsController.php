@@ -423,7 +423,7 @@ class BibleFileSetsController extends APIController
 
         $cache_params = [$id, $iso];
         $fileset = cacheRemember(
-            'bible_fileset_copyright',
+            'bible_fileset_license_group_copyright',
             $cache_params,
             now()->addDay(),
             function () use ($iso, $id) {

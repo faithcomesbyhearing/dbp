@@ -746,7 +746,7 @@ class BiblesController extends APIController
         $iso = checkParam('iso') ?? 'eng';
 
         $cache_params = [$bible_id, $iso];
-        $copyrights = cacheRemember('bible_copyrights', $cache_params, now()->addDay(), function () use ($bible, $iso) {
+        $copyrights = cacheRemember('bible_license_group_copyrights', $cache_params, now()->addDay(), function () use ($bible, $iso) {
             $language_id = optional(Language::where('iso', $iso)->select('id')->first())->id;
             $filesets_hash_ids = $bible->filesets->pluck('hash_id')->toArray();
             return empty($filesets_hash_ids)
