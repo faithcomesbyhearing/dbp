@@ -51,7 +51,7 @@ class BiblebrainService
         ?int $verse_start = null,
         ?int $verse_end = null,
     ): ResponseInterface {
-        $path = "/media/stream/playlist/{$fileset_id}/{$book}/{$chapter}/master.m3u8";
+        $path = "/api/media/stream/playlist/{$fileset_id}/{$book}/{$chapter}/master.m3u8";
 
         $queryParams = [];
         if ($verse_start !== null) {
@@ -84,7 +84,7 @@ class BiblebrainService
         ?int $verse_start = null,
         ?int $verse_end = null
     ): ResponseInterface {
-        $path = "/media/stream/playlist/{$fileset_id}/{$book}/{$chapter}/{$file_name}";
+        $path = "/api/media/stream/playlist/{$fileset_id}/{$book}/{$chapter}/{$file_name}";
 
         $queryParams = [];
         if ($verse_start !== null) {
@@ -115,7 +115,7 @@ class BiblebrainService
         ?int $verse_start = null,
         ?int $verse_end = null
     ): ResponseInterface {
-        $path = "/media/stream/playlist-auto/{$fileset_id}/{$book}/{$chapter}";
+        $path = "/api/media/stream/playlist-auto/{$fileset_id}/{$book}/{$chapter}";
 
         $queryParams = [];
         if ($verse_start !== null) {
