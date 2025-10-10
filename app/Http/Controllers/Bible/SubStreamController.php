@@ -47,7 +47,12 @@ class SubStreamController extends APINoKeyController
         if (count($parts) < 2) {
             // Special case: If only one part is provided, it might be a bible_file_id
             $bible_file_id = $parts[0];
-            $bible_file = BibleFile::select('bible_files.book_id', 'bible_files.chapter_start')
+            $bible_file = BibleFile::select(
+                'bible_files.book_id',
+                'bible_files.chapter_start',
+                'bible_files.verse_sequence',
+                'bible_files.verse_end'
+            )
                 ->where('id', $bible_file_id)
                 ->first();
 
@@ -59,8 +64,9 @@ class SubStreamController extends APINoKeyController
 
             $book_id = $bible_file->book_id;
             $chapter = (int) $bible_file->chapter_start;
-            $verse_start = 0;
-            $verse_end = 0;
+            $verse_start = (int) $bible_file->verse_sequence ?: 0;
+            $verse_end = (int) $bible_file->verse_end ?: 0;
+
         } else {
             if (count($parts) > 4) {
                 return $this
