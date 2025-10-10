@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Playlist;
 
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Spatie\Fractalistic\ArraySerializer;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use App\Traits\AccessControlAPI;
 use App\Http\Controllers\APIController;
 use App\Models\Bible\Bible;
@@ -30,10 +32,10 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Collection;
 use Illuminate\Database\QueryException;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Services\Plans\PlaylistService;
+use App\Services\Plans\BiblebrainStreamService;
 use App\Services\Bibles\BibleFilesetService;
 use App\Exceptions\MySQLErrorCode;
 
@@ -45,11 +47,13 @@ class PlaylistsController extends APIController
 
     protected $items_limit = 1000;
     private $playlist_service;
+    private $biblebrain_service;
 
     public function __construct()
     {
         parent::__construct();
         $this->playlist_service = new PlaylistService();
+        $this->biblebrain_service = new BiblebrainStreamService();
     }
 
     /**
@@ -403,7 +407,7 @@ class PlaylistsController extends APIController
         $playlist = $this->getPlaylist($user, $playlist_id);
 
         if (!$playlist || (isset($playlist->original) && $playlist->original['error'])) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Not Found');
         }
 
         if (isset($playlist->items)) {
@@ -530,7 +534,7 @@ class PlaylistsController extends APIController
             ->where('id', $playlist_id)->first();
 
         if (!$playlist) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Not Found');
         }
 
         $update_values = [];
@@ -869,7 +873,7 @@ class PlaylistsController extends APIController
             } catch(QueryException $e) {
                 // Catch only the error code for a duplicate entry
                 if ($e->getCode() == MySQLErrorCode::DUPLICATE_ENTRY) {
-                    \Log::info("Exception to complete Playlist Item [user: {$user->id} item id: {$item_id}]");
+                    Log::info("Exception to complete Playlist Item [user: {$user->id} item id: {$item_id}]");
                 }  else {
                     throw $e;
                 }
@@ -1060,7 +1064,14 @@ class PlaylistsController extends APIController
             return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Item Not Found');
         }
 
-        $hls_playlist = $this->getHlsPlaylist([$playlist_item], $download);
+        try {
+            $hls_playlist = $this->getHlsPlaylist([$playlist_item], $download);
+        } catch (\Exception $e) {
+            \Log::channel('errorlog')->error("Exception getting HLS playlist for item {$playlist_item->id}: " . $e->getMessage());
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_INTERNAL_SERVER_ERROR)
+                ->replyWithError('Error generating HLS playlist');
+        }
 
         if ($download) {
             return $this->reply(
@@ -1068,7 +1079,7 @@ class PlaylistsController extends APIController
             );
         }
 
-        return response($hls_playlist['file_content'], 200, [
+        return response($hls_playlist['file_content'], SymfonyResponse::HTTP_OK, [
             'Content-Disposition' => 'attachment; filename="item_' . $playlist_item->id . '.m3u8"',
             'Content-Type'        => 'application/x-mpegURL'
         ]);
@@ -1099,21 +1110,50 @@ class PlaylistsController extends APIController
         return (object) $playlist_item;
     }
 
-    public function hls(Response $response, $playlist_id)
+    /**
+     * @OA\Get(
+     *     path="/playlists/{playlist_id}/hls",
+     *     tags={"Playlists"},
+     *     summary="Get HLS playlist",
+     *     operationId="v4_internal_playlists.hls",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="playlist_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Playlist/properties/id")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(type="string"))
+     *     )
+     * )
+     */
+    public function hls($playlist_id)
     {
         $download = checkBoolean('download');
         $playlist = Playlist::with('items')->find($playlist_id);
         if (!$playlist) {
-            return $this->setStatusCode(404)->replyWithError('Playlist Not Found');
+            return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Not Found');
         }
 
-        $hls_playlist = $this->getHlsPlaylist($playlist->items, $download);
+        try {
+            if ($this->biblebrain_service->isEnabled()) {
+                $hls_playlist = $this->biblebrain_service->getHlsPlaylist($playlist->items, $download);
+            } else {
+                $hls_playlist = $this->getHlsPlaylist($playlist->items, $download);
+            }
+        } catch (\Exception $e) {
+            \Log::channel('errorlog')->error("Exception getting HLS playlist for playlist {$playlist_id}: " . $e->getMessage());
+            return $this
+                ->setStatusCode(SymfonyResponse::HTTP_INTERNAL_SERVER_ERROR)
+                ->replyWithError('Error generating HLS playlist');
+        }
 
         if ($download) {
-            return $this->reply(['hls' => $hls_playlist['file_content'], 'signed_files' => $hls_playlist['signed_files']]);
+            return $this->reply([
+                'hls' => $hls_playlist['file_content'],
+                'signed_files' => $hls_playlist['signed_files']
+            ]);
         }
 
-        return response($hls_playlist['file_content'], 200, [
+        return response($hls_playlist['file_content'], SymfonyResponse::HTTP_OK, [
             'Content-Disposition' => 'attachment; filename="' . $playlist_id . '.m3u8"',
             'Content-Type'        => 'application/x-mpegURL'
         ]);

@@ -209,22 +209,44 @@ Route::name('v4_timestamps.verse')->get(
 );
 
 // VERSION 4 | Stream
-Route::name('v4_media_stream')->get(
+// Dynamically select controller based on BIBLEBRAIN_SERVICES_ENABLED flag
+$useBiblebrainService = config('services.biblebrain_services.enabled');
+
+$applyMiddleware = $useBiblebrainService
+    ? ['AccessControl']
+    : [];
+
+$masterStreamController = $useBiblebrainService
+    ? 'Bible\MasterStreamController@index'
+    : 'Bible\StreamController@index';
+
+$subStreamController = $useBiblebrainService
+    ? 'Bible\SubStreamController@index'
+    : 'Bible\StreamController@transportStream';
+
+Route::name('v4_media_stream')
+->middleware($applyMiddleware)
+->get(
     'bible/filesets/{fileset_id}/{file_id}/playlist.m3u8',
-    'Bible\StreamController@index'
+    $masterStreamController
 );
-Route::name('v4_media_stream_ts')->get(
+
+Route::name('v4_media_stream_ts')
+->get(
     'bible/filesets/{fileset_id}/{file_id}/{file_name}',
-    'Bible\StreamController@transportStream'
+    $subStreamController
 );
+
 ## this is no good. StreamController::index does not process book_id/chapter/verse_start/verse_end
-Route::name('v4_media_stream')->get(
+Route::name('v4_media_stream')
+->middleware($applyMiddleware)
+->get(
     'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start?}-{verse_end?}/playlist.m3u8',
-    'Bible\StreamController@index'
+    $masterStreamController
 );
 Route::name('v4_media_stream_ts')->get(
     'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start}-{verse_end}/{file_name}',
-    'Bible\StreamController@transportStream'
+    $subStreamController
 );
 
 // VERSION 4 - Jesus Film
