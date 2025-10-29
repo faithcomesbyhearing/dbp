@@ -999,7 +999,8 @@ class BiblesController extends APIController
                 $chapter_filesets->downloads = [];
             }
 
-            $text_plain = $this->getFileset($bible->filesets, 'text_plain', $book->book_testament);
+            $book_testament = $book->book_testament;
+            $text_plain = $this->getFileset($bible->filesets, 'text_plain', $book_testament);
             if ($text_plain) {
                 $text_controller = new TextController();
                 $verses = $text_controller->index($text_plain->id, $book_id, $chapter)->original['data'] ?? [];
@@ -1008,9 +1009,10 @@ class BiblesController extends APIController
                 }
             }
 
-            $text_format = $this->getFileset($bible->filesets, 'text_format', $book->book_testament);
+            $fileset_controller = new BibleFileSetsController();
+
+            $text_format = $this->getFileset($bible->filesets, 'text_format', $book_testament);
             if ($text_format) {
-                $fileset_controller = new BibleFileSetsController();
                 $formatted_verses = $fileset_controller->show($text_format->id, $text_format->set_type_code, 'v4_chapter_filesets_show')->original['data'] ?? [];
                 if (!empty($formatted_verses)) {
                     $path = $formatted_verses[0]['path'];
@@ -1064,9 +1066,8 @@ class BiblesController extends APIController
                 }
             }
 
-            $video_stream = $this->getFileset($bible->filesets, 'video_stream', $book->book_testament);
+            $video_stream = $this->getFileset($bible->filesets, 'video_stream', $book_testament);
             if ($video_stream) {
-                $fileset_controller = new BibleFileSetsController();
                 $gospel_films = $fileset_controller->show($video_stream->id, $video_stream->set_type_code, 'v4_chapter_filesets_show')->original['data'] ?? [];
                 $chapter_filesets->video->gospel_films = array_map(function ($gospel_film) use ($video_stream) {
                     unset($video_stream->laravel_through_key);
