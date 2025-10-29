@@ -17,6 +17,7 @@ use Spatie\Fractalistic\ArraySerializer;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class BibleFileSetsController extends APIController
 {
@@ -84,7 +85,7 @@ class BibleFileSetsController extends APIController
                     ->uniqueFileset($fileset_id, $type)
                     ->first();
                 if (!$fileset) {
-                    return $this->setStatusCode(404)->replyWithError(
+                    return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
                         trans('api.bible_fileset_errors_404')
                     );
                 }
