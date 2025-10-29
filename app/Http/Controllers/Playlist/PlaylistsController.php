@@ -1128,7 +1128,9 @@ class PlaylistsController extends APIController
     public function hls($playlist_id)
     {
         $download = checkBoolean('download');
-        $playlist = Playlist::with('items')->find($playlist_id);
+        $playlist = Playlist::with(['items' => function ($query) {
+            $query->with('fileset');
+        }])->find($playlist_id);
         if (!$playlist) {
             return $this->setStatusCode(SymfonyResponse::HTTP_NOT_FOUND)->replyWithError('Playlist Not Found');
         }
