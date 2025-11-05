@@ -643,6 +643,24 @@ class BibleFileset extends Model
     }
 
     /**
+     * Find a fileset by ID with archived = false, prioritizing text_plain type
+     * if multiple rows exist with the same ID.
+     *
+     * @param Builder $query
+     * @param string $fileset_id - The fileset ID to search for
+     *
+     * @return Builder
+     */
+    public function scopePrioritizeTextPlainType(Builder $query, string $fileset_id) : Builder
+    {
+        return $query
+            ->where('id', $fileset_id)
+            ->where('archived', false)
+            ->orderByRaw("CASE WHEN set_type_code = ? THEN 0 ELSE 1 END", [BibleFileset::TYPE_TEXT_PLAIN])
+            ->orderBy('set_type_code');
+    }
+
+    /**
      * Determines if a file related to a specific book and chapter exists.
      *
      * This method checks if there's a Bible file associated with a given book and chapter. If the
