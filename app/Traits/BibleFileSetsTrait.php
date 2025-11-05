@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use Illuminate\Database\Eloquent\Collection;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use Aws\CloudFront\CloudFrontClient;
 use App\Models\Bible\BibleFile;
@@ -44,6 +45,10 @@ trait BibleFileSetsTrait
             $type
         );
 
+        if ($fileset->set_type_code === BibleFileset::TYPE_VIDEO_STREAM) {
+            $query->prioritizeNewVideoFormat();
+        }
+
         if ($limit !== null) {
             $fileset_chapters_paginated = $query->paginate($limit);
             $filesets_pagination = new IlluminatePaginatorAdapter($fileset_chapters_paginated);
@@ -52,7 +57,7 @@ trait BibleFileSetsTrait
             $fileset_chapters = $query->get();
         }
         if ($fileset_chapters->count() === 0) {
-            return $this->setStatusCode(404)->replyWithError(
+            return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
                 'No Fileset Chapters Found for the provided params'
             );
         }

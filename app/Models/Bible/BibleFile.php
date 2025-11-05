@@ -4,6 +4,7 @@ namespace App\Models\Bible;
 
 use DB;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use App\Models\Language\Language;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Bible\BibleBook;
@@ -197,6 +198,18 @@ class BibleFile extends Model
      *
      */
     protected $duration;
+
+    /**
+     * @OA\Property(
+     *   title="is_complete_chapter",
+     *   type="boolean",
+     *   description="If the file is a complete chapter, this field will be true",
+     *   nullable=false,
+     *   default=false,
+     *   example=true
+     * )
+     */
+    protected $is_complete_chapter;
 
     public function language()
     {
@@ -413,5 +426,60 @@ class BibleFile extends Model
                     ->joinFilesetTags($book_id);
             })
             ->select($select_columns);
+    }
+
+    /**
+     * Filter video files by content format based on group availability.
+     *
+     * For each (hash_id, book_id, chapter_start) group:
+     * - If ANY file has stream_bytes relation (new chapter-based format):
+     *   Return ONLY those with the relation (newer content)
+     * - If NO files have stream_bytes relation (legacy verse-based format):
+     *   Return ALL files in the group (older content)
+     *
+     * This ensures consistent delivery: either all new chapter-based content
+     * or all legacy verse-based content per chapter, never mixed.
+     *
+     * @param Builder $query
+     *
+     * @return Builder
+     */
+    public function scopePrioritizeNewVideoFormat(Builder $query) : Builder
+    {
+        $from_table = getAliasOrTableName($query->getQuery()->from);
+
+        return $query->where(function (Builder $subquery) use ($from_table) {
+            // Case 1: Group has files with stream_bytes relation AND this file has it
+            $subquery->where(function (Builder $group_has_relation) use ($from_table) {
+                $group_has_relation
+                    ->whereExists(function (QueryBuilder $group_check) use ($from_table) {
+                        // Check if ANY file in the group has the relation
+                        return $group_check->selectRaw('1')
+                            ->from('bible_file_stream_bandwidths', 'bfsbw_group')
+                            ->join('bible_file_stream_bytes as bfsb_group', 'bfsbw_group.id', 'bfsb_group.stream_bandwidth_id')
+                            ->join('bible_files as group_files', 'group_files.id', 'bfsbw_group.bible_file_id')
+                            ->whereColumn('group_files.hash_id', '=', "{$from_table}.hash_id")
+                            ->whereColumn('group_files.book_id', '=', "{$from_table}.book_id")
+                            ->whereColumn('group_files.chapter_start', '=', "{$from_table}.chapter_start");
+                    })
+                    ->whereExists(function (QueryBuilder $this_file_check) use ($from_table) {
+                        // AND this current file has the relation
+                        return $this_file_check->selectRaw('1')
+                            ->from('bible_file_stream_bandwidths', 'bfsbw_this')
+                            ->join('bible_file_stream_bytes as bfsb_this', 'bfsbw_this.id', 'bfsb_this.stream_bandwidth_id')
+                            ->whereColumn("{$from_table}.id", '=', 'bfsbw_this.bible_file_id');
+                    });
+            })
+            // Case 2: Group has NO files with stream_bytes relation (include all)
+            ->orWhereNotExists(function (QueryBuilder $group_has_no_relation) use ($from_table) {
+                return $group_has_no_relation->selectRaw('1')
+                    ->from('bible_file_stream_bandwidths', 'bfsbw_none')
+                    ->join('bible_file_stream_bytes as bfsb_none', 'bfsbw_none.id', 'bfsb_none.stream_bandwidth_id')
+                    ->join('bible_files as group_files_none', 'group_files_none.id', 'bfsbw_none.bible_file_id')
+                    ->whereColumn('group_files_none.hash_id', '=', "{$from_table}.hash_id")
+                    ->whereColumn('group_files_none.book_id', '=', "{$from_table}.book_id")
+                    ->whereColumn('group_files_none.chapter_start', '=', "{$from_table}.chapter_start");
+            });
+        });
     }
 }

@@ -81,14 +81,20 @@ class BibleFilesetsDownloadController extends APIController
             $fileset_cache_params,
             now()->addHours(12),
             function () use ($fileset_id, $type) {
-                $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
+                // Support the logic where filesets with same ID exist mainly for text/plain types.
+                // In that case, prioritize text_plain type first to get the correct fileset_type_code
+                $fileset_from_id = BibleFileset::prioritizeTextPlainType($fileset_id)->first();
                 if (!$fileset_from_id) {
                     return null;
                 }
 
-                $fileset_type = $fileset_from_id['set_type_code'];
-                // fixes data issue where text filesets use the same filesetID
-                $fileset_type = $this->getCorrectFilesetType($fileset_type, $type);
+                if (!empty($type)) {
+                    // if type is specified, use it
+                    $fileset_type = $type;
+                } else {
+                    $fileset_type = $fileset_from_id['set_type_code'];
+                }
+
                 return BibleFileset::with('bible')
                     ->uniqueFileset($fileset_id, $fileset_type)
                     ->first();
