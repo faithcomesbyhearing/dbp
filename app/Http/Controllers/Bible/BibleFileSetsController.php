@@ -209,15 +209,19 @@ class BibleFileSetsController extends APIController
                     ->orWhere('id_osis', $book_id)
                     ->orWhere('id_usfx', $book_id)
                     ->first();
-                $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
+                $fileset_from_id = BibleFileset::prioritizeTextPlainType($fileset_id)->first();
                 if (!$fileset_from_id) {
                     return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
                         trans('api.bible_fileset_errors_404')
                     );
                 }
-                $fileset_type = $fileset_from_id['set_type_code'];
-                // fixes data issue where text filesets use the same filesetID
-                $fileset_type = $this->getCorrectFilesetType($fileset_type, $type);
+
+                if (!empty($type)) {
+                    // if type is specified, use it
+                    $fileset_type = $type;
+                } else {
+                    $fileset_type = $fileset_from_id['set_type_code'];
+                }
 
                 $fileset = BibleFileset::with('bible')
                     ->uniqueFileset($fileset_id, $fileset_type)
@@ -321,16 +325,19 @@ class BibleFileSetsController extends APIController
             $cache_params,
             now()->addHours(12),
             function () use ($fileset_id, $book_id, $limit, $type) {
-                $fileset_from_id = BibleFileset::where('id', $fileset_id)->first();
+                $fileset_from_id = BibleFileset::prioritizeTextPlainType($fileset_id)->first();
                 if (!$fileset_from_id) {
-                    return $this->setStatusCode(404)->replyWithError(
+                    return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
                         trans('api.bible_fileset_errors_404')
                     );
                 }
 
-                $fileset_type = $fileset_from_id['set_type_code'];
-                // fixes data issue where text filesets use the same filesetID
-                $fileset_type = $this->getCorrectFilesetType($fileset_type, $type);
+                if (!empty($type)) {
+                    // if type is specified, use it
+                    $fileset_type = $type;
+                } else {
+                    $fileset_type = $fileset_from_id['set_type_code'];
+                }
                 $fileset = BibleFileset::with('bible')
                     ->uniqueFileset($fileset_id, $fileset_type)
                     ->first();
