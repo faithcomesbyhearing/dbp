@@ -259,6 +259,24 @@ class Book extends Model
         $query->where('id', $id)->orWhere('id_osis', $id)->orWhere('id_usfx', $id);
     }
 
+    /**
+     * Find a book by any of its ID types and return the book ID
+     *
+     * @param string|null $book_id
+     * @return Book|null
+     */
+    public static function findBookByAnyIdentifier($book_id) : ?Book
+    {
+        if (is_null($book_id)) {
+            return null;
+        }
+
+        return self::where('id', $book_id)
+            ->orWhere('id_osis', $book_id)
+            ->orWhere('id_usfx', $book_id)
+            ->first();
+    }
+
     public function scopeFilterByTestament($query, $testament)
     {
         $query->when($testament, function ($q) use ($testament) {

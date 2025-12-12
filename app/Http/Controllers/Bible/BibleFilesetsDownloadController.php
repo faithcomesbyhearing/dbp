@@ -128,33 +128,20 @@ class BibleFilesetsDownloadController extends APIController
             $cache_params,
             now()->addHours(12),
             function () use ($fileset, $book_id, $chapter, $limit) {
-                $asset_id = $fileset->asset_id;
-                $bible = optional($fileset->bible)->first();
-
-                $book = $book_id
-                    ? Book::where('id', $book_id)
-                        ->orWhere('id_osis', $book_id)
-                        ->orWhere('id_usfx', $book_id)
-                        ->first()
-                    : null;
-
+                $normalized_book_id = optional(Book::findBookByAnyIdentifier($book_id))->id;
                 if ($fileset->set_type_code === BibleFileset::TYPE_TEXT_PLAIN) {
                     return $this->showTextFilesetChapter(
                         $limit,
-                        $bible,
                         $fileset,
-                        $book,
+                        $normalized_book_id,
                         $chapter
                     );
                 } else {
-                    return $this->showAudioVideoFilesets(
-                        $limit,
-                        $bible,
+                    return $this->getAudioVideoFilesetsToDownload(
                         $fileset,
-                        $asset_id,
-                        $fileset->set_type_code,
-                        $book,
-                        $chapter
+                        $normalized_book_id,
+                        $chapter,
+                        $limit
                     );
                 }
             }
