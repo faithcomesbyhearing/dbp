@@ -170,7 +170,7 @@ function cacheRemember($cache_key, $cache_args, $ttl, $callback)
  */
 function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
 {
-    if (config('app.env') === 'dev') {
+    if (config('app.env') !== 'production') {
         // Use array cache store for dev mode to avoid Memcached minimum TTL issues
         // ttl < 1 second
         $dev_ttl = config('cache.dev_ttl', 1);
