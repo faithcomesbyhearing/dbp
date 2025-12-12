@@ -77,10 +77,7 @@ class BibleFileSetsController extends APIController
             $cache_params,
             now()->addHours(12),
             function () use ($fileset_id, $book_id, $type, $chapter_id) {
-                $book = Book::where('id', $book_id)
-                    ->orWhere('id_osis', $book_id)
-                    ->orWhere('id_usfx', $book_id)
-                    ->first();
+                $normalized_book_id = optional(Book::findBookByAnyIdentifier($book_id))->id;
                 $fileset = BibleFileset::with('bible')
                     ->uniqueFileset($fileset_id, $type)
                     ->first();
@@ -94,17 +91,12 @@ class BibleFileSetsController extends APIController
                 if ($access_allowed !== true) {
                     return $access_allowed;
                 }
-                $asset_id = $fileset->asset_id;
-                $bible = optional($fileset->bible)->first();
 
                 return $this->showAudioVideoFilesets(
-                    null,
-                    $bible,
                     $fileset,
-                    $asset_id,
-                    $type,
-                    $book,
-                    $chapter_id
+                    $normalized_book_id,
+                    $chapter_id,
+                    null
                 );
             }
         );
@@ -205,10 +197,7 @@ class BibleFileSetsController extends APIController
             $cache_safe_key,
             now()->addHours(12),
             function () use ($fileset_id, $book_id, $chapter_id, $verse_start, $verse_end, $type) {
-                $book = Book::where('id', $book_id)
-                    ->orWhere('id_osis', $book_id)
-                    ->orWhere('id_usfx', $book_id)
-                    ->first();
+                $normalized_book_id = optional(Book::findBookByAnyIdentifier($book_id))->id;
                 $fileset_from_id = BibleFileset::prioritizeTextPlainType($fileset_id)->first();
                 if (!$fileset_from_id) {
                     return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
@@ -236,28 +225,22 @@ class BibleFileSetsController extends APIController
                 if ($access_allowed !== true) {
                     return $access_allowed;
                 }
-                $asset_id = $fileset->asset_id;
-                $bible = optional($fileset->bible)->first();
 
                 if ($fileset_type === 'text_plain') {
                     return $this->showTextFilesetChapter(
                         null,
-                        $bible,
                         $fileset,
-                        $book,
+                        $normalized_book_id,
                         $chapter_id,
                         $verse_start,
                         $verse_end
                     );
                 } else {
                     return $this->showAudioVideoFilesets(
-                        null,
-                        $bible,
                         $fileset,
-                        $asset_id,
-                        $fileset_type,
-                        $book,
-                        $chapter_id
+                        $normalized_book_id,
+                        $chapter_id,
+                        null
                     );
                 }
             }
@@ -353,31 +336,20 @@ class BibleFileSetsController extends APIController
                     return $bulk_access_control;
                 }
 
-                $asset_id = $fileset->asset_id;
-                $bible = optional($fileset->bible)->first();
-
-                $book = $book_id
-                    ? Book::where('id', $book_id)
-                        ->orWhere('id_osis', $book_id)
-                        ->orWhere('id_usfx', $book_id)
-                        ->first()
-                    : null;
+                $normalized_book_id = optional(Book::findBookByAnyIdentifier($book_id))->id;
 
                 if ($fileset_type === 'text_plain') {
                     return $this->showTextFilesetChapter(
                         $limit,
-                        $bible,
                         $fileset,
-                        $book
+                        $normalized_book_id
                     );
                 } else {
                     return $this->showAudioVideoFilesets(
-                        $limit,
-                        $bible,
                         $fileset,
-                        $asset_id,
-                        $fileset_type,
-                        $book
+                        $normalized_book_id,
+                        null,
+                        $limit
                     );
                 }
             }
