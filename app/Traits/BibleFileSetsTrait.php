@@ -19,89 +19,183 @@ use DB;
 
 trait BibleFileSetsTrait
 {
-
-    private function showAudioVideoFilesets(
-        $limit,
-        $bible,
+    /**
+     * Build common query for audio/video filesets
+     */
+    private function buildAudioVideoFilesetQuery(
         $fileset,
-        $asset_id,
-        $type,
-        $book = null,
+        ?string $book_id = null,
         $chapter_id = null
     ) {
+        $bible = optional($fileset->bible)->first();
+
         $query = BibleFile::byHashIdJoinBooks(
             $fileset->hash_id,
-            $bible,
+            $bible->id,
+            $bible->versification,
             $chapter_id,
-            $book ? $book->id : null
+            $book_id
         // We need to ensure we pull the correct files. The video_stream fileset can have multiple associated files,
         // but it specifically requires the m3u8 format. Meanwhile, the audio fileset works differently because m3u8
         // Bible files are not stored in the database, so the audio fileset needs mp3 Bible files.
         )->filterBySetTypeCode(
-            $fileset->set_type_code,
-        // the files will be ordered according the given type from the request
-        // and not the fileset type
+            $fileset->set_type_code
         )->orderBySetTypeCode(
-            $type
+            $fileset->set_type_code
         );
 
         if ($fileset->set_type_code === BibleFileset::TYPE_VIDEO_STREAM) {
             $query->prioritizeNewVideoFormat();
         }
 
+        return $query;
+    }
+
+    /**
+     * Execute query with optional pagination
+     */
+    private function executeQuery($query, $limit)
+    {
         if ($limit !== null) {
             $fileset_chapters_paginated = $query->paginate($limit);
             $filesets_pagination = new IlluminatePaginatorAdapter($fileset_chapters_paginated);
             $fileset_chapters = $fileset_chapters_paginated->getCollection();
         } else {
             $fileset_chapters = $query->get();
-        }
-        if ($fileset_chapters->count() === 0) {
-            return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
-                'No Fileset Chapters Found for the provided params'
-            );
+            $filesets_pagination = null;
         }
 
-        $asset = Asset::where('id', $asset_id)->first();
+        if ($fileset_chapters->count() === 0) {
+            return [
+                'error' => $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
+                    'No Fileset Chapters Found for the provided params'
+                )
+            ];
+        }
+
+        return [
+            'fileset_chapters' => $fileset_chapters,
+            'filesets_pagination' => $filesets_pagination
+        ];
+    }
+
+    /**
+     * Prepare AWS client for signing URLs
+     */
+    private function prepareClient($fileset)
+    {
+        $asset = Asset::where('id', $fileset->asset_id)->first();
         $client = null;
+
         if ($asset) {
             $client = $this->authorizeAWS($asset->asset_type);
         }
 
+        if (!$client) {
+            return [
+                'error' => $this->setStatusCode(HttpResponse::HTTP_INTERNAL_SERVER_ERROR)->replyWithError(
+                    'No AWS Client available for signing URLs'
+                )
+            ];
+        }
+
+        return ['client' => $client];
+    }
+
+    /**
+     * Common processing for audio/video filesets
+     */
+    private function processAudioVideoFilesets(
+        $fileset,
+        ?string $book_id = null,
+        $chapter_id = null,
+        bool $is_download = false,
+        ?int $limit = null
+    ) {
+        $query = $this->buildAudioVideoFilesetQuery($fileset, $book_id, $chapter_id);
+
+        $queryResult = $this->executeQuery($query, $limit);
+        if (isset($queryResult['error'])) {
+            return $queryResult['error'];
+        }
+
+        $clientResult = $this->prepareClient($fileset);
+        if (isset($clientResult['error'])) {
+            return $clientResult['error'];
+        }
+
+        $fileset_chapters = $queryResult['fileset_chapters'];
+        $filesets_pagination = $queryResult['filesets_pagination'];
+        $client = $clientResult['client'];
+
+        $bible = optional($fileset->bible)->first();
+
         $fileset_chapters = $this->generateSecondaryFiles(
             $fileset,
             $fileset_chapters,
-            $bible,
+            $bible->id,
             $client
         );
-        $fileset_return = fractal(
-            $this->generateFilesetChapters(
+
+        if ($is_download) {
+            $fileset_chapters_processed = $this->generateFilesetChaptersToDownload(
                 $fileset,
                 $fileset_chapters,
-                $bible,
+                $bible->id,
                 $client
-            ),
+            );
+        } else {
+            $fileset_chapters_processed = $this->generateFilesetChapters(
+                $fileset,
+                $fileset_chapters,
+                $bible->id,
+                $client
+            );
+        }
+
+        $fileset_return = fractal(
+            $fileset_chapters_processed,
             new FileSetTransformer(),
             $this->serializer
         );
+
         if (isset($fileset_chapters->metadata)) {
             $fileset_return->addMeta($fileset_chapters->metadata);
         }
 
         return $limit !== null ?
-          $fileset_return->paginateWith($filesets_pagination) :
-          $fileset_return;
+            $fileset_return->paginateWith($filesets_pagination) :
+            $fileset_return;
+    }
+
+    private function getAudioVideoFilesetsToDownload(
+        $fileset,
+        ?string $book_id = null,
+        $chapter_id = null,
+        ?int $limit = null
+    ) {
+        return $this->processAudioVideoFilesets($fileset, $book_id, $chapter_id, true, $limit);
+    }
+
+    private function showAudioVideoFilesets(
+        $fileset,
+        ?string $book_id = null,
+        $chapter_id = null,
+        $limit = null
+    ) {
+        return $this->processAudioVideoFilesets($fileset, $book_id, $chapter_id, false, $limit);
     }
 
     private function showTextFilesetChapter(
         $limit,
-        $bible,
         $fileset,
-        $book = null,
+        ?string $book_id = null,
         ?int $chapter_id = null,
         ?string $verse_start = null,
         ?string $verse_end = null
     ) {
+        $bible = optional($fileset->bible)->first();
+
         $select_columns = [
             'bible_verses.book_id as book_id',
             'books.name as book_name',
@@ -115,8 +209,8 @@ trait BibleFileSetsTrait
         ];
         $text_query = BibleVerse::withVernacularMetaData($bible)
         ->where('hash_id', $fileset->hash_id)
-        ->when($book, function ($query) use ($book) {
-            return $query->where('bible_verses.book_id', $book->id);
+        ->when($book_id, function ($query) use ($book_id) {
+            return $query->where('bible_verses.book_id', $book_id);
         })
         ->when(!is_null($chapter_id), function ($query) use ($chapter_id) {
             return $query->where('chapter', (int) $chapter_id);
@@ -173,7 +267,7 @@ trait BibleFileSetsTrait
     private function generateSecondaryFiles(
         $fileset,
         $fileset_chapters,
-        $bible,
+        $bible_id,
         $client
     ) {
         $secondary_files = BibleFileSecondary::where(
@@ -189,7 +283,7 @@ trait BibleFileSetsTrait
         foreach ($secondary_files as $secondary_file) {
             $secondary_file_url = $this->signedUrlUsingClient(
                 $client,
-                storagePath($bible->id, $fileset, null, $secondary_file->file_name),
+                storagePath($bible_id, $fileset, null, $secondary_file->file_name),
                 random_int(0, 10000000)
             );
             if ($secondary_file->file_type === 'art') {
@@ -209,26 +303,58 @@ trait BibleFileSetsTrait
     }
 
     /**
+     * Check if fileset is a streaming type
+     */
+    private function isStreamingFileset($fileset): bool
+    {
+        return $fileset->set_type_code === BibleFileset::TYPE_VIDEO_STREAM ||
+            $fileset->set_type_code === BibleFileset::TYPE_AUDIO_STREAM ||
+            $fileset->set_type_code === BibleFileset::TYPE_AUDIO_DRAMA_STREAM;
+    }
+
+    /**
+     * Handle non-stream fileset chapters by signing URLs
+     */
+    private function processNonStreamFilesetChapters(
+        $fileset_chapters,
+        $bible_id,
+        $fileset,
+        $client
+    ) {
+        foreach ($fileset_chapters as $key => $fileset_chapter) {
+            $fileset_chapters[$key]->file_name = $this->signedUrlUsingClient(
+                $client,
+                storagePath(
+                    $bible_id,
+                    $fileset,
+                    $fileset_chapter
+                ),
+                random_int(0, 10000000)
+            );
+        }
+        return $fileset_chapters;
+    }
+
+    /**
+     * Base method for generating fileset chapters
+     *
      * @param      $fileset
      * @param      $fileset_chapters
-     * @param      $bible
-     * @param      $asset_id
+     * @param      $bible_id
+     * @param      $client
+     * @param      bool $handle_multi_mp3 Whether to handle multiple MP3 chapters
      *
      * @throws \Exception
      * @return array
      */
-    private function generateFilesetChapters(
+    private function generateFilesetChaptersBase(
         $fileset,
         $fileset_chapters,
-        $bible,
-        $client
+        $bible_id,
+        $client,
+        bool $handle_multi_mp3 = false
     ) {
-        $is_stream =
-            $fileset->set_type_code === BibleFileset::TYPE_VIDEO_STREAM ||
-            $fileset->set_type_code === BibleFileset::TYPE_AUDIO_STREAM ||
-            $fileset->set_type_code === BibleFileset::TYPE_AUDIO_DRAMA_STREAM;
-
-        if ($is_stream) {
+        if ($this->isStreamingFileset($fileset)) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
                 $routeParameters = [
                     'fileset_id' => $fileset->id,
@@ -245,53 +371,57 @@ trait BibleFileSetsTrait
                 ));
             }
         } else {
-            // Multiple files per chapter
-            $hasMultiMp3Chapter = $fileset->isAudio() &&
-                sizeof($fileset_chapters) > 1 &&
-                $this->hasMultipleMp3Chapters($fileset_chapters);
+            // Check for multiple MP3 files per chapter
+            if ($handle_multi_mp3) {
+                $hasMultiMp3Chapter = $fileset->isAudio() &&
+                    sizeof($fileset_chapters) > 1 &&
+                    $this->hasMultipleMp3Chapters($fileset_chapters);
 
-            if ($hasMultiMp3Chapter) {
-                if ($fileset_chapters[0]->chapter_start) {
-                    $fileset_chapters[0]->file_name = route(
-                        'v4_media_stream',
-                        [
-                            'fileset_id' => $fileset->id,
-                            'book_id' => $fileset_chapters[0]->book_id,
-                            'chapter' => $fileset_chapters[0]->chapter_start,
-                        ]
-                    );
+                if ($hasMultiMp3Chapter) {
+                    if ($fileset_chapters[0]->chapter_start) {
+                        $fileset_chapters[0]->file_name = route(
+                            'v4_media_stream',
+                            [
+                                'fileset_id' => $fileset->id,
+                                'book_id' => $fileset_chapters[0]->book_id,
+                                'chapter' => $fileset_chapters[0]->chapter_start,
+                            ]
+                        );
+                    } else {
+                        $fileset_chapters[0]->file_name = sprintf(
+                            '%s/bible/filesets/%s/%s-%s-%s-%s/playlist.m3u8',
+                            config('app.api_url'),
+                            $fileset->id,
+                            $fileset_chapters[0]->book_id,
+                            $fileset_chapters[0]->chapter_start,
+                            '',
+                            ''
+                        );
+                    }
+                    if (!empty($fileset_chapters) > 0 && $fileset_chapters->last() instanceof \App\Models\Bible\BibleFile) {
+                        $collection = $fileset_chapters;
+                    } else {
+                        $collection = collect($fileset_chapters);
+                    }
+                    $fileset_chapters[0]->duration = $collection->sum('duration');
+                    $fileset_chapters[0]->verse_end = optional($collection->last())->verse_end;
+                    $fileset_chapters[0]->multiple_mp3 = true;
+                    $fileset_chapters = [$fileset_chapters[0]];
                 } else {
-                    $fileset_chapters[0]->file_name = sprintf(
-                        '%s/bible/filesets/%s/%s-%s-%s-%s/playlist.m3u8',
-                        config('app.api_url'),
-                        $fileset->id,
-                        $fileset_chapters[0]->book_id,
-                        $fileset_chapters[0]->chapter_start,
-                        '',
-                        ''
+                    $fileset_chapters = $this->processNonStreamFilesetChapters(
+                        $fileset_chapters,
+                        $bible_id,
+                        $fileset,
+                        $client
                     );
                 }
-                if (!empty($fileset_chapters) > 0 && $fileset_chapters->last() instanceof \App\Models\Bible\BibleFile) {
-                    $collection = $fileset_chapters;
-                } else {
-                    $collection = collect($fileset_chapters);
-                }
-                $fileset_chapters[0]->duration = $collection->sum('duration');
-                $fileset_chapters[0]->verse_end = optional($collection->last())->verse_end;
-                $fileset_chapters[0]->multiple_mp3 = true;
-                $fileset_chapters = [$fileset_chapters[0]];
             } else {
-                foreach ($fileset_chapters as $key => $fileset_chapter) {
-                    $fileset_chapters[$key]->file_name = $this->signedUrlUsingClient(
-                        $client,
-                        storagePath(
-                            $bible->id,
-                            $fileset,
-                            $fileset_chapter
-                        ),
-                        random_int(0, 10000000)
-                    );
-                }
+                $fileset_chapters = $this->processNonStreamFilesetChapters(
+                    $fileset_chapters,
+                    $bible_id,
+                    $fileset,
+                    $client
+                );
             }
         }
 
@@ -300,6 +430,33 @@ trait BibleFileSetsTrait
         }
 
         return $fileset_chapters;
+    }
+
+    /**
+     * @param      $fileset
+     * @param      $fileset_chapters
+     * @param      $bible_id
+     * @param      $client
+     *
+     * @throws \Exception
+     * @return array
+     */
+    private function generateFilesetChapters(
+        $fileset,
+        $fileset_chapters,
+        $bible_id,
+        $client
+    ) {
+        return $this->generateFilesetChaptersBase($fileset, $fileset_chapters, $bible_id, $client, true);
+    }
+
+    private function generateFilesetChaptersToDownload(
+        $fileset,
+        $fileset_chapters,
+        $bible_id,
+        $client
+    ) {
+        return $this->generateFilesetChaptersBase($fileset, $fileset_chapters, $bible_id, $client, false);
     }
 
     /**

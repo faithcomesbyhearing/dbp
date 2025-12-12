@@ -368,11 +368,11 @@ class BibleFile extends Model
     public function scopeByHashIdJoinBooks(
         Builder $query,
         string $fileset_hash_id,
-        Bible $bible,
+        string $bible_id,
+        string $bible_versification,
         ?string $chapter_id,
         ?string $book_id
     ) : Builder {
-        $bible_id = optional($bible)->id;
 
         $select_columns = [
             'bible_files.duration',
@@ -387,7 +387,7 @@ class BibleFile extends Model
             'bible_files.file_name',
             'bible_files.file_size',
             'bible_books.name as book_name',
-            BibleBook::getBookOrderSelectColumnExpressionRaw($bible->versification, 'book_order'),
+            BibleBook::getBookOrderSelectColumnExpressionRaw($bible_versification, 'book_order'),
             'bible_file_tags.value as bible_tag_value',
         ];
 
