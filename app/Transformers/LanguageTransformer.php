@@ -98,7 +98,7 @@ class LanguageTransformer extends BaseTransformer
             case 'v4_languages.one':
                 return [
                     'id'                   => $language->id,
-                    'name'                 => $language->name,
+                    'name'                 => $language->fcbh_name,
                     'description'          => optional(
                         $language->translations->where('iso_translation', $this->i10n)->first()
                     )->description,
