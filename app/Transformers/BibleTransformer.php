@@ -261,6 +261,11 @@ class BibleTransformer extends BaseTransformer
                     return $carry;
                 }, null);
 
+                $fcbhLangName = "";
+                if ($bible->language) {
+                    $fcbhLangName = $bible->language->fcbh_name;
+                }
+
                 $bible = [
                     'abbr'          => $bible->id,
                     'alphabet'      => $bible->alphabet,
@@ -273,7 +278,7 @@ class BibleTransformer extends BaseTransformer
                         ->where('pivot.relationship_type', 'publisher')->all(),
                     'providers'     => optional($this->filterOrganizations($bible->organizations))
                         ->where('pivot.relationship_type', 'provider')->all(),
-                    'language'      => optional($bible->language)->name,
+                    'language'      => $fcbhLangName,
                     'language_id'   => optional($bible->language)->id,
                     'iso'           => optional($bible->language)->iso,
                     'language_rolv_code' => optional($bible->language)->rolv_code,
