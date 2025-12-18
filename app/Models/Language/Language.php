@@ -595,6 +595,19 @@ class Language extends Model
         return $this->hasOne(LanguageTranslation::class, 'language_source_id')->where('language_translation_id', $GLOBALS['i18n_id']);
     }
 
+    /**
+     * Get the FCBH English translation for the language
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function fcbhTranslation()
+    {
+        return $this
+            ->hasOne(LanguageTranslation::class, 'language_source_id')
+            ->where('language_translation_id', Language::ENGLISH_ID)
+            ->where('priority', 9);
+    }
+
     public function countries()
     {
         return $this->belongsToMany(Country::class, 'country_language');
@@ -805,5 +818,21 @@ class Language extends Model
         }
 
         return $new_language_query;
+    }
+
+    /**
+     * Get the FCBH name attribute.
+     *
+     * @return string
+     */
+    public function getFcbhNameAttribute(): ?string {
+        $translation = $this->fcbhTranslation()
+            ->select(['language_source_id','name'])
+            ->first();
+
+        if ($translation) {
+            return $translation->name;
+        }
+        return $this->name;
     }
 }
