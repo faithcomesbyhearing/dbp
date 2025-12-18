@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Model;
  * )
  *
  */
-class BibleFilesetSize extends Model
+class BibleFilesetMode extends Model
 {
     public const AUDIO = 3;
     public const VIDEO = 5;
