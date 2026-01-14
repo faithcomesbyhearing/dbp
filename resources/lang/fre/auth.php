@@ -15,6 +15,7 @@ return [
 
     'failed'   => 'Ces identifiants ne correspondent pas à nos enregistrements',
     'throttle' => 'Trop de tentatives de connexion. Veuillez essayer de nouveau dans :seconds secondes.',
+    'social_account_not_found' => 'Aucun compte trouvé pour ce compte :provider. Veuillez vous inscrire d\'abord.',
 
     // Activation items
     'sentEmail'        => 'Noua avons envoyé un email à :email.',
