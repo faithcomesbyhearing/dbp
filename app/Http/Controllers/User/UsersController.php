@@ -161,7 +161,9 @@ class UsersController extends APIController
      *     path="/login",
      *     tags={"Users"},
      *     summary="Login a user",
-     *     description="",
+     *     description="Login endpoint supports email/password or social provider authentication. 
+     *                  For social providers, optional 'autocreate' parameter controls behavior when 
+     *                  account doesn't exist (default: true). Use /users endpoint to create new accounts.",
      *     operationId="v4_internal_user.login",
      *     @OA\RequestBody(required=true, description="Either the `email` & `password` or the `social_provider_user_id` & `social_provider_id` are required for user Login", @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
@@ -170,12 +172,26 @@ class UsersController extends APIController
      *              @OA\Property(property="project_id",                ref="#/components/schemas/Project/properties/id"),
      *              @OA\Property(property="social_provider_user_id",   ref="#/components/schemas/Account/properties/provider_user_id"),
      *              @OA\Property(property="social_provider_id",        ref="#/components/schemas/Account/properties/provider_id"),
+     *              @OA\Property(
+     *                  property="autocreate",
+     *                  type="boolean",
+     *                  description="For social provider login: if true (default), automatically creates account if it doesn't exist. If false, returns 401 when account doesn't exist.",
+     *                  example=true
+     *              ),
      *          )
      *     )),
      *     @OA\Response(
      *         response=200,
-     *         description="successful operation",
+     *         description="User successfully logged in",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Authentication failed. For social providers with autocreate=false, this indicates 
+     *                      the account doesn't exist and signup is required",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="No account found for this Facebook account. Please sign up first.")
+     *         )
      *     )
      * )
      *
@@ -206,9 +222,16 @@ class UsersController extends APIController
         }
 
         if (!isset($user) || !$user) {
-            return $this->setStatusCode(401)->replyWithError(
-                trans('auth.failed')
-            );
+            $error_message = trans('auth.failed');
+            
+            // Add specific message for social provider login
+            if ($social_provider_id) {
+                $error_message = trans('auth.social_account_not_found', [
+                    'provider' => ucfirst($social_provider_id)
+                ]);
+            }
+            
+            return $this->setStatusCode(401)->replyWithError($error_message);
         }
 
         // Associate user with Project
@@ -318,6 +341,28 @@ class UsersController extends APIController
                 ->first();
         }
 
+        // Account doesn't exist - check autocreate parameter
+        // Default to true if not provided (backward compatibility)
+        // Use checkBoolean but handle default: if parameter not provided, default to true
+        $autocreate_param = checkParam('autocreate');
+        $autocreate = ($autocreate_param !== null)
+            ? checkBoolean('autocreate', false)
+            : true; // Default to true if not provided
+
+        // If autocreate is explicitly false, return null to trigger 401
+        if ($autocreate === false) {
+            $no_match_log = 'social provider login with no matching DBP account. ' .
+                            'request:' . json_encode($request->all()) .
+                            ', provider_id: ' . $provider_id .
+                            ', provider_user_id: ' . $provider_user_id .
+                            ', autocreate: false';
+            Log::info($no_match_log);
+
+            // Return null to trigger 401 - client should show signup flow
+            return null;
+        }
+
+        // autocreate is true (default behavior) - auto-create account (CURRENT FLOW)
         $no_match_log = 'social provider login with no matching DBP info. request:' . json_encode($request->all())
                         . ', provider_id: ' . $provider_id . ', provider_user_id: ' . $provider_user_id;
         Log::error($no_match_log);

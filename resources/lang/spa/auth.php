@@ -4,6 +4,7 @@ return [
 
     'failed' => 'Las credenciales introducidas son incorrectas.',
     'throttle' => 'Demasiados intentos de acceso. Inténtelo de nuevo en :seconds segundos.',
+    'social_account_not_found' => 'No se encontró una cuenta para esta cuenta de :provider. Por favor, regístrese primero.',
 
     // Activation items
     'sentEmail'        => 'We have sent an email to :email.',
