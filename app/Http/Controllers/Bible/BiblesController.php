@@ -84,6 +84,13 @@ class BiblesController extends APIController
      *          description="This will return results only which have audio timing information available for that bible. The timing information is stored in table bible_file_timestamps.",
      *          example="true"
      *     ),
+     *     @OA\Parameter(
+     *          name="show_country",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="Include country_id field in response. When true, adds country_id field containing the country ID from languages.country_id.",
+     *          example="true"
+     *     ),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Response(
@@ -106,6 +113,7 @@ class BiblesController extends APIController
         $media              = checkParam('media');
         $media_exclude      = checkParam('media_exclude');
         $audio_timing       = checkParam('audio_timing') ?? false;
+        $show_country       = checkBoolean('show_country', false);
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
         $limit              = (int) (checkParam('limit') ?? 50);
@@ -154,7 +162,8 @@ class BiblesController extends APIController
             $is_bibleis_gideons,
             $order_cache_key,
             $access_group_ids->toString(),
-            $audio_timing
+            $audio_timing,
+            $show_country
         ]);
 
         $bibles = cacheRemember(
@@ -173,7 +182,8 @@ class BiblesController extends APIController
                 $tag_exclude,
                 $limit,
                 $order_by,
-                $audio_timing
+                $audio_timing,
+                $show_country
             ) {
                 $bibles = Bible::filterByLanguage($language_code)
                 ->withRequiredFilesets([
@@ -233,6 +243,7 @@ class BiblesController extends APIController
                         MIN(language_autonym.name) as language_autonym,
                         MIN(language_current.name) as language_current,
                         MIN(languages.rolv_code) as language_rolv_code,
+                        ' . ($show_country ? 'MIN(languages.country_id) as country_id,' : '') . '
                         MIN(bibles.priority) as priority,
                         MIN(bibles.id) as id'
                     )
