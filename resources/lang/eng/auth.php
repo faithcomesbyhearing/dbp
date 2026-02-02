@@ -15,6 +15,7 @@ return [
 
     'failed'   => 'These credentials do not match our records.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
+    'social_account_not_found' => 'No account found for this :provider account. Please sign up first.',
 
     // Activation items
     'sentEmail'        => 'We have sent an email to :email.',
