@@ -3,7 +3,6 @@
 namespace App\Services\Bibles;
 
 use App\Models\Bible\BibleFileset;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class FilesetBookIdResolver
@@ -16,7 +15,7 @@ class FilesetBookIdResolver
      *
      * @return array
      */
-    public function resolve(BibleFileset $fileset, string $versification) : array
+    public function resolve(BibleFileset $fileset) : array
     {
         $batch_resolver = new FilesetBookIdBatchResolver();
         $map = $batch_resolver->resolve(collect([$fileset]));
