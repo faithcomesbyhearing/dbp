@@ -28,6 +28,9 @@ use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Language\Language;
 use App\Services\Bibles\BibleFilesetService;
+use App\Services\Bibles\FilesetBookIdBatchResolver;
+use App\Services\Bibles\FilesetBookIdResolver;
+use App\Services\Bibles\ShowVerifyContentResponseCache;
 use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
@@ -394,6 +397,12 @@ class BiblesController extends APIController
      *     operationId="v4_bible.one",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
      *     @OA\Parameter(name="include_font",in="query"),
+     *     @OA\Parameter(
+     *          name="verify_content",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, each entry in books includes a filesets array of { id, type } for all filesets that have content for that book; same id can appear with different types."
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -410,53 +419,110 @@ class BiblesController extends APIController
         $id   = checkParam('dam_id', false, $id);
 
         $include_font = is_null(checkParam('include_font')) ? true : checkBoolean('include_font', false);
+        $verify_content = is_null(checkParam('verify_content')) ? true : checkBoolean('verify_content', false);
 
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
         }
         $key_error_404 = 'api.bibles_errors_404';
         $access_group_ids = getAccessGroups();
-        $bible = Bible::whereId($id)->isContentAvailable($access_group_ids)->count();
-
-        if (!$bible) {
-            return $this
+        $bible_exists = Bible::whereId($id)->isContentAvailable($access_group_ids)->exists();
+        $error_response = null;
+        if (!$bible_exists) {
+            $error_response = $this
                 ->setStatusCode(Response::HTTP_NOT_FOUND)
                 ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
-        $cache_params = [$id, $access_group_ids->toString(), $include_font];
-        $bible = cacheRemember(
-            'bibles_show',
-            $cache_params,
-            now()->addDay(),
-            function () use ($access_group_ids, $id, $include_font) {
-                return Bible::with([
-                    'translations',
-                    'books.book',
-                    'links',
-                    'organizations.logo',
-                    'organizations.logoIcon',
-                    'organizations.translations',
-                    'alphabet.primaryFont',
-                    'filesets' => function ($query) use ($access_group_ids, $include_font) {
-                        $query->isContentAvailable($access_group_ids)
-                            ->when($include_font, function ($sub_query) {
-                                $sub_query->with('fonts');
-                            })
-                            ->conditionToExcludeOldTextFormat()
-                            ->conditionToExcludeOldDA16Format();
-                    }
-                ])->find($id);
+        $bible = null;
+        if (!$error_response) {
+            $cache_params = [$id, $access_group_ids->toString(), $include_font];
+            $bible = cacheRemember(
+                'bibles_show',
+                $cache_params,
+                now()->addDay(),
+                function () use ($access_group_ids, $id, $include_font) {
+                    return Bible::with([
+                        'translations',
+                        'books.book',
+                        'links',
+                        'organizations.logo',
+                        'organizations.logoIcon',
+                        'organizations.translations',
+                        'alphabet.primaryFont',
+                        'filesets' => function ($query) use ($access_group_ids, $include_font) {
+                            $query->isContentAvailable($access_group_ids)
+                                ->when($include_font, function ($sub_query) {
+                                    $sub_query->with('fonts');
+                                })
+                                ->conditionToExcludeOldTextFormat()
+                                ->conditionToExcludeOldDA16Format();
+                        }
+                    ])->find($id);
+                }
+            );
+            if (!$bible || !sizeof($bible->filesets)) {
+                $error_response = $this
+                    ->setStatusCode(Response::HTTP_NOT_FOUND)
+                    ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
             }
-        );
+        }
 
-        if (!$bible || !sizeof($bible->filesets)) {
-            return $this
-                ->setStatusCode(Response::HTTP_NOT_FOUND)
-                ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
+        if ($error_response) {
+            return $error_response;
+        }
+
+        // When verify_content === true, cache the serialized response and use batch fileset lookup
+        if ($verify_content === true && $bible->filesets->isNotEmpty()) {
+            $response_payload = $this->buildVerifyContentResponsePayload(
+                $bible,
+                $access_group_ids,
+                $include_font,
+                $verify_content,
+                $id
+            );
+            return $this->reply($response_payload);
         }
 
         return $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
+    }
+
+    private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id) : array
+    {
+        return ShowVerifyContentResponseCache::remember(
+            [$id, $access_group_ids->toString(), $include_font, $verify_content],
+            now()->addDay(),
+            function () use ($bible, $access_group_ids, $verify_content, $id) {
+                $book_fileset_map = cacheRemember(
+                    'bibles_show_book_filesets',
+                    [$id, $access_group_ids->toString(), $verify_content],
+                    now()->addDay(),
+                    function () use ($bible) {
+                        $batch_resolver = new FilesetBookIdBatchResolver();
+                        $single_resolver = new FilesetBookIdResolver();
+                        $fileset_book_ids = $batch_resolver->resolve($bible->filesets);
+                        $map = [];
+                        foreach ($bible->filesets as $fileset) {
+                            $book_ids = $fileset_book_ids[$fileset->id]
+                                ?? $single_resolver->resolve($fileset);
+                            foreach ($book_ids as $book_id) {
+                                $map[$book_id] = $map[$book_id] ?? [];
+                                $map[$book_id][] = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
+                            }
+                        }
+                        return $map;
+                    }
+                );
+                // Clone bible and books so we don't mutate the cached bible
+                $bible_response = clone $bible;
+                $bible_response->setRelation('books', $bible->books->map(function ($book) use ($book_fileset_map) {
+                    $book = clone $book;
+                    $book->filesets = array_values($book_fileset_map[$book->book_id] ?? []);
+                    return $book;
+                }));
+                return fractal($bible_response, new BibleTransformer(), $this->serializer)->toArray();
+            }
+        );
     }
 
     /**
