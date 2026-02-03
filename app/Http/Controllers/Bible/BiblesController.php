@@ -415,9 +415,8 @@ class BiblesController extends APIController
         }
         $key_error_404 = 'api.bibles_errors_404';
         $access_group_ids = getAccessGroups();
-        $bible = Bible::whereId($id)->isContentAvailable($access_group_ids)->count();
-
-        if (!$bible) {
+        $bible_exists = Bible::whereId($id)->isContentAvailable($access_group_ids)->exists();
+        if (!$bible_exists) {
             return $this
                 ->setStatusCode(Response::HTTP_NOT_FOUND)
                 ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
@@ -449,52 +448,63 @@ class BiblesController extends APIController
             }
         );
 
-        // When verify_content === true, cache the serialized response and use batch fileset lookup
-        if ($verify_content === true && $bible && $bible->filesets->isNotEmpty()) {
-            $response_payload = ShowVerifyContentResponseCache::remember(
-                [$id, $access_group_ids->toString(), $include_font, $verify_content],
-                now()->addDay(),
-                function () use ($bible, $access_group_ids, $verify_content, $id) {
-                    $book_fileset_map = cacheRemember(
-                        'bibles_show_book_filesets',
-                        [$id, $access_group_ids->toString(), $verify_content],
-                        now()->addDay(),
-                        function () use ($bible) {
-                            $batch_resolver = new FilesetBookIdBatchResolver();
-                            $single_resolver = new FilesetBookIdResolver();
-                            $fileset_book_ids = $batch_resolver->resolve($bible->filesets);
-                            $map = [];
-                            foreach ($bible->filesets as $fileset) {
-                                $book_ids = $fileset_book_ids[$fileset->id]
-                                    ?? $single_resolver->resolve($fileset, $bible->versification);
-                                foreach ($book_ids as $book_id) {
-                                    $map[$book_id] = $map[$book_id] ?? [];
-                                    $map[$book_id][] = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
-                                }
-                            }
-                            return $map;
-                        }
-                    );
-                    // Clone bible and books so we don't mutate the cached bible
-                    $bible_response = clone $bible;
-                    $bible_response->setRelation('books', $bible->books->map(function ($book) use ($book_fileset_map) {
-                        $book = clone $book;
-                        $book->filesets = array_values($book_fileset_map[$book->book_id] ?? []);
-                        return $book;
-                    }));
-                    return fractal($bible_response, new BibleTransformer(), $this->serializer)->toArray();
-                }
-            );
-            return $this->reply($response_payload);
-        }
-
         if (!$bible || !sizeof($bible->filesets)) {
             return $this
                 ->setStatusCode(Response::HTTP_NOT_FOUND)
                 ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
+        // When verify_content === true, cache the serialized response and use batch fileset lookup
+        if ($verify_content === true && $bible->filesets->isNotEmpty()) {
+            $response_payload = $this->buildVerifyContentResponsePayload(
+                $bible,
+                $access_group_ids,
+                $include_font,
+                $verify_content,
+                $id
+            );
+            return $this->reply($response_payload);
+        }
+
         return $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
+    }
+
+    private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id) : array
+    {
+        return ShowVerifyContentResponseCache::remember(
+            [$id, $access_group_ids->toString(), $include_font, $verify_content],
+            now()->addDay(),
+            function () use ($bible, $access_group_ids, $verify_content, $id) {
+                $book_fileset_map = cacheRemember(
+                    'bibles_show_book_filesets',
+                    [$id, $access_group_ids->toString(), $verify_content],
+                    now()->addDay(),
+                    function () use ($bible) {
+                        $batch_resolver = new FilesetBookIdBatchResolver();
+                        $single_resolver = new FilesetBookIdResolver();
+                        $fileset_book_ids = $batch_resolver->resolve($bible->filesets);
+                        $map = [];
+                        foreach ($bible->filesets as $fileset) {
+                            $book_ids = $fileset_book_ids[$fileset->id]
+                                ?? $single_resolver->resolve($fileset);
+                            foreach ($book_ids as $book_id) {
+                                $map[$book_id] = $map[$book_id] ?? [];
+                                $map[$book_id][] = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
+                            }
+                        }
+                        return $map;
+                    }
+                );
+                // Clone bible and books so we don't mutate the cached bible
+                $bible_response = clone $bible;
+                $bible_response->setRelation('books', $bible->books->map(function ($book) use ($book_fileset_map) {
+                    $book = clone $book;
+                    $book->filesets = array_values($book_fileset_map[$book->book_id] ?? []);
+                    return $book;
+                }));
+                return fractal($bible_response, new BibleTransformer(), $this->serializer)->toArray();
+            }
+        );
     }
 
     /**
