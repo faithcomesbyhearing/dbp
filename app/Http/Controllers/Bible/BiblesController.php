@@ -28,6 +28,9 @@ use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Language\Language;
 use App\Services\Bibles\BibleFilesetService;
+use App\Services\Bibles\FilesetBookIdBatchResolver;
+use App\Services\Bibles\FilesetBookIdResolver;
+use App\Services\Bibles\ShowVerifyContentResponseCache;
 use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
@@ -383,6 +386,12 @@ class BiblesController extends APIController
      *     operationId="v4_bible.one",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
      *     @OA\Parameter(name="include_font",in="query"),
+     *     @OA\Parameter(
+     *          name="verify_content",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, each entry in books includes a filesets array of { id, type } for all filesets that have content for that book; same id can appear with different types."
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -399,6 +408,7 @@ class BiblesController extends APIController
         $id   = checkParam('dam_id', false, $id);
 
         $include_font = is_null(checkParam('include_font')) ? true : checkBoolean('include_font', false);
+        $verify_content = is_null(checkParam('verify_content')) ? true : checkBoolean('verify_content', false);
 
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
@@ -438,6 +448,45 @@ class BiblesController extends APIController
                 ])->find($id);
             }
         );
+
+        // When verify_content === true, cache the serialized response and use batch fileset lookup
+        if ($verify_content === true && $bible && $bible->filesets->isNotEmpty()) {
+            $response_payload = ShowVerifyContentResponseCache::remember(
+                [$id, $access_group_ids->toString(), $include_font, $verify_content],
+                now()->addDay(),
+                function () use ($bible, $access_group_ids, $verify_content, $id) {
+                    $book_fileset_map = cacheRemember(
+                        'bibles_show_book_filesets',
+                        [$id, $access_group_ids->toString(), $verify_content],
+                        now()->addDay(),
+                        function () use ($bible) {
+                            $batch_resolver = new FilesetBookIdBatchResolver();
+                            $single_resolver = new FilesetBookIdResolver();
+                            $fileset_book_ids = $batch_resolver->resolve($bible->filesets);
+                            $map = [];
+                            foreach ($bible->filesets as $fileset) {
+                                $book_ids = $fileset_book_ids[$fileset->id]
+                                    ?? $single_resolver->resolve($fileset, $bible->versification);
+                                foreach ($book_ids as $book_id) {
+                                    $map[$book_id] = $map[$book_id] ?? [];
+                                    $map[$book_id][] = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
+                                }
+                            }
+                            return $map;
+                        }
+                    );
+                    // Clone bible and books so we don't mutate the cached bible
+                    $bible_response = clone $bible;
+                    $bible_response->setRelation('books', $bible->books->map(function ($book) use ($book_fileset_map) {
+                        $book = clone $book;
+                        $book->filesets = array_values($book_fileset_map[$book->book_id] ?? []);
+                        return $book;
+                    }));
+                    return fractal($bible_response, new BibleTransformer(), $this->serializer)->toArray();
+                }
+            );
+            return $this->reply($response_payload);
+        }
 
         if (!$bible || !sizeof($bible->filesets)) {
             return $this
