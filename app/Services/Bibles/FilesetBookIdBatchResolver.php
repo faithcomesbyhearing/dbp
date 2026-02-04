@@ -2,7 +2,6 @@
 
 namespace App\Services\Bibles;
 
-
 use Illuminate\Support\Facades\Log;
 use App\Models\Bible\BibleFilesetSize;
 use App\Models\Bible\BibleVerse;
