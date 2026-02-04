@@ -11,7 +11,6 @@ class FilesetBookIdResolver
      * Resolve book IDs for a single fileset without re-fetching it.
      *
      * @param BibleFileset $fileset
-     * @param string $versification
      *
      * @return array
      */
