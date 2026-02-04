@@ -419,7 +419,7 @@ class BiblesController extends APIController
         $id   = checkParam('dam_id', false, $id);
 
         $include_font = is_null(checkParam('include_font')) ? true : checkBoolean('include_font', false);
-        $verify_content = is_null(checkParam('verify_content')) ? true : checkBoolean('verify_content', false);
+        $verify_content = is_null(checkParam('verify_content')) ? false : checkBoolean('verify_content', false);
 
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
