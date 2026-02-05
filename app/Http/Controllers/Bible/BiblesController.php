@@ -427,64 +427,59 @@ class BiblesController extends APIController
         $key_error_404 = 'api.bibles_errors_404';
         $access_group_ids = getAccessGroups();
         $bible_exists = Bible::whereId($id)->isContentAvailable($access_group_ids)->exists();
-        $error_response = null;
         if (!$bible_exists) {
-            $error_response = $this
+            return $this
                 ->setStatusCode(Response::HTTP_NOT_FOUND)
                 ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
-        $bible = null;
-        if (!$error_response) {
-            $cache_params = [$id, $access_group_ids->toString(), $include_font];
-            $bible = cacheRemember(
-                'bibles_show',
-                $cache_params,
-                now()->addDay(),
-                function () use ($access_group_ids, $id, $include_font) {
-                    return Bible::with([
-                        'translations',
-                        'books.book',
-                        'links',
-                        'organizations.logo',
-                        'organizations.logoIcon',
-                        'organizations.translations',
-                        'alphabet.primaryFont',
-                        'filesets' => function ($query) use ($access_group_ids, $include_font) {
-                            $query->isContentAvailable($access_group_ids)
-                                ->when($include_font, function ($sub_query) {
-                                    $sub_query->with('fonts');
-                                })
-                                ->conditionToExcludeOldTextFormat()
-                                ->conditionToExcludeOldDA16Format();
-                        }
-                    ])->find($id);
-                }
-            );
-            if (!$bible || !sizeof($bible->filesets)) {
-                $error_response = $this
-                    ->setStatusCode(Response::HTTP_NOT_FOUND)
-                    ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
-            }
+        $bible = $this->loadBibleForShow($id, $access_group_ids, $include_font);
+        if (!$bible || !sizeof($bible->filesets)) {
+            return $this
+                ->setStatusCode(Response::HTTP_NOT_FOUND)
+                ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
-        if ($error_response) {
-            return $error_response;
-        }
-
-        // When verify_content === true, cache the serialized response and use batch fileset lookup
-        if ($verify_content === true && $bible->filesets->isNotEmpty()) {
-            $response_payload = $this->buildVerifyContentResponsePayload(
+        $response = $verify_content === true && $bible->filesets->isNotEmpty()
+            ? $this->reply($this->buildVerifyContentResponsePayload(
                 $bible,
                 $access_group_ids,
                 $include_font,
                 $verify_content,
                 $id
-            );
-            return $this->reply($response_payload);
-        }
+            ))
+            : $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
 
-        return $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
+        return $response;
+    }
+
+    private function loadBibleForShow(string $id, $access_group_ids, bool $include_font)
+    {
+        $cache_params = [$id, $access_group_ids->toString(), $include_font];
+        return cacheRemember(
+            'bibles_show',
+            $cache_params,
+            now()->addDay(),
+            function () use ($access_group_ids, $id, $include_font) {
+                return Bible::with([
+                    'translations',
+                    'books.book',
+                    'links',
+                    'organizations.logo',
+                    'organizations.logoIcon',
+                    'organizations.translations',
+                    'alphabet.primaryFont',
+                    'filesets' => function ($query) use ($access_group_ids, $include_font) {
+                        $query->isContentAvailable($access_group_ids)
+                            ->when($include_font, function ($sub_query) {
+                                $sub_query->with('fonts');
+                            })
+                            ->conditionToExcludeOldTextFormat()
+                            ->conditionToExcludeOldDA16Format();
+                    }
+                ])->find($id);
+            }
+        );
     }
 
     private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id) : array

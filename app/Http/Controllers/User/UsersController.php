@@ -161,7 +161,7 @@ class UsersController extends APIController
      *     path="/login",
      *     tags={"Users"},
      *     summary="Login a user",
-     *     description="Login endpoint supports email/password or social provider authentication. 
+     *     description="Login endpoint supports email/password or social provider authentication.
      *                  For social providers, optional 'autocreate' parameter controls behavior when 
      *                  account doesn't exist (default: true). Use /users endpoint to create new accounts.",
      *     operationId="v4_internal_user.login",
@@ -187,8 +187,8 @@ class UsersController extends APIController
      *     ),
      *     @OA\Response(
      *         response=401,
-     *         description="Authentication failed. For social providers with autocreate=false, this indicates 
-     *                      the account doesn't exist and signup is required",
+     *         description="Authentication failed. For social providers with autocreate=false,
+     *                      this indicates the account doesn't exist and signup is required",
      *         @OA\JsonContent(
      *             @OA\Property(property="error", type="string", example="No account found for this Facebook account. Please sign up first.")
      *         )
@@ -362,7 +362,7 @@ class UsersController extends APIController
             return null;
         }
 
-        // autocreate is true (default behavior) - auto-create account (CURRENT FLOW)
+        // autocreate is true (default behavior) - auto-create account
         $no_match_log = 'social provider login with no matching DBP info. request:' . json_encode($request->all())
                         . ', provider_id: ' . $provider_id . ', provider_user_id: ' . $provider_user_id;
         Log::error($no_match_log);
