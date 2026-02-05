@@ -440,7 +440,7 @@ class BiblesController extends APIController
                 ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
-        $response = $verify_content === true && $bible->filesets->isNotEmpty()
+        return $verify_content === true && $bible->filesets->isNotEmpty()
             ? $this->reply($this->buildVerifyContentResponsePayload(
                 $bible,
                 $access_group_ids,
@@ -449,8 +449,6 @@ class BiblesController extends APIController
                 $id
             ))
             : $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
-
-        return $response;
     }
 
     private function loadBibleForShow(string $id, $access_group_ids, bool $include_font)
