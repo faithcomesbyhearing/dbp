@@ -162,7 +162,7 @@ class UsersController extends APIController
      *     tags={"Users"},
      *     summary="Login a user",
      *     description="Login endpoint supports email/password or social provider authentication.
-     *                  For social providers, optional 'autocreate' parameter controls behavior when 
+     *                  For social providers, optional 'autocreate' parameter controls behavior when
      *                  account doesn't exist (default: true). Use /users endpoint to create new accounts.",
      *     operationId="v4_internal_user.login",
      *     @OA\RequestBody(required=true, description="Either the `email` & `password` or the `social_provider_user_id` & `social_provider_id` are required for user Login", @OA\MediaType(mediaType="application/json",
