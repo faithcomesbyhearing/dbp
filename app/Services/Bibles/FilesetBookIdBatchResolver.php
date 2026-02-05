@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\DB;
 class FilesetBookIdBatchResolver
 {
     /**
-     * Resolve book IDs for multiple filesets in one pass.
+     * Resolves book IDs for multiple filesets in one pass.
+     * Based on Book::getActiveBooksFromFileset query.
+     * Main differences:
+     *  - Processes filesets in batches,
+     *  - Implements AP fallback to Complete and OT filesets,
+     *  - Plain-text handling: ensures only books that actually exist in content are returned
      *
      * @param Collection $filesets
      *
@@ -90,15 +95,20 @@ class FilesetBookIdBatchResolver
             })
             ->rightJoin('books', 'books.id', 'bible_books.book_id')
             ->where(function ($query) {
-                $size_code_expression = new Expression("fileset.set_size_code LIKE CONCAT('%', books.book_testament, '%')");
-                $covenant_expression = new Expression("(fileset.set_size_code = '".BibleFilesetSize::SIZE_STORIES."' AND books.book_testament = '".Book::COVENANT_TESTAMENT."')");
-                $ap_fallback_expression = new Expression("(books.book_testament = 'AP' AND (fileset.set_size_code = '".BibleFilesetSize::SIZE_COMPLETE."' OR fileset.set_size_code LIKE '%OT%'))");
-                $query->orWhereColumn('fileset.set_size_code', '=', 'books.book_testament')
-                    ->orWhere('fileset.set_size_code', BibleFilesetSize::SIZE_COMPLETE)
-                    ->orWhereRaw($size_code_expression->getValue(DB::connection()->getQueryGrammar()))
-                    ->orWhereRaw($covenant_expression->getValue(DB::connection()->getQueryGrammar()));
-                $query->orWhereRaw($ap_fallback_expression->getValue(DB::connection()->getQueryGrammar()));
+                $this->buildBookTestamentConditions($query);
             });
+    }
+
+    private function buildBookTestamentConditions($query) : void
+    {
+        $size_code_expression = new Expression("fileset.set_size_code LIKE CONCAT('%', books.book_testament, '%')");
+        $covenant_expression = new Expression("(fileset.set_size_code = '".BibleFilesetSize::SIZE_STORIES."' AND books.book_testament = '".Book::COVENANT_TESTAMENT."')");
+        $ap_fallback_expression = new Expression("(books.book_testament = 'AP' AND (fileset.set_size_code = '".BibleFilesetSize::SIZE_COMPLETE."' OR fileset.set_size_code LIKE '%OT%'))");
+        $query->orWhereColumn('fileset.set_size_code', '=', 'books.book_testament')
+            ->orWhere('fileset.set_size_code', BibleFilesetSize::SIZE_COMPLETE)
+            ->orWhereRaw($size_code_expression->getValue(DB::connection()->getQueryGrammar()))
+            ->orWhereRaw($covenant_expression->getValue(DB::connection()->getQueryGrammar()))
+            ->orWhereRaw($ap_fallback_expression->getValue(DB::connection()->getQueryGrammar()));
     }
 
     private function accumulateResults(array &$results, $rows) : void
