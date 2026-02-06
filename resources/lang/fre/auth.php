@@ -18,7 +18,7 @@ return [
     'social_account_not_found' => 'Aucun compte trouvé pour ce compte :provider. Veuillez vous inscrire d\'abord.',
 
     // Activation items
-    'sentEmail'        => 'Noua avons envoyé un email à :email.',
+    'sentEmail'        => 'Nous avons envoyé un email à :email.',
     'clickInEmail'     => 'Cliquez sur le lien pour activer votre compte.',
     'anEmailWasSent'   => 'Un email a été expédié à :email le :date.',
     'clickHereResend'  => 'Cliquez pour réexpédier le mail.',

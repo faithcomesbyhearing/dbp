@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Bible\BibleFilesetSize;
 use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
-use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -101,14 +100,20 @@ class FilesetBookIdBatchResolver
 
     private function buildBookTestamentConditions($query) : void
     {
-        $size_code_expression = new Expression("fileset.set_size_code LIKE CONCAT('%', books.book_testament, '%')");
-        $covenant_expression = new Expression("(fileset.set_size_code = '".BibleFilesetSize::SIZE_STORIES."' AND books.book_testament = '".Book::COVENANT_TESTAMENT."')");
-        $ap_fallback_expression = new Expression("(books.book_testament = 'AP' AND (fileset.set_size_code = '".BibleFilesetSize::SIZE_COMPLETE."' OR fileset.set_size_code LIKE '%OT%'))");
         $query->orWhereColumn('fileset.set_size_code', '=', 'books.book_testament')
             ->orWhere('fileset.set_size_code', BibleFilesetSize::SIZE_COMPLETE)
-            ->orWhereRaw($size_code_expression->getValue(DB::connection()->getQueryGrammar()))
-            ->orWhereRaw($covenant_expression->getValue(DB::connection()->getQueryGrammar()))
-            ->orWhereRaw($ap_fallback_expression->getValue(DB::connection()->getQueryGrammar()));
+            ->orWhere('fileset.set_size_code', 'LIKE', DB::raw("CONCAT('%', books.book_testament, '%')"))
+            ->orWhere(function ($subQuery) {
+                $subQuery->where('fileset.set_size_code', BibleFilesetSize::SIZE_STORIES)
+                    ->where('books.book_testament', Book::COVENANT_TESTAMENT);
+            })
+            ->orWhere(function ($subQuery) {
+                $subQuery->where('books.book_testament', Book::AP_TESTAMENT)
+                    ->where(function ($subQueryInner) {
+                        $subQueryInner->where('fileset.set_size_code', BibleFilesetSize::SIZE_COMPLETE)
+                            ->orWhere('fileset.set_size_code', 'LIKE', '%' . BibleFilesetSize::SIZE_OLD_TESTAMENT . '%');
+                    });
+            });
     }
 
     private function accumulateResults(array &$results, $rows) : void
