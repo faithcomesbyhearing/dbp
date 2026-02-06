@@ -30,7 +30,6 @@ use App\Models\Language\Language;
 use App\Services\Bibles\BibleFilesetService;
 use App\Services\Bibles\FilesetBookIdBatchResolver;
 use App\Services\Bibles\FilesetBookIdResolver;
-use App\Services\Bibles\ShowVerifyContentResponseCache;
 use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
@@ -482,7 +481,7 @@ class BiblesController extends APIController
 
     private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id) : array
     {
-        return ShowVerifyContentResponseCache::remember(
+        return cacheRemember('bibles_show_verify_content_response',
             [$id, $access_group_ids->toString(), $include_font, $verify_content],
             now()->addDay(),
             function () use ($bible, $access_group_ids, $verify_content, $id) {

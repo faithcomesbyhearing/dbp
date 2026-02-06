@@ -348,11 +348,20 @@ class UsersController extends APIController
         $autocreate = ($autocreate_param !== null)
             ? checkBoolean('autocreate', false)
             : true; // Default to true if not provided
-
+        $safe_log_fields = $request->only([
+            'name',
+            'first_name',
+            'last_name',
+            'email',
+            'project_id',
+            'social_provider_id',
+            'social_provider_user_id',
+            'autocreate',
+        ]);
         // If autocreate is explicitly false, return null to trigger 401
         if ($autocreate === false) {
             $no_match_log = 'social provider login with no matching DBP account. ' .
-                            'request:' . json_encode($request->all()) .
+                            'request:' . json_encode($safe_log_fields) .
                             ', provider_id: ' . $provider_id .
                             ', provider_user_id: ' . $provider_user_id .
                             ', autocreate: false';
@@ -363,8 +372,11 @@ class UsersController extends APIController
         }
 
         // autocreate is true (default behavior) - auto-create account
-        $no_match_log = 'social provider login with no matching DBP info. request:' . json_encode($request->all())
-                        . ', provider_id: ' . $provider_id . ', provider_user_id: ' . $provider_user_id;
+        $no_match_log = 'social provider login with no matching DBP info.' .
+                        ' request:' . json_encode($safe_log_fields) .
+                        ', provider_id: ' . $provider_id .
+                        ', provider_user_id: ' . $provider_user_id .
+                        ', autocreate: true';
         Log::error($no_match_log);
         // Verify a user with the email exist
         if (!$request->email) {
@@ -382,7 +394,7 @@ class UsersController extends APIController
                 'activated' => 0,
                 'password' => \Hash::make(Str::random(10))
             ]);
-            $user_created_log = 'new user created with userid:' . $user->id . ', request: ' . json_encode($request->all());
+            $user_created_log = 'new user created with userid:' . $user->id . ', request: ' . json_encode($safe_log_fields);
             Log::error($user_created_log);
 
             Profile::create([
@@ -406,7 +418,7 @@ class UsersController extends APIController
 
         // if exists update the provider_user_id (For now throw error to newrelic)
         if ($existing_account && ($provider_user_id !== $existing_account->provider_user_id)) {
-            $provider_error_message = 'Login error on request' . json_encode($request->all()) . ' with different provider_user_id ' . $provider_user_id .
+            $provider_error_message = 'Login error on request' . json_encode($safe_log_fields) . ' with different provider_user_id ' . $provider_user_id .
                                       ' on account data:' . json_encode($existing_account);
             Log::error($provider_error_message);
         }

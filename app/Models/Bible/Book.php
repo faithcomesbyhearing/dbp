@@ -63,6 +63,7 @@ class Book extends Model
 {
     public const NEW_TESTAMENT = 'S';
     public const COVENANT_TESTAMENT = 'CV';
+    public const AP_TESTAMENT = 'AP';
 
     protected $connection = 'dbp';
     protected $table = 'books';
