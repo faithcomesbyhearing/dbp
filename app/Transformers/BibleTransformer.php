@@ -119,6 +119,12 @@ class BibleTransformer extends BaseTransformer
      *              @OA\Property(property="language_altNames", ref="#/components/schemas/LanguageTranslation/properties/name"),
      *              @OA\Property(property="iso",               ref="#/components/schemas/Language/properties/iso"),
      *              @OA\Property(property="date",              ref="#/components/schemas/Bible/properties/date"),
+     *              @OA\Property(
+     *                  property="country_id",
+     *                  type="string",
+     *                  description="Country ID from languages.country_id (only included when show_country=true)",
+     *                  nullable=true
+     *              ),
      *              @OA\Property(property="filesets", type="object",
      *                         @OA\Property(property="dbp-prod",type="array", @OA\Items(ref="#/components/schemas/BibleFileset"))
      *              )
@@ -227,6 +233,11 @@ class BibleTransformer extends BaseTransformer
                     'iso'               => $bible->iso ?? null,
                     'date'              => $bible->date
                 ];
+
+                // Add country_id if it exists (will only exist if show_country was true)
+                if (isset($bible->country_id)) {
+                    $output['country_id'] = $bible->country_id;
+                }
 
                 if ($bible->relationLoaded('filesets')) {
                     $output['filesets'] = $bible->filesets->mapToGroups(function ($item, $key) {
