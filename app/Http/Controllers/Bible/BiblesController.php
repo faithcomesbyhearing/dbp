@@ -28,6 +28,8 @@ use App\Models\Bible\BibleVerse;
 use App\Models\Bible\Book;
 use App\Models\Language\Language;
 use App\Services\Bibles\BibleFilesetService;
+use App\Services\Bibles\FilesetBookIdBatchResolver;
+use App\Services\Bibles\FilesetBookIdResolver;
 use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
@@ -84,6 +86,13 @@ class BiblesController extends APIController
      *          description="This will return results only which have audio timing information available for that bible. The timing information is stored in table bible_file_timestamps.",
      *          example="true"
      *     ),
+     *     @OA\Parameter(
+     *          name="show_country",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="Include country_id field in response. When true, adds country_id field containing the country ID from languages.country_id.",
+     *          example="true"
+     *     ),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Response(
@@ -106,6 +115,7 @@ class BiblesController extends APIController
         $media              = checkParam('media');
         $media_exclude      = checkParam('media_exclude');
         $audio_timing       = checkParam('audio_timing') ?? false;
+        $show_country       = checkBoolean('show_country', false);
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
         $limit              = (int) (checkParam('limit') ?? 50);
@@ -154,7 +164,8 @@ class BiblesController extends APIController
             $is_bibleis_gideons,
             $order_cache_key,
             $access_group_ids->toString(),
-            $audio_timing
+            $audio_timing,
+            $show_country
         ]);
 
         $bibles = cacheRemember(
@@ -173,7 +184,8 @@ class BiblesController extends APIController
                 $tag_exclude,
                 $limit,
                 $order_by,
-                $audio_timing
+                $audio_timing,
+                $show_country
             ) {
                 $bibles = Bible::filterByLanguage($language_code)
                 ->withRequiredFilesets([
@@ -233,6 +245,7 @@ class BiblesController extends APIController
                         MIN(language_autonym.name) as language_autonym,
                         MIN(language_current.name) as language_current,
                         MIN(languages.rolv_code) as language_rolv_code,
+                        ' . ($show_country ? 'MIN(languages.country_id) as country_id,' : '') . '
                         MIN(bibles.priority) as priority,
                         MIN(bibles.id) as id'
                     )
@@ -383,6 +396,12 @@ class BiblesController extends APIController
      *     operationId="v4_bible.one",
      *     @OA\Parameter(name="id",in="path",required=true,@OA\Schema(ref="#/components/schemas/Bible/properties/id")),
      *     @OA\Parameter(name="include_font",in="query"),
+     *     @OA\Parameter(
+     *          name="verify_content",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, each entry in books includes a filesets array of { id, type } for all filesets that have content for that book; same id can appear with different types."
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -399,22 +418,42 @@ class BiblesController extends APIController
         $id   = checkParam('dam_id', false, $id);
 
         $include_font = is_null(checkParam('include_font')) ? true : checkBoolean('include_font', false);
+        $verify_content = is_null(checkParam('verify_content')) ? false : checkBoolean('verify_content', false);
 
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
         }
         $key_error_404 = 'api.bibles_errors_404';
         $access_group_ids = getAccessGroups();
-        $bible = Bible::whereId($id)->isContentAvailable($access_group_ids)->count();
-
-        if (!$bible) {
+        $bible_exists = Bible::whereId($id)->isContentAvailable($access_group_ids)->exists();
+        if (!$bible_exists) {
             return $this
                 ->setStatusCode(Response::HTTP_NOT_FOUND)
                 ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
         }
 
+        $bible = $this->loadBibleForShow($id, $access_group_ids, $include_font);
+        if (!$bible || !sizeof($bible->filesets)) {
+            return $this
+                ->setStatusCode(Response::HTTP_NOT_FOUND)
+                ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
+        }
+
+        return $verify_content === true && $bible->filesets->isNotEmpty()
+            ? $this->reply($this->buildVerifyContentResponsePayload(
+                $bible,
+                $access_group_ids,
+                $include_font,
+                $verify_content,
+                $id
+            ))
+            : $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
+    }
+
+    private function loadBibleForShow(string $id, $access_group_ids, bool $include_font)
+    {
         $cache_params = [$id, $access_group_ids->toString(), $include_font];
-        $bible = cacheRemember(
+        return cacheRemember(
             'bibles_show',
             $cache_params,
             now()->addDay(),
@@ -438,14 +477,44 @@ class BiblesController extends APIController
                 ])->find($id);
             }
         );
+    }
 
-        if (!$bible || !sizeof($bible->filesets)) {
-            return $this
-                ->setStatusCode(Response::HTTP_NOT_FOUND)
-                ->replyWithError(trans($key_error_404, ['bible_id' => $id]));
-        }
-
-        return $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
+    private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id) : array
+    {
+        return cacheRemember('bibles_show_verify_content_response',
+            [$id, $access_group_ids->toString(), $include_font, $verify_content],
+            now()->addDay(),
+            function () use ($bible, $access_group_ids, $verify_content, $id) {
+                $book_fileset_map = cacheRemember(
+                    'bibles_show_book_filesets',
+                    [$id, $access_group_ids->toString(), $verify_content],
+                    now()->addDay(),
+                    function () use ($bible) {
+                        $batch_resolver = new FilesetBookIdBatchResolver();
+                        $single_resolver = new FilesetBookIdResolver();
+                        $fileset_book_ids = $batch_resolver->resolve($bible->filesets);
+                        $map = [];
+                        foreach ($bible->filesets as $fileset) {
+                            $book_ids = $fileset_book_ids[$fileset->id]
+                                ?? $single_resolver->resolve($fileset);
+                            foreach ($book_ids as $book_id) {
+                                $map[$book_id] = $map[$book_id] ?? [];
+                                $map[$book_id][] = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
+                            }
+                        }
+                        return $map;
+                    }
+                );
+                // Clone bible and books so we don't mutate the cached bible
+                $bible_response = clone $bible;
+                $bible_response->setRelation('books', $bible->books->map(function ($book) use ($book_fileset_map) {
+                    $book = clone $book;
+                    $book->filesets = array_values($book_fileset_map[$book->book_id] ?? []);
+                    return $book;
+                }));
+                return fractal($bible_response, new BibleTransformer(), $this->serializer)->toArray();
+            }
+        );
     }
 
     /**
