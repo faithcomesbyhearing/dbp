@@ -120,7 +120,7 @@ trait AccessControlAPI
     {
         $keys = config('auth.compat_users.api_keys.bibleis');
 
-        if (empty($keys)) {
+        if ($keys === null || trim((string) $keys) === '') {
             return false;
         }
 
