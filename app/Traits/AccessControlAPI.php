@@ -114,7 +114,7 @@ trait AccessControlAPI
      *
      * @param string $api_key
      *
-     * @return string
+     * @return bool
      */
     private function doesApiKeyBelongToBibleis(string $api_key) : bool
     {
