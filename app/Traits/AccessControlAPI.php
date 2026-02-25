@@ -125,10 +125,8 @@ trait AccessControlAPI
         }
 
         // Support multiple keys separated by comma
-        $allowed_keys = array_filter(
-            array_map('trim', explode(',', $keys)),
-            fn($key) => $key !== ''
-        );
+        $allowed_keys = array_map('trim', explode(',', $keys));
+
         return in_array($api_key, $allowed_keys, true);
     }
 
