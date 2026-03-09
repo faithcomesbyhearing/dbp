@@ -177,6 +177,52 @@ class BiblesRoutesTest extends ApiV4Test
 
     /**
      * @category V4_API
+     * @category Route Name: v4_bible.books
+     * @category Route Path: https://api.dbp.test/bibles/ENGESV/book?v=4&key={key}&verify_content=true
+     * @see      \App\Http\Controllers\Bible\BiblesController::books
+     * @group    BibleRoutes
+     * @group    V4
+     * @group    travis
+     * @test
+     */
+    public function bibleBooksVerifyContentContentTypesIsArray()
+    {
+        $path = route(
+            'v4_bible.books',
+            array_merge(['bible_id' => 'ENGESV', 'verify_content' => true], $this->params)
+        );
+        echo "\nTesting: $path";
+        $response = $this->withHeaders($this->params)->get($path);
+        $response->assertSuccessful();
+
+        $books = json_decode($response->getContent(), true)['data'] ?? [];
+
+        foreach ($books as $book) {
+            if (!isset($book['content_types'])) {
+                continue;
+            }
+
+            $content_types = $book['content_types'];
+
+            // content_types must be a sequential array, not an associative map
+            $this->assertIsArray($content_types, "content_types for {$book['book_id']} should be an array");
+            $this->assertEquals(
+                array_values($content_types),
+                $content_types,
+                "content_types for {$book['book_id']} should have sequential keys (not a map)"
+            );
+
+            // content_types should contain no duplicates
+            $this->assertCount(
+                count(array_unique($content_types)),
+                $content_types,
+                "content_types for {$book['book_id']} should not contain duplicates"
+            );
+        }
+    }
+
+    /**
+     * @category V4_API
      * @category Route Name: v4_bible.archival
      * @category Route Path: https://api.dbp.test/bibles/archival?v=4&key={key}
      * @see      \App\Http\Controllers\Bible\BiblesController::archival
