@@ -13,8 +13,8 @@ class FilesetBookIdBatchResolver
 {
     /**
      * Resolves book IDs for multiple filesets in one pass.
-     * Based on Book::getActiveBooksFromFileset query.
-     * Main differences:
+     * Resolves which books belong to each fileset by joining through
+     * bible_fileset_connections, bible_books, and content tables.
      *  - Processes filesets in batches,
      *  - Implements AP fallback to Complete and OT filesets,
      *  - Plain-text handling: ensures only books that actually exist in content are returned
