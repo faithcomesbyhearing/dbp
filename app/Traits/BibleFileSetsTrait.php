@@ -20,6 +20,19 @@ use DB;
 trait BibleFileSetsTrait
 {
     /**
+     * Extract the leading numeric portion from a verse string (e.g. '2b' → 2, '10a' → 10).
+     * Returns null if the value is empty or has no leading digits.
+     */
+    private function extractLeadingNumber(?string $value): ?int
+    {
+        if ($value !== null && preg_match('/^(\d+)/', $value, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return null;
+    }
+
+    /**
      * Build common query for audio/video filesets
      */
     private function buildAudioVideoFilesetQuery(
@@ -360,7 +373,8 @@ trait BibleFileSetsTrait
                     'fileset_id' => $fileset->id,
                     'book_id' => $fileset_chapter->book_id,
                     'chapter' => $fileset_chapter->chapter_start,
-                    'verse_start' => $fileset_chapter->verse_sequence,
+                    'verse_start' => $fileset_chapter->verse_sequence
+                        ?? $this->extractLeadingNumber($fileset_chapter->verse_start),
                     'verse_end' => $fileset_chapter->verse_end ? (int) $fileset_chapter->verse_end : null
                 ];
                 $fileset_chapters[$key]->file_name = route('v4_media_stream', array_filter(
