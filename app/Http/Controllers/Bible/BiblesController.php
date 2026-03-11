@@ -601,14 +601,13 @@ class BiblesController extends APIController
                 $cache_params,
                 now()->addDay(),
                 function () use ($books, $bible) {
-                    $book_controller = new BooksController();
+                    $batch_resolver = new FilesetBookIdBatchResolver();
+                    $fileset_book_ids = $batch_resolver->resolve($bible->filesets);
                     $active_books = [];
                     foreach ($bible->filesets as $fileset) {
-                        $books_fileset = $book_controller
-                            ->getActiveBooksFromFileset($fileset->id, $fileset->set_type_code)
-                            ->pluck('id');
+                        $book_ids = collect($fileset_book_ids[$fileset->id] ?? []);
                         $active_books = $this->processActiveBooks(
-                            $books_fileset,
+                            $book_ids,
                             $active_books,
                             $fileset->set_type_code
                         );
@@ -616,7 +615,9 @@ class BiblesController extends APIController
 
                     return $books->map(function ($book) use ($active_books) {
                         if (isset($active_books[$book->book_id])) {
-                            $book->content_types = array_unique($active_books[$book->book_id]);
+                            // Avoid returning duplicate content types for a book if multiple filesets contain the same book
+                            // array_values to reset keys after array_unique removes duplicates avoiding json serialization issues
+                            $book->content_types = array_values(array_unique($active_books[$book->book_id]));
                         }
                         return $book;
                     })->filter(function ($book) {
