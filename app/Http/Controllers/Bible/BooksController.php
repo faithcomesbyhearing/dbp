@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Bible;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\Bible\Book;
 use App\Models\Bible\BibleFileset;
+use App\Services\Bibles\FilesetBookIdBatchResolver;
 use App\Transformers\BooksTransformer;
 use App\Http\Controllers\APIController;
 use Illuminate\Http\JsonResponse;
@@ -84,30 +85,59 @@ class BooksController extends APIController
         $fileset_type = checkParam('fileset_type') ?? 'text_plain';
 
         $cache_params = [$id, $fileset_type];
-        $books = cacheRemember('v4_books', $cache_params, now()->addDay(), function () use ($fileset_type, $id) {
-            $books = $this->getActiveBooksFromFileset($id, $fileset_type);
-            if (isset($books->original, $books->original['error'])) {
-                return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError('Fileset Not Found');
+        $fileset = cacheRemember(
+            'v4_books_fileset',
+            $cache_params,
+            now()->addDay(),
+            function () use ($id, $fileset_type) {
+                return BibleFileset::with('bible')
+                    ->where('id', $id)
+                    ->where('set_type_code', $fileset_type)
+                    ->where('archived', false)
+                    ->where('content_loaded', true)
+                    ->first();
             }
+        );
+
+        if (!$fileset) {
+            return $this->setStatusCode(Response::HTTP_NOT_FOUND)
+                ->replyWithError('Fileset Not Found');
+        }
+
+        $bible = $fileset->bible->first();
+
+        if (!$bible) {
+            return $this->setStatusCode(Response::HTTP_NOT_FOUND)
+                ->replyWithError('Bible Not Found for Fileset');
+        }
+
+        $books = cacheRemember('v4_books', $cache_params, now()->addDay(), function () use ($fileset, $bible) {
+            $books = $this->getActiveBooksFromFileset($fileset, $bible->id, $bible->versification);
             return fractal($books, new BooksTransformer(), $this->serializer);
         });
 
         return $this->reply($books);
     }
 
-    public function getActiveBooksFromFileset($id, $fileset_type)
+    /**
+     * Returns the active books for a given fileset.
+     *
+     * @param BibleFileset $fileset
+     * @param string $bible_id
+     * @param string $versification
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getActiveBooksFromFileset(BibleFileset $fileset, string $bible_id, string $versification)
     {
-        $fileset = BibleFileset::with('bible')
-            ->where('id', $id)
-            ->where('set_type_code', $fileset_type)
-            ->where('archived', false)
-            ->where('content_loaded', true)
-            ->first();
-        if (!$fileset) {
-            return $this->setStatusCode(Response::HTTP_NOT_FOUND)->replyWithError('Fileset Not Found'); // BWF: shouldn't reply like this, as it masks error later on
+        $batch_resolver = new FilesetBookIdBatchResolver();
+        $fileset_book_ids = $batch_resolver->resolve(collect([$fileset]));
+        $book_ids = $fileset_book_ids[$fileset->id] ?? [];
+
+        if (empty($book_ids)) {
+            return collect();
         }
 
-        $versification = optional($fileset->bible->first())->versification;
-        return Book::getActiveBooksFromFileset($fileset, $versification, $fileset_type);
+        return Book::getBooksByIdsForBible($bible_id, $book_ids, $versification);
     }
 }
