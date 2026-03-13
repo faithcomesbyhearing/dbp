@@ -14,7 +14,7 @@
 
     {{-- Narsil --}}
 
-    @include('layouts.partials.banner', ['title' => 'Error'])
+    @include('layouts.partials.banner', ['title' => trans('auth.error_title')])
 
     <div class="container">
         <div class="content">
@@ -23,9 +23,15 @@
                 @isset($status)
                     <div class="message-header">{{ trans('api.errors_'.$status) }}</div>
                 @else
-                    <div class="message-header">{{ trans('api.errors'.$message) }}</div>
+                    <div class="message-header">{{ trans('auth.error_title') }}</div>
                 @endif
-                <div class="message-body">@if(isset($message)) {{ $message }} @endif</div>
+                <div class="message-body">
+                    @if(isset($message)) <p>{{ $message }}</p> @endif
+                    @if(isset($hint)) <p>{{ $hint }}</p> @endif
+                    @if(isset($action_url))
+                        <p><a href="{{ $action_url }}" class="button is-link">{{ $action_label ?? trans('auth.continue') }}</a></p>
+                    @endif
+                </div>
             </div>
 
         </div>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="{{ $htmlLang ?? 'en' }}">
 <head>
     <meta charset="utf-8">
     <style>
@@ -21,11 +21,11 @@
     </style>
 </head>
 <body>
-    <h2>{{ trans('auth.reset_email_heading', [], $project->iso) }}</h2>
-    <p>{{ trans('auth.reset_email_body', ['project_name' => $project->name], $project->iso) }}</p>
+    <h2>{{ trans('auth.reset_email_heading', [], $language) }}</h2>
+    <p>{{ trans('auth.reset_email_body', ['project_name' => $project->name], $language) }}</p>
     <p>
         <a class="button" href="{{ $project->url_reset ?? config('app.url').'/password/reset' }}/{{ $user->token}}">
-            {{ trans('auth.reset_email_action', [], $project->iso) }}
+            {{ trans('auth.reset_email_action', [], $language) }}
         </a>
     </p>
 </body>
