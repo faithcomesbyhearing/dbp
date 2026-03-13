@@ -59,6 +59,12 @@ return [
     please ignore this email. Otherwise please follow the button below to reset your password.',
     'reset_email_action'  => 'Reset Password',
 
+    'password_reset_success'  => 'Your password has been reset',
+    'password_min_length'     => 'Your password must be at least eight characters',
+    'passwords_do_not_match'  => 'Your passwords do not match',
+    'reset_successful'        => 'Reset Successful',
+    'continue_to'             => 'Continue to',
+
     // User flash messages
     'sendResetLink' => 'Send Password Reset Link',
     'resetPassword' => 'Reset Password',
@@ -83,5 +89,14 @@ return [
     'captchaRequire'   => 'Captcha is required',
     'CaptchaWrong'     => 'Wrong captcha, please try again.',
     'roleRequired'     => 'User role is required.',
+
+    // Misc UI
+    'error_title'  => 'Error',
+    'continue'     => 'Continue',
+    'please_wait'  => 'Please wait...',
+
+    // Invalid token
+    'no_matching_token' => 'No matching token found',
+    'invalid_token_hint' => 'This link may have expired or already been used. Please request a new password reset.',
 
 ];
