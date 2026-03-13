@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Http\Controllers\APIController;
 use App\Models\User\Project;
 use App\Models\User\ProjectMember;
@@ -25,13 +26,26 @@ class PasswordsController extends APIController
     {
         $reset_request = PasswordReset::where('token', $token)->first();
         if (!$reset_request) {
-            return $this->replyWithError('No matching Token found');
+            $browserLang = $request->getPreferredLanguage() ?? 'en';
+            $language = $this->normalizeLocale($browserLang);
+            app()->setLocale($language);
+            return view('layouts.errors.broken')->with([
+                'message'      => trans('auth.no_matching_token'),
+                'hint'         => trans('auth.invalid_token_hint'),
+                'action_url'   => route('password.request'),
+                'action_label' => trans('auth.sendResetLink'),
+            ]);
         }
-        return view('auth.passwords.reset', compact('reset_request'));
+        $language = $reset_request->language ?? 'eng';
+        app()->setLocale($language);
+        return view('auth.passwords.reset', compact('reset_request', 'language'));
     }
 
-    public function showRequestForm()
+    public function showRequestForm(Request $request)
     {
+        $browserLang = $request->getPreferredLanguage() ?? 'en';
+        $language = $this->normalizeLocale($browserLang);
+        app()->setLocale($language);
         $project = Project::where('name', 'Digital Bible Platform')->first();
         return view('auth.passwords.email', compact('project'));
     }
@@ -73,7 +87,7 @@ class PasswordsController extends APIController
     {
         $user = User::where('email', $request->email)->first();
         if (!$user) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.users_errors_404'));
+            return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(trans('api.users_errors_404'));
         }
         $project_id = checkParam('project_id', true);
 
@@ -85,18 +99,24 @@ class PasswordsController extends APIController
                 'project_id' => $project_id,
                 'role_id'    => $role->id ?? 'user'
             ]);
+            $connection->load('project');
         }
 
 
+        $iso = $request->input('iso', 'eng');
+        $language = $this->normalizeLocale($iso);
+
+        PasswordReset::where('email', $request->email)->delete();
         $generatedToken = PasswordReset::create([
             'email' => $request->email,
             'token' => Str::random(64),
             'reset_path' => $request->reset_path,
-            'created_at' => Carbon::now()
+            'created_at' => Carbon::now(),
+            'language' => $language
         ]);
         $user->token = $generatedToken->token;
 
-        \Mail::to($user)->send(new EmailPasswordReset($user, $connection->project));
+        \Mail::to($user)->send(new EmailPasswordReset($user, $connection->project, $language));
         if (!$this->api) {
             return view('auth.passwords.email-sent');
         }
@@ -148,7 +168,7 @@ class PasswordsController extends APIController
 
         // Validate Project / User Connection
         if ($is_logged && !$this->compareProjects($user->id, $this->key)) {
-            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+            return $this->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)->replyWithError(trans('api.projects_users_not_connected'));
         }
 
         $validator = Validator::make($request->all(), [
@@ -169,7 +189,7 @@ class PasswordsController extends APIController
             $errors = $validator->errors();
 
             if ($this->api) {
-                return $this->setStatusCode(401)->replyWithError($errors);
+                return $this->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)->replyWithError($errors);
             }
 
             return view('auth.passwords.reset', compact('token', 'errors'));
@@ -178,28 +198,76 @@ class PasswordsController extends APIController
         $user = $is_logged ? $user : User::where('email', $request->email)->first();
 
         if (!$user) {
-            return $this->setStatusCode(404)->replyWithError(trans('api.users_errors_404'));
+            return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(trans('api.users_errors_404'));
         }
 
         $password_match = \Hash::check($request->old_password, $user->password);
         if ($request->old_password && !$password_match) {
-            return $this->setStatusCode(401)->replyWithError(trans('auth.failed'));
+            return $this->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)->replyWithError(trans('auth.failed'));
         }
 
         $new_password = $request->new_password;
-        $user->password = \Hash::needsRehash($new_password) ? \Hash::make($new_password) : $new_password;
+        $user->password = \Hash::make($new_password);
         $user->save();
 
+        $reset_path = url('/');
         if ($request->token_id) {
             $reset = PasswordReset::where('email', $user->email)->where('token', $request->token_id)->first();
             if (!empty($reset)) {
+                if ($reset->reset_path && $this->isSafeRedirectUrl($reset->reset_path)) {
+                    $reset_path = $reset->reset_path;
+                }
                 $reset->delete();
             }
         }
 
         if ($this->api) {
             unset($user->api_token);
-            return $this->setStatusCode(200)->reply($user);
+            return $this->setStatusCode(HttpResponse::HTTP_OK)->reply($user);
         }
+        return view('auth.passwords.reset-successful', compact('reset_path'));
+    }
+
+    private function normalizeLocale(string $iso): string
+    {
+        $base = strtolower(preg_split('/[-_]/', $iso)[0]);
+        $map = [
+            // 2-letter -> directory name
+            'en' => 'eng', 'es' => 'spa', 'fr' => 'fre', 'ar' => 'arb',
+            'bn' => 'ben', 'da' => 'dan', 'de' => 'deu', 'el' => 'ell',
+            'fa' => 'fas', 'ha' => 'hau', 'he' => 'heb', 'hi' => 'hin',
+            'id' => 'ind', 'ig' => 'ibo', 'it' => 'ita', 'ja' => 'jpn',
+            'jv' => 'jav', 'ko' => 'kor', 'ku' => 'kmr', 'la' => 'lat',
+            'lt' => 'lit', 'ml' => 'mal', 'ms' => 'zlm', 'nl' => 'nld',
+            'pt' => 'por', 'ro' => 'ron', 'ru' => 'rus', 'sv' => 'swe',
+            'ta' => 'tam', 'te' => 'tel', 'th' => 'tha', 'tr' => 'tur',
+            'ur' => 'urd', 'vi' => 'vie', 'yo' => 'yor', 'zh' => 'cmn',
+            'az' => 'aze', 'uk' => 'ukr',
+            // 3-letter passthrough
+            'eng' => 'eng', 'spa' => 'spa', 'fre' => 'fre', 'fra' => 'fre',
+            'arb' => 'arb', 'ben' => 'ben', 'cmn' => 'cmn', 'deu' => 'deu',
+            'hin' => 'hin', 'por' => 'por', 'rus' => 'rus', 'tur' => 'tur',
+            'jpn' => 'jpn', 'kor' => 'kor', 'ita' => 'ita', 'vie' => 'vie',
+            'tha' => 'tha', 'ind' => 'ind', 'hau' => 'hau', 'yor' => 'yor',
+            'ibo' => 'ibo', 'fas' => 'fas', 'heb' => 'heb', 'urd' => 'urd',
+            'tam' => 'tam', 'tel' => 'tel', 'mal' => 'mal', 'ell' => 'ell',
+            'nld' => 'nld', 'ron' => 'ron', 'swe' => 'swe', 'dan' => 'dan',
+            'lit' => 'lit', 'jav' => 'jav', 'kmr' => 'kmr', 'zlm' => 'zlm',
+            'lat' => 'lat', 'aze' => 'aze', 'ukr' => 'ukr', 'shu' => 'arb',
+        ];
+        return $map[$base] ?? 'eng';
+    }
+
+    private function isSafeRedirectUrl(string $url): bool
+    {
+        $parsed = parse_url($url);
+        if (!$parsed || isset($parsed['scheme']) && !in_array($parsed['scheme'], ['http', 'https'], true)) {
+            return false;
+        }
+        if (isset($parsed['host'])) {
+            $appHost = parse_url(config('app.url'), PHP_URL_HOST);
+            return $parsed['host'] === $appHost;
+        }
+        return true;
     }
 }
