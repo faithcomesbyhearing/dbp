@@ -54,10 +54,21 @@ return [
     'ph_password'      => 'Mot de passe',
     'ph_password_conf' => 'Confirmez mot de passe',
 
+    'reset_email_heading' => 'Réinitialiser votre mot de passe',
+    'reset_email_body'    => ':project_name a reçu une demande de réinitialisation de votre mot de passe. Si vous n\'êtes pas à l\'origine de cette demande, veuillez ignorer cet e-mail. Sinon, cliquez sur le bouton ci-dessous pour réinitialiser votre mot de passe.',
+    'reset_email_action'  => 'Réinitialiser le mot de passe',
+
+    'password_reset_success'  => 'Votre mot de passe a été réinitialisé',
+    'password_min_length'     => 'Votre mot de passe doit contenir au moins huit caractères',
+    'passwords_do_not_match'  => 'Les mots de passe ne correspondent pas',
+    'reset_successful'        => 'Réinitialisation réussie',
+    'continue_to'             => 'Continuer vers',
+
     // User flash messages
     'sendResetLink' => 'Envoyer un lien de réinitialisation',
     'resetPassword' => 'Réinitialiser le mot de passe',
     'loggedIn'      => 'Vous êtes connecté',
+    'sessionExpired'=> 'Votre session semble avoir expiré. Veuillez réessayer.',
 
     // email links
     'pleaseActivate'    => 'Activez votre compte SVP.',
@@ -77,5 +88,14 @@ return [
     'captchaRequire'   => 'Merci d\utiliser le Captcha',
     'CaptchaWrong'     => 'Captcha incorrect, essayez à nouveau.',
     'roleRequired'     => 'Rôle utilisateur nécesaire.',
+
+    // Misc UI
+    'error_title'  => 'Erreur',
+    'continue'     => 'Continuer',
+    'please_wait'  => 'Veuillez patienter...',
+
+    // Invalid token
+    'no_matching_token' => 'Aucun jeton correspondant trouvé',
+    'invalid_token_hint' => 'Ce lien a peut-être expiré ou a déjà été utilisé. Veuillez demander une nouvelle réinitialisation de mot de passe.',
 
 ];
