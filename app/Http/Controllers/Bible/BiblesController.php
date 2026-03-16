@@ -114,7 +114,7 @@ class BiblesController extends APIController
         $country            = checkParam('country');
         $media              = checkParam('media');
         $media_exclude      = checkParam('media_exclude');
-        $audio_timing       = checkParam('audio_timing') ?? false;
+        $audio_timing       = checkBoolean('audio_timing') ?? false;
         $show_country       = checkBoolean('show_country', false);
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
