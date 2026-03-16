@@ -577,7 +577,7 @@ class PlansController extends APIController
             ->where('user_id', $user->id)
             ->get()->pluck('id');
 
-        $add_to_end = checkParam('add_to_end') ?? false;
+        $add_to_end = checkBoolean('add_to_end');
 
         $plan_days_data = $new_playlists->map(function ($item, $index) use ($plan, $add_to_end, $current_days_size) {
             return [
@@ -649,8 +649,7 @@ class PlansController extends APIController
                 ->replyWithError('User Plan Not Found');
         }
 
-        $complete = checkParam('complete') ?? true;
-        $complete = $complete && $complete !== 'false';
+        $complete = checkBoolean('complete');
 
         $result = null;
         try {

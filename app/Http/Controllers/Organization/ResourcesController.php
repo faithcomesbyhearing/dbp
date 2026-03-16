@@ -24,7 +24,7 @@ class ResourcesController extends APIController
         $iso             = checkParam('iso');
         $limit           = checkParam('limit') ?? 2000;
         $organization    = checkParam('organization_id');
-        $dialects        = checkParam('include_dialects');
+        $dialects        = checkBoolean('include_dialects');
 
         $resources = Resource::with('translations', 'links', 'organization.translations', 'language')
             ->when($iso, function ($query) use ($iso, $dialects) {
