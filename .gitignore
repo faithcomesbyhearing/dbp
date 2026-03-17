@@ -60,6 +60,9 @@ tools/permissionValidation/results/**
 tools/permissionValidation/myconfig.py
 tools/permissionValidation/runlog*
 
+# Generated backup files
+scripts/
+
 # Codebuild
 /artifacts/
 codebuild_build.sh

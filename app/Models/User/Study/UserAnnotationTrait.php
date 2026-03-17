@@ -55,6 +55,8 @@ trait UserAnnotationTrait
         // Select the bible_id and fileset_id for the bible fileset connections that match the fileset_ids.
         $bible_ids = BibleFilesetConnection::select('bible_id', 'bf.id as fileset_id')
             ->join('bible_filesets AS bf', 'bible_fileset_connections.hash_id', 'bf.hash_id')
+            ->where('bf.content_loaded', true)
+            ->where('bf.archived', false)
             ->whereIn('bf.id', array_keys($fileset_ids))
             ->groupBy('bible_fileset_connections.bible_id', 'bible_fileset_connections.bible_id')
             ->get();
