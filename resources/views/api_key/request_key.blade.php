@@ -1,7 +1,7 @@
 @extends('layouts.apiKey')
 @section('head')
 <title>Request your API key</title>
-{!! htmlScriptTagJsApi(['lang' => 'en']) !!}
+{!! NoCaptcha::renderJs('en') !!}
 @endsection
 
 @section('content')
@@ -62,7 +62,7 @@
           </div>
         @endif
         <div class="full-col__input-wrapper align-center mb-24">
-          {!! htmlFormSnippet() !!}
+          {!! NoCaptcha::display() !!}
         </div>
         <div class="full-col__input-wrapper align-center">
           <input type="submit" value="Submit" data-wait="Please wait..." class="btn-md btn--send mb-40 w-button">

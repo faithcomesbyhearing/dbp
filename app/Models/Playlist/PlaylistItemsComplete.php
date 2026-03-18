@@ -5,6 +5,7 @@ namespace App\Models\Playlist;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\ModelBase;
+use Illuminate\Support\Facades\DB;
 
 class PlaylistItemsComplete extends Model
 {
@@ -67,7 +68,7 @@ class PlaylistItemsComplete extends Model
     public static function removeItemsByPlayListsAndUser(Array $playlist_ids, int $user_id) : bool
     {
         return self::whereExists(function ($sub_query) use ($playlist_ids) {
-            return $sub_query->select(\DB::raw(1))
+            return $sub_query->select(DB::raw(1))
                 ->from('playlist_items as pli')
                 ->whereIn('pli.playlist_id', $playlist_ids)
                 ->whereColumn('pli.id', '=', 'playlist_items_completed.playlist_item_id');

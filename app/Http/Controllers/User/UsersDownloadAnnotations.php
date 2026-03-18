@@ -16,6 +16,7 @@ use App\Models\User\Study\Bookmark;
 use App\Models\User\Study\Note;
 use App\Models\User\Annotations;
 use App\Transformers\UsersDownloadAnnotationsTransFormer as Transformer;
+use Illuminate\Support\Facades\DB;
 
 class UsersDownloadAnnotations extends APIController
 {
@@ -164,7 +165,7 @@ class UsersDownloadAnnotations extends APIController
         $sort_dir = $this->checkSortDirParam();
 
         $order_by = !$sort_by
-            ? \DB::raw('user_notes.book_id, user_notes.chapter, user_notes.verse_start')
+            ? DB::raw('user_notes.book_id, user_notes.chapter, user_notes.verse_start')
             : 'user_notes.' . $sort_by;
 
         return Note::select([
@@ -227,7 +228,7 @@ class UsersDownloadAnnotations extends APIController
         $sort_dir = $this->checkSortDirParam();
 
         $order_by = !$sort_by
-            ? \DB::raw('user_bookmarks.book_id, user_bookmarks.chapter, user_bookmarks.verse_start')
+            ? DB::raw('user_bookmarks.book_id, user_bookmarks.chapter, user_bookmarks.verse_start')
             : 'user_bookmarks.' . $sort_by;
 
         return Bookmark::select([
@@ -290,7 +291,7 @@ class UsersDownloadAnnotations extends APIController
         $sort_dir = $this->checkSortDirParam();
 
         $order_by = !$sort_by
-            ? \DB::raw('user_highlights.book_id, user_highlights.chapter, user_highlights.verse_start')
+            ? DB::raw('user_highlights.book_id, user_highlights.chapter, user_highlights.verse_start')
             : 'user_highlights.' . $sort_by;
 
         $select_fields = [

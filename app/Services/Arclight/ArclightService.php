@@ -2,6 +2,7 @@
 
 namespace App\Services\Arclight;
 
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -56,7 +57,7 @@ class ArclightService
         }
 
         if (!$this->isSuccessful($response)) {
-            \Log::channel('errorlog')
+            Log::channel('errorlog')
             ->error([
                 "Arclight - Error URL:{$response->getInfo('url')} Error Code: '{$response->getStatusCode()}"
             ]);

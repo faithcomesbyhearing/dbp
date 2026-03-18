@@ -71,7 +71,7 @@ class ProjectRoutesTest extends ApiV4Test
     {
         $this->markTestIncomplete('Returns inconsistent success/failures');
         
-        $project = factory(Project::class)->create();
+        $project = Project::factory()->create();
         $user = Key::where('key', $this->key)->first()->user;
         $admin_role = Role::where('slug', 'admin')->first();
         ProjectMember::create([

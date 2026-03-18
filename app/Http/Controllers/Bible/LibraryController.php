@@ -16,6 +16,7 @@ use App\Transformers\V2\LibraryVolumeTransformer;
 use App\Transformers\V2\LibraryCatalog\LibraryMetadataTransformer;
 
 use App\Http\Controllers\APIController;
+use Illuminate\Support\Facades\DB;
 
 class LibraryController extends APIController
 {
@@ -502,7 +503,7 @@ class LibraryController extends APIController
                         'bible_filesets.hash_id'
                     )
                     ->select(
-                        \DB::raw(
+                        DB::raw(
                             'english_name.name as english_name,
                             autonym.name as autonym_name,
                             bibles.id as bible_id,
@@ -584,7 +585,7 @@ class LibraryController extends APIController
         $bible_filesets_with_bible_id = BibleFileset::whereIn('id', array_keys($filesets_ids))
             ->whereIn('bible_filesets.set_type_code', ['audio_stream', 'audio_drama_stream', 'audio', 'audio_drama'])
             ->select(
-                \DB::raw(
+                DB::raw(
                     'bible_filesets.id,
                     (SELECT bibles.id
                     FROM bibles

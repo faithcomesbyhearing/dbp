@@ -3,6 +3,7 @@
 namespace App\Models\Bible;
 
 use App\Models\Language\Language;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -48,6 +49,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class BibleTranslation extends Model
 {
+    use HasFactory;
+
     protected $connection = 'dbp';
     protected $hidden = ['created_at','updated_at','id','notes','pivot','language'];
     protected $fillable = ['name','description','bible_id','iso'];
@@ -164,6 +167,11 @@ class BibleTranslation extends Model
      *
      */
     protected $notes;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Bible\BibleTranslationFactory::new();
+    }
 
     public function getIsoAttribute()
     {

@@ -659,7 +659,7 @@ class PlaylistItems extends Model implements Sortable
             'verse_sequence',
             'verses',
             'duration',
-            \DB::Raw('IF(playlist_items_completed.playlist_item_id, true, false) as completed'),
+            DB::Raw('IF(playlist_items_completed.playlist_item_id, true, false) as completed'),
         ])
         ->leftJoin('playlist_items_completed', function ($query_join) use ($user_id) {
             $query_join
@@ -708,7 +708,7 @@ class PlaylistItems extends Model implements Sortable
             'order_column',
             'verses',
             'duration',
-            \DB::Raw('false as completed'),
+            DB::Raw('false as completed'),
         ])
             ->whereIn('playlist_id', $playlist_ids)
             ->with(['fileset' => function ($query_fileset) {
@@ -749,7 +749,7 @@ class PlaylistItems extends Model implements Sortable
             'order_column',
             'verses',
             'duration',
-            \DB::Raw('false as completed'),
+            DB::Raw('false as completed'),
         ])
             ->where('playlist_id', $playlist_id)
             ->with(['fileset' => function ($query_fileset) {

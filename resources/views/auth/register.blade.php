@@ -61,7 +61,7 @@
                     @if(config('settings.reCaptchStatus'))
                         <div class="form-group">
                             <div class="col-sm-6 col-sm-offset-4">
-                                <div class="g-recaptcha" data-sitekey="{{ config('settings.reCaptchSite') }}"></div>
+                                {!! NoCaptcha::display() !!}
                             </div>
                         </div>
                     @endif
@@ -76,6 +76,6 @@
 
 @section('footer_scripts')
     @if(config('settings.reCaptchStatus'))
-        <script src='https://www.google.com/recaptcha/api.js'></script>
+        {!! NoCaptcha::renderJs() !!}
     @endif
 @endsection

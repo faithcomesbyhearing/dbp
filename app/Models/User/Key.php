@@ -3,6 +3,7 @@
 namespace App\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\User\Key
@@ -31,6 +32,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Key extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\User\KeyFactory::new();
+    }
+
     protected $connection = 'dbp_users';
     protected $table = 'user_keys';
     protected $fillable = ['key','name','description','user_id'];

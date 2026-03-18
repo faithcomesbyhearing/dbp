@@ -12,6 +12,7 @@ use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class LanguagesController extends APIController
 {
@@ -179,7 +180,7 @@ class LanguagesController extends APIController
                         'autonym.name as autonym',
                         'languages.rolv_code',
                         'languages.deleted_at',
-                        \DB::raw($select_country_population . ' as country_population')
+                        DB::raw($select_country_population . ' as country_population')
                     ])
                     ->with(['bibles' => function ($query) {
                         $query->whereHas('filesets');

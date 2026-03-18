@@ -2,6 +2,7 @@
 
 namespace App\Models\User\Study;
 
+use Illuminate\Support\Facades\Log;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleBook;
 use App\Models\User\User;
@@ -177,7 +178,7 @@ class Note extends Model
         try {
             return Crypt::decrypt($note);
         } catch (DecryptException $e) {
-            \Log::channel('errorlog')->error($e->getMessage());
+            Log::channel('errorlog')->error($e->getMessage());
             return '';
         }
     }

@@ -18,6 +18,7 @@ use Spatie\Fractalistic\ArraySerializer;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 
 class BibleFileSetsController extends APIController
 {
@@ -507,13 +508,24 @@ class BibleFileSetsController extends APIController
                 $cache_params,
                 now()->addMonth(),
                 function () use ($bible_location) {
-                    $filesets = BibleFileset::where(
+                    $fileset = BibleFileset::where(
                         'id',
                         $bible_location->fileset_id
                     )
                         ->whereNotIn('set_type_code', ['text_format'])
-                        ->first()
-                        ->bible->first()->filesets;
+                        ->first();
+
+                    if (!$fileset) {
+                        return ['audio' => collect(), 'video' => collect()];
+                    }
+
+                    $bible = $fileset->bible()->with('filesets')->first();
+
+                    if (!$bible) {
+                        return ['audio' => collect(), 'video' => collect()];
+                    }
+
+                    $filesets = $bible->filesets;
                     $audio_filesets_hashes = $filesets
                         ->whereIn('set_type_code', [
                             'audio_drama',
@@ -537,7 +549,7 @@ class BibleFileSetsController extends APIController
                 ['book_id', $bible_location->book_id],
                 ['chapter_start', '>=', $bible_location->chapter_start],
                 [
-                    \DB::raw('IFNULL( chapter_end, chapter_start)'),
+                    DB::raw('IFNULL( chapter_end, chapter_start)'),
                     '<=',
                     $bible_location->chapter_end
                 ]
@@ -549,7 +561,7 @@ class BibleFileSetsController extends APIController
                     (int) $bible_location->verse_start
                 ];
                 $where_fields[] = [
-                    \DB::raw(
+                    DB::raw(
                         'IFNULL( chapter_end, ' .
                             (int) $bible_location->verse_end .
                             ')'
@@ -558,18 +570,19 @@ class BibleFileSetsController extends APIController
                     $bible_location->verse_end
                 ];
             }
-            $bible_location->has_audio = BibleFile::whereIn(
-                'hash_id',
-                $hashes['audio']
-            )
-                ->where($where_fields)
-                ->exists();
-            $bible_location->has_video = BibleFile::whereIn(
-                'hash_id',
-                $hashes['video']
-            )
-                ->where($where_fields)
-                ->exists();
+            // Combine audio + video hash check into a single query
+            $all_hashes = $hashes['audio']->merge($hashes['video'])->unique();
+            if ($all_hashes->isNotEmpty()) {
+                $matching_hashes = BibleFile::whereIn('hash_id', $all_hashes)
+                    ->where($where_fields)
+                    ->pluck('hash_id')
+                    ->unique();
+                $bible_location->has_audio = $matching_hashes->intersect($hashes['audio'])->isNotEmpty();
+                $bible_location->has_video = $matching_hashes->intersect($hashes['video'])->isNotEmpty();
+            } else {
+                $bible_location->has_audio = false;
+                $bible_location->has_video = false;
+            }
             $result[] = $bible_location;
         }
 
