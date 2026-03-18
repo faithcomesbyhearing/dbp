@@ -8,6 +8,7 @@ use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleVerse;
 use App\Models\Bible\StreamBandwidth;
 use App\Models\Playlist\PlaylistItems;
+use Illuminate\Support\Facades\DB;
 
 class PlaylistItemService
 {
@@ -190,7 +191,7 @@ class PlaylistItemService
             $book_ids[$item_to_create['book_id']] = true;
         }
 
-        $bible_verses = BibleVerse::select([\DB::raw('COUNT(id) as verse_count'), 'book_id', 'chapter'])
+        $bible_verses = BibleVerse::select([DB::raw('COUNT(id) as verse_count'), 'book_id', 'chapter'])
             ->whereIn('hash_id', $bible_filesets->pluck('hash_id'))
             ->whereIn('book_id', array_keys($book_ids))
             ->groupBy(['book_id', 'chapter'])

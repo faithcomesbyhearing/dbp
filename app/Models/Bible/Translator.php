@@ -27,7 +27,6 @@ use Illuminate\Database\Eloquent\Model;
 class Translator extends Model
 {
     protected $connection = 'dbp';
-    protected $dates = ['created_at', 'updated_at'];
     protected $hidden = ['pivot','created_at','updated_at'];
     public $incrementing = false;
 

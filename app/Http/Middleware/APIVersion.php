@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Support\Facades\Route;
 
 class APIVersion
 {
@@ -46,7 +47,7 @@ class APIVersion
         if ($routeV != $requestV) {
             $route_name = $requestV === '3' && $routeV === '2' ? $route : null;
 
-            if (!\Route::has($route_name)) {
+            if (!Route::has($route_name)) {
                 return response('Not Found', 404);
             }
         }

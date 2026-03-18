@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Organization;
 
 use App\Http\Controllers\APIController;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Language\Language;
 use App\Models\Organization\Organization;
 use App\Models\Resource\Resource;
@@ -62,7 +63,7 @@ class ResourcesController extends APIController
 
     private function invalidResource(Request $request)
     {
-        $validator = \Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'unicode_pdf'         => 'url|nullable',
             'slug'                => 'required|unique:dbp.resources,slug|string|maxLength:191|regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
             'language_id'         => 'required|exists:dbp.languages,id',

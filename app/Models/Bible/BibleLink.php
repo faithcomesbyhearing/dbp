@@ -3,6 +3,7 @@
 namespace App\Models\Bible;
 
 use App\Models\Organization\Organization;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -30,6 +31,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class BibleLink extends Model
 {
+    use HasFactory;
+
     protected $connection = 'dbp';
     /**
      * BibleLinks will only be called from the Bibles Model. So we don't need ID or Abbr.
@@ -163,6 +166,11 @@ class BibleLink extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
+    protected static function newFactory()
+    {
+        return \Database\Factories\Bible\BibleLinkFactory::new();
+    }
+
     public function organization()
     {
         return $this->hasOne(Organization::class, 'id');

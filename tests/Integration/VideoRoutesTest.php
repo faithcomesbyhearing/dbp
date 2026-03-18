@@ -14,10 +14,10 @@ class VideoRoutesTest extends ApiV4Test
      * @category Route Name: v4_media_stream
      * @category Route Path: https://api.dbp.test/?v=4&key={key}/stream/{file_id}/playlist.m3u8
      * @see      VideoStreamController::index
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function videoStream()
     {
         $this->markTestIncomplete('Travis not handling files');
@@ -42,10 +42,10 @@ class VideoRoutesTest extends ApiV4Test
      * @category Route Name: v4_media_stream_ts
      * @category Route Path: https://api.dbp.test/bible/filesets/{fileset_id}/stream/{file_id}/{file_name}?v=4&key={key}
      * @see      VideoStreamController::transportStream
-     * @group    V4
-     * @group    non-travis | File downloads aren't testing properly
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group("non-travis | File downloads aren't testing properly")]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function videoStreamTs()
     {
         $resolution = StreamBandwidth::with('file.fileset')->inRandomOrder()->first();
