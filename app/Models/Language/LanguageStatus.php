@@ -3,6 +3,7 @@
 namespace App\Models\Language;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\Language\LanguageStatus
@@ -27,6 +28,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class LanguageStatus extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Language\LanguageStatusFactory::new();
+    }
+
     protected $connection = 'dbp';
     protected $table = 'language_status';
     protected $fillable = ['id','title','description'];

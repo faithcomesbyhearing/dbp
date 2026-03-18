@@ -63,10 +63,10 @@ class ApiV2Test extends TestCase
      * @category Route Name: v2_library_asset
      * @link Route Path: https://api.dbp.test/library/asset?v=2&key={key}&pretty
      * @link V2 Route Path: https://dbt.io/library/asset?v=2&key=3e0eed1a69fc6e012fef51b8a28cc6ff&pretty
-     * @group    V2
-     * @group    non-travis | S3 won't interact with Travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group("non-travis | S3 won't interact with Travis")]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryAsset()
     {
         $path = route('v2_library_asset', $this->params);
@@ -87,10 +87,10 @@ class ApiV2Test extends TestCase
      * @category Route Name: v2_api_apiReply
      * @link Route Path: https://api.dbp.test/api/reply?v=2&pretty&key={key}
      * @link V2 Route Path: https://dbt.io/api/reply?v=2&key={key}&pretty
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function apiReplyReturnsSuccessful()
     {
         $path = route('v2_api_apiReply', $this->params);
@@ -111,10 +111,10 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: LibraryAsset
      * @category Route Name: v2_library_asset
      * @link Route Path: https://api.dbp.test/api/apiversion?v=2&pretty&key={key}
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryVersion()
     {
         $params = implode('&', array_map(function ($v, $k) {
@@ -136,10 +136,10 @@ class ApiV2Test extends TestCase
      * @category Route Name: v2_library_bookOrder
      * @link Route Path: https://api.dbp.test/library/bookorder?v=2&dam_id=ENGESV&pretty&key={key}
      * @link V2 Route Path: https://dbt.io/library/bookorder?v=2&dam_id=AAIWBTN2ET&key=3e0eed1a69fc6e012fef51b8a28cc6ff&pretty
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryBookOrder()
     {
         $this->markTestIncomplete('Inconsistent success, seeds need review');
@@ -167,10 +167,10 @@ class ApiV2Test extends TestCase
      * @category Route Name: v2_library_book
      * @link Test Route Path: https://api.dbp.test/library/book?v=2&dam_id=AAIWBTN2ET&key={key}&pretty
      * @link V2 Route Path: https://dbt.io/library/book?v=2&dam_id=AAIWBTN2ET&key=3e0eed1a69fc6e012fef51b8a28cc6ff&pretty
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryBook()
     {
         $this->params['dam_id'] = 'ENGKJV';
@@ -190,10 +190,10 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: BookName
      * @category Route Name: v2_library_bookName
      * @link Route Path: https://api.dbp.test/library/bookname?v=2&language_code=eng&pretty&key={key}
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryBookName()
     {
         $path = route('v2_library_bookName', $this->params);
@@ -217,10 +217,10 @@ class ApiV2Test extends TestCase
      * @category Route Name: v2_library_bookName
      * @link Route Path: https://api.dbp.test/library/chapter?v=2&dam_id=AAIWBTN2ET&book_id=GEN&pretty&key={key}
      * @link V2 Route Path: https://dbt.io/library/chapter?v=2&dam_id=AAIWBTN2ET&key=3e0eed1a69fc6e012fef51b8a28cc6ff
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryChapter()
     {
         $verse = BibleVerse::where('id', random_int(1, BibleVerse::count()))->first();
@@ -247,10 +247,10 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: LibraryLanguage
      * @category Route Name: v2_library_language
      * @link Route Path: https://api.dbp.test/library/language?v=2&pretty&key={key}
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryLanguage()
     {
         $path = route('v2_library_language', [], false);
@@ -272,10 +272,10 @@ class ApiV2Test extends TestCase
      * @category Route Name: v2_library_verseInfo
      * @link Route Path: https://api.dbp.test/library/verseinfo?v=2&pretty&bible_id=ENGESV&book_id=GEN&chapter=1&verse_start=1&key={key}
      * @link https://dbt.io/library/verseinfo?v=2&pretty&bible_id=ENGESV&book_id=GEN&chapter=1&verse_start=1
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryVerseInfo()
     {
         $random_verse = BibleVerse::with('fileset')->where('id', random_int(1, BibleVerse::count()))->first();
@@ -304,10 +304,10 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: Number
      * @category Route Name: v2_library_numbers
      * @link Route Path: https://api.dbp.test/library/numbers?v=2&pretty&iso=arb&start=1&end=50&key={key}&script=Arab
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryNumbers()
     {
         $numeral_systems = NumeralSystem::all();
@@ -338,10 +338,10 @@ class ApiV2Test extends TestCase
      * @category Route Name: v2_library_metadata
      * @link Route Path: https://api.dbp.test/library/metadata?v=2&dam_id=ENGESVN1ET&key={key}
      * @link Source Path: https://dbt.io/library/metadata?v=2&dam_id=ENGESVN1ET&key=53355c32fca5f3cac4d7a670d2df2e09
-     * @group    V2
-     * @group    non-travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('non-travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryMetadata()
     {
         $path = route('v2_library_metadata', $this->params);
@@ -364,10 +364,10 @@ class ApiV2Test extends TestCase
      * @category Route Name: v2_library_volume
      * @link Route Path: https://api.dbp.test/library/volume?v=2&pretty&key={key}
      * @link Route:
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryVolume()
     {
         $path = route('v2_library_volume', $this->params);
@@ -387,10 +387,10 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: LibraryVolume
      * @category Route Name: v2_library_volumeLanguage
      * @link Route Path: https://api.dbp.test/library/volumelanguage?v=2&pretty&key={key}
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryVolumeLanguage()
     {
         $path = route('v2_library_volumeLanguage', [], false);
@@ -412,10 +412,10 @@ class ApiV2Test extends TestCase
      * @category Route Name: v2_library_volumeLanguageFamily
      * @link Route Path: https://api.dbp.test/library/volumelanguagefamily?v=2&pretty&key={key}
      * @link Route Path: https://dbt.io/library/volumelanguagefamily?v=2&key=53355c32fca5f3cac4d7a670d2df2e09
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function libraryVolumeLanguageFamily()
     {
         $path = route('v2_library_volumeLanguageFamily', $this->params);
@@ -436,10 +436,10 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: VolumeOrganization
      * @category Route Name: v2_volume_organization_list
      * @link Route Path: https://api.dbp.test/library/volumeorganization?v=2&pretty&key={key}
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function volumeOrganizationList()
     {
         $path = route('v2_volume_organization_list', $this->params);
@@ -461,10 +461,10 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: LibraryVolumeLanguageFamily
      * @category Route Name: v2_volume_history
      * @link Route Path: https://api.dbp.test/library/volumehistory?v=2&pretty&key={key}
-     * @group    V2
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function volumeHistory()
     {
         $this->params['limit'] = 5;
@@ -483,10 +483,10 @@ class ApiV2Test extends TestCase
      * @category Swagger ID:
      * @category Route Name: v2_audio_path
      * @link Route Path: https://api.dbp.test/audio/path?v=2&dam_id=AFRNVVN2DA&pretty&key={key}
-     * @group    V2
-     * @group    non-travis | S3 won't sign routes from travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V2')]
+    #[\PHPUnit\Framework\Attributes\Group("non-travis | S3 won't sign routes from travis")]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function audioPath()
     {
         $fileset = BibleFileset::where('set_type_code', 'audio')->orWhere('set_type_code', 'audio_drama')->inRandomOrder()->first();
@@ -509,9 +509,9 @@ class ApiV2Test extends TestCase
      * @category Route Name: v2_video_location
      * @link Route Path: https://api.dbp.test/video/location?v=2&dam_id=ENGESV
      * @link Old Path: https://dbt.io/video/location?v=2&dam_id=ENGESV
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function videoLocation()
     {
         $this->markTestIncomplete('Skipping Location');
@@ -529,9 +529,9 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: VideoPath
      * @category Route Name: v2_video_video_path
      * @link Route Path: https://api.dbp.test/video/videopath?v=2&dam_id=ENGESV&pretty
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function videoPath()
     {
         $this->markTestIncomplete('Video Path currently needs review');
@@ -550,9 +550,9 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: CountryLang
      * @category Route Name: v2_country_lang
      * @link Route Path: https://api.dbp.test/country/countrylang?v=2&pretty
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function countryLang()
     {
         $response = $this->withHeaders($this->params)->get(route('v2_country_lang'));

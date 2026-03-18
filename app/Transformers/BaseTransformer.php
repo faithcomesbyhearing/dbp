@@ -10,7 +10,7 @@ namespace App\Transformers;
 
 use League\Fractal\TransformerAbstract;
 use League\Fractal\Scope;
-use Route;
+use Illuminate\Support\Facades\Route;
 
 class BaseTransformer extends TransformerAbstract
 {

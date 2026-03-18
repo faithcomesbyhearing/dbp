@@ -13,6 +13,7 @@ use App\Models\Bible\BibleTranslation;
 use App\Models\Organization\OrganizationTranslation;
 use App\Models\Language\Alphabet;
 use App\Models\Bible\Book;
+use Illuminate\Support\Facades\DB;
 
 class BibleManagementController extends Controller
 {
@@ -51,7 +52,7 @@ class BibleManagementController extends Controller
             'date'                => 'integer',
         ]);
 
-        $bible = \DB::transaction(function () use ($id) {
+        $bible = DB::transaction(function () use ($id) {
             $bible = Bible::with('translations', 'organizations', 'links')->find($id);
             $bible->update(request()->only(['id', 'date', 'script', 'portions', 'copyright', 'derived', 'in_progress', 'notes', 'iso']));
 
@@ -116,7 +117,7 @@ class BibleManagementController extends Controller
             'date'                => 'integer',
         ]);
 
-        $bible = \DB::transaction(function () {
+        $bible = DB::transaction(function () {
             $bible = new Bible();
             $bible = $bible->create(request()->only(['id', 'date', 'script', 'portions', 'copyright', 'derived', 'in_progress', 'notes', 'iso']));
             $bible->translations()->createMany(request()->translations);

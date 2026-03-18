@@ -122,7 +122,7 @@ class BibleFilesetLookup extends Model
     public static function getDownloadContentByKey(
         int $limit,
         Collection $access_group_by_user_key,
-        string $type = null
+        ?string $type = null
     ) : LengthAwarePaginator {
 
         $download_access_group_array_ids = AccessGroup::select('id')
