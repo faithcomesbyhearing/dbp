@@ -21,6 +21,7 @@ use App\Transformers\Serializers\NoteArraySerializer;
 use App\Transformers\V2\Annotations\BookmarkTransformer;
 use App\Transformers\V2\Annotations\HighlightTransformer;
 use App\Transformers\V2\Annotations\NoteTransformer;
+use Illuminate\Support\Facades\Hash;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use Carbon\Carbon;
 
@@ -144,8 +145,8 @@ class UsersControllerV2 extends APIController
             }
 
             if ($user && $email) {
-                $oldPassword = \Hash::check(md5($password), $user->password);
-                $newPassword = \Hash::check($password, $user->password);
+                $oldPassword = Hash::check(md5($password), $user->password);
+                $newPassword = Hash::check($password, $user->password);
                 if (!$oldPassword && !$newPassword) {
                     $user = false;
                 }

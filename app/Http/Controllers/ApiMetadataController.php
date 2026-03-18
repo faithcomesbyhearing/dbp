@@ -7,6 +7,7 @@ use App\Models\Bible\BibleFileset;
 use App\Models\User\Changelog;
 use App\Traits\CallsBucketsTrait;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ApiMetadataController extends APIController
 {
@@ -66,7 +67,7 @@ class ApiMetadataController extends APIController
     {
         $status_code = 200;
         try {
-            \DB::connection('dbp_users')->getPdo();
+            DB::connection('dbp_users')->getPdo();
             $user_connection_message = 'live';
         } catch (\Exception $e) {
             $user_connection_message = $e->getMessage();
@@ -74,7 +75,7 @@ class ApiMetadataController extends APIController
         }
 
         try {
-            \DB::connection('dbp')->getPdo();
+            DB::connection('dbp')->getPdo();
             $dbp_connection_message = 'live';
         } catch (\Exception $e) {
             $dbp_connection_message = $e->getMessage();

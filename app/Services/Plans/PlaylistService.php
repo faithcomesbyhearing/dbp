@@ -9,6 +9,7 @@ use App\Models\Bible\Bible;
 use Illuminate\Database\Eloquent\Collection;
 use App\Services\Bibles\BibleFilesetService;
 use App\Services\Plans\PlaylistItemService;
+use Illuminate\Support\Facades\DB;
 
 class PlaylistService
 {
@@ -280,7 +281,7 @@ class PlaylistService
             return null;
         }
 
-        $created_playlist_items = \DB::transaction(function () use ($playlist_items_to_create, $playlist_id) {
+        $created_playlist_items = DB::transaction(function () use ($playlist_items_to_create, $playlist_id) {
             PlaylistItems::insert($playlist_items_to_create);
 
             return PlaylistItems::getLastItemsByPlaylistId(
@@ -308,7 +309,7 @@ class PlaylistService
      */
     public function getDurationByIds(Array $playlist_ids) : ?Collection
     {
-        return PlaylistItems::select('playlist_id', \DB::raw('SUM(duration) as duration'))
+        return PlaylistItems::select('playlist_id', DB::raw('SUM(duration) as duration'))
             ->whereIn('playlist_id', $playlist_ids)
             ->groupBy('playlist_id')
             ->get()

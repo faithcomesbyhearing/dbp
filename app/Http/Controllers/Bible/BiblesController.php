@@ -38,6 +38,7 @@ use Illuminate\Support\Facades\File;
 use ZipArchive;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class BiblesController extends APIController
 {
@@ -246,7 +247,7 @@ class BiblesController extends APIController
                     $q->isTimingInformationAvailable();
                 })
                 ->select(
-                    \DB::raw(
+                    DB::raw(
                         'MIN(current_title.name) as ctitle,
                         MIN(ver_title.name) as vtitle,
                         MIN(bibles.language_id) as language_id,
@@ -722,7 +723,7 @@ class BiblesController extends APIController
                                 'hash_id',
                                 'book_id',
                                 'chapter',
-                                \DB::raw('COUNT(*) as verse_count')
+                                DB::raw('COUNT(*) as verse_count')
                             )
                             ->groupBy('hash_id', 'book_id', 'chapter')
                             ->get()
@@ -1340,7 +1341,7 @@ class BiblesController extends APIController
                     $mp3 = $client->get($download->path);
                     $zip->addFromString($download->file_name, $mp3->getBody());
                 } catch (\Throwable $th) {
-                    \Log::channel('errorlog')->error($th->getMessage());
+                    Log::channel('errorlog')->error($th->getMessage());
                 }
             }
             unset($result->filesets->downloads);

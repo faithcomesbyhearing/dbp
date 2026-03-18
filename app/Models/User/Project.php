@@ -4,6 +4,7 @@ namespace App\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\User\Project
@@ -35,7 +36,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Project extends Model
 {
+    use HasFactory;
     use SoftDeletes;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\User\ProjectFactory::new();
+    }
 
     protected $connection = 'dbp_users';
     protected $table = 'projects';
@@ -43,7 +50,12 @@ class Project extends Model
     public $keyType = 'integer';
     public $incrementing = false;
 
-    protected $dates = ['deleted_at'];
+    protected function casts(): array
+    {
+        return [
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     /**
      *

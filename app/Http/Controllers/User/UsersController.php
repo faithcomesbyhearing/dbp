@@ -21,11 +21,13 @@ use App\Transformers\UserTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-use Log;
-use Mail;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use App\Validators\AccountValidator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use App\Exceptions\ResponseException as Response;
@@ -65,7 +67,7 @@ class UsersController extends APIController
         $limit = checkParam('limit') ?? 100;
         $project_id = checkParam('project_id');
 
-        $users_by_project = \DB::table('dbp_users.project_members')
+        $users_by_project = DB::table('dbp_users.project_members')
             ->select(['user_id'])
             ->where('dbp_users.project_members.project_id', $project_id)
             ->distinct()
@@ -73,7 +75,7 @@ class UsersController extends APIController
 
         $users_by_project_ids = $users_by_project->pluck('user_id')->toArray();
 
-        $userCollection = \DB::table('dbp_users.users')
+        $userCollection = DB::table('dbp_users.users')
             ->whereIn('id', $users_by_project_ids)
             ->select(['id', 'name', 'email'])
             ->get();
@@ -318,8 +320,8 @@ class UsersController extends APIController
         if (!$user) {
             return false;
         }
-        $oldPassword = \Hash::check(md5($password), $user->password);
-        $newPassword = \Hash::check($password, $user->password);
+        $oldPassword = Hash::check(md5($password), $user->password);
+        $newPassword = Hash::check($password, $user->password);
         if (!$oldPassword && !$newPassword) {
             return false;
         }
@@ -391,7 +393,7 @@ class UsersController extends APIController
                 'last_name' => $request->last_name,
                 'email' => $request->email,
                 'activated' => 0,
-                'password' => \Hash::make(Str::random(10))
+                'password' => Hash::make(Str::random(10))
             ]);
             $user_created_log = 'new user created with userid:' . $user->id . ', request: ' . json_encode($safe_log_fields);
             Log::error($user_created_log);
@@ -473,7 +475,7 @@ class UsersController extends APIController
             ),
             'activated' => 0,
             'notes' => $request->notes,
-            'password' => \Hash::make($request->password)
+            'password' => Hash::make($request->password)
         ]);
 
         $sex = checkParam('sex') ?? 0;
@@ -598,7 +600,7 @@ class UsersController extends APIController
 
         // If the request does not originate from an admin
         $user_projects = $user->projects->pluck('id');
-        $developer_projects = $this->user->projectMembers
+        $developer_projects = $this->user->projectMembers()
             ->whereIn('role_id', [2, 3, 4])
             ->pluck('project_id');
 
@@ -713,8 +715,8 @@ class UsersController extends APIController
             ->first();
         $access_granted = false;
         if ($password) {
-            $oldPassword = \Hash::check(md5($password), $user->password);
-            $newPassword = \Hash::check($password, $user->password);
+            $oldPassword = Hash::check(md5($password), $user->password);
+            $newPassword = Hash::check($password, $user->password);
             $access_granted = $oldPassword || $newPassword;
         } elseif ($social_provider_id) {
             $account = $user->accounts
@@ -841,7 +843,7 @@ class UsersController extends APIController
         }
         $user->verified = 1;
         $user->save();
-        \Auth::login($user);
+        Auth::login($user);
         $this->guard()->login($user);
         return redirect()->route('home');
     }
@@ -856,10 +858,10 @@ class UsersController extends APIController
                 trans('api.auth_key_validation_failed')
             );
         }
-        $developer = $this->user->projectMembers
+        $developer = $this->user->projectMembers()
             ->where('slug', 'developer')
-            ->first();
-        if ($developer !== null) {
+            ->exists();
+        if ($developer) {
             return $this->setStatusCode(401)->replyWithError(
                 trans('api.auth_user_validation_failed')
             );
