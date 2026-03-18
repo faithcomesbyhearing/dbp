@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Database\Query\Expression;
 use App\Models\Bible\Book;
 use Awobaz\Compoships\Compoships;
+use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\Bible\BibleBook
@@ -193,7 +194,7 @@ class BibleBook extends Model
     ) : Expression {
         $case_sql = self::getBookOrderSql($bible_versification);
 
-        return \DB::raw("$case_sql AS $alias");
+        return DB::raw("$case_sql AS $alias");
     }
 
     /**
@@ -206,7 +207,7 @@ class BibleBook extends Model
     public static function getBookOrderExpressionRaw(string $bible_versification) : string
     {
         $expression = new Expression(self::getBookOrderSql($bible_versification));
-        return $expression->getValue(\DB::connection()->getQueryGrammar());
+        return $expression->getValue(DB::connection()->getQueryGrammar());
     }
 
     /**

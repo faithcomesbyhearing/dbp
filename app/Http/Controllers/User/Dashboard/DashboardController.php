@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\User\Dashboard;
 
 use App\Http\Controllers\APIController;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends APIController
 {

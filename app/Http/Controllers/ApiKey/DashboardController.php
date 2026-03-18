@@ -9,9 +9,10 @@ use App\Models\User\Key;
 use App\Models\User\KeyRequest;
 use App\Models\User\AccessGroupKey;
 
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use App\Exceptions\ResponseException as Response;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Exception;
 
 class DashboardController extends APIController
@@ -86,7 +87,7 @@ class DashboardController extends APIController
             $subject = checkParam('subject');
             $message = checkParam('message');
             try {
-                \Mail::to($email)->send(new EmailKeyRequest($subject, $message));
+                Mail::to($email)->send(new EmailKeyRequest($subject, $message));
                 return $this->reply('ok');
             } catch (Exception $e) {
                 return $this->setStatusCode(500)->replyWithError($e->getMessage());
