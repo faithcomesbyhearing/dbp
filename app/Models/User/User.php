@@ -11,6 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Models\Organization\Organization;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\User\User
@@ -50,14 +51,26 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
+    use HasFactory;
     use Notifiable;
     use SoftDeletes;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\User\UserFactory::new();
+    }
 
     protected $connection = 'dbp_users';
     protected $table     = 'users';
     protected $fillable  = ['id', 'v2_id', 'name', 'first_name', 'last_name', 'created_at', 'updated_at', 'last_login', 'email', 'password', 'activated', 'token', 'notes', 'signup_ip_address', 'signup_confirmation_ip_address', 'signup_sm_ip_address', 'admin_ip_address', 'updated_ip_address', 'deleted_ip_address', 'freshchat_restore_id'];
     protected $hidden    = ['password', 'remember_token', 'activated', 'token'];
-    protected $dates     = ['deleted_at'];
+
+    protected function casts(): array
+    {
+        return [
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     /**
      *

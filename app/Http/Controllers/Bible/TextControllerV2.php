@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Bible;
 
 use App\Models\Bible\BibleVerse;
-use DB;
+use Illuminate\Support\Facades\DB;
 
 use Illuminate\Http\Response;
 use App\Models\Bible\BibleFileset;
@@ -170,7 +170,7 @@ class TextControllerV2 extends APIController
             'bible_verses.verse_end',
             'bible_verses.verse_text',
             'book_testament',
-            \DB::raw("'$fileset_id' as dam_id_request"),
+            DB::raw("'$fileset_id' as dam_id_request"),
         ];
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)
             ->withVernacularMetaData($bible, $testament_filter)

@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use App\Services\Arclight\ArclightService;
 
@@ -19,7 +20,7 @@ trait ArclightConnection
             ));
             $results = json_decode(file_get_contents($new_path, false, $ctx));
         } catch (Exception $e) {
-            \Log::channel('errorlog')->error(["Arclight Connection Error: '{$e->getMessage()}" ]);
+            Log::channel('errorlog')->error(["Arclight Connection Error: '{$e->getMessage()}" ]);
             $results = [];
         }
 

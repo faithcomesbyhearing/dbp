@@ -560,7 +560,7 @@ class PlanService
      *
      * @return Plan
      */
-    public function getPlanWithDaysByIdAndUser(int $plan_id, int $user_id = null) : Plan
+    public function getPlanWithDaysByIdAndUser(int $plan_id, ?int $user_id = null) : Plan
     {
         return Plan::getWithDaysAndUserById($plan_id, $user_id);
     }

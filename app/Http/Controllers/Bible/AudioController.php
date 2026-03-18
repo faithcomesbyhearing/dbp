@@ -12,6 +12,7 @@ use App\Models\Bible\BibleFileTimestamp;
 
 use App\Traits\CallsBucketsTrait;
 use App\Transformers\AudioTransformer;
+use Illuminate\Support\Facades\DB;
 
 class AudioController extends APIController
 {
@@ -203,10 +204,10 @@ class AudioController extends APIController
         $books = Book::all();
 
         // Create Sophia Query
-        $query  = \DB::connection()->getPdo()->quote('+' . str_replace(' ', ' +', $query));
+        $query  = DB::connection()->getPdo()->quote('+' . str_replace(' ', ' +', $query));
         $expression = new Expression("MATCH (verse_text) AGAINST($query IN NATURAL LANGUAGE MODE)");
         $verses = BibleVerse::where('hash_id', $text_fileset->hash_id)
-            ->whereRaw($expression->getValue(\DB::connection()->getQueryGrammar()))
+            ->whereRaw($expression->getValue(DB::connection()->getQueryGrammar()))
             ->when($book_id, function ($query) use ($book_id) {
                 return $query->where('book_id', $book_id);
             })

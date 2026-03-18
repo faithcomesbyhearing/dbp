@@ -11,6 +11,7 @@ use Illuminate\Database\Query\Expression;
 use Carbon\Carbon;
 use App\Models\User\User;
 use Illuminate\Database\Query\JoinClause;
+use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\Plan
@@ -41,7 +42,13 @@ class Plan extends Model
     public $table         = 'plans';
     protected $fillable   = ['user_id', 'name', 'suggested_start_date', 'draft', 'thumbnail', 'language_id'];
     protected $hidden     = ['user_id', 'deleted_at', 'plan_id', 'language_id'];
-    protected $dates      = ['deleted_at'];
+
+    protected function casts(): array
+    {
+        return [
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     /**
      *
@@ -283,7 +290,7 @@ class Plan extends Model
     {
         $playlist_items_completed_subquery = PlaylistItemsComplete::select(
                 'user_playlists.plan_id',
-                \DB::raw('MAX(playlist_items_completed.created_at) AS max_created_at')
+                DB::raw('MAX(playlist_items_completed.created_at) AS max_created_at')
             )
             ->join('user_playlists', 'user_playlists.id', 'playlist_items_completed.playlist_item_id')
             ->where('playlist_items_completed.user_id', $user->id)
@@ -303,7 +310,7 @@ class Plan extends Model
 
         $user_playlists_subquery = Playlist::select(
                 'user_playlists.plan_id',
-                \DB::raw('MAX(user_playlists.updated_at) AS max_updated_at')
+                DB::raw('MAX(user_playlists.updated_at) AS max_updated_at')
             )
             ->where('user_playlists.user_id', $user->id)
             ->groupBy('user_playlists.plan_id');
@@ -320,7 +327,7 @@ class Plan extends Model
             }
         );
 
-        return $query->addSelect(\DB::raw('GREATEST(
+        return $query->addSelect(DB::raw('GREATEST(
             COALESCE(user_plans.updated_at, "1970-01-01 00:00:00"),
             COALESCE(item_completed_interation.max_created_at, "1970-01-01 00:00:00"),
             COALESCE(user_playlists_interation.max_updated_at, "1970-01-01 00:00:00"),

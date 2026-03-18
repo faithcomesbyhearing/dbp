@@ -3,10 +3,12 @@
 namespace App\Models\Language;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use App\Models\Language\Language;
+use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\Language\LanguageTranslation
@@ -23,6 +25,13 @@ use App\Models\Language\Language;
  */
 class LanguageTranslation extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Language\LanguageTranslationFactory::new();
+    }
+
     protected $connection = 'dbp';
     protected $hidden = ['language_source_id','created_at','updated_at','priority','description','id'];
     protected $table = 'language_translations';
@@ -158,7 +167,7 @@ class LanguageTranslation extends Model
         $from_table = getAliasOrTableName($query->getQuery()->from);
 
         return $query->where($from_table.'.priority', '=', function ($query) use ($from_table) {
-            $query->select(\DB::raw('MAX(`priority`)'))
+            $query->select(DB::raw('MAX(`priority`)'))
                 ->from('language_translations as lang_trans_prior')
                 ->whereColumn('lang_trans_prior.language_source_id', '=', $from_table.'.language_source_id')
                 ->whereColumn(

@@ -22,7 +22,7 @@ class KeysController extends APIController
             'description' => 'required|string',
             'question' => 'string',
             'agreement' => 'required',
-            'g-recaptcha-response' => 'recaptcha'
+            'g-recaptcha-response' => 'required|captcha'
         ];
   
         $validator = Validator::make(request()->all(), $rules);

@@ -268,10 +268,26 @@ class PlaylistsController extends APIController
 
         $playlist_ids = [];
 
+        // Pre-fetch text filesets for all playlists at once to avoid N+1
+        $playlist_text_filesets = [];
+        if ($show_text) {
+            $all_playlist_ids = $playlists->getCollection()->pluck('id')->toArray();
+            if (!empty($all_playlist_ids)) {
+                $all_fileset_ids = PlaylistItems::getUniqueFilesetsByPlaylistIds($all_playlist_ids);
+                $filesets_hashes = BibleFilesetService::getFilesetsByIds($all_fileset_ids);
+                $bible_hashes = BibleFilesetService::getBibleFilesetConnectionByHashIds($filesets_hashes->pluck('hash_id'));
+                $text_filesets = BibleFilesetService::getTextFilesetsByBibleIds($bible_hashes->pluck('bible_id'));
+                $bible_hash = $bible_hashes->pluck('bible_id', 'hash_id');
+                $playlist_text_filesets = $filesets_hashes->isNotEmpty() && $text_filesets->isNotEmpty()
+                    ? BibleFilesetService::matchFilesetsByTextSize($filesets_hashes, $text_filesets, $bible_hash)
+                    : [];
+            }
+        }
+
         foreach ($playlists->getCollection() as $playlist) {
             if ($show_text && isset($playlist->items)) {
                 foreach ($playlist->items as $item) {
-                    $item->verse_text = $item->getVerseText();
+                    $item->verse_text = $item->getVerseText($playlist_text_filesets);
                 }
             }
 
@@ -411,8 +427,10 @@ class PlaylistsController extends APIController
         }
 
         if (isset($playlist->items)) {
+            $playlist_text_filesets = $this->getPlaylistTextFilesets((int) $playlist_id);
+
             foreach ($playlist->items as $item) {
-                $item->verse_text = $item->getVerseText();
+                $item->verse_text = $item->getVerseText($playlist_text_filesets);
             }
         }
 
@@ -469,6 +487,7 @@ class PlaylistsController extends APIController
         
         if ($show_text && isset($playlist->items)) {
             $playlist_text_filesets = $this->getPlaylistTextFilesets((int) $playlist_id);
+            $playlist->items->loadMissing(['fileset.files']);
 
             foreach ($playlist->items as $item) {
                 $item->verse_text = $item->getVerseText($playlist_text_filesets);
@@ -957,8 +976,11 @@ class PlaylistsController extends APIController
         $playlist = $this->playlist_service->translate($playlist_id, $bible, $user->id);
 
         if ($show_details && isset($playlist->items)) {
+            $playlist_text_filesets = $this->getPlaylistTextFilesets((int) $playlist_id);
+            $playlist->items->loadMissing(['fileset.files']);
+
             foreach ($playlist->items as $item) {
-                $item->verse_text = $item->getVerseText([]);
+                $item->verse_text = $item->getVerseText($playlist_text_filesets);
                 $item->item_timestamps = $item->getTimestamps();
             }
         }
@@ -1067,7 +1089,7 @@ class PlaylistsController extends APIController
         try {
             $hls_playlist = $this->getHlsPlaylist([$playlist_item], $download);
         } catch (\Exception $e) {
-            \Log::channel('errorlog')->error("Exception getting HLS playlist for item {$playlist_item->id}: " . $e->getMessage());
+            Log::channel('errorlog')->error("Exception getting HLS playlist for item {$playlist_item->id}: " . $e->getMessage());
             return $this
                 ->setStatusCode(SymfonyResponse::HTTP_INTERNAL_SERVER_ERROR)
                 ->replyWithError('Error generating HLS playlist');
@@ -1142,7 +1164,7 @@ class PlaylistsController extends APIController
                 $hls_playlist = $this->getHlsPlaylist($playlist->items, $download);
             }
         } catch (\Exception $e) {
-            \Log::channel('errorlog')->error("Exception getting HLS playlist for playlist {$playlist_id}: " . $e->getMessage());
+            Log::channel('errorlog')->error("Exception getting HLS playlist for playlist {$playlist_id}: " . $e->getMessage());
             return $this
                 ->setStatusCode(SymfonyResponse::HTTP_INTERNAL_SERVER_ERROR)
                 ->replyWithError('Error generating HLS playlist');
