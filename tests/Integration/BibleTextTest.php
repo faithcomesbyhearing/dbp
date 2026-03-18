@@ -28,10 +28,10 @@ class BibleTextTest extends ApiV4Test
      * @category Route Name: v4_bible_filesets.chapter
      * @category Route Path: https://api.dbp.test/bibles/filesets/ENGKJV/GEN/1?v=4&key={key}
      * @see      \App\Http\Controllers\Bible\TextController::index
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function bibleFilesetsChapter()
     {
         $access_control = $this->accessControl($this->key);
@@ -63,9 +63,9 @@ class BibleTextTest extends ApiV4Test
      * @category Swagger ID: TextVerse
      * @category Route Name: v2_text_verse
      * @link Route Path: https://api.dbp.test/text/verse?v=2&key=1234&dam_id=ENGESV&book_id=GEN&chapter_id=1&verse_start=1&verse_end=10
-     * @group    travis
-     * @test
-    */
+     */
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function text_verse_allowed()
     {
         $access_control = $this->accessControl($this->params['key']);
