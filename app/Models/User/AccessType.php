@@ -3,6 +3,7 @@
 namespace App\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\User\Account
@@ -18,6 +19,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class AccessType extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\User\AccessTypeFactory::new();
+    }
+
     protected $connection = 'dbp';
     public $table = 'access_types';
     public $fillable = ['hash_id'];

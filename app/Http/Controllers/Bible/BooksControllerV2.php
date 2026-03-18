@@ -171,13 +171,10 @@ class BooksControllerV2 extends APIController
 
                 $bible_id = $fileset->bible()->first()->id;
 
-                foreach ($books as $key => $book) {
-                    $chapters                     = $booksChapters->where('book', $book->id_usfx)->pluck('chapter');
-                    $books[$key]->source_id       = $id;
-                    $books[$key]->bible_id        = $bible_id;
-                    $books[$key]->chapters        = $chapters->implode(',');
-                    $books[$key]->number_chapters = $chapters->count();
-                }
+                $books->each(function ($book) use ($id, $bible_id) {
+                    $book->source_id = $id;
+                    $book->bible_id  = $bible_id;
+                });
 
                 return fractal($books, new BookTransformer())->serializeWith($this->serializer);
             }

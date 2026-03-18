@@ -15,7 +15,7 @@ use App\Models\Organization\Asset;
 use App\Models\Bible\BibleFileset;
 use App\Transformers\FileSetTransformer;
 use App\Transformers\TextTransformer;
-use DB;
+use Illuminate\Support\Facades\DB;
 
 trait BibleFileSetsTrait
 {
@@ -289,7 +289,7 @@ trait BibleFileSetsTrait
         )
         // this MIN is used to only pick one file name for each type
         // TODO: discuss and apply  a different way of selecting secondary files (specially for thumbnails)
-        ->select(\DB::raw('MIN(file_name) as file_name,  file_type'))
+        ->select(DB::raw('MIN(file_name) as file_name,  file_type'))
         ->groupBy('file_type')->get();
 
         $secondary_file_paths = ['thumbnail' => null, 'zip_file' => null,];
@@ -377,7 +377,7 @@ trait BibleFileSetsTrait
                         ?? $this->extractLeadingNumber($fileset_chapter->verse_start),
                     'verse_end' => $fileset_chapter->verse_end ? (int) $fileset_chapter->verse_end : null
                 ];
-                $fileset_chapters[$key]->file_name = route('v4_media_stream', array_filter(
+                $fileset_chapters[$key]->file_name = route('v4_media_stream_by_reference', array_filter(
                     $routeParameters,
                     function ($filesetProperty) {
                         return !is_null($filesetProperty) && $filesetProperty !== '';
@@ -394,7 +394,7 @@ trait BibleFileSetsTrait
                 if ($hasMultiMp3Chapter) {
                     if ($fileset_chapters[0]->chapter_start) {
                         $fileset_chapters[0]->file_name = route(
-                            'v4_media_stream',
+                            'v4_media_stream_by_reference',
                             [
                                 'fileset_id' => $fileset->id,
                                 'book_id' => $fileset_chapters[0]->book_id,

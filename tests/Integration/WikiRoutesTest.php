@@ -16,11 +16,11 @@ class WikiRoutesTest extends ApiV4Test
      * @category Route Name: v4_countries
      * @category Route Path: https://api.dbp.test/countries?v=4&key={key}
      * @see      \App\Http\Controllers\Wiki\CountriesController
-     * @group V4
-     * @group V4_wiki
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('V4_wiki')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function countries()
     {
         $path = route('v4_countries.all', $this->params);
@@ -46,11 +46,11 @@ class WikiRoutesTest extends ApiV4Test
      * @category Route Name: v4_languages.all
      * @category Route Path: https://api.dbp.test/languages?v=4&key={key}
      * @see      \App\Http\Controllers\Wiki\LanguagesController::index
-     * @group V4
-     * @group V4_wiki
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('V4_wiki')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function languages()
     {
         $path = route('v4_languages.all', $this->params);
@@ -70,11 +70,11 @@ class WikiRoutesTest extends ApiV4Test
      * @category Route Name: v4_alphabets
      * @category Route Path: https://api.dbp.test/alphabets?v=4&key={key}
      * @see      \App\Http\Controllers\Wiki\AlphabetsController
-     * @group V4
-     * @group V4_wiki
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('V4_wiki')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function wikiAlphabets()
     {
         $path = route('v4_alphabets.all', $this->params);
@@ -95,11 +95,11 @@ class WikiRoutesTest extends ApiV4Test
      * @category Route Name: v4_numbers
      * @category Route Path: https://api.dbp.test/numbers/?v=4&key={key}
      * @see      \App\Http\Controllers\Wiki\NumbersController
-     * @group V4
-     * @group V4_wiki
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('V4_wiki')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function wikiNumbers()
     {
         $path = route('v4_numbers.all', $this->params);

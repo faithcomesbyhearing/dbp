@@ -9,6 +9,7 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\ProgressBar;
 use App\Models\Plan\Plan;
 use App\Models\Playlist\PlaylistItems;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Command to synchronize the duration of all plans
@@ -50,7 +51,7 @@ class SyncFeaturedPlansDuration extends Command
     {
         return Plan::select([
             'plans.id',
-            \DB::raw('COUNT(playlist_items.id) as num_items'),
+            DB::raw('COUNT(playlist_items.id) as num_items'),
             'plans.name',
         ])
             ->join('user_playlists', 'user_playlists.plan_id', 'plans.id')

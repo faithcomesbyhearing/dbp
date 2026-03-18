@@ -17,10 +17,10 @@ class ProjectRoutesTest extends ApiV4Test
      * @category Route Name: v4_projects
      * @category Route Path: https://api.dbp.test/projects?v=4&key={key}
      * @see      \App\Http\Controllers\Organization\ProjectsController
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function projects()
     {
         $path = route('v4_projects.index', $this->params);
@@ -63,15 +63,15 @@ class ProjectRoutesTest extends ApiV4Test
      * @category Route Name: v4_oAuth
      * @category Route Path: https://api.dbp.test/projects/{project_id}/oauth-providers/?v=4&key={key}
      * @see      \App\Http\Controllers\Organization\OAuthProvidersController
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function projectsOAuthProvider()
     {
         $this->markTestIncomplete('Returns inconsistent success/failures');
         
-        $project = factory(Project::class)->create();
+        $project = Project::factory()->create();
         $user = Key::where('key', $this->key)->first()->user;
         $admin_role = Role::where('slug', 'admin')->first();
         ProjectMember::create([

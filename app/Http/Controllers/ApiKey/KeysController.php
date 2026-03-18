@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ApiKey;
 use App\Http\Controllers\APIController;
 use App\Models\User\KeyRequest as UserKeyRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 
 class KeysController extends APIController
@@ -22,7 +23,7 @@ class KeysController extends APIController
             'description' => 'required|string',
             'question' => 'string',
             'agreement' => 'required',
-            'g-recaptcha-response' => 'recaptcha'
+            'g-recaptcha-response' => 'required|captcha'
         ];
   
         $validator = Validator::make(request()->all(), $rules);
