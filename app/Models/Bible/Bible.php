@@ -2,12 +2,13 @@
 
 namespace App\Models\Bible;
 
-use DB;
+use Illuminate\Support\Facades\DB;
 use App\Models\Country\Country;
 use App\Models\Country\CountryLanguage;
 use App\Models\Language\Alphabet;
 use App\Models\Language\NumeralSystem;
 use App\Models\Organization\Organization;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -70,6 +71,8 @@ use App\Models\Language\Language;
  */
 class Bible extends Model
 {
+    use HasFactory;
+
     /**
      * @var string
      */
@@ -382,7 +385,7 @@ class Bible extends Model
                 $q->where('bible_filesets.set_type_code', $type_filters['media']);
             }
 
-            $q->select(\DB::raw(1));
+            $q->select(DB::raw(1));
             $q->isContentAvailable($type_filters['access_group_ids']);
             $this->setConditionFilesets($q, $type_filters);
             $this->setConditionTagExclude($q, $type_filters);
@@ -499,6 +502,11 @@ class Bible extends Model
      *
      * @return BibleFileset|null The associated BibleFileset if found, or null otherwise.
      */
+    protected static function newFactory()
+    {
+        return \Database\Factories\Bible\BibleFactory::new();
+    }
+
     public function filesetTypeTextPlainAssociated() : Collection
     {
         // Attempt to retrieve the first bible and its relevant filesets.

@@ -19,6 +19,7 @@ use App\Transformers\PlanDayPlaylistItemsTransformer;
 use App\Transformers\PlanBasicTransformer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
 use App\Services\Plans\PlanService;
@@ -654,7 +655,7 @@ class PlansController extends APIController
 
         $result = null;
         try {
-            \DB::transaction(function () use ($complete, $plan_day, $user) {
+            DB::transaction(function () use ($complete, $plan_day, $user) {
                 if ($complete) {
                     $plan_day->complete($user->id);
                 } else {
@@ -666,7 +667,7 @@ class PlansController extends APIController
         } catch (QueryException $e) {
             // Catch only the error code for a duplicate entry
             if ($e->getCode() == MySQLErrorCode::DUPLICATE_ENTRY) {
-                \Log::info(
+                Log::info(
                     "Exception to complete Plan Day [user: {$user->id} plan ID: {$user_plan->id} plan day ID: {$day_id}]"
                 );
             }  else {
@@ -793,7 +794,7 @@ class PlansController extends APIController
         $save_progress = checkParam('save_progress', false) ?? false;
         $save_progress = filter_var($save_progress, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 
-        $plan = \DB::transaction(function () use ($user, $plan, $user_plan, $save_progress, $start_date) {
+        $plan = DB::transaction(function () use ($user, $plan, $user_plan, $save_progress, $start_date) {
             $user_plan->reset($start_date, $save_progress, $user->id)->save();
             return fractal(
                 $plan,

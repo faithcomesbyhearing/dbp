@@ -10,6 +10,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Carbon\Carbon;
 use App\Models\User\User;
 use App\Services\Bibles\BibleFilesetService;
+use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\Playlist
@@ -36,11 +37,19 @@ class Playlist extends Model
 {
     use SoftDeletes;
 
+    private const FOLLOWING_SELECT = 'IF(playlists_followers.user_id, true, false) as following';
+
     protected $connection = 'dbp_users';
     public $table         = 'user_playlists';
     protected $fillable   = ['user_id', 'name', 'external_content', 'draft', 'plan_id', 'language_id'];
     protected $hidden     = ['user_id', 'deleted_at', 'plan_id', 'language_id'];
-    protected $dates      = ['deleted_at'];
+
+    protected function casts(): array
+    {
+        return [
+            'deleted_at' => 'datetime',
+        ];
+    }
     /**
      *
      * @OA\Property(
@@ -189,7 +198,7 @@ class Playlist extends Model
 
         return Playlist::select([
             'user_playlists.*',
-            \DB::Raw('IF(playlists_followers.user_id, true, false) as following')
+            DB::Raw(self::FOLLOWING_SELECT)
         ])
         ->with(['user', 'items' => function ($query_items) use ($user_id, $valid_filesets) {
             if (!empty($user_id)) {
@@ -244,7 +253,7 @@ class Playlist extends Model
             }]);
         }])
             ->where('user_playlists.id', $playlist_id)
-            ->select(['user_playlists.*', \DB::Raw('false as following')])
+            ->select(['user_playlists.*', DB::Raw('false as following')])
             ->first();
     }
 
@@ -276,7 +285,7 @@ class Playlist extends Model
                     ->where('playlists_followers.user_id', $user_id);
             })
             ->whereIn('user_playlists.id', $playlist_ids)
-            ->select(['user_playlists.*', \DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
+            ->select(['user_playlists.*', DB::Raw(self::FOLLOWING_SELECT)])
             ->get()
             ->keyBy('id');
     }
@@ -296,7 +305,7 @@ class Playlist extends Model
     {
         return Playlist::whereIn('id', $playlist_ids)
             ->whereExists(function (QueryBuilder $query) {
-                return $query->select(\DB::raw(1))
+                return $query->select(DB::raw(1))
                     ->from('playlist_items as pi')
                     ->whereColumn('pi.playlist_id', '=', 'user_playlists.id');
             })
@@ -319,7 +328,7 @@ class Playlist extends Model
                 'verse_sequence',
                 'verses',
                 'duration',
-                \DB::Raw('false as completed'),
+                DB::Raw('false as completed'),
             ]);
 
             $query_items->with(['fileset' => function ($query_fileset) {
@@ -333,7 +342,7 @@ class Playlist extends Model
                     ->where('playlists_followers.user_id', $user_id);
             })
             ->where('user_playlists.id', $playlist_id)
-            ->select(['user_playlists.*', \DB::Raw('IF(playlists_followers.user_id, true, false) as following')])
+            ->select(['user_playlists.*', DB::Raw(self::FOLLOWING_SELECT)])
             ->first();
     }
 

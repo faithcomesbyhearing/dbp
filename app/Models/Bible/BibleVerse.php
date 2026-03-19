@@ -2,9 +2,11 @@
 
 namespace App\Models\Bible;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  *
@@ -19,6 +21,8 @@ use Illuminate\Support\Collection;
  */
 class BibleVerse extends Model
 {
+    use HasFactory;
+
     protected $connection = 'dbp';
     protected $table = 'bible_verses';
     protected $hidden = ['id', 'hash_id'];
@@ -63,6 +67,11 @@ class BibleVerse extends Model
      * )
      */
     protected $verse_text;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Bible\BibleVerseFactory::new();
+    }
 
     public function fileset()
     {
@@ -163,7 +172,7 @@ class BibleVerse extends Model
             ->join('bibles', 'bibles.id', 'bible_fileset_connections.bible_id')
             ->with(["fileset.bible.filesetsWithoutMeta" => function ($query) use ($book_id, $chapter_id) {
                 return $query->whereExists(function ($subquery) use ($book_id, $chapter_id) {
-                    return $subquery->select(\DB::raw(1))
+                    return $subquery->select(DB::raw(1))
                         ->from('bible_files')
                         ->where('bible_files.chapter_start', $chapter_id)
                         ->where('bible_files.book_id', $book_id)

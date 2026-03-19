@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Organization;
 
 use App\Http\Controllers\APIController;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User\Project;
 use App\Models\User\ProjectMember;
 use App\Models\User\Role;
@@ -11,7 +12,8 @@ use App\Transformers\ProjectTransformer;
 
 use Illuminate\View\View;
 use \Illuminate\Http\Response;
-use Validator;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class ProjectsController extends APIController
 {
@@ -87,13 +89,13 @@ class ProjectsController extends APIController
      */
     public function store(Request $request)
     {
-        $user = \Auth::user() ?? $this->user;
+        $user = Auth::user() ?? $this->user;
         if (!$user) {
             return $this->setStatusCode(401)->replyWithError(trans('api.auth_permission_denied'));
         }
         $this->validateProject($request);
 
-        $project = \DB::transaction(function () use ($request, $user) {
+        $project = DB::transaction(function () use ($request, $user) {
             $project = Project::create([
                 'id'              => random_int(1, 65535),
                 'name'            => $request->name,
@@ -151,7 +153,7 @@ class ProjectsController extends APIController
     public function show($id)
     {
         $access_allowed = true;
-        $user           = \Auth::user() ?? $this->user;
+        $user           = Auth::user() ?? $this->user;
 
         $project = Project::find($id);
         if (!$project) {
@@ -159,7 +161,7 @@ class ProjectsController extends APIController
         }
 
         if ($project->sensitive) {
-            $access_allowed = $user !== null ? ($project->members->contains($user) or $user->admin) : false;
+            $access_allowed = $user !== null ? ($project->members()->where('user_id', $user->id)->exists() || $user->admin) : false;
         }
         if (!$access_allowed) {
             return $this->setStatusCode(404)->replyWithError(trans('api.projects_401'));
@@ -258,7 +260,7 @@ class ProjectsController extends APIController
             return $this->setStatusCode(404)->replyWithError(trans('api.projects_404'));
         }
 
-        $access_allowed = $project->admins->where('user_id', $this->user->id)->first();
+        $access_allowed = $project->admins()->where('user_id', $this->user->id)->exists();
         if (!$access_allowed) {
             return $this->setStatusCode(401)->replyWithError(trans('api.projects_destroy_401'));
         }

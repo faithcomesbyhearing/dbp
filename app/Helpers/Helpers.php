@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -8,13 +9,14 @@ use Symfony\Component\HttpFoundation\Response;
 use App\Support\AccessGroupsCollection;
 use App\Models\Bible\BibleFilesetSize;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 function getAccessGroups() : AccessGroupsCollection
 {
     $group_ids = request()->input('middleware_access_group_ids');
 
     if (empty($group_ids)) {
-        \Log::channel('errorlog')->error(["Missing access group ids", Response::HTTP_UNPROCESSABLE_ENTITY]);
+        Log::channel('errorlog')->error(["Missing access group ids", Response::HTTP_UNPROCESSABLE_ENTITY]);
         abort(
             Response::HTTP_UNPROCESSABLE_ENTITY,
             "Missing parameter access group ids."
@@ -526,9 +528,9 @@ if (!function_exists('unique_random')) {
                 $connection = $parameters_connection[0];
                 $table = $parameters_connection[1];
     
-                $count = \DB::connection($connection)->table($table)->where($col, '=', $random)->count();
+                $count = DB::connection($connection)->table($table)->where($col, '=', $random)->count();
             } else {
-                $count = \DB::table($table)->where($col, '=', $random)->count();
+                $count = DB::table($table)->where($col, '=', $random)->count();
             }
 
             // Store the random character in the tested array

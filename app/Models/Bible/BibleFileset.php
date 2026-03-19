@@ -11,6 +11,7 @@ use App\Models\LicenseGroup\LicenseGroupLicensor;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -40,6 +41,8 @@ use Illuminate\Support\Str;
  */
 class BibleFileset extends Model
 {
+    use HasFactory;
+
     public const AUDIO = 'audio';
     public const VIDEO = 'video';
     public const TEXT = 'text';
@@ -58,6 +61,8 @@ class BibleFileset extends Model
     public const V1_AUDIO_16_KBPS_FILESET_LENGTH = 12;
     public const V1_SUFIX_AUDIO_16_KBPS = 'DA16';
     public const V2_SUFIX_AUDIO_16_KBPS = '-opus16';
+
+    private const CHAR_LENGTH_ID_FORMAT = 'CHAR_LENGTH(%s.id)';
 
     protected $connection = 'dbp';
     public $incrementing = false;
@@ -125,6 +130,11 @@ class BibleFileset extends Model
     /**
      * Get the copyright record associated with the fileset
      */
+    protected static function newFactory()
+    {
+        return \Database\Factories\Bible\BibleFilesetFactory::new();
+    }
+
     public function copyright()
     {
         return $this->hasOne(LicenseGroup::class, 'id', 'license_group_id');
@@ -303,7 +313,7 @@ class BibleFileset extends Model
                     $query->where('bible_filesets.id', $id)
                         ->whereExists(function ($query) use ($id) {
                             return $query
-                                ->select(\DB::raw(1))
+                                ->select(DB::raw(1))
                                 ->from('bible_fileset_connections')
                                 ->where('bible_filesets.id', $id)
                                 ->whereColumn('bible_filesets.hash_id', '=', 'bible_fileset_connections.hash_id');
@@ -526,8 +536,8 @@ class BibleFileset extends Model
             ->where('bfctext.content_loaded', true)
             ->where('bfctext.archived', false)
             ->whereColumn('bfctext.set_type_code', '=', $from_table.'.set_type_code')
-            ->where(DB::raw(\sprintf('CHAR_LENGTH(%s.id)', $from_table)), '=', self::OLD_TEXT_PLAIN_FILESET_LENGTH)
-            ->where(DB::raw('CHAR_LENGTH(bfctext.id)'), '=', self::NEW_TEXT_PLAIN_FILESET_LENGTH)
+            ->where(DB::raw(\sprintf(self::CHAR_LENGTH_ID_FORMAT, $from_table)), '=', self::OLD_TEXT_PLAIN_FILESET_LENGTH)
+            ->where(DB::raw(\sprintf(self::CHAR_LENGTH_ID_FORMAT, 'bfctext')), '=', self::NEW_TEXT_PLAIN_FILESET_LENGTH)
             ->whereColumn(
                 DB::raw(\sprintf('SUBSTRING(bfctext.id, %d, %d)', 1, self::OLD_TEXT_PLAIN_FILESET_LENGTH)),
                 '=',
@@ -545,38 +555,54 @@ class BibleFileset extends Model
     {
         $from_table = getAliasOrTableName($query->getQuery()->from);
 
+        // Short-circuit: only evaluate the expensive NOT EXISTS subqueries when the
+        // outer row is a text_plain fileset with a 6-character ID (the old format).
+        // For all other filesets the subqueries would always return no rows anyway,
+        // so we can skip them entirely.
         return $query
-            ->whereNotExists(function (QueryBuilder $subquery) use ($from_table) {
-                // Check for the existence of the same text format for both the six-character fileset and
-                // the 10-character fileset.
-                return $this->subqueryConditionToExcludeOldTextFormat($subquery, $from_table)
-                    ->whereColumn('bfctext.set_size_code', '=', $from_table.'.set_size_code');
-            })->whereNot(function (Builder $subquery) use ($from_table) {
-                // Check for the existence of a complete text format for the six-character fileset, which
-                // includes NT and OT sizes of the 10-character fileset. It will ensure that both NT and
-                // OT exist to avoid returning the six-character fileset.
-                return $subquery->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
-                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
-                        ->where($from_table.'.set_size_code', '=', BibleFilesetSize::SIZE_COMPLETE)
-                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_NEW_TESTAMENT.'%');
-                })->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
-                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
-                        ->where($from_table.'.set_size_code', '=', BibleFilesetSize::SIZE_COMPLETE)
-                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_OLD_TESTAMENT.'%');
-                });
-            })->whereNot(function (Builder $subquery) use ($from_table) {
-                // Check for the existence of partial text formats for the six-character fileset
-                // (e.g., size_type=NTOTP) with NT and OT sizes of the 10-character fileset. It will ensure
-                // that both NT and OT exist to avoid returning the six-character fileset.
-                return $subquery->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
-                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
-                        ->where($from_table.'.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_NEW_TESTAMENT.'%')
-                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_NEW_TESTAMENT.'%');
-                })->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
-                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
-                        ->where($from_table.'.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_OLD_TESTAMENT.'%')
-                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_OLD_TESTAMENT.'%');
-                });
+            ->where(function (Builder $outer) use ($from_table) {
+                $outer
+                    ->where($from_table . '.set_type_code', '!=', self::TYPE_TEXT_PLAIN)
+                    ->orWhere(
+                        DB::raw(\sprintf(self::CHAR_LENGTH_ID_FORMAT, $from_table)),
+                        '!=',
+                        self::OLD_TEXT_PLAIN_FILESET_LENGTH
+                    )
+                    ->orWhere(function (Builder $inner) use ($from_table) {
+                        $inner
+                            ->whereNotExists(function (QueryBuilder $subquery) use ($from_table) {
+                                // Check for the existence of the same text format for both the six-character fileset and
+                                // the 10-character fileset.
+                                return $this->subqueryConditionToExcludeOldTextFormat($subquery, $from_table)
+                                    ->whereColumn('bfctext.set_size_code', '=', $from_table.'.set_size_code');
+                            })->whereNot(function (Builder $subquery) use ($from_table) {
+                                // Check for the existence of a complete text format for the six-character fileset, which
+                                // includes NT and OT sizes of the 10-character fileset. It will ensure that both NT and
+                                // OT exist to avoid returning the six-character fileset.
+                                return $subquery->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
+                                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
+                                        ->where($from_table.'.set_size_code', '=', BibleFilesetSize::SIZE_COMPLETE)
+                                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_NEW_TESTAMENT.'%');
+                                })->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
+                                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
+                                        ->where($from_table.'.set_size_code', '=', BibleFilesetSize::SIZE_COMPLETE)
+                                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_OLD_TESTAMENT.'%');
+                                });
+                            })->whereNot(function (Builder $subquery) use ($from_table) {
+                                // Check for the existence of partial text formats for the six-character fileset
+                                // (e.g., size_type=NTOTP) with NT and OT sizes of the 10-character fileset. It will ensure
+                                // that both NT and OT exist to avoid returning the six-character fileset.
+                                return $subquery->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
+                                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
+                                        ->where($from_table.'.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_NEW_TESTAMENT.'%')
+                                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_NEW_TESTAMENT.'%');
+                                })->whereExists(function (QueryBuilder $subquery_exists) use ($from_table) {
+                                    return $this->subqueryConditionToExcludeOldTextFormat($subquery_exists, $from_table)
+                                        ->where($from_table.'.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_OLD_TESTAMENT.'%')
+                                        ->where('bfctext.set_size_code', 'LIKE', '%'.BibleFilesetSize::SIZE_OLD_TESTAMENT.'%');
+                                });
+                            });
+                    });
             });
     }
 
@@ -590,41 +616,50 @@ class BibleFileset extends Model
     {
         $from_table = getAliasOrTableName($query->getQuery()->from);
 
+        // Short-circuit: only evaluate the NOT EXISTS subquery when the outer row
+        // is an audio/audio_drama fileset with a 12-character ID (the old DA16 format).
+        // For all other filesets this check is irrelevant.
         return $query
-            ->whereNotExists(function (QueryBuilder $subquery) use ($from_table) {
-                return $subquery->select(\DB::raw(1))
-                    ->from('bible_filesets', 'bfcaudio')
-                    ->whereIn('bfcaudio.set_type_code', [BibleFileset::TYPE_AUDIO, BibleFileset::TYPE_AUDIO_DRAMA])
-                    ->whereColumn('bfcaudio.set_type_code', '=', $from_table.'.set_type_code')
-                    ->where(
-                        DB::raw(\sprintf(
-                            'CHAR_LENGTH(%s.id)',
-                            $from_table
-                        )),
-                        '=',
+            ->where(function (Builder $outer) use ($from_table) {
+                $outer
+                    ->whereNotIn($from_table . '.set_type_code', [self::TYPE_AUDIO, self::TYPE_AUDIO_DRAMA])
+                    ->orWhere(
+                        DB::raw(\sprintf(self::CHAR_LENGTH_ID_FORMAT, $from_table)),
+                        '!=',
                         self::V1_AUDIO_16_KBPS_FILESET_LENGTH
                     )
-                    ->where(
-                        DB::raw(\sprintf(
-                            'SUBSTRING(bfcaudio.id, %d, %d)',
-                            strlen(self::V2_SUFIX_AUDIO_16_KBPS)*-1,
-                            strlen(self::V2_SUFIX_AUDIO_16_KBPS)
-                        )),
-                        '=',
-                        self::V2_SUFIX_AUDIO_16_KBPS
-                    )
-                    ->whereColumn(
-                        DB::raw(\sprintf('SUBSTRING(bfcaudio.id, %d, %d)', 1, self::NEW_TEXT_PLAIN_FILESET_LENGTH)),
-                        '=',
-                        DB::raw(
-                            \sprintf(
-                                'SUBSTRING(%s.id, %d, %d)',
-                                $from_table,
-                                1,
-                                self::NEW_TEXT_PLAIN_FILESET_LENGTH
-                            ),
-                        )
-                    );
+                    ->orWhereNotExists(function (QueryBuilder $subquery) use ($from_table) {
+                        return $subquery->select(DB::raw(1))
+                            ->from('bible_filesets', 'bfcaudio')
+                            ->whereIn('bfcaudio.set_type_code', [BibleFileset::TYPE_AUDIO, BibleFileset::TYPE_AUDIO_DRAMA])
+                            ->whereColumn('bfcaudio.set_type_code', '=', $from_table.'.set_type_code')
+                            ->where(
+                                DB::raw(\sprintf(self::CHAR_LENGTH_ID_FORMAT, $from_table)),
+                                '=',
+                                self::V1_AUDIO_16_KBPS_FILESET_LENGTH
+                            )
+                            ->where(
+                                DB::raw(\sprintf(
+                                    'SUBSTRING(bfcaudio.id, %d, %d)',
+                                    strlen(self::V2_SUFIX_AUDIO_16_KBPS)*-1,
+                                    strlen(self::V2_SUFIX_AUDIO_16_KBPS)
+                                )),
+                                '=',
+                                self::V2_SUFIX_AUDIO_16_KBPS
+                            )
+                            ->whereColumn(
+                                DB::raw(\sprintf('SUBSTRING(bfcaudio.id, %d, %d)', 1, self::NEW_TEXT_PLAIN_FILESET_LENGTH)),
+                                '=',
+                                DB::raw(
+                                    \sprintf(
+                                        'SUBSTRING(%s.id, %d, %d)',
+                                        $from_table,
+                                        1,
+                                        self::NEW_TEXT_PLAIN_FILESET_LENGTH
+                                    ),
+                                )
+                            );
+                    });
             });
     }
 

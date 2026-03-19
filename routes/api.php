@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 // VERSION 4 | Countries
 Route::name('v4_countries.all')
 ->middleware('AccessControl')
@@ -238,13 +240,13 @@ Route::name('v4_media_stream_ts')
 );
 
 ## this is no good. StreamController::index does not process book_id/chapter/verse_start/verse_end
-Route::name('v4_media_stream')
+Route::name('v4_media_stream_by_reference')
 ->middleware($applyMiddleware)
 ->get(
     'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start?}-{verse_end?}/playlist.m3u8',
     $masterStreamController
 );
-Route::name('v4_media_stream_ts')->get(
+Route::name('v4_media_stream_ts_by_reference')->get(
     'bible/filesets/{fileset_id}/{book_id}-{chapter}-{verse_start}-{verse_end}/{file_name}',
     $subStreamController
 );
@@ -374,7 +376,7 @@ Route::name('v4_internal_playlists.translate')
     ->get('playlists/{playlist_id}/translate', 'Playlist\PlaylistsController@translate');
 Route::name('v4_internal_playlists.hls')
     ->get('playlists/{playlist_id}/hls', 'Playlist\PlaylistsController@hls');
-Route::name('v4_internal_playlists_item.hls')
+Route::name('v4_internal_playlists_item.hls_by_reference')
     ->get(
         'playlists/{fileset_id}-{book_id}-{chapter}-{verse_start}-{verse_end}/item-hls',
         'Playlist\PlaylistsController@itemHls'

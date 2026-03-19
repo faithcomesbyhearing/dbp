@@ -10,6 +10,7 @@ use App\Models\Playlist\PlaylistItems;
 use App\Models\Bible\BibleFilesetConnection;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleFilesetSize;
+use Illuminate\Support\Facades\DB;
 
 trait UserAnnotationTrait
 {
@@ -79,7 +80,7 @@ trait UserAnnotationTrait
         // chapter combination.
         return $query
             ->where($this->table.'.book_id', $book_id)
-            ->whereIn(\DB::raw("CONCAT($this->table.bible_id, '', $this->table.chapter)"), $bible_per_chapter);
+            ->whereIn(DB::raw("CONCAT($this->table.bible_id, '', $this->table.chapter)"), $bible_per_chapter);
     }
 
     /**

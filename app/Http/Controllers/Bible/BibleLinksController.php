@@ -6,6 +6,7 @@ use App\Models\Language\Language;
 use App\Transformers\BibleLinksTransformer;
 use App\Models\Organization\Organization;
 use App\Http\Controllers\APIController;
+use Illuminate\Support\Facades\DB;
 
 class BibleLinksController extends APIController
 {
@@ -30,7 +31,7 @@ class BibleLinksController extends APIController
                 return $this->setStatusCode(404)->replyWithError(trans('api.languages_errors_404'));
             }
 
-            $bibleLinks = \DB::table('bible_links')
+            $bibleLinks = DB::table('bible_links')
                 ->join('bible_translations', function ($q) use ($language) {
                     $q->on('bible_links.bible_id', 'bible_translations.bible_id')->where('language_id', $language->id);
                 })

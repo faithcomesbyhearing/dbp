@@ -24,7 +24,7 @@ class AccessControlTest extends ApiV4Test
      */
     public function accessAllowedBasic()
     {
-        $user = $this->createUserAndAccessGroup(factory(AccessType::class)->make());
+        $user = $this->createUserAndAccessGroup(AccessType::factory()->make());
         $access_controls = $this->accessControl($user->keys->first());
 
         $this->assertTrue(count($access_controls->identifiers) > 0);
@@ -56,7 +56,7 @@ class AccessControlTest extends ApiV4Test
         // Mock IP address uses North America and US by default
         $this->mockIpTest();
 
-        $user = $this->createUserAndAccessGroup(factory(AccessType::class)->make(['country_id' => 'US']));
+        $user = $this->createUserAndAccessGroup(AccessType::factory()->make(['country_id' => 'US']));
         $access_controls = $this->accessControl($user->keys->first());
 
         // Assert hashes attached to the group are returned
@@ -75,7 +75,7 @@ class AccessControlTest extends ApiV4Test
         // Mock IP address uses North America and US by default
         $this->mockIpTest();
 
-        $user = $this->createUserAndAccessGroup(factory(AccessType::class)->make(['country_id' => 'IN']));
+        $user = $this->createUserAndAccessGroup(AccessType::factory()->make(['country_id' => 'IN']));
         $access_controls = $this->accessControl($user->keys->first());
 
         $this->assertFalse(Str::contains($access_controls->string, 'RESTRICTED'));
@@ -92,7 +92,7 @@ class AccessControlTest extends ApiV4Test
         // Mock IP Test asserts North American Origin by Default
         $this->mockIpTest();
 
-        $user = $this->createUserAndAccessGroup(factory(AccessType::class)->make(['country_id' => 'US']));
+        $user = $this->createUserAndAccessGroup(AccessType::factory()->make(['country_id' => 'US']));
         $access_controls = $this->accessControl($user->keys->first());
 
         $this->assertNotContains($user->keys->access->first()->filesets->hash_id, $access_controls->identifiers);
@@ -118,8 +118,8 @@ class AccessControlTest extends ApiV4Test
 
     private function createUserAndAccessGroup($type)
     {
-        $user = factory(User::class)->state('developer')->create();
-        $user->keys->first()->access()->sync(factory(AccessGroup::class)->create()
+        $user = User::factory()->developer()->create();
+        $user->keys->first()->access()->sync(AccessGroup::factory()->create()
             ->each(function ($access_group) use ($type) {
                 $access_group->types()->save($type);
             }));

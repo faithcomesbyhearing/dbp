@@ -3,8 +3,10 @@
 namespace App\Models\Bible;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Bible\BibleBook;
 use App\Models\Bible\BibleFilesetSize;
+use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\Bible\Book
@@ -337,7 +339,7 @@ class Book extends Model
      */
     public static function hasVersificationColumn(string $versification) : bool
     {
-        return \Schema::connection('dbp')->hasColumn('books', $versification . '_order');
+        return Schema::connection('dbp')->hasColumn('books', $versification . '_order');
     }
 
     /**
@@ -355,7 +357,7 @@ class Book extends Model
             ? $versification
             : 'protestant';
 
-        return \DB::connection('dbp')
+        return DB::connection('dbp')
             ->table('books')
             ->join('bible_books', function ($join) use ($bible_id) {
                 $join->on('bible_books.book_id', '=', 'books.id')

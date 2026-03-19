@@ -2,7 +2,8 @@
 
 namespace App\Models\Bible;
 
-use DB;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use App\Models\Language\Language;
@@ -56,6 +57,8 @@ use App\Models\Bible\Bible;
  */
 class BibleFile extends Model
 {
+    use HasFactory;
+
     protected $connection = 'dbp';
     protected $table = 'bible_files';
     protected $hidden = ['created_at','updated_at'];
@@ -210,6 +213,11 @@ class BibleFile extends Model
      * )
      */
     protected $is_complete_chapter;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Bible\BibleFileFactory::new();
+    }
 
     public function language()
     {

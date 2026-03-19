@@ -1,4 +1,4 @@
-FROM php:8.2.7-fpm
+FROM php:8.3.30-fpm
 
 RUN apt-get update && \
 apt-get install -y \
@@ -30,12 +30,15 @@ RUN docker-php-ext-install pdo
 RUN docker-php-ext-install pdo_mysql && docker-php-ext-enable pdo_mysql
 
 # Install memcached
-RUN pecl install memcached-3.1.5 &&\
+RUN pecl install memcached &&\
 docker-php-ext-enable memcached
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer \
   | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Allow git to operate on mounted volume with different ownership
+RUN git config --global --add safe.directory /opt/app
 
 # Setup workdir
 WORKDIR /opt/app

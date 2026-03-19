@@ -9,6 +9,7 @@ use App\Models\Traits\ModelBase;
 use App\Models\Playlist\PlaylistItems;
 use App\Models\Playlist\PlaylistItemsComplete;
 use App\Models\Plan\PlanDayComplete;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @OA\Schema (
@@ -137,7 +138,7 @@ class UserPlan extends Model
      */
     public static function removePlanDaysCompleteByPlanId(int $plan_id, int $user_id) : void
     {
-        \DB::transaction(function () use ($plan_id, $user_id) {
+        DB::transaction(function () use ($plan_id, $user_id) {
             $playlist_ids_by_plan = PlanDay::getPlaylistIdsByPlanAndUser($plan_id, $user_id);
             PlaylistItemsComplete::removeItemsByPlayListsAndUser($playlist_ids_by_plan, $user_id);
             PlanDayComplete::removeDaysByPlanAndUser($plan_id, $user_id);
