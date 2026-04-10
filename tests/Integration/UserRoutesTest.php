@@ -77,6 +77,14 @@ class UserRoutesTest extends ApiV4Test
     }
 
     /**
+     * Whitelist the test API key for user data access in the current test.
+     */
+    private function whitelistTestKey()
+    {
+        config(['auth.compat_users.api_keys.user_data_access' => $this->key]);
+    }
+
+    /**
      * @category V4_API
      * @category Route Name: v4_user
      * @category Route Path: https://api.dbp.test/users?v=4&key={key}
@@ -87,6 +95,8 @@ class UserRoutesTest extends ApiV4Test
      */
     public function users()
     {
+        $this->whitelistTestKey();
+
         $key = Key::with('user.projectMembers')->where('key', $this->key)->first();
         $project_id = $key->user->projectMembers->whereIn('role_id', [2,4])->first()->project_id;
 
@@ -313,6 +323,56 @@ class UserRoutesTest extends ApiV4Test
         $path = route('v4_bookmarks.destroy', array_merge(['user_id' => $key->user_id,'bookmark_id' =>$test_bookmark->id], $this->params));
         echo "\nTesting: $path";
         $response = $this->withHeaders($this->params)->delete($path);
+        $response->assertSuccessful();
+    }
+
+    /**
+     * @group    V4
+     * @group    travis
+     * @test
+     */
+    public function nonWhitelistedKeyGetsForbiddenOnUserEndpoints()
+    {
+        // Ensure the test key is NOT whitelisted
+        config(['auth.compat_users.api_keys.user_data_access' => 'some-other-key']);
+
+        $path = route('v4_internal_user.index', array_merge($this->params, ['project_id' => 1]));
+        $response = $this->withHeaders($this->params)->get($path);
+        $response->assertStatus(403);
+
+        $path = route('v4_internal_user.show', array_merge($this->params, ['user_id' => 1]));
+        $response = $this->withHeaders($this->params)->get($path);
+        $response->assertStatus(403);
+    }
+
+    /**
+     * @group    V4
+     * @group    travis
+     * @test
+     */
+    public function nonWhitelistedKeyGetsForbiddenOnAccountEndpoints()
+    {
+        config(['auth.compat_users.api_keys.user_data_access' => 'some-other-key']);
+
+        $path = route('v4_internal_user_accounts.index', array_merge($this->params, ['project_id' => 1, 'user_id' => 1]));
+        $response = $this->withHeaders($this->params)->get($path);
+        $response->assertStatus(403);
+    }
+
+    /**
+     * @group    V4
+     * @group    travis
+     * @test
+     */
+    public function whitelistedKeyCanAccessUserEndpoints()
+    {
+        $this->whitelistTestKey();
+
+        $key = Key::with('user.projectMembers')->where('key', $this->key)->first();
+        $project_id = $key->user->projectMembers->whereIn('role_id', [2,4])->first()->project_id;
+
+        $path = route('v4_internal_user.index', array_merge($this->params, ['project_id' => $project_id]));
+        $response = $this->withHeaders($this->params)->get($path);
         $response->assertSuccessful();
     }
 }
