@@ -65,6 +65,12 @@ return [
             'path'           => storage_path('logs/api/api.log')
         ],
 
+        'user_data_access' => [
+            'driver' => 'daily',
+            'path'   => storage_path('logs/user_data_access_access.log'),
+            'days'   => 90,
+        ],
+
         'slack' => [
             'driver'   => 'slack',
             'url'      => env('LOG_SLACK_WEBHOOK_URL'),
