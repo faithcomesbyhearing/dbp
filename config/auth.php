@@ -82,6 +82,7 @@ return [
         'api_keys' => [
             'bibleis' => env('BIBLEIS_KEYS'),
             'gideons' => env('GIDEONS_KEYS'),
+            'user_data_access' => env('USER_DATA_ACCESS_KEYS', ''),
         ],
     ],
 

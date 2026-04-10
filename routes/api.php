@@ -281,24 +281,21 @@ Route::name('v4_internal_library_search')
     ->get('search/library', 'Bible\TextController@searchLibrary');
 
 // VERSION 4 | Users (bible.is private)
-Route::name('v4_internal_user.index')->get(
-    'users',
-    'User\UsersController@index'
-);
+Route::name('v4_internal_user.index')
+    ->middleware(['UserDataAccess', 'UserDataAuditLog'])
+    ->get('users', 'User\UsersController@index');
 Route::name('v4_internal_user.store')->post(
     'users',
     'User\UsersController@store'
 );
-Route::name('v4_internal_user.show')->get(
-    'users/{user_id}',
-    'User\UsersController@show'
-);
-Route::name('v4_internal_user.update')->put(
-    'users/{user_id}',
-    'User\UsersController@update'
-);
+Route::name('v4_internal_user.show')
+    ->middleware(['UserDataAccess', 'UserDataAuditLog'])
+    ->get('users/{user_id}', 'User\UsersController@show');
+Route::name('v4_internal_user.update')
+    ->middleware(['UserDataAccess', 'UserDataAuditLog'])
+    ->put('users/{user_id}', 'User\UsersController@update');
 Route::name('v4_internal_user.destroy')
-    ->middleware('APIToken:check')
+    ->middleware(['APIToken:check', 'UserDataAccess', 'UserDataAuditLog'])
     ->delete('users', 'User\UsersController@destroy');
 Route::name('v4_internal_user.login')->post(
     '/login',
@@ -331,16 +328,16 @@ Route::name('v4_internal_api_token.validate')
 
 // VERSION 4 | Playlists (bible.is private)
 Route::name('v4_internal_playlists.index')
-    ->middleware('APIToken')
+    ->middleware(['APIToken', 'UserDataAccess', 'UserDataAuditLog'])
     ->get('playlists', 'Playlist\PlaylistsController@index');
 Route::name('v4_internal_playlists.store')
     ->middleware('APIToken:check')
     ->post('playlists', 'Playlist\PlaylistsController@store');
 Route::name('v4_internal_playlists.show')
-    ->middleware('APIToken')
+    ->middleware(['APIToken', 'UserDataAccess', 'UserDataAuditLog'])
     ->get('playlists/{playlist_id}', 'Playlist\PlaylistsController@show');
 Route::name('v4_internal_playlists.show_text')
-    ->middleware('APIToken')
+    ->middleware(['APIToken', 'UserDataAccess', 'UserDataAuditLog'])
     ->get(
         'playlists/{playlist_id}/text',
         'Playlist\PlaylistsController@showText'
@@ -403,13 +400,13 @@ Route::name('v4_internal_playlists.bookmarks')
     ->whereAlphaNumeric('book_id');
 // VERSION 4 | Plans (bible.is private)
 Route::name('v4_internal_plans.index')
-    ->middleware('APIToken')
+    ->middleware(['APIToken', 'UserDataAccess', 'UserDataAuditLog'])
     ->get('plans', 'Plan\PlansController@index');
 Route::name('v4_internal_plans.store')
     ->middleware('APIToken:check')
     ->post('plans', 'Plan\PlansController@store');
 Route::name('v4_internal_plans.show')
-    ->middleware('APIToken')
+    ->middleware(['APIToken', 'UserDataAccess', 'UserDataAuditLog'])
     ->get('plans/{plan_id}', 'Plan\PlansController@show');
 Route::name('v4_internal_plans.update')
     ->middleware('APIToken:check')
@@ -443,22 +440,18 @@ Route::name('v4_internal_plans_days.delete')
     ->delete('plans/{plan_id}/day', 'Plan\PlansController@deleteDays');
 
 // VERSION 4 | Accounts (bible.is private)
-Route::name('v4_internal_user_accounts.index')->get(
-    'accounts',
-    'User\AccountsController@index'
-);
-Route::name('v4_internal_user_accounts.store')->post(
-    'accounts',
-    'User\AccountsController@store'
-);
-Route::name('v4_internal_user_accounts.update')->put(
-    'accounts',
-    'User\AccountsController@update'
-);
-Route::name('v4_internal_user_accounts.destroy')->delete(
-    'accounts',
-    'User\AccountsController@destroy'
-);
+Route::name('v4_internal_user_accounts.index')
+    ->middleware(['UserDataAccess', 'UserDataAuditLog'])
+    ->get('accounts', 'User\AccountsController@index');
+Route::name('v4_internal_user_accounts.store')
+    ->middleware(['UserDataAccess', 'UserDataAuditLog'])
+    ->post('accounts', 'User\AccountsController@store');
+Route::name('v4_internal_user_accounts.update')
+    ->middleware(['UserDataAccess', 'UserDataAuditLog'])
+    ->put('accounts', 'User\AccountsController@update');
+Route::name('v4_internal_user_accounts.destroy')
+    ->middleware(['UserDataAccess', 'UserDataAuditLog'])
+    ->delete('accounts', 'User\AccountsController@destroy');
 
 // VERSION 4 | Annotations with api_token (bible.is private)
 Route::middleware('APIToken')->group(function () {
