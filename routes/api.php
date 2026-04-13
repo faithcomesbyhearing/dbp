@@ -178,6 +178,11 @@ Route::name('v4_bible_filesets_download.list')
     'Bible\BibleFilesetsDownloadController@list'
 );
 
+Route::name('v4_bible_filesets_download.package_create')->post(
+    'download/package-create',
+    'Bible\BibleFilesetsDownloadController@packageCreate'
+);
+
 Route::name('v4_bible_filesets_download.index')
     ->middleware(['APIToken', 'AccessControl'])
     ->get(
