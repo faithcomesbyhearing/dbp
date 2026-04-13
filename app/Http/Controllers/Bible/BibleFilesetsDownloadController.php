@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Bible;
 
-use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use App\Traits\AccessControlAPI;
 use App\Traits\CallsBucketsTrait;
 use App\Traits\BibleFileSetsTrait;
@@ -227,5 +230,51 @@ class BibleFilesetsDownloadController extends APIController
         );
 
         return $this->reply(fractal($filesets, new BibleFileSetsDownloadTransFormer));
+    }
+
+    /**
+     * Proxies package creation to BBHub (POST /package/create-by-filesets).
+     * Same API key rules as v2 `/library/language`: `key` + `v`, no AccessControl.
+     */
+    public function packageCreate(Request $request): Response|JsonResponse
+    {
+        $payload = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($payload)) {
+            $this->setStatusCode(400);
+            return $this->replyWithError('Request body must be valid JSON.');
+        }
+
+        $validator = Validator::make($payload, [
+            'filesets'       => 'required|array',
+            'filesets.*'     => 'string',
+            'encryptionType' => 'required|integer',
+        ]);
+        if ($validator->fails()) {
+            $this->setStatusCode(422);
+            return $this->replyWithError($validator->errors()->first());
+        }
+
+        $baseUrl = rtrim((string) config('services.bbhub.url'), '/');
+        $url = $baseUrl . '/package/create-by-filesets';
+        $timeout = (int) config('services.bbhub.service_timeout', 60);
+
+        try {
+            $upstream = Http::timeout($timeout)
+                ->acceptJson()
+                ->asJson()
+                ->post($url, $payload);
+        } catch (ConnectionException $e) {
+            \Log::warning('BBHub connection failed', ['url' => $url, 'exception' => $e->getMessage()]);
+            $this->setStatusCode(503);
+            return $this->replyWithError('BBHub is unavailable.');
+        }
+
+        $response = response($upstream->body(), $upstream->status());
+        $contentType = $upstream->header('Content-Type');
+        if ($contentType) {
+            $response->header('Content-Type', $contentType);
+        }
+
+        return $response;
     }
 }
