@@ -114,6 +114,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rate Limiting IP Whitelist
+    |--------------------------------------------------------------------------
+    |
+    | Comma-separated list of trusted IP addresses that bypass API rate
+    | limiting. Used for proxy servers (e.g. live.bible.is) that already
+    | have rate limiting enforced at the infrastructure level.
+    |
+    */
+
+    'ip_trusted_no_rate_limit' => env('IP_TRUSTED_NO_RATE_LIMIT', ''),
+
+    /*
+    |--------------------------------------------------------------------------
     | Autoloaded Service Providers
     |--------------------------------------------------------------------------
     |
