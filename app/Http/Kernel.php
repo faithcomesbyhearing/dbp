@@ -73,7 +73,7 @@ class Kernel extends HttpKernel
         'can'                     => \Illuminate\Auth\Middleware\Authorize::class,
         'guest'                   => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'signed'                  => \Illuminate\Routing\Middleware\ValidateSignature::class,
-        'throttle'                => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        'throttle'                => \App\Http\Middleware\ThrottleRequestsWithWhitelist::class,
         'verified'                => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'APIToken'                => \App\Http\Middleware\APIToken::class,
         'AccessControl'           => \App\Http\Middleware\AccessControl::class,
