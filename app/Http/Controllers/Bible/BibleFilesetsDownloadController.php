@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use App\Traits\AccessControlAPI;
@@ -240,7 +241,7 @@ class BibleFilesetsDownloadController extends APIController
     {
         $payload = json_decode($request->getContent(), true);
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($payload)) {
-            $this->setStatusCode(400);
+            $this->setStatusCode(Response::HTTP_BAD_REQUEST);
             return $this->replyWithError('Request body must be valid JSON.');
         }
 
@@ -250,7 +251,7 @@ class BibleFilesetsDownloadController extends APIController
             'encryptionType' => 'required|integer',
         ]);
         if ($validator->fails()) {
-            $this->setStatusCode(422);
+            $this->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY);
             return $this->replyWithError($validator->errors()->first());
         }
 
@@ -259,13 +260,19 @@ class BibleFilesetsDownloadController extends APIController
         $timeout = (int) config('services.bbhub.service_timeout', 60);
 
         try {
-            $upstream = Http::timeout($timeout)
+            $upstream = Http::retry(3, 100, function ($exception, PendingRequest $request) {
+                return $exception instanceof ConnectionException;
+            })
+                ->timeout($timeout)
                 ->acceptJson()
                 ->asJson()
                 ->post($url, $payload);
         } catch (ConnectionException $e) {
-            \Log::warning('BBHub connection failed', ['url' => $url, 'exception' => $e->getMessage()]);
-            $this->setStatusCode(503);
+            \Log::warning('BBHub connection failed after retries', [
+                'url' => $url,
+                'exception' => $e->getMessage(),
+            ]);
+            $this->setStatusCode(Response::HTTP_SERVICE_UNAVAILABLE);
             return $this->replyWithError('BBHub is unavailable.');
         }
 
