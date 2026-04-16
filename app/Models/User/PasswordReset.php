@@ -19,7 +19,7 @@ class PasswordReset extends Model
 {
     protected $connection = 'dbp_users';
     protected $table = 'password_resets';
-    protected $fillable = ['email','token','reset_path','created_at'];
+    protected $fillable = ['email','token','reset_path','created_at','language'];
     public $incrementing = false;
     public $keyType = 'string';
     public $primaryKey = 'token';
