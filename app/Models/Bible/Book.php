@@ -3,11 +3,6 @@
 namespace App\Models\Bible;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Collection;
-use Illuminate\Database\Query\Expression;
-use App\Models\Bible\BibleVerse;
-use App\Models\Bible\BibleFileset;
 use App\Models\Bible\BibleBook;
 use App\Models\Bible\BibleFilesetSize;
 
@@ -346,56 +341,27 @@ class Book extends Model
     }
 
     /**
-     * Get the Book records from a given fileset object
+     * Get full book records by IDs for a given bible, ordered by versification.
      *
-     * @param BibleFileset $fileset
+     * @param string $bible_id
+     * @param array  $book_ids
      * @param string $versification
-     * @param string $fileset_type
      *
-     * @return Collection
+     * @return \Illuminate\Support\Collection
      */
-    public static function getActiveBooksFromFileset(
-        BibleFileset $fileset,
-        string $versification,
-        string $fileset_type = null
-    ) : Collection {
+    public static function getBooksByIdsForBible(string $bible_id, array $book_ids, string $versification) : \Illuminate\Support\Collection
+    {
         $book_order_column = self::hasVersificationColumn($versification)
             ? $versification
             : 'protestant';
 
-        $is_plain_text = BibleVerse::where('hash_id', $fileset->hash_id)->exists();
-
         return \DB::connection('dbp')
-            ->table('bible_filesets as fileset')
-            ->where('fileset.id', $fileset->id)
-            ->leftJoin(
-                'bible_fileset_connections as connection',
-                'connection.hash_id',
-                'fileset.hash_id'
-            )
-            ->leftJoin('bibles', 'bibles.id', 'connection.bible_id')
-            ->when($fileset_type, function ($q) use ($fileset_type) {
-                $q->where('set_type_code', $fileset_type);
+            ->table('books')
+            ->join('bible_books', function ($join) use ($bible_id) {
+                $join->on('bible_books.book_id', '=', 'books.id')
+                    ->where('bible_books.bible_id', '=', $bible_id);
             })
-            ->join('bible_books', function ($join) {
-                $join->on('bible_books.bible_id', 'bibles.id');
-            })
-            ->rightJoin('books', 'books.id', 'bible_books.book_id')
-            ->when(!$is_plain_text, function ($query) use ($fileset) {
-                $query = self::compareFilesetToFileTableBooks($query, $fileset->hash_id);
-            })
-            ->where(function ($query) {
-                $size_code_expression = new Expression("fileset.set_size_code LIKE CONCAT('%', books.book_testament, '%')");
-                $covenant_expression = new Expression("(fileset.set_size_code = '".BibleFilesetSize::SIZE_STORIES."' AND books.book_testament = '".self::COVENANT_TESTAMENT."')");
-                // The set_size_code value in the fileset column must be either equal to "C" (COMPLETE) or have the
-                // book_testament value from the book column contained within it. For example, if the book_testament
-                // value is "NT" and the set_size_code value is "NTP".
-                $query->orWhereColumn('fileset.set_size_code', '=', 'books.book_testament')
-                    ->orWhere('fileset.set_size_code', BibleFilesetSize::SIZE_COMPLETE)
-                    ->orWhereRaw($size_code_expression->getValue(\DB::connection()->getQueryGrammar()))
-                    // If the set_size_code is "S" (STORIES) and the book_testament is "CV" (COVENANT) to select the covenant films books
-                    ->orWhereRaw($covenant_expression->getValue(\DB::connection()->getQueryGrammar()));
-            })
+            ->whereIn('books.id', $book_ids)
             ->select([
                 'books.id',
                 'books.id_usfx',
@@ -411,24 +377,5 @@ class Book extends Model
             ])
             ->orderBy(BibleBook::BOOK_ORDER_COLUMN)
             ->get();
-    }
-
-    /**
-     *
-     * @param $query
-     * @param $hashId
-     */
-    public static function compareFilesetToFileTableBooks(Builder $query, string $hashId) : Builder
-    {
-        // If the fileset referencesade dbp.bible_files from that table
-        $fileset_book_ids = \DB::connection('dbp')
-            ->table('bible_files')
-            ->where('hash_id', $hashId)
-            ->select(['book_id'])
-            ->distinct()
-            ->get()
-            ->pluck('book_id');
-
-        return $query->whereIn('bible_books.book_id', $fileset_book_ids);
     }
 }

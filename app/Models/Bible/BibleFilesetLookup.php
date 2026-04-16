@@ -143,6 +143,10 @@ class BibleFilesetLookup extends Model
         ->join('bibles', 'bibles.id', 'bible_fileset_connections.bible_id')
         ->join('languages', 'languages.id', 'bibles.language_id')
         ->join('license_group_licensor', 'license_group_licensor.license_group_id', 'bible_filesets.license_group_id')
+        ->join('organizations', function (JoinClause $join) {
+            $join->on('organizations.id', 'license_group_licensor.organization_id')
+                ->whereNull('organizations.deleted_at');
+        })
         ->join('organization_translations', function (JoinClause $join) {
             $join->on(
                 'organization_translations.organization_id',

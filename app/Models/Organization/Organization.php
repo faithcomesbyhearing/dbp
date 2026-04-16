@@ -8,6 +8,7 @@ use App\Models\Bible\Bible;
 use App\Models\LicenseGroup\LicenseGroupLicensor;
 use App\Models\User\Role;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use OpenApi\Annotations\License;
 
 /**
@@ -78,13 +79,16 @@ use OpenApi\Annotations\License;
  */
 class Organization extends Model
 {
+    use SoftDeletes;
+
     const SIL_LICENSOR_ID = 19;
     const USED_WITH_PERMISSION = 'used with permission';
     const USED_WITH_PERMISSION_SLUG = 'used-with-permission';
 
     protected $connection = 'dbp';
     // The attributes excluded from the model's JSON form.
-    protected $hidden = ['logo','facebook','twitter','code','created_at','updated_at','notes'];
+    protected $hidden = ['logo','facebook','twitter','code','created_at','updated_at','deleted_at','notes'];
+    protected $dates  = ['deleted_at'];
     protected $fillable = ['name', 'email', 'password','facebook','twitter','website','address','phone'];
 
     /**

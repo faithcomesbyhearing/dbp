@@ -114,11 +114,20 @@ trait AccessControlAPI
      *
      * @param string $api_key
      *
-     * @return string
+     * @return bool
      */
     private function doesApiKeyBelongToBibleis(string $api_key) : bool
     {
-        return config('auth.compat_users.api_keys.bibleis') === $api_key;
+        $keys = config('auth.compat_users.api_keys.bibleis');
+
+        if ($keys === null || trim((string) $keys) === '') {
+            return false;
+        }
+
+        // Support multiple keys separated by comma
+        $allowed_keys = array_map('trim', explode(',', $keys));
+
+        return in_array($api_key, $allowed_keys, true);
     }
 
     public function allowedByAccessControl(BibleFileset $fileset)
