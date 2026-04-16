@@ -31,9 +31,6 @@ services:
     depends_on:
       - db8
       - dbpusers8
-    environment:
-      # package-create API URL (override in .env if service runs on host)
-      - PACKAGE_CREATE_URL=${PACKAGE_CREATE_URL:-http://localhost:5044/package/create}
 
   server:
     image: nginx:stable-alpine
