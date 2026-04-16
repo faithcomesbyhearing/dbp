@@ -358,8 +358,14 @@ class UsersController extends APIController
             'social_provider_user_id',
             'autocreate',
         ]);
-        // If autocreate is explicitly false, return null to trigger 401
-        if ($autocreate === false) {
+
+        // Before erroring when autocreate=false, check if a user with this email exists
+        $user = $request->email
+            ? User::with('accounts', 'profile')->where('email', $request->email)->first()
+            : null;
+
+        // Return null (401) only when autocreate is false AND no user exists for this email
+        if ($autocreate === false && !$user) {
             $no_match_log = 'social provider login with no matching DBP account. ' .
                             'request:' . json_encode($safe_log_fields) .
                             ', provider_id: ' . $provider_id .
@@ -371,21 +377,14 @@ class UsersController extends APIController
             return null;
         }
 
-        // autocreate is true (default behavior) - auto-create account
-        $no_match_log = 'social provider login with no matching DBP info.' .
-                        ' request:' . json_encode($safe_log_fields) .
-                        ', provider_id: ' . $provider_id .
-                        ', provider_user_id: ' . $provider_user_id .
-                        ', autocreate: true';
-        Log::error($no_match_log);
-        // Verify a user with the email exist
-        if (!$request->email) {
-            $user = null;
-        } else {
-            $user = User::with('accounts', 'profile')->where('email', $request->email)->first();
-        }
-        // Create user if not exists
+        // Resolve user: existing by email or create when autocreate is true
         if (!$user) {
+            $no_match_log = 'social provider login with no matching DBP info.' .
+                            ' request:' . json_encode($safe_log_fields) .
+                            ', provider_id: ' . $provider_id .
+                            ', provider_user_id: ' . $provider_user_id .
+                            ', autocreate: true';
+            Log::error($no_match_log);
             $user = User::create([
                 'name' => $request->name,
                 'first_name' => $request->first_name,

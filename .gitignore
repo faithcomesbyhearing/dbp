@@ -63,3 +63,6 @@ tools/permissionValidation/runlog*
 # Codebuild
 /artifacts/
 codebuild_build.sh
+
+# AI Generated Files
+docs/
