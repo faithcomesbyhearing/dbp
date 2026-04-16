@@ -236,6 +236,68 @@ class BibleFilesetsDownloadController extends APIController
     /**
      * Proxies package creation to BBHub (POST /package/create-by-filesets).
      * Same API key rules as v2 `/library/language`: `key` + `v`, no AccessControl.
+     *
+     * @OA\Post(
+     *     path="/download/package-create",
+     *     operationId="v4_download_package_create",
+     *     tags={"Bibles"},
+     *     summary="Create a download package from filesets",
+     *     description="Accepts a JSON payload containing fileset IDs and an encryption type, then proxies the request to BBHub package creation.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"filesets","encryptionType"},
+     *             @OA\Property(
+     *                 property="filesets",
+     *                 type="array",
+     *                 minItems=1,
+     *                 uniqueItems=true,
+     *                 @OA\Items(type="string", minLength=1),
+     *                 example={"ENGESVN2DA","ENGESVO1DA"}
+     *             ),
+     *             @OA\Property(
+     *                 property="encryptionType",
+     *                 type="integer",
+     *                 example=1
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Response from the upstream BBHub service (status and body are proxied).",
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 additionalProperties=true
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Request body must be valid JSON.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="Request body must be valid JSON.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation failed for the request body.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="The filesets field is required.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=503,
+     *         description="BBHub is unavailable.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="BBHub is unavailable.")
+     *         )
+     *     )
+     * )
      */
     public function packageCreate(Request $request): Response|JsonResponse
     {
@@ -246,9 +308,9 @@ class BibleFilesetsDownloadController extends APIController
         }
 
         $validator = Validator::make($payload, [
-            'filesets'       => 'required|array',
-            'filesets.*'     => 'string',
-            'encryptionType' => 'required|integer',
+            'filesets'         => 'required|array|min:1',
+            'filesets.*'       => 'string|min:1|distinct',
+            'encryptionType'   => 'required|integer',
         ]);
         if ($validator->fails()) {
             $this->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY);
