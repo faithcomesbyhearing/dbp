@@ -6,7 +6,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use App\Traits\AccessControlAPI;
@@ -322,7 +321,7 @@ class BibleFilesetsDownloadController extends APIController
         $timeout = (int) config('services.bbhub.service_timeout', 60);
 
         try {
-            $upstream = Http::retry(3, 100, function ($exception, PendingRequest $request) {
+            $upstream = Http::retry(3, 100, function ($exception) {
                 return $exception instanceof ConnectionException;
             })
                 ->timeout($timeout)
