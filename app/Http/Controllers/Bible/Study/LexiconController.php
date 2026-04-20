@@ -67,7 +67,7 @@ class LexiconController extends APIController
     {
         $word        = checkParam('word', true);
         $language    = checkParam('language');
-        $exact_match = checkParam('exact_match');
+        $exact_match = checkBoolean('exact_match');
         $limit       = checkParam('limit');
 
         return $this->reply(Lexicon::filterByLanguage($language)->filterByWord($word, $exact_match)->take($limit));

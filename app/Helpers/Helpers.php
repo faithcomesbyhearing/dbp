@@ -116,7 +116,18 @@ function checkParam(string $paramName, $required = false, $inPathValue = null)
 function checkBoolean(string $paramName, $required = false, $inPathValue = null)
 {
     $param = checkParam($paramName, $required, $inPathValue);
-    $param = (bool) $param &&  strtolower($param) !== 'false';
+
+    // null treated as false.
+    if ($param === null) {
+        return false;
+    }
+
+    // if it's already a boolean, return it.
+    if (is_bool($param)) {
+        return $param;
+    }
+
+    $param = (bool) $param && strtolower($param) === 'true';
     return $param;
 }
 
