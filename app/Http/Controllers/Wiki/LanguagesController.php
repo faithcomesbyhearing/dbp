@@ -90,7 +90,7 @@ class LanguagesController extends APIController
 
         $country               = checkParam('country');
         $code                  = checkParam('code|iso|language_code');
-        $include_translations  = checkParam('include_translations|include_alt_names');
+        $include_translations  = checkBoolean('include_translations|include_alt_names');
         $name                  = checkParam('name|language_name');
         $limit                 = (int) (checkParam('limit') ?? 50);
         $limit                 = min($limit, 150);
