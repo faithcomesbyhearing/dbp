@@ -71,4 +71,9 @@ return [
         'url' => env('BIBLEBRAIN_SERVICES_BASE_URL', 'https://qaqvosflpf.execute-api.us-west-2.amazonaws.com'),
         'service_timeout' => env('BIBLEBRAIN_SERVICE_TIMEOUT', 10)
     ],
+
+    'bbhub' => [
+        'url' => env('BBHUB_BASE_URL', 'https://dev.biblebrainhub.fcbh.org/'),
+        'service_timeout' => env('BBHUB_SERVICE_TIMEOUT', 1200),
+    ],
 ];
