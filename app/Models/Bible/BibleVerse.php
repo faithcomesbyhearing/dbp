@@ -159,6 +159,8 @@ class BibleVerse extends Model
                 return $query->orderBy('verse_sequence');
             })
             ->join('bible_filesets', 'bible_filesets.hash_id', 'bible_verses.hash_id')
+            ->where('bible_filesets.content_loaded', true)
+            ->where('bible_filesets.archived', false)
             ->join('bible_fileset_connections', 'bible_filesets.hash_id', 'bible_fileset_connections.hash_id')
             ->join('bibles', 'bibles.id', 'bible_fileset_connections.bible_id')
             ->with(["fileset.bible.filesetsWithoutMeta" => function ($query) use ($book_id, $chapter_id) {

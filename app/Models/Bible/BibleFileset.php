@@ -40,6 +40,11 @@ use Illuminate\Support\Str;
  */
 class BibleFileset extends Model
 {
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new \App\Scopes\ContentAvailableScope());
+    }
+
     public const AUDIO = 'audio';
     public const VIDEO = 'video';
     public const TEXT = 'text';
@@ -200,9 +205,7 @@ class BibleFileset extends Model
         return BibleFileset::select('bible_filesets.*')
             ->join('bible_fileset_connections as connection', 'connection.hash_id', 'bible_filesets.hash_id')
             ->where('connection.bible_id', $bible_id)
-            ->where('set_type_code', BibleFileset::TYPE_TEXT_PLAIN)
-            ->where('archived', false)
-            ->where('content_loaded', true);
+            ->where('set_type_code', BibleFileset::TYPE_TEXT_PLAIN);
     }
     /**
      * Retrieves an associated fileset of type 'text plain' based on set size codes.
@@ -322,9 +325,7 @@ class BibleFileset extends Model
             } else {
                 $query->where('bible_filesets.set_type_code', $fileset_type);
             }
-        })
-        ->where('bible_filesets.content_loaded', true)
-        ->where('bible_filesets.archived', false);
+        });
     }
 
     public function scopeIsContentAvailable(
@@ -333,8 +334,6 @@ class BibleFileset extends Model
         ?array $access_group_ids = [],
     ) : Builder {
         return $query
-            ->where('bible_filesets.content_loaded', true)
-            ->where('bible_filesets.archived', false)
             ->leftJoin('license_group as lg', 'lg.id', '=', 'bible_filesets.license_group_id')
             ->where(function (Builder $q) use ($access_groups, $access_group_ids) {
                 $q
@@ -655,7 +654,6 @@ class BibleFileset extends Model
     {
         return $query
             ->where('id', $fileset_id)
-            ->where('archived', false)
             ->orderByRaw("CASE WHEN set_type_code = ? THEN 0 ELSE 1 END", [BibleFileset::TYPE_TEXT_PLAIN])
             ->orderBy('set_type_code');
     }
