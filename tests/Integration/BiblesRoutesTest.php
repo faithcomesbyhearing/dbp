@@ -70,6 +70,60 @@ class BiblesRoutesTest extends ApiV4Test
 
         $response = $this->withHeaders($this->params)->get($path);
         $response->assertSuccessful();
+
+        // CopyrightTransformer uses ArraySerializer — response is the payload directly, no 'data' wrapper.
+        $payload = json_decode($response->getContent(), true) ?? [];
+        $this->assertArrayNotHasKey(
+            'segmentation_type',
+            $payload,
+            'Default copyright response must not contain segmentation_type'
+        );
+    }
+
+    /**
+     * @category V4_API
+     * @category Route Name: v4_internal_bible_filesets.copyright
+     * @category Route Path: https://api.dbp.test/bibles/filesets/{fileset_id}/copyright?v=4&key={key}&verify_segmentation=true
+     * @see      \App\Http\Controllers\Bible\BibleFileSetsController::copyright
+     * @group    BibleRoutes
+     * @group    V4
+     * @group    travis
+     * @test
+     */
+    public function bibleFilesetsCopyrightWithVerifySegmentation()
+    {
+        $fileset = BibleFileset::whereNotNull('segmentation_type')
+            ->where('hidden', 0)
+            ->where('archived', 0)
+            ->inRandomOrder()
+            ->first();
+
+        if (!$fileset) {
+            $this->markTestSkipped('No fileset with non-null segmentation_type seeded in this environment.');
+        }
+
+        $params = array_merge(
+            ['fileset_id' => $fileset->id, 'verify_segmentation' => 'true'],
+            $this->params
+        );
+        $path = route('v4_internal_bible_filesets.copyright', $params);
+        echo "\nTesting: $path";
+
+        $response = $this->withHeaders($this->params)->get($path);
+        $response->assertSuccessful();
+
+        // CopyrightTransformer uses ArraySerializer — response is the payload directly, no 'data' wrapper.
+        $payload = json_decode($response->getContent(), true) ?? [];
+        $this->assertArrayHasKey(
+            'segmentation_type',
+            $payload,
+            'verify_segmentation=true must include segmentation_type key in copyright response'
+        );
+        $this->assertContains(
+            $payload['segmentation_type'],
+            ['section', 'chapter', null],
+            'segmentation_type must be section, chapter, or null'
+        );
     }
 
     /**
@@ -255,6 +309,82 @@ class BiblesRoutesTest extends ApiV4Test
         echo "\nTesting: $path";
         $response = $this->withHeaders($this->params)->get($path);
         $response->assertSuccessful();
+
+        $decoded = json_decode($response->getContent(), true);
+        $payload = is_array($decoded) ? ($decoded['data'] ?? []) : [];
+        foreach ($payload['filesets'] ?? [] as $asset_group) {
+            foreach ($asset_group as $fileset) {
+                $this->assertArrayNotHasKey(
+                    'segmentation_type',
+                    $fileset,
+                    "Default v4_bible.one response must not contain segmentation_type for fileset {$fileset['id']}"
+                );
+            }
+        }
+    }
+
+    /**
+     * @category V4_API
+     * @category Route Name: v4_bible.one
+     * @category Route Path: https://api.dbp.test/bibles/{bible_id}?v=4&key={key}&verify_segmentation=true
+     * @see      \App\Http\Controllers\Bible\BiblesController::show
+     * @group    BibleRoutes
+     * @group    V4
+     * @group    travis
+     * @test
+     */
+    public function bibleOneWithVerifySegmentation()
+    {
+        // Discover an accessible bible whose filesets carry segmentation_type by hitting v4_bible.all first.
+        $index_path = route('v4_bible.all', array_merge(['verify_segmentation' => 'true'], $this->params));
+        $index_response = $this->withHeaders($this->params)->get($index_path);
+        $index_response->assertSuccessful();
+        $index_decoded = json_decode($index_response->getContent(), true);
+        $index_payload = is_array($index_decoded) ? ($index_decoded['data'] ?? []) : [];
+
+        $bible_id = null;
+        foreach ($index_payload as $bible) {
+            foreach ($bible['filesets'] ?? [] as $asset_group) {
+                foreach ($asset_group as $fileset) {
+                    if (!is_null($fileset['segmentation_type'] ?? null)) {
+                        $bible_id = $bible['abbr'];
+                        break 3;
+                    }
+                }
+            }
+        }
+
+        if (!$bible_id) {
+            $this->markTestSkipped('No accessible bible with a fileset carrying non-null segmentation_type in this environment.');
+        }
+
+        $path = route('v4_bible.one', array_merge(
+            ['bible_id' => $bible_id, 'verify_segmentation' => 'true'],
+            $this->params
+        ));
+        echo "\nTesting: $path";
+        $response = $this->withHeaders($this->params)->get($path);
+        $response->assertSuccessful();
+
+        $decoded = json_decode($response->getContent(), true);
+        $payload = is_array($decoded) ? ($decoded['data'] ?? []) : [];
+        $checked_fileset_count = 0;
+        foreach ($payload['filesets'] ?? [] as $asset_group) {
+            foreach ($asset_group as $fileset) {
+                $this->assertArrayHasKey(
+                    'segmentation_type',
+                    $fileset,
+                    "verify_segmentation=true must include segmentation_type for fileset {$fileset['id']}"
+                );
+                $this->assertContains(
+                    $fileset['segmentation_type'],
+                    ['section', 'chapter', null],
+                    "segmentation_type must be section, chapter, or null for fileset {$fileset['id']}"
+                );
+                $checked_fileset_count++;
+            }
+        }
+        $this->assertGreaterThan(0, $checked_fileset_count, 'Expected at least one fileset to verify');
     }
 
     /**
@@ -273,5 +403,59 @@ class BiblesRoutesTest extends ApiV4Test
         echo "\nTesting: $path";
         $response = $this->withHeaders($this->params)->get($path);
         $response->assertSuccessful();
+
+        $decoded = json_decode($response->getContent(), true);
+        $payload = is_array($decoded) ? ($decoded['data'] ?? []) : [];
+        foreach ($payload as $bible) {
+            foreach ($bible['filesets'] ?? [] as $asset_group) {
+                foreach ($asset_group as $fileset) {
+                    $this->assertArrayNotHasKey(
+                        'segmentation_type',
+                        $fileset,
+                        "Default v4_bible.all response must not contain segmentation_type for fileset {$fileset['id']}"
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * @category V4_API
+     * @category Route Name: v4_bible.all
+     * @category Route Path: https://api.dbp.test/bibles?v=4&key={key}&verify_segmentation=true
+     * @see      \App\Http\Controllers\Bible\BiblesController::index
+     * @group    BibleRoutes
+     * @group    V4
+     * @group    travis
+     * @test
+     */
+    public function bibleAllWithVerifySegmentation()
+    {
+        $path = route('v4_bible.all', array_merge(['verify_segmentation' => 'true'], $this->params));
+        echo "\nTesting: $path";
+        $response = $this->withHeaders($this->params)->get($path);
+        $response->assertSuccessful();
+
+        $decoded = json_decode($response->getContent(), true);
+        $payload = is_array($decoded) ? ($decoded['data'] ?? []) : [];
+        $checked_fileset_count = 0;
+        foreach ($payload as $bible) {
+            foreach ($bible['filesets'] ?? [] as $asset_group) {
+                foreach ($asset_group as $fileset) {
+                    $this->assertArrayHasKey(
+                        'segmentation_type',
+                        $fileset,
+                        "verify_segmentation=true must include segmentation_type for fileset {$fileset['id']}"
+                    );
+                    $this->assertContains(
+                        $fileset['segmentation_type'],
+                        ['section', 'chapter', null],
+                        "segmentation_type must be section, chapter, or null for fileset {$fileset['id']}"
+                    );
+                    $checked_fileset_count++;
+                }
+            }
+        }
+        $this->assertGreaterThan(0, $checked_fileset_count, 'Expected at least one fileset to verify');
     }
 }
