@@ -107,6 +107,19 @@ class BibleFileset extends Model
      */
     protected $mode_id;
 
+    /**
+     *
+     * @OA\Property(
+     *     property="segmentation_type",
+     *     type="string",
+     *     enum={"section","chapter"},
+     *     nullable=true,
+     *     description="Segmentation strategy for this fileset (section, chapter, or null when unspecified)."
+     * )
+     *
+     */
+    protected $segmentation_type;
+
 
     protected $created_at;
 
@@ -117,7 +130,7 @@ class BibleFileset extends Model
      * @OA\Property(
      *   title="license_group_id",
      *   type="integer",
-     *   description="The liceense group id",
+     *   description="The license group id",
      * )
      */
     protected $license_group_id;

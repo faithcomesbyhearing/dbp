@@ -93,6 +93,12 @@ class BiblesController extends APIController
      *          description="Include country_id field in response. When true, adds country_id field containing the country ID from languages.country_id.",
      *          example="true"
      *     ),
+     *     @OA\Parameter(
+     *          name="verify_segmentation",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, each fileset object includes a segmentation_type key (section, chapter, or null)."
+     *     ),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Response(
@@ -116,6 +122,7 @@ class BiblesController extends APIController
         $media_exclude      = checkParam('media_exclude');
         $audio_timing       = checkBoolean('audio_timing');
         $show_country       = checkBoolean('show_country', false);
+        $verify_segmentation = checkBoolean('verify_segmentation');
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
         $limit              = (int) (checkParam('limit') ?? 50);
@@ -165,7 +172,8 @@ class BiblesController extends APIController
             $order_cache_key,
             $access_group_ids->toString(),
             $audio_timing,
-            $show_country
+            $show_country,
+            $verify_segmentation
         ]);
 
         $bibles = cacheRemember(
@@ -185,7 +193,8 @@ class BiblesController extends APIController
                 $limit,
                 $order_by,
                 $audio_timing,
-                $show_country
+                $show_country,
+                $verify_segmentation
             ) {
                 $bibles = Bible::filterByLanguage($language_code)
                 ->withRequiredFilesets([
@@ -255,7 +264,7 @@ class BiblesController extends APIController
                 $bibles = $bibles->paginate($limit);
                 $bibles_return = fractal(
                     $bibles->getCollection(),
-                    BibleTransformer::class,
+                    new BibleTransformer($verify_segmentation),
                     new DataArraySerializer()
                 );
                 return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
@@ -402,6 +411,12 @@ class BiblesController extends APIController
      *          @OA\Schema(type="boolean", default=false),
      *          description="When true, each entry in books includes a filesets array of { id, type } for all filesets that have content for that book; same id can appear with different types."
      *     ),
+     *     @OA\Parameter(
+     *          name="verify_segmentation",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, each fileset object includes a segmentation_type key (section, chapter, or null)."
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -419,6 +434,7 @@ class BiblesController extends APIController
 
         $include_font = is_null(checkParam('include_font')) ? true : checkBoolean('include_font', false);
         $verify_content = is_null(checkParam('verify_content')) ? false : checkBoolean('verify_content', false);
+        $verify_segmentation = checkBoolean('verify_segmentation');
 
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
@@ -445,9 +461,10 @@ class BiblesController extends APIController
                 $access_group_ids,
                 $include_font,
                 $verify_content,
-                $id
+                $id,
+                $verify_segmentation
             ))
-            : $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
+            : $this->reply(fractal($bible, new BibleTransformer($verify_segmentation), $this->serializer));
     }
 
     private function loadBibleForShow(string $id, $access_group_ids, bool $include_font)
@@ -479,17 +496,17 @@ class BiblesController extends APIController
         );
     }
 
-    private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id) : array
+    private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id, bool $verify_segmentation = false) : array
     {
         return cacheRemember('bibles_show_verify_content_response',
-            [$id, $access_group_ids->toString(), $include_font, $verify_content],
+            [$id, $access_group_ids->toString(), $include_font, $verify_content, $verify_segmentation],
             now()->addDay(),
-            function () use ($bible, $access_group_ids, $verify_content, $id) {
+            function () use ($bible, $access_group_ids, $verify_content, $id, $verify_segmentation) {
                 $book_fileset_map = cacheRemember(
                     'bibles_show_book_filesets',
-                    [$id, $access_group_ids->toString(), $verify_content],
+                    [$id, $access_group_ids->toString(), $verify_content, $verify_segmentation],
                     now()->addDay(),
-                    function () use ($bible) {
+                    function () use ($bible, $verify_segmentation) {
                         $batch_resolver = new FilesetBookIdBatchResolver();
                         $single_resolver = new FilesetBookIdResolver();
                         $fileset_book_ids = $batch_resolver->resolve($bible->filesets);
@@ -499,7 +516,11 @@ class BiblesController extends APIController
                                 ?? $single_resolver->resolve($fileset);
                             foreach ($book_ids as $book_id) {
                                 $map[$book_id] = $map[$book_id] ?? [];
-                                $map[$book_id][] = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
+                                $entry = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
+                                if ($verify_segmentation) {
+                                    $entry['segmentation_type'] = $fileset->segmentation_type ?? null;
+                                }
+                                $map[$book_id][] = $entry;
                             }
                         }
                         return $map;
@@ -512,7 +533,7 @@ class BiblesController extends APIController
                     $book->filesets = array_values($book_fileset_map[$book->book_id] ?? []);
                     return $book;
                 }));
-                return fractal($bible_response, new BibleTransformer(), $this->serializer)->toArray();
+                return fractal($bible_response, new BibleTransformer($verify_segmentation), $this->serializer)->toArray();
             }
         );
     }
