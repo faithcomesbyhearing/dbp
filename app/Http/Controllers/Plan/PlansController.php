@@ -523,7 +523,7 @@ class PlansController extends APIController
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\Parameter(name="days", in="query", required=true, @OA\Schema(type="integer"), description="Number of days to add to the plan"),
-     *     @OA\Parameter(name="add_to_end", in="query", required=false, @OA\Schema(type="true"), description="If new days to add should be added to end of list of days")
+     *     @OA\Parameter(name="add_to_end", in="query", required=false, @OA\Schema(type="boolean"), description="If new days to add should be added to end of list of days"),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",

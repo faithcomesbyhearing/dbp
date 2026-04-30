@@ -9,6 +9,14 @@ class CopyrightTransformer extends BaseTransformer
 {
     use OrganizationFilterTrait;
 
+    private bool $verify_segmentation;
+
+    public function __construct(bool $verify_segmentation = false)
+    {
+        parent::__construct();
+        $this->verify_segmentation = $verify_segmentation;
+    }
+
     /**
      * Transform copyright fileset data, filtering organizations as needed.
      *
@@ -22,6 +30,10 @@ class CopyrightTransformer extends BaseTransformer
             'type' => $fileset->type,
             'size' => $fileset->size,
         ];
+
+        if ($this->verify_segmentation) {
+            $transformed['segmentation_type'] = $fileset->segmentation_type ?? null;
+        }
 
         if (isset($fileset->asset_id)) {
             $transformed['asset_id'] = $fileset->asset_id;
