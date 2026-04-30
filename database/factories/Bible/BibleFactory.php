@@ -68,6 +68,9 @@ $factory->define(\App\Models\Bible\BibleFileset::class, function (Faker $faker) 
     ];
 });
 
+$factory->state(\App\Models\Bible\BibleFileset::class, 'segmentation_section', ['segmentation_type' => 'section']);
+$factory->state(\App\Models\Bible\BibleFileset::class, 'segmentation_chapter', ['segmentation_type' => 'chapter']);
+
 $factory->define(\App\Models\Bible\BibleFile::class, function (Faker $faker) {
     return [
         'id'      => '',

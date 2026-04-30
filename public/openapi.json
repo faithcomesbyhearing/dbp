@@ -322,6 +322,115 @@
                 }
             }
         },
+        "/download/package-create": {
+            "post": {
+                "tags": [
+                    "Bibles"
+                ],
+                "summary": "Create a download package from filesets",
+                "description": "Accepts a JSON payload containing fileset IDs and an encryption type, then proxies the request to BBHub package creation.",
+                "operationId": "v4_download_package_create",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/version_number"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "filesets",
+                                    "encryptionType"
+                                ],
+                                "properties": {
+                                    "filesets": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "minLength": 1
+                                        },
+                                        "minItems": 1,
+                                        "uniqueItems": true,
+                                        "example": [
+                                            "ENGESVN2DA",
+                                            "ENGESVO1DA"
+                                        ]
+                                    },
+                                    "encryptionType": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Response from the upstream BBHub service (status and body are proxied).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": true
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Request body must be valid JSON.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Request body must be valid JSON."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation failed for the request body.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "The filesets field is required."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "BBHub is unavailable.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "BBHub is unavailable."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/bibles/verses/{language_code}/{book_id}/{chapter_id}/{verse_number?}": {
             "get": {
                 "tags": [
@@ -517,6 +626,25 @@
                         "example": "true"
                     },
                     {
+                        "name": "show_country",
+                        "in": "query",
+                        "description": "Include country_id field in response. When true, adds country_id field containing the country ID from languages.country_id.",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "example": "true"
+                    },
+                    {
+                        "name": "verify_segmentation",
+                        "in": "query",
+                        "description": "When true, each fileset object includes a segmentation_type key (section, chapter, or null).",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    {
                         "$ref": "#/components/parameters/page"
                     },
                     {
@@ -630,6 +758,24 @@
                     {
                         "name": "include_font",
                         "in": "query"
+                    },
+                    {
+                        "name": "verify_content",
+                        "in": "query",
+                        "description": "When true, each entry in books includes a filesets array of { id, type } for all filesets that have content for that book; same id can appear with different types.",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    {
+                        "name": "verify_segmentation",
+                        "in": "query",
+                        "description": "When true, each fileset object includes a segmentation_type key (section, chapter, or null).",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
                     },
                     {
                         "$ref": "#/components/parameters/version_number"
@@ -1566,14 +1712,177 @@
                     "size": {
                         "$ref": "#/components/schemas/BibleFileset/properties/set_size_code"
                     },
+                    "segmentation_type": {
+                        "$ref": "#/components/schemas/BibleFileset/properties/segmentation_type"
+                    },
+                    "asset_id": {
+                        "description": "The S3 bucket / asset identifier the fileset is stored under",
+                        "type": "string"
+                    },
                     "copyright": {
-                        "$ref": "#/components/schemas/BibleFilesetCopyright"
+                        "$ref": "#/components/schemas/v4_bible_filesets.copyright_details"
                     }
                 },
                 "type": "object",
                 "xml": {
                     "name": "v4_bible_filesets.copyright"
                 }
+            },
+            "v4_bible_filesets.copyright_details": {
+                "title": "v4_bible_filesets.copyright_details",
+                "description": "Structured copyright metadata returned by CopyrightTransformer",
+                "properties": {
+                    "copyright_date": {
+                        "description": "Copyright date as recorded in the license group",
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "copyright": {
+                        "description": "Copyright statement text",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "open_access": {
+                        "description": "Whether the fileset is open access",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "is_combined": {
+                        "description": "Whether the copyright is combined across multiple licensors",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "organizations": {
+                        "description": "Licensor organizations associated with this copyright (only present when at least one is attached)",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/v4_bible_filesets.copyright_organization"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "v4_bible_filesets.copyright_organization": {
+                "title": "v4_bible_filesets.copyright_organization",
+                "description": "Organization shape used in the copyright details payload",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "abbreviation": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "description_short": {
+                        "description": "Sourced from the organization's tagline",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "email_director": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "logos": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "primaryColor": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "secondaryColor": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "inactive": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "url_site": {
+                        "description": "Sourced from the organization's url_website",
+                        "type": "string"
+                    },
+                    "url_donate": {
+                        "type": "string"
+                    },
+                    "url_twitter": {
+                        "type": "string"
+                    },
+                    "url_facebook": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "address2": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "city": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "state": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "country": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "zip": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "latitude": {
+                        "type": "number",
+                        "format": "float",
+                        "nullable": true
+                    },
+                    "longitude": {
+                        "type": "number",
+                        "format": "float",
+                        "nullable": true
+                    },
+                    "translations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
             },
             "v4_bible_filesets_download.index": {
                 "title": "v4_bible_filesets_download.index",
@@ -2232,6 +2541,14 @@
                         "minimum": 0,
                         "example": 683,
                         "nullable": true
+                    },
+                    "is_complete_chapter": {
+                        "title": "is_complete_chapter",
+                        "description": "If the file is a complete chapter, this field will be true",
+                        "type": "boolean",
+                        "default": false,
+                        "example": true,
+                        "nullable": false
                     }
                 },
                 "type": "object",
@@ -2300,6 +2617,23 @@
                     },
                     "set_size_code": {
                         "$ref": "#/components/schemas/BibleFilesetSize/properties/set_size_code"
+                    },
+                    "mode_id": {
+                        "$ref": "#/components/schemas/BibleFilesetMode/properties/id"
+                    },
+                    "segmentation_type": {
+                        "description": "Segmentation strategy for this fileset (section, chapter, or null when unspecified).",
+                        "type": "string",
+                        "enum": [
+                            "section",
+                            "chapter"
+                        ],
+                        "nullable": true
+                    },
+                    "license_group_id": {
+                        "title": "license_group_id",
+                        "description": "The license group id",
+                        "type": "integer"
                     }
                 },
                 "type": "object",
@@ -2307,38 +2641,30 @@
                     "name": "BibleFileset"
                 }
             },
-            "BibleFilesetCopyright": {
-                "title": "Bible Fileset Copyright",
-                "description": "BibleFilesetCopyright",
+            "BibleFilesetMode": {
+                "title": "BibleFilesetMode",
+                "description": "The Bible fileset mode model communicates information about generalized fileset modes",
+                "required": [
+                    "filename"
+                ],
                 "properties": {
-                    "copyright_date": {
-                        "title": "copyright_date",
-                        "description": "The copyright date created copyright",
-                        "type": "string",
-                        "example": "2014"
-                    },
-                    "copyright": {
-                        "title": "copyright",
-                        "description": "The copyright",
-                        "type": "string",
-                        "example": "© Ethnos360"
-                    },
-                    "copyright_description": {
-                        "title": "copyright_description",
-                        "description": "The copyright description",
-                        "type": "string",
-                        "example": "© Ethnos360"
-                    },
-                    "open_access": {
-                        "title": "open_access",
-                        "description": "The open_access description",
+                    "id": {
+                        "title": "id",
+                        "description": "The id",
                         "type": "integer",
-                        "example": 1
+                        "minimum": 0,
+                        "example": 4
+                    },
+                    "name": {
+                        "title": "name",
+                        "description": "The name",
+                        "type": "string",
+                        "example": "video"
                     }
                 },
                 "type": "object",
                 "xml": {
-                    "name": "BibleFilesetCopyright"
+                    "name": "BibleFilesetMode"
                 }
             },
             "BibleFilesetSize": {
@@ -3639,6 +3965,50 @@
                     "name": "NumeralSystem"
                 }
             },
+            "LicenseGroup": {
+                "title": "License Group",
+                "description": "LicenseGroup",
+                "properties": {
+                    "id": {
+                        "title": "id",
+                        "description": "The license group id",
+                        "type": "integer"
+                    },
+                    "name": {
+                        "title": "name",
+                        "description": "The license group name",
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "permission_pattern_id": {
+                        "title": "permission_pattern_id",
+                        "description": "The permission pattern id",
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "description": {
+                        "title": "description",
+                        "description": "The license group description",
+                        "type": "string"
+                    },
+                    "copyright": {
+                        "title": "copyright",
+                        "description": "The copyright text",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "is_copyright_combined": {
+                        "title": "is_copyright_combined",
+                        "description": "Is this a combined copyright from multiple sources",
+                        "type": "boolean",
+                        "nullable": true
+                    }
+                },
+                "type": "object",
+                "xml": {
+                    "name": "LicenseGroup"
+                }
+            },
             "Asset": {
                 "title": "Asset",
                 "description": "Asset",
@@ -4870,6 +5240,11 @@
                                 },
                                 "date": {
                                     "$ref": "#/components/schemas/Bible/properties/date"
+                                },
+                                "country_id": {
+                                    "description": "Country ID from languages.country_id (only included when show_country=true)",
+                                    "type": "string",
+                                    "nullable": true
                                 },
                                 "filesets": {
                                     "properties": {
