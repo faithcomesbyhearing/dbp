@@ -12,6 +12,15 @@ class BibleTransformer extends BaseTransformer
 {
 
     use OrganizationFilterTrait;
+
+    private bool $verify_segmentation;
+
+    public function __construct(bool $verify_segmentation = false)
+    {
+        parent::__construct();
+        $this->verify_segmentation = $verify_segmentation;
+    }
+
     /**
      * A Fractal transformer.
      *
@@ -337,6 +346,10 @@ class BibleTransformer extends BaseTransformer
             'type' => $fileset->set_type_code,
             'size' => $fileset->set_size_code,
         ];
+
+        if ($this->verify_segmentation) {
+            $fileset_data['segmentation_type'] = $fileset->segmentation_type ?? null;
+        }
 
         $meta_records_indexed = $fileset->getMetaTagsIndexedByName();
 
