@@ -389,6 +389,170 @@ class BiblesRoutesTest extends ApiV4Test
 
     /**
      * @category V4_API
+     * @category Route Name: v4_bible.one
+     * @category Route Path: https://api.dbp.test/bibles/{bible_id}?v=4&key={key}&verify_segmentation=true&verify_content=true
+     * @see      \App\Http\Controllers\Bible\BiblesController::show
+     * @group    BibleRoutes
+     * @group    V4
+     * @group    travis
+     * @test
+     */
+    public function bibleOneWithVerseStarts()
+    {
+        $audio_types = [
+            BibleFileset::TYPE_AUDIO,
+            BibleFileset::TYPE_AUDIO_DRAMA,
+            BibleFileset::TYPE_AUDIO_STREAM,
+            BibleFileset::TYPE_AUDIO_DRAMA_STREAM,
+        ];
+
+        // Discover an accessible bible whose filesets carry a section-segmented audio fileset.
+        $index_path = route('v4_bible.all', array_merge(['verify_segmentation' => 'true'], $this->params));
+        $index_response = $this->withHeaders($this->params)->get($index_path);
+        $index_response->assertSuccessful();
+        $index_decoded = json_decode($index_response->getContent(), true);
+        $index_payload = is_array($index_decoded) ? ($index_decoded['data'] ?? []) : [];
+
+        $bible_id = null;
+        foreach ($index_payload as $bible) {
+            foreach ($bible['filesets'] ?? [] as $asset_group) {
+                foreach ($asset_group as $fileset) {
+                    if (
+                        ($fileset['segmentation_type'] ?? null) === 'section'
+                        && in_array($fileset['type'] ?? null, $audio_types, true)
+                    ) {
+                        $bible_id = $bible['abbr'];
+                        break 3;
+                    }
+                }
+            }
+        }
+
+        if (!$bible_id) {
+            $this->markTestSkipped('No accessible bible with a section-segmented audio fileset in this environment.');
+        }
+
+        // Both flags: per-book verse_starts must appear on qualifying filesets only.
+        $path = route('v4_bible.one', array_merge(
+            ['bible_id' => $bible_id, 'verify_segmentation' => 'true', 'verify_content' => 'true'],
+            $this->params
+        ));
+        echo "\nTesting: $path";
+        $response = $this->withHeaders($this->params)->get($path);
+        $response->assertSuccessful();
+
+        $decoded = json_decode($response->getContent(), true);
+        $payload = is_array($decoded) ? ($decoded['data'] ?? []) : [];
+
+        // Top-level filesets map must NOT include verse_starts.
+        foreach ($payload['filesets'] ?? [] as $asset_group) {
+            foreach ($asset_group as $fileset) {
+                $this->assertArrayNotHasKey(
+                    'verse_starts',
+                    $fileset,
+                    "Top-level fileset {$fileset['id']} must not include verse_starts"
+                );
+            }
+        }
+
+        $qualifying_book_filesets = 0;
+        foreach ($payload['books'] ?? [] as $book) {
+            foreach ($book['filesets'] ?? [] as $book_fileset) {
+                $is_qualifying = ($book_fileset['segmentation_type'] ?? null) === 'section'
+                    && in_array($book_fileset['type'] ?? null, $audio_types, true);
+                if ($is_qualifying) {
+                    $this->assertArrayHasKey(
+                        'verse_starts',
+                        $book_fileset,
+                        "Qualifying per-book fileset {$book_fileset['id']} (book {$book['book_id']}) must include verse_starts"
+                    );
+                    $this->assertIsArray($book_fileset['verse_starts']);
+                    $this->assertNotEmpty(
+                        $book_fileset['verse_starts'],
+                        "verse_starts must contain at least one entry for fileset {$book_fileset['id']} (book {$book['book_id']})"
+                    );
+                    foreach ($book_fileset['verse_starts'] as $entry) {
+                        $this->assertArrayHasKey('chapter_start', $entry);
+                        $this->assertArrayHasKey('verse_start', $entry);
+                        $this->assertArrayHasKey('verse_start_alt', $entry);
+                        $this->assertArrayNotHasKey(
+                            'book_id',
+                            $entry,
+                            "verse_starts entry must not carry book_id (implied by the parent book)"
+                        );
+                    }
+                    $qualifying_book_filesets++;
+                } else {
+                    $this->assertArrayNotHasKey(
+                        'verse_starts',
+                        $book_fileset,
+                        "Non-qualifying per-book fileset {$book_fileset['id']} (book {$book['book_id']}) must not include verse_starts"
+                    );
+                }
+            }
+        }
+        $this->assertGreaterThan(0, $qualifying_book_filesets, 'Expected at least one qualifying per-book fileset entry');
+
+        // verify_segmentation alone: verse_starts must be absent everywhere.
+        // Cache is flushed between scenarios so each request gets a fresh Bible model
+        // (mimics production Memcached, where each request deserializes a fresh copy).
+        \Illuminate\Support\Facades\Cache::store('array')->flush();
+        $seg_only_path = route('v4_bible.one', array_merge(
+            ['bible_id' => $bible_id, 'verify_segmentation' => 'true'],
+            $this->params
+        ));
+        $this->assertNoVerseStartsAnywhere(
+            $this->withHeaders($this->params)->get($seg_only_path),
+            'verify_segmentation=true alone'
+        );
+
+        // verify_content alone: verse_starts must be absent everywhere.
+        \Illuminate\Support\Facades\Cache::store('array')->flush();
+        $content_only_path = route('v4_bible.one', array_merge(
+            ['bible_id' => $bible_id, 'verify_content' => 'true'],
+            $this->params
+        ));
+        $this->assertNoVerseStartsAnywhere(
+            $this->withHeaders($this->params)->get($content_only_path),
+            'verify_content=true alone'
+        );
+
+        // Default request: verse_starts must be absent everywhere.
+        \Illuminate\Support\Facades\Cache::store('array')->flush();
+        $default_path = route('v4_bible.one', array_merge(['bible_id' => $bible_id], $this->params));
+        $this->assertNoVerseStartsAnywhere(
+            $this->withHeaders($this->params)->get($default_path),
+            'default request'
+        );
+    }
+
+    private function assertNoVerseStartsAnywhere($response, string $context) : void
+    {
+        $response->assertSuccessful();
+        $decoded = json_decode($response->getContent(), true);
+        $payload = is_array($decoded) ? ($decoded['data'] ?? []) : [];
+        foreach ($payload['filesets'] ?? [] as $asset_group) {
+            foreach ($asset_group as $fileset) {
+                $this->assertArrayNotHasKey(
+                    'verse_starts',
+                    $fileset,
+                    "[$context] top-level fileset {$fileset['id']} must not include verse_starts"
+                );
+            }
+        }
+        foreach ($payload['books'] ?? [] as $book) {
+            foreach ($book['filesets'] ?? [] as $book_fileset) {
+                $this->assertArrayNotHasKey(
+                    'verse_starts',
+                    $book_fileset,
+                    "[$context] per-book fileset {$book_fileset['id']} (book {$book['book_id']}) must not include verse_starts"
+                );
+            }
+        }
+    }
+
+    /**
+     * @category V4_API
      * @category Route Name: v4_bible.all
      * @category Route Path: https://api.dbp.test/bibles?v=4&key={key}
      * @see      \App\Http\Controllers\Bible\BiblesController::index
