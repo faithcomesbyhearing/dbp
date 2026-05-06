@@ -30,6 +30,7 @@ use App\Models\Language\Language;
 use App\Services\Bibles\BibleFilesetService;
 use App\Services\Bibles\FilesetBookIdBatchResolver;
 use App\Services\Bibles\FilesetBookIdResolver;
+use App\Services\Bibles\FilesetVerseStartsResolver;
 use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
@@ -415,7 +416,7 @@ class BiblesController extends APIController
      *          name="verify_segmentation",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When true, each fileset object includes a segmentation_type key (section, chapter, or null)."
+     *          description="When true, each fileset object includes a segmentation_type key (section, chapter, or null). When combined with verify_content=true, qualifying audio filesets (segmentation_type='section') under each books[].filesets[] entry will additionally include a verse_starts array of {chapter_start, verse_start, verse_start_alt} items describing that book's section boundaries."
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -506,7 +507,10 @@ class BiblesController extends APIController
                     'bibles_show_book_filesets',
                     [$id, $access_group_ids->toString(), $verify_content, $verify_segmentation],
                     now()->addDay(),
-                    function () use ($bible, $verify_segmentation) {
+                    function () use ($bible, $access_group_ids, $id, $verify_segmentation) {
+                        $verse_starts_map = $verify_segmentation
+                            ? $this->loadVerseStartsMap($bible, $id, $access_group_ids)
+                            : [];
                         $batch_resolver = new FilesetBookIdBatchResolver();
                         $single_resolver = new FilesetBookIdResolver();
                         $fileset_book_ids = $batch_resolver->resolve($bible->filesets);
@@ -519,6 +523,9 @@ class BiblesController extends APIController
                                 $entry = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
                                 if ($verify_segmentation) {
                                     $entry['segmentation_type'] = $fileset->segmentation_type ?? null;
+                                    if (isset($verse_starts_map[$fileset->hash_id][$book_id])) {
+                                        $entry['verse_starts'] = $verse_starts_map[$fileset->hash_id][$book_id];
+                                    }
                                 }
                                 $map[$book_id][] = $entry;
                             }
@@ -534,6 +541,34 @@ class BiblesController extends APIController
                     return $book;
                 }));
                 return fractal($bible_response, new BibleTransformer($verify_segmentation), $this->serializer)->toArray();
+            }
+        );
+    }
+
+    /**
+     * Load the verse_starts map for any qualifying section-segmented audio filesets on the bible.
+     * The map is keyed by hash_id then book_id, so attaching per-book entries is constant-time.
+     * Returns an empty array when no fileset qualifies (no DB query is issued in that case).
+     *
+     * The cache key includes the access group fingerprint because $bible->filesets
+     * is already filtered by isContentAvailable(); a narrower-access request must
+     * not poison the cache for a broader-access request that can see additional
+     * qualifying filesets.
+     */
+    private function loadVerseStartsMap(Bible $bible, string $bible_id, $access_group_ids) : array
+    {
+        $resolver = new FilesetVerseStartsResolver();
+        $qualifying_filesets = $resolver->qualifyingFilesets($bible->filesets);
+        if ($qualifying_filesets->isEmpty()) {
+            return [];
+        }
+
+        return cacheRemember(
+            'bibles_show_verse_starts',
+            [$bible_id, $access_group_ids->toString()],
+            now()->addDay(),
+            function () use ($resolver, $qualifying_filesets) {
+                return $resolver->resolveForFilesets($qualifying_filesets);
             }
         );
     }
