@@ -416,7 +416,13 @@ class BiblesController extends APIController
      *          name="verify_segmentation",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When true, each fileset object includes a segmentation_type key (section, chapter, or null). When combined with verify_content=true, qualifying audio filesets (segmentation_type='section') under each books[].filesets[] entry will additionally include a verse_starts array of {chapter_start, verse_start, verse_start_alt} items describing that book's section boundaries."
+     *          description="When true, the top-level filesets map exposes a segmentation_type key on each fileset entry (section, chapter, or null). This metadata is intentionally not duplicated under books[].filesets[]; clients should consult the top-level map for fileset-level metadata."
+     *     ),
+     *     @OA\Parameter(
+     *          name="verse_starts",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, qualifying audio filesets (segmentation_type='section') under each books[].filesets[] entry include a verse_starts array of {chapter_start, verse_start, verse_start_alt} items describing that book's section boundaries. Setting this parameter implicitly enables verify_segmentation=true and verify_content=true; sending verify_segmentation=true and verify_content=true alone does NOT return verse_starts."
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -436,6 +442,11 @@ class BiblesController extends APIController
         $include_font = is_null(checkParam('include_font')) ? true : checkBoolean('include_font', false);
         $verify_content = is_null(checkParam('verify_content')) ? false : checkBoolean('verify_content', false);
         $verify_segmentation = checkBoolean('verify_segmentation');
+        $include_verse_starts = checkBoolean('verse_starts');
+        if ($include_verse_starts) {
+            $verify_segmentation = true;
+            $verify_content = true;
+        }
 
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
@@ -463,7 +474,8 @@ class BiblesController extends APIController
                 $include_font,
                 $verify_content,
                 $id,
-                $verify_segmentation
+                $verify_segmentation,
+                $include_verse_starts
             ))
             : $this->reply(fractal($bible, new BibleTransformer($verify_segmentation), $this->serializer));
     }
@@ -497,18 +509,18 @@ class BiblesController extends APIController
         );
     }
 
-    private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id, bool $verify_segmentation = false) : array
+    private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id, bool $verify_segmentation = false, bool $include_verse_starts = false) : array
     {
         return cacheRemember('bibles_show_verify_content_response',
-            [$id, $access_group_ids->toString(), $include_font, $verify_content, $verify_segmentation],
+            [$id, $access_group_ids->toString(), $include_font, $verify_content, $verify_segmentation, $include_verse_starts],
             now()->addDay(),
-            function () use ($bible, $access_group_ids, $verify_content, $id, $verify_segmentation) {
+            function () use ($bible, $access_group_ids, $verify_content, $id, $verify_segmentation, $include_verse_starts) {
                 $book_fileset_map = cacheRemember(
                     'bibles_show_book_filesets',
-                    [$id, $access_group_ids->toString(), $verify_content, $verify_segmentation],
+                    [$id, $access_group_ids->toString(), $verify_content, $include_verse_starts],
                     now()->addDay(),
-                    function () use ($bible, $access_group_ids, $id, $verify_segmentation) {
-                        $verse_starts_map = $verify_segmentation
+                    function () use ($bible, $access_group_ids, $id, $include_verse_starts) {
+                        $verse_starts_map = $include_verse_starts
                             ? $this->loadVerseStartsMap($bible, $id, $access_group_ids)
                             : [];
                         $batch_resolver = new FilesetBookIdBatchResolver();
@@ -521,11 +533,8 @@ class BiblesController extends APIController
                             foreach ($book_ids as $book_id) {
                                 $map[$book_id] = $map[$book_id] ?? [];
                                 $entry = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
-                                if ($verify_segmentation) {
-                                    $entry['segmentation_type'] = $fileset->segmentation_type ?? null;
-                                    if (isset($verse_starts_map[$fileset->hash_id][$book_id])) {
-                                        $entry['verse_starts'] = $verse_starts_map[$fileset->hash_id][$book_id];
-                                    }
+                                if ($include_verse_starts && isset($verse_starts_map[$fileset->hash_id][$book_id])) {
+                                    $entry['verse_starts'] = $verse_starts_map[$fileset->hash_id][$book_id];
                                 }
                                 $map[$book_id][] = $entry;
                             }
