@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Organization;
 
 use App\Http\Controllers\APIController;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Bible\Bible;
 use App\Models\Bible\BibleLink;
 use App\Models\Organization\Organization;
@@ -80,7 +81,7 @@ class OrganizationsController extends APIController
             $cache_params,
             now()->addDay(),
             function () use ($language_id, $membership, $content, $bibles, $resources) {
-                $organizations = Organization::with('translations')
+                $organizations = Organization::with(['translations', 'vernacularTranslation'])
                     ->includeMemberResources($membership)
                     ->includeLogos($language_id)
                     ->has('translations')
@@ -172,7 +173,7 @@ class OrganizationsController extends APIController
      */
     public function create()
     {
-        $user = \Auth::user() ?? $this->user;
+        $user = Auth::user() ?? $this->user;
         if (!$user->archivist) {
             return $this->setStatusCode(401)->replyWithError(trans('api.wiki_authorization_failed'));
         }
@@ -181,7 +182,7 @@ class OrganizationsController extends APIController
 
     public function apply()
     {
-        $user = \Auth::user() ?? $this->user;
+        $user = Auth::user() ?? $this->user;
         $organizations = Organization::with('translations')->get();
 
         return view('dashboard.organizations.roles.create', compact('user', 'organizations'));

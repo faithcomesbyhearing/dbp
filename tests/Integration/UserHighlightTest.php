@@ -16,10 +16,10 @@ class UserHighlightTest extends ApiV4Test
      * @category Route Name: v4_highlights.index
      * @category Route Path: https://api.dbp.test/users/{user_id}/highlights?v=4&key={key}
      * @see      \App\Http\Controllers\User\HighlightsController::index
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function highlightIndexErrors()
     {
         // User 404
@@ -34,10 +34,10 @@ class UserHighlightTest extends ApiV4Test
      * @category Route Name: v4_highlights
      * @category Route Path: https://api.dbp.test/users/{user_id}/highlights?v=4&key={key}
      * @see      \App\Http\Controllers\User\HighlightsController
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function highlights()
     {
         $key = Key::where('key', $this->key)->first();

@@ -3,6 +3,7 @@
 namespace App\Models\Organization;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\Organization\Bucket
@@ -20,6 +21,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Asset extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Organization\AssetFactory::new();
+    }
+
     protected $connection = 'dbp';
     public $incrementing = false;
     public $keyType = 'string';

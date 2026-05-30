@@ -7,10 +7,12 @@ use App\Models\Playlist\PlaylistItems;
 use App\Models\Playlist\PlaylistItemsComplete;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\Plan
@@ -102,16 +104,16 @@ class PlanDay extends Model implements Sortable
      *
      * @return bool
      */
-    public function hasContentAvailable(Playlist $playlist_to_eval = null) : bool
+    public function hasContentAvailable(?Playlist $playlist_to_eval = null) : bool
     {
         if (!is_null($playlist_to_eval) && $this['playlist_id'] === $playlist_to_eval->id) {
             return isset($playlist_to_eval->items) ? sizeof($playlist_to_eval->items) > 0 : false;
         }
 
         $plan_day_items = collect(
-            \DB::connection($this->connection)
+            DB::connection($this->connection)
             ->select(
-                \DB::raw(
+                DB::raw(
                     'SELECT EXISTS (
                         SELECT 1 FROM playlist_items WHERE playlist_id = ?
                     ) as has_content'
@@ -130,7 +132,7 @@ class PlanDay extends Model implements Sortable
      *
      * @return void
      */
-    public function complete(int $user_id = null) : void
+    public function complete(?int $user_id = null) : void
     {
         if (is_null($user_id)) {
             $user_id = Auth::user()->id;
@@ -157,7 +159,7 @@ class PlanDay extends Model implements Sortable
      *
      * @return bool
      */
-    public function completePlaylistItems(int $plan_day_id, int $user_id = null) : bool
+    public function completePlaylistItems(int $plan_day_id, ?int $user_id = null) : bool
     {
         if (is_null($user_id)) {
             $user_id = Auth::user()->id;
@@ -209,7 +211,7 @@ class PlanDay extends Model implements Sortable
      *
      * @return void
      */
-    public function unComplete(int $user_id = null) : void
+    public function unComplete(?int $user_id = null) : void
     {
         if (is_null($user_id)) {
             $user_id = Auth::user()->id;
@@ -229,7 +231,7 @@ class PlanDay extends Model implements Sortable
      *
      * @return bool
      */
-    public function unCompletePlaylistItems(int $plan_day_id, int $user_id = null)
+    public function unCompletePlaylistItems(int $plan_day_id, ?int $user_id = null)
     {
         if (is_null($user_id)) {
             $user_id = Auth::user()->id;
@@ -257,7 +259,7 @@ class PlanDay extends Model implements Sortable
     public function scopeSummaryItemsCompletedByPlanId(Builder $query, int $plan_id, int $user_id) : Builder
     {
         return $query->select(
-            \DB::raw(
+            DB::raw(
                 'plan_days.id,
                 COUNT(plan_days.id) AS total_items,
                 COUNT(playlist_items_completed.playlist_item_id) AS total_items_completed'
@@ -292,7 +294,7 @@ class PlanDay extends Model implements Sortable
             })
             ->where('plan_days.plan_id', $plan_id)
             ->whereExists(function ($sub_query) use ($plan_id, $user_id) {
-                return $sub_query->select(\DB::raw(1))
+                return $sub_query->select(DB::raw(1))
                     ->from('plan_days as pld')
                     ->join('playlist_items as pli', 'pli.playlist_id', 'pld.playlist_id')
                     ->leftJoin('playlist_items_completed as pldc', function ($query_join) use ($user_id) {
@@ -341,7 +343,7 @@ class PlanDay extends Model implements Sortable
             'id',
             'plan_id',
             'playlist_id',
-            \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
+            DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
         ])
         ->leftJoin('plan_days_completed', function ($query_join) use ($user_id) {
             $query_join
@@ -366,7 +368,7 @@ class PlanDay extends Model implements Sortable
             'id',
             'plan_id',
             'playlist_id',
-            \DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
+            DB::Raw('IF(plan_days_completed.plan_day_id, true, false) as completed')
         ])
         ->leftJoin('plan_days_completed', function ($query_join) use ($user_id) {
             $query_join
@@ -388,7 +390,7 @@ class PlanDay extends Model implements Sortable
         return $days_query->with(['playlist' => function ($playlist_query) use ($user_id) {
             $playlist_query->select([
                 'user_playlists.*',
-                \DB::Raw('IF(playlists_followers.user_id, true, false) as following')
+                DB::Raw('IF(playlists_followers.user_id, true, false) as following')
             ])
             ->with(['user', 'items' => function ($query_items) use ($user_id) {
                 if (!empty($user_id)) {
@@ -420,7 +422,7 @@ class PlanDay extends Model implements Sortable
     public static function removePlanDaysByPlanId(int $plan_id, array $plan_day_ids): bool
     {
         try {
-            \DB::transaction(function () use ($plan_id, $plan_day_ids) {
+            DB::transaction(function () use ($plan_id, $plan_day_ids) {
                 $deleted_days = PlanDay::whereIn('id', $plan_day_ids)->where('plan_id', $plan_id);
                 $playlists_ids = $deleted_days->pluck('playlist_id')->unique();
                 $playlists = Playlist::whereIn('id', $playlists_ids);
@@ -429,7 +431,7 @@ class PlanDay extends Model implements Sortable
             });
             return true;
         } catch (\Exception $e) {
-            \Log::error('Failed to remove plan days', ['plan_id' => $plan_id, 'plan_day_ids' => $plan_day_ids, 'exception' => $e]);
+            Log::error('Failed to remove plan days', ['plan_id' => $plan_id, 'plan_day_ids' => $plan_day_ids, 'exception' => $e]);
             return false;
         }
     }

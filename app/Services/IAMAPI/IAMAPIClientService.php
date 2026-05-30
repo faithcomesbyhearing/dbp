@@ -2,6 +2,7 @@
 
 namespace App\Services\IAMAPI;
 
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\CurlHttpClient;
 use Symfony\Component\HttpClient\Exception\TransportException;
@@ -44,13 +45,13 @@ class IAMAPIClientService implements IAMAPIClientInterface
                 ['timeout' => $this->service_timeout]
             );
 
-            \Log::channel('single')->notice(['GET request', $new_path]);
+            Log::channel('single')->notice(['GET request', $new_path]);
 
             $response = $content->getContent();
 
             return collect(json_decode($response));
         } catch (TransportException $e) {
-            \Log::channel('errorlog')->error($e->getMessage());
+            Log::channel('errorlog')->error($e->getMessage());
             throw $e;
         }
     }

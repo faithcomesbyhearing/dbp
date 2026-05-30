@@ -3,6 +3,7 @@
 namespace App\Models\Country;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 
 use App\Models\Language\Language;
@@ -17,6 +18,7 @@ use App\Models\Country\FactBook\CountryIssues;
 use App\Models\Country\FactBook\CountryPeople;
 use App\Models\Country\FactBook\CountryReligion;
 use App\Models\Country\FactBook\CountryTransportation;
+use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\Country\Country
@@ -39,6 +41,13 @@ use App\Models\Country\FactBook\CountryTransportation;
  */
 class Country extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Country\CountryFactory::new();
+    }
+
     protected $connection = 'dbp';
     protected $table = 'countries';
     protected $hidden = ['pivot','created_at','updated_at','introduction'];
@@ -269,7 +278,7 @@ class Country extends Model
             $fileset_connections_group = BibleFilesetConnection::select('bible_id')
                 ->groupBy('bible_id');
 
-            return $sub_query->select(\DB::raw(1))
+            return $sub_query->select(DB::raw(1))
                 ->from('bibles AS b')
                 ->joinSub(
                     $fileset_connections_group,
