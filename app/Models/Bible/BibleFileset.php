@@ -132,7 +132,7 @@ class BibleFileset extends Model
      * @OA\Property(
      *     property="verse_starts",
      *     type="array",
-     *     description="Section boundaries for the fileset, scoped to the parent book. Returned only on per-book fileset entries (under books[].filesets[]) when both verify_segmentation=true and verify_content=true are present, and only for audio filesets with segmentation_type='section'. verse_start is the numeric verse_sequence for client-side arithmetic; verse_start_alt preserves the original verse marker, which may be alphanumeric (e.g. '001', '2b').",
+     *     description="Section boundaries for the fileset, scoped to the parent book. Returned only on per-book fileset entries (under books[].filesets[]) when verse_starts=true is sent (which implicitly enables verify_segmentation=true and verify_content=true), and only for audio filesets with segmentation_type='section'. verse_start is the numeric verse_sequence for client-side arithmetic; verse_start_alt preserves the original verse marker, which may be alphanumeric (e.g. '001', '2b').",
      *     @OA\Items(
      *         type="object",
      *         @OA\Property(property="chapter_start",   type="integer", example=1, description="The starting chapter of the section."),
