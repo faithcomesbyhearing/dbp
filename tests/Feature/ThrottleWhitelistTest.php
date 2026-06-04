@@ -14,6 +14,11 @@ class ThrottleWhitelistTest extends TestCase
     private const TRUSTED_IP_2 = '192.0.2.2';
     private const TRUSTED_IP_3 = '192.0.2.3';
     private const UNTRUSTED_IP = '198.51.100.1';
+    private const ATTACKER_IP = '203.0.113.99';
+
+    // Private ALB-like peer IP (REMOTE_ADDR) used to simulate requests arriving
+    // through the AWS load balancer.
+    private const ALB_REMOTE_ADDR = '10.0.1.50';
 
     protected function setUp(): void
     {
@@ -110,6 +115,100 @@ class ThrottleWhitelistTest extends TestCase
         $this->assertTrue(
             $response->headers->has('X-RateLimit-Limit'),
             'IP not in whitelist should have rate limit headers'
+        );
+    }
+
+    /**
+     * Behind the AWS ALB the upstream client may appear on the left and the ALB
+     * appends the real proxy IP (live.bible.is) on the right. TrustProxies='*' does
+     * NOT rewrite the raw HTTP_X_FORWARDED_FOR server var, so the middleware reads
+     * exactly what is injected here.
+     *
+     * @group throttle_whitelist
+     * @test
+     */
+    public function whitelisted_proxy_in_rightmost_xff_bypasses_rate_limit()
+    {
+        config(['app.ip_trusted_no_rate_limit' => self::TRUSTED_IP_1]);
+
+        $response = $this->call('GET', self::TEST_ROUTE, [], [], [], [
+            'REMOTE_ADDR'          => self::ALB_REMOTE_ADDR,
+            'HTTP_X_FORWARDED_FOR' => self::UNTRUSTED_IP . ', ' . self::TRUSTED_IP_1,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertFalse(
+            $response->headers->has('X-RateLimit-Limit'),
+            'Whitelisted proxy as right-most X-Forwarded-For entry should bypass rate limiting'
+        );
+    }
+
+    /**
+     * Common case: the proxy did not forward an upstream client, so the ALB appends
+     * only the proxy IP as the single X-Forwarded-For entry.
+     *
+     * @group throttle_whitelist
+     * @test
+     */
+    public function whitelisted_proxy_as_single_xff_entry_bypasses_rate_limit()
+    {
+        config(['app.ip_trusted_no_rate_limit' => self::TRUSTED_IP_1]);
+
+        $response = $this->call('GET', self::TEST_ROUTE, [], [], [], [
+            'REMOTE_ADDR'          => self::ALB_REMOTE_ADDR,
+            'HTTP_X_FORWARDED_FOR' => self::TRUSTED_IP_1,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertFalse(
+            $response->headers->has('X-RateLimit-Limit'),
+            'Whitelisted proxy as the only X-Forwarded-For entry should bypass rate limiting'
+        );
+    }
+
+    /**
+     * A client cannot bypass throttling by spoofing a whitelisted IP in
+     * X-Forwarded-For: the AWS ALB appends the real observed source on the right,
+     * so the left-most (client-controlled) value is never used for the match.
+     *
+     * @group throttle_whitelist
+     * @test
+     */
+    public function spoofed_xff_does_not_bypass_rate_limit()
+    {
+        config(['app.ip_trusted_no_rate_limit' => self::TRUSTED_IP_1]);
+
+        $response = $this->call('GET', self::TEST_ROUTE, [], [], [], [
+            'REMOTE_ADDR'          => self::ALB_REMOTE_ADDR,
+            'HTTP_X_FORWARDED_FOR' => self::TRUSTED_IP_1 . ', ' . self::ATTACKER_IP,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue(
+            $response->headers->has('X-RateLimit-Limit'),
+            'Spoofed left-most X-Forwarded-For must NOT bypass rate limiting'
+        );
+    }
+
+    /**
+     * Without X-Forwarded-For (e.g. direct/local request) the whitelist matches
+     * against REMOTE_ADDR.
+     *
+     * @group throttle_whitelist
+     * @test
+     */
+    public function falls_back_to_remote_addr_without_xff()
+    {
+        config(['app.ip_trusted_no_rate_limit' => self::TRUSTED_IP_1]);
+
+        $response = $this->call('GET', self::TEST_ROUTE, [], [], [], [
+            'REMOTE_ADDR' => self::TRUSTED_IP_1,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertFalse(
+            $response->headers->has('X-RateLimit-Limit'),
+            'Without X-Forwarded-For the whitelist should match REMOTE_ADDR'
         );
     }
 }
