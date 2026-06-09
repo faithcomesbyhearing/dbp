@@ -16,7 +16,7 @@ class SeedBibleText extends Seeder
     {
         ini_set('memory_limit', '4000M');
 
-        $filesets = BibleFileset::where('set_type_code', 'text_plain')->get();
+        $filesets = BibleFileset::withoutGlobalScope(\App\Scopes\ContentAvailableScope::class)->where('set_type_code', 'text_plain')->get();
         $books  = Book::select('id', 'id_usfx')->get()->pluck('id', 'id_usfx');
         unset($books['']);
 

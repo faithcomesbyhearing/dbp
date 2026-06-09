@@ -411,6 +411,8 @@ class TextController extends APIController
         $verses = \DB::connection('dbp')->table('bible_verses')
             ->where('bible_verses.hash_id', $fileset->hash_id)
             ->join('bible_filesets', 'bible_filesets.hash_id', 'bible_verses.hash_id')
+            ->where('bible_filesets.content_loaded', true)
+            ->where('bible_filesets.archived', false)
             ->join('books', 'bible_verses.book_id', 'books.id')
             ->select(
                 DB::raw(
