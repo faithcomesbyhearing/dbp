@@ -53,6 +53,13 @@ class BibleFileset extends Model
     public const TYPE_TEXT_PLAIN = 'text_plain';
     public const TYPE_TEXT_USX = 'text_usx';
 
+    public const AUDIO_TYPES = [
+        self::TYPE_AUDIO,
+        self::TYPE_AUDIO_DRAMA,
+        self::TYPE_AUDIO_STREAM,
+        self::TYPE_AUDIO_DRAMA_STREAM,
+    ];
+
     public const NEW_TEXT_PLAIN_FILESET_LENGTH = 10;
     public const OLD_TEXT_PLAIN_FILESET_LENGTH = 6;
     public const V1_AUDIO_16_KBPS_FILESET_LENGTH = 12;
@@ -107,6 +114,35 @@ class BibleFileset extends Model
      */
     protected $mode_id;
 
+    /**
+     *
+     * @OA\Property(
+     *     property="segmentation_type",
+     *     type="string",
+     *     enum={"section","chapter"},
+     *     nullable=true,
+     *     description="Segmentation strategy for this fileset (section, chapter, or null when unspecified)."
+     * )
+     *
+     */
+    protected $segmentation_type;
+
+    /**
+     *
+     * @OA\Property(
+     *     property="verse_starts",
+     *     type="array",
+     *     description="Section boundaries for the fileset, scoped to the parent book. Returned only on per-book fileset entries (under books[].filesets[]) when verse_starts=true is sent (which implicitly enables verify_segmentation=true and verify_content=true), and only for audio filesets with segmentation_type='section'. verse_start is the numeric verse_sequence for client-side arithmetic; verse_start_alt preserves the original verse marker, which may be alphanumeric (e.g. '001', '2b').",
+     *     @OA\Items(
+     *         type="object",
+     *         @OA\Property(property="chapter_start",   type="integer", example=1, description="The starting chapter of the section."),
+     *         @OA\Property(property="verse_start",     ref="#/components/schemas/BibleFile/properties/verse_sequence"),
+     *         @OA\Property(property="verse_start_alt", ref="#/components/schemas/BibleFile/properties/verse_start")
+     *     )
+     * )
+     *
+     */
+    protected $verse_starts;
 
     protected $created_at;
 
@@ -117,7 +153,7 @@ class BibleFileset extends Model
      * @OA\Property(
      *   title="license_group_id",
      *   type="integer",
-     *   description="The liceense group id",
+     *   description="The license group id",
      * )
      */
     protected $license_group_id;
@@ -447,15 +483,7 @@ class BibleFileset extends Model
      */
     public function isAudio() : bool
     {
-        return in_array(
-            $this['set_type_code'],
-            [
-                BibleFileset::TYPE_AUDIO_DRAMA,
-                BibleFileset::TYPE_AUDIO,
-                BibleFileset::TYPE_AUDIO_DRAMA,
-                BibleFileset::TYPE_AUDIO_DRAMA_STREAM
-            ]
-        );
+        return in_array($this['set_type_code'], self::AUDIO_TYPES, true);
     }
 
     /**
