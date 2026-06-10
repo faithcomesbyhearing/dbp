@@ -30,6 +30,7 @@ use App\Models\Language\Language;
 use App\Services\Bibles\BibleFilesetService;
 use App\Services\Bibles\FilesetBookIdBatchResolver;
 use App\Services\Bibles\FilesetBookIdResolver;
+use App\Services\Bibles\FilesetVerseStartsResolver;
 use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
@@ -93,6 +94,12 @@ class BiblesController extends APIController
      *          description="Include country_id field in response. When true, adds country_id field containing the country ID from languages.country_id.",
      *          example="true"
      *     ),
+     *     @OA\Parameter(
+     *          name="verify_segmentation",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, each fileset object includes a segmentation_type key (section, chapter, or null)."
+     *     ),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Response(
@@ -116,6 +123,7 @@ class BiblesController extends APIController
         $media_exclude      = checkParam('media_exclude');
         $audio_timing       = checkParam('audio_timing') ?? false;
         $show_country       = checkBoolean('show_country', false);
+        $verify_segmentation = checkBoolean('verify_segmentation');
         $size               = checkParam('size'); #removed from API for initial release
         $size_exclude       = checkParam('size_exclude'); #removed from API for initial release
         $limit              = (int) (checkParam('limit') ?? 50);
@@ -165,7 +173,8 @@ class BiblesController extends APIController
             $order_cache_key,
             $access_group_ids->toString(),
             $audio_timing,
-            $show_country
+            $show_country,
+            $verify_segmentation
         ]);
 
         $bibles = cacheRemember(
@@ -185,7 +194,8 @@ class BiblesController extends APIController
                 $limit,
                 $order_by,
                 $audio_timing,
-                $show_country
+                $show_country,
+                $verify_segmentation
             ) {
                 $bibles = Bible::filterByLanguage($language_code)
                 ->withRequiredFilesets([
@@ -255,7 +265,7 @@ class BiblesController extends APIController
                 $bibles = $bibles->paginate($limit);
                 $bibles_return = fractal(
                     $bibles->getCollection(),
-                    BibleTransformer::class,
+                    new BibleTransformer($verify_segmentation),
                     new DataArraySerializer()
                 );
                 return $bibles_return->paginateWith(new IlluminatePaginatorAdapter($bibles));
@@ -402,6 +412,18 @@ class BiblesController extends APIController
      *          @OA\Schema(type="boolean", default=false),
      *          description="When true, each entry in books includes a filesets array of { id, type } for all filesets that have content for that book; same id can appear with different types."
      *     ),
+     *     @OA\Parameter(
+     *          name="verify_segmentation",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, the top-level filesets map exposes a segmentation_type key on each fileset entry (section, chapter, or null). This metadata is intentionally not duplicated under books[].filesets[]; clients should consult the top-level map for fileset-level metadata."
+     *     ),
+     *     @OA\Parameter(
+     *          name="verse_starts",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, qualifying audio filesets (segmentation_type='section') under each books[].filesets[] entry include a verse_starts array of {chapter_start, verse_start, verse_start_alt} items describing that book's section boundaries. Setting this parameter implicitly enables verify_segmentation=true and verify_content=true; sending verify_segmentation=true and verify_content=true alone does NOT return verse_starts."
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -419,6 +441,12 @@ class BiblesController extends APIController
 
         $include_font = is_null(checkParam('include_font')) ? true : checkBoolean('include_font', false);
         $verify_content = is_null(checkParam('verify_content')) ? false : checkBoolean('verify_content', false);
+        $verify_segmentation = checkBoolean('verify_segmentation');
+        $include_verse_starts = checkBoolean('verse_starts');
+        if ($include_verse_starts) {
+            $verify_segmentation = true;
+            $verify_content = true;
+        }
 
         if ($this->v === 2 || $this->v === 3) {
             $id = substr($id, 0, 6);
@@ -445,9 +473,11 @@ class BiblesController extends APIController
                 $access_group_ids,
                 $include_font,
                 $verify_content,
-                $id
+                $id,
+                $verify_segmentation,
+                $include_verse_starts
             ))
-            : $this->reply(fractal($bible, new BibleTransformer(), $this->serializer));
+            : $this->reply(fractal($bible, new BibleTransformer($verify_segmentation), $this->serializer));
     }
 
     private function loadBibleForShow(string $id, $access_group_ids, bool $include_font)
@@ -479,17 +509,20 @@ class BiblesController extends APIController
         );
     }
 
-    private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id) : array
+    private function buildVerifyContentResponsePayload($bible, $access_group_ids, $include_font, $verify_content, $id, bool $verify_segmentation = false, bool $include_verse_starts = false) : array
     {
         return cacheRemember('bibles_show_verify_content_response',
-            [$id, $access_group_ids->toString(), $include_font, $verify_content],
+            [$id, $access_group_ids->toString(), $include_font, $verify_content, $verify_segmentation, $include_verse_starts],
             now()->addDay(),
-            function () use ($bible, $access_group_ids, $verify_content, $id) {
+            function () use ($bible, $access_group_ids, $verify_content, $id, $verify_segmentation, $include_verse_starts) {
                 $book_fileset_map = cacheRemember(
                     'bibles_show_book_filesets',
-                    [$id, $access_group_ids->toString(), $verify_content],
+                    [$id, $access_group_ids->toString(), $verify_content, $include_verse_starts],
                     now()->addDay(),
-                    function () use ($bible) {
+                    function () use ($bible, $access_group_ids, $id, $include_verse_starts) {
+                        $verse_starts_map = $include_verse_starts
+                            ? $this->loadVerseStartsMap($bible, $id, $access_group_ids)
+                            : [];
                         $batch_resolver = new FilesetBookIdBatchResolver();
                         $single_resolver = new FilesetBookIdResolver();
                         $fileset_book_ids = $batch_resolver->resolve($bible->filesets);
@@ -499,7 +532,11 @@ class BiblesController extends APIController
                                 ?? $single_resolver->resolve($fileset);
                             foreach ($book_ids as $book_id) {
                                 $map[$book_id] = $map[$book_id] ?? [];
-                                $map[$book_id][] = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
+                                $entry = ['id' => $fileset->id, 'type' => $fileset->set_type_code];
+                                if ($include_verse_starts && isset($verse_starts_map[$fileset->hash_id][$book_id])) {
+                                    $entry['verse_starts'] = $verse_starts_map[$fileset->hash_id][$book_id];
+                                }
+                                $map[$book_id][] = $entry;
                             }
                         }
                         return $map;
@@ -512,7 +549,35 @@ class BiblesController extends APIController
                     $book->filesets = array_values($book_fileset_map[$book->book_id] ?? []);
                     return $book;
                 }));
-                return fractal($bible_response, new BibleTransformer(), $this->serializer)->toArray();
+                return fractal($bible_response, new BibleTransformer($verify_segmentation), $this->serializer)->toArray();
+            }
+        );
+    }
+
+    /**
+     * Load the verse_starts map for any qualifying section-segmented audio filesets on the bible.
+     * The map is keyed by hash_id then book_id, so attaching per-book entries is constant-time.
+     * Returns an empty array when no fileset qualifies (no DB query is issued in that case).
+     *
+     * The cache key includes the access group fingerprint because $bible->filesets
+     * is already filtered by isContentAvailable(); a narrower-access request must
+     * not poison the cache for a broader-access request that can see additional
+     * qualifying filesets.
+     */
+    private function loadVerseStartsMap(Bible $bible, string $bible_id, $access_group_ids) : array
+    {
+        $resolver = new FilesetVerseStartsResolver();
+        $qualifying_filesets = $resolver->qualifyingFilesets($bible->filesets);
+        if ($qualifying_filesets->isEmpty()) {
+            return [];
+        }
+
+        return cacheRemember(
+            'bibles_show_verse_starts',
+            [$bible_id, $access_group_ids->toString()],
+            now()->addDay(),
+            function () use ($resolver, $qualifying_filesets) {
+                return $resolver->resolveForFilesets($qualifying_filesets);
             }
         );
     }
