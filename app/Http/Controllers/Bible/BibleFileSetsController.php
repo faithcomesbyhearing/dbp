@@ -375,6 +375,12 @@ class BibleFileSetsController extends APIController
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/id"),
      *          description="The fileset ID to retrieve the copyright information for"
      *     ),
+     *     @OA\Parameter(
+     *          name="verify_segmentation",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, the response includes a segmentation_type key (section, chapter, or null)."
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -391,7 +397,60 @@ class BibleFileSetsController extends APIController
      *     @OA\Property(property="id", ref="#/components/schemas/BibleFileset/properties/id"),
      *     @OA\Property(property="type", ref="#/components/schemas/BibleFileset/properties/set_type_code"),
      *     @OA\Property(property="size", ref="#/components/schemas/BibleFileset/properties/set_size_code"),
-     *     @OA\Property(property="copyright", ref="#/components/schemas/LicenseGroup/properties/copyright"),
+     *     @OA\Property(property="segmentation_type", ref="#/components/schemas/BibleFileset/properties/segmentation_type"),
+     *     @OA\Property(property="asset_id", type="string", description="The S3 bucket / asset identifier the fileset is stored under"),
+     *     @OA\Property(property="copyright", ref="#/components/schemas/v4_bible_filesets.copyright_details"),
+     * )
+     *
+     * @OA\Schema (
+     *     type="object",
+     *     schema="v4_bible_filesets.copyright_details",
+     *     description="Structured copyright metadata returned by CopyrightTransformer",
+     *     title="v4_bible_filesets.copyright_details",
+     *     @OA\Property(property="copyright_date", type="string", format="date", nullable=true, description="Copyright date as recorded in the license group"),
+     *     @OA\Property(property="copyright", type="string", nullable=true, description="Copyright statement text"),
+     *     @OA\Property(property="created_at", type="string", format="date-time", nullable=true),
+     *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true),
+     *     @OA\Property(property="open_access", type="boolean", default=false, description="Whether the fileset is open access"),
+     *     @OA\Property(property="is_combined", type="boolean", default=false, description="Whether the copyright is combined across multiple licensors"),
+     *     @OA\Property(
+     *         property="organizations",
+     *         type="array",
+     *         description="Licensor organizations associated with this copyright (only present when at least one is attached)",
+     *         @OA\Items(ref="#/components/schemas/v4_bible_filesets.copyright_organization")
+     *     ),
+     * )
+     *
+     * @OA\Schema (
+     *     type="object",
+     *     schema="v4_bible_filesets.copyright_organization",
+     *     description="Organization shape used in the copyright details payload",
+     *     title="v4_bible_filesets.copyright_organization",
+     *     @OA\Property(property="id", type="integer", nullable=true),
+     *     @OA\Property(property="slug", type="string", nullable=true),
+     *     @OA\Property(property="abbreviation", type="string", nullable=true),
+     *     @OA\Property(property="description", type="string", nullable=true),
+     *     @OA\Property(property="description_short", type="string", nullable=true, description="Sourced from the organization's tagline"),
+     *     @OA\Property(property="phone", type="string", nullable=true),
+     *     @OA\Property(property="email", type="string", nullable=true),
+     *     @OA\Property(property="email_director", type="string", nullable=true),
+     *     @OA\Property(property="logos", type="array", @OA\Items(type="object")),
+     *     @OA\Property(property="primaryColor", type="string", nullable=true),
+     *     @OA\Property(property="secondaryColor", type="string", nullable=true),
+     *     @OA\Property(property="inactive", type="boolean", default=false),
+     *     @OA\Property(property="url_site", type="string", description="Sourced from the organization's url_website"),
+     *     @OA\Property(property="url_donate", type="string"),
+     *     @OA\Property(property="url_twitter", type="string"),
+     *     @OA\Property(property="url_facebook", type="string"),
+     *     @OA\Property(property="address", type="string", nullable=true),
+     *     @OA\Property(property="address2", type="string", nullable=true),
+     *     @OA\Property(property="city", type="string", nullable=true),
+     *     @OA\Property(property="state", type="string", nullable=true),
+     *     @OA\Property(property="country", type="string", nullable=true),
+     *     @OA\Property(property="zip", type="string", nullable=true),
+     *     @OA\Property(property="latitude", type="number", format="float", nullable=true),
+     *     @OA\Property(property="longitude", type="number", format="float", nullable=true),
+     *     @OA\Property(property="translations", type="array", @OA\Items(type="object")),
      * )
      *
      * @param string $id
@@ -400,6 +459,7 @@ class BibleFileSetsController extends APIController
     public function copyright($id)
     {
         $iso = checkParam('iso') ?? 'eng';
+        $verify_segmentation = checkBoolean('verify_segmentation');
 
         $cache_params = [$id, $iso];
         $fileset = cacheRemember(
@@ -423,12 +483,13 @@ class BibleFileSetsController extends APIController
                         'bible_filesets.mode_id as mode_id',
                         'bible_filesets.set_type_code as type',
                         'bible_filesets.set_size_code as size',
+                        'bible_filesets.segmentation_type',
                         'bible_filesets.license_group_id'
                     ])->first();
             }
         );
 
-        return $this->reply(fractal($fileset, CopyrightTransformer::class, new ArraySerializer()));
+        return $this->reply(fractal($fileset, new CopyrightTransformer($verify_segmentation), new ArraySerializer()));
     }
 
     /**
