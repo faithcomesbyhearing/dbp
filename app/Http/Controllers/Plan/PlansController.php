@@ -649,7 +649,8 @@ class PlansController extends APIController
                 ->replyWithError('User Plan Not Found');
         }
 
-        $complete = checkBoolean('complete');
+        // This allows clients to mark a day complete without needing to send a value
+        $complete = $request->exists('complete') ? checkBoolean('complete') : true;
 
         $result = null;
         try {
