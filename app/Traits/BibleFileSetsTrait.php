@@ -5,6 +5,7 @@ namespace App\Traits;
 use Illuminate\Database\Eloquent\Collection;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Aws\CloudFront\CloudFrontClient;
 use App\Models\Bible\BibleFile;
 use App\Models\Bible\BibleFileSecondary;
@@ -69,6 +70,7 @@ trait BibleFileSetsTrait
      */
     private function executeQuery($query, $limit)
     {
+        $fileset_chapters_paginated = null;
         if ($limit !== null) {
             $fileset_chapters_paginated = $query->paginate($limit);
             $filesets_pagination = new IlluminatePaginatorAdapter($fileset_chapters_paginated);
@@ -88,7 +90,8 @@ trait BibleFileSetsTrait
 
         return [
             'fileset_chapters' => $fileset_chapters,
-            'filesets_pagination' => $filesets_pagination
+            'filesets_pagination' => $filesets_pagination,
+            'paginator' => $fileset_chapters_paginated,
         ];
     }
 
@@ -123,7 +126,8 @@ trait BibleFileSetsTrait
         ?string $book_id = null,
         $chapter_id = null,
         bool $is_download = false,
-        ?int $limit = null
+        ?int $limit = null,
+        bool $expand_sections = false
     ) {
         $query = $this->buildAudioVideoFilesetQuery($fileset, $book_id, $chapter_id);
 
@@ -139,6 +143,7 @@ trait BibleFileSetsTrait
 
         $fileset_chapters = $queryResult['fileset_chapters'];
         $filesets_pagination = $queryResult['filesets_pagination'];
+        $paginator = $queryResult['paginator'];
         $client = $clientResult['client'];
 
         $bible = optional($fileset->bible)->first();
@@ -162,8 +167,27 @@ trait BibleFileSetsTrait
                 $fileset,
                 $fileset_chapters,
                 $bible->id,
-                $client
+                $client,
+                $expand_sections
             );
+        }
+
+        // Collapsing multiple files into a single .m3u8 playlist shrinks the item
+        // count. Realign the paginator so meta.pagination total/count match the
+        // returned data instead of the pre-collapse row count.
+        if ($paginator !== null) {
+            $processed_count = collect($fileset_chapters_processed)->count();
+            if ($processed_count < $paginator->count()) {
+                $filesets_pagination = new IlluminatePaginatorAdapter(
+                    new LengthAwarePaginator(
+                        $fileset_chapters_processed,
+                        $processed_count,
+                        $paginator->perPage(),
+                        $paginator->currentPage(),
+                        ['path' => $paginator->path()]
+                    )
+                );
+            }
         }
 
         $fileset_return = fractal(
@@ -194,9 +218,17 @@ trait BibleFileSetsTrait
         $fileset,
         ?string $book_id = null,
         $chapter_id = null,
-        $limit = null
+        $limit = null,
+        bool $expand_sections = false
     ) {
-        return $this->processAudioVideoFilesets($fileset, $book_id, $chapter_id, false, $limit);
+        return $this->processAudioVideoFilesets(
+            $fileset,
+            $book_id,
+            $chapter_id,
+            false,
+            $limit,
+            $expand_sections
+        );
     }
 
     private function showTextFilesetChapter(
@@ -365,7 +397,8 @@ trait BibleFileSetsTrait
         $fileset_chapters,
         $bible_id,
         $client,
-        bool $handle_multi_mp3 = false
+        bool $handle_multi_mp3 = false,
+        bool $expand_sections = false
     ) {
         if ($this->isStreamingFileset($fileset)) {
             foreach ($fileset_chapters as $key => $fileset_chapter) {
@@ -389,7 +422,11 @@ trait BibleFileSetsTrait
             if ($handle_multi_mp3) {
                 $hasMultiMp3Chapter = $fileset->isAudio() &&
                     sizeof($fileset_chapters) > 1 &&
-                    $this->hasMultipleMp3Chapters($fileset_chapters);
+                    $this->isSingleChapterSplitIntoMultipleFiles(
+                        $fileset,
+                        $fileset_chapters,
+                        $expand_sections
+                    );
 
                 if ($hasMultiMp3Chapter) {
                     if ($fileset_chapters[0]->chapter_start) {
@@ -459,9 +496,17 @@ trait BibleFileSetsTrait
         $fileset,
         $fileset_chapters,
         $bible_id,
-        $client
+        $client,
+        bool $expand_sections = false
     ) {
-        return $this->generateFilesetChaptersBase($fileset, $fileset_chapters, $bible_id, $client, true);
+        return $this->generateFilesetChaptersBase(
+            $fileset,
+            $fileset_chapters,
+            $bible_id,
+            $client,
+            true,
+            $expand_sections
+        );
     }
 
     private function generateFilesetChaptersToDownload(
@@ -556,10 +601,59 @@ trait BibleFileSetsTrait
         return $file_tags_indexed;
     }
 
-    private function hasMultipleMp3Chapters($fileset_chapters)
-    {
+    /**
+     * Determine whether a set of audio files represents a single chapter that was
+     * mechanically split across multiple mp3 files — the only case that should be
+     * collapsed into one .m3u8 playlist item by generateFilesetChaptersBase().
+     *
+     * Section-awareness is opt-in via $expand_sections. When a client opts in, the
+     * method must NOT collapse:
+     *  - Section-segmented filesets, where one-chapter books (e.g. PHM, JUD) have
+     *    several intentional per-section recordings that all share chapter_start = 1.
+     *    These are identified by segmentation_type = 'section'; for legacy filesets
+     *    that pre-date that column (segmentation_type = null) distinct verse_start
+     *    markers are used as a defensive fallback, since a mechanical split shares
+     *    the same verse_start across its files.
+     *
+     * When $expand_sections is false this reduces to the original behavior: collapse
+     * whenever every file shares the same chapter_start, so existing clients keep the
+     * single .m3u8 chapter playlist they rely on.
+     *
+     * @param BibleFileset $fileset
+     * @param iterable     $fileset_chapters
+     * @param bool         $expand_sections Opt-in: keep section-segmented audio as separate items
+     *
+     * @return bool
+     */
+    private function isSingleChapterSplitIntoMultipleFiles(
+        $fileset,
+        $fileset_chapters,
+        bool $expand_sections = false
+    ) {
+        $segmentation_type = $fileset->segmentation_type ?? null;
+
+        // Intentional per-section recordings are never a mechanical chapter split,
+        // but only honor this when the client has opted into section playback.
+        if ($expand_sections &&
+            $segmentation_type === BibleFileset::SEGMENTATION_TYPE_SECTION
+        ) {
+            return false;
+        }
+
+        $first = $fileset_chapters[0];
         foreach ($fileset_chapters as $chapter) {
-            if ($chapter['chapter_start'] !== $fileset_chapters[0]['chapter_start']) {
+            // More than one distinct chapter → not a single split chapter.
+            if ($chapter['chapter_start'] !== $first['chapter_start']) {
+                return false;
+            }
+            // Defensive fallback for filesets predating segmentation_type (null):
+            // distinct verse_start markers mean these are sections, not a
+            // mechanical split (whose files share the same verse_start). Gated
+            // behind the opt-in so non-opting clients keep the original behavior.
+            if ($expand_sections &&
+                $segmentation_type === null &&
+                $chapter['verse_start'] !== $first['verse_start']
+            ) {
                 return false;
             }
         }

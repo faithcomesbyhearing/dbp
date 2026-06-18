@@ -3,12 +3,11 @@
 namespace App\Services\Bibles;
 
 use App\Models\Bible\BibleFile;
+use App\Models\Bible\BibleFileset;
 use Illuminate\Support\Collection;
 
 class FilesetVerseStartsResolver
 {
-    private const SEGMENTATION_TYPE_SECTION = 'section';
-
     /**
      * Filter the in-memory fileset collection down to those that should
      * carry verse_starts: section-segmented audio filesets.
@@ -19,7 +18,7 @@ class FilesetVerseStartsResolver
     public function qualifyingFilesets(Collection $filesets) : Collection
     {
         return $filesets->filter(function ($fileset) {
-            return ($fileset->segmentation_type ?? null) === self::SEGMENTATION_TYPE_SECTION
+            return ($fileset->segmentation_type ?? null) === BibleFileset::SEGMENTATION_TYPE_SECTION
                 && $fileset->isAudio();
         })->values();
     }
