@@ -44,6 +44,10 @@ class BibleFileSetsController extends APIController
      *     @OA\Parameter(name="type", in="query", description="The fileset type", required=true,
      *          @OA\Schema(ref="#/components/schemas/BibleFileset/properties/set_type_code")
      *     ),
+     *     @OA\Parameter(name="expand_sections", in="query",
+     *          description="Opt-in (default false). When true, section-segmented audio filesets (segmentation_type='section') return one playable item per section instead of a collapsed .m3u8 chapter playlist.",
+     *          @OA\Schema(type="boolean", default=false)
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -69,14 +73,15 @@ class BibleFileSetsController extends APIController
         $book_id = checkParam('book_id');
         $chapter_id = checkParam('chapter_id|chapter');
         $type = checkParam('type', $set_type_code !== null, $set_type_code);
+        $expand_sections = checkBoolean('expand_sections', false);
 
-        $cache_params = [$this->v, $fileset_id, $book_id, $type, $chapter_id];
+        $cache_params = [$this->v, $fileset_id, $book_id, $type, $chapter_id, $expand_sections];
 
         $fileset_chapters = cacheRemember(
             $cache_key,
             $cache_params,
             now()->addHours(12),
-            function () use ($fileset_id, $book_id, $type, $chapter_id) {
+            function () use ($fileset_id, $book_id, $type, $chapter_id, $expand_sections) {
                 $normalized_book_id = optional(Book::findBookByAnyIdentifier($book_id))->id;
                 $fileset = BibleFileset::with('bible')
                     ->uniqueFileset($fileset_id, $type)
@@ -96,7 +101,8 @@ class BibleFileSetsController extends APIController
                     $fileset,
                     $normalized_book_id,
                     $chapter_id,
-                    null
+                    null,
+                    $expand_sections
                 );
             }
         );
@@ -126,6 +132,10 @@ class BibleFileSetsController extends APIController
      *     ),
      *     @OA\Parameter(name="verse_end", in="query", description="Will filter the results by the given ending verse",
      *          @OA\Schema(ref="#/components/schemas/BibleFile/properties/verse_end")
+     *     ),
+     *     @OA\Parameter(name="expand_sections", in="query",
+     *          description="Opt-in (default false). When true, section-segmented audio filesets (segmentation_type='section') return one playable item per section instead of a collapsed .m3u8 chapter playlist.",
+     *          @OA\Schema(type="boolean", default=false)
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -160,6 +170,7 @@ class BibleFileSetsController extends APIController
         $verse_start  = checkParam('verse_start') ?? 1;
         $verse_end    = checkParam('verse_end');
         $type         = checkParam('type') ?? '';
+        $expand_sections = checkBoolean('expand_sections', false);
         $chapter_id   = getAndCheckParam('chapter_id|chapter', true, $chapter_url_param);
 
         $validator = Validator::make([
@@ -188,7 +199,8 @@ class BibleFileSetsController extends APIController
             $chapter_id,
             $verse_start,
             $verse_end,
-            $type
+            $type,
+            $expand_sections
         ];
 
         $cache_safe_key = generateCacheSafeKey($cache_key, $cache_params);
@@ -196,7 +208,7 @@ class BibleFileSetsController extends APIController
         $fileset_chapters = cacheRememberByKey(
             $cache_safe_key,
             now()->addHours(12),
-            function () use ($fileset_id, $book_id, $chapter_id, $verse_start, $verse_end, $type) {
+            function () use ($fileset_id, $book_id, $chapter_id, $verse_start, $verse_end, $type, $expand_sections) {
                 $normalized_book_id = optional(Book::findBookByAnyIdentifier($book_id))->id;
                 $fileset_from_id = BibleFileset::prioritizeTextPlainType($fileset_id)->first();
                 if (!$fileset_from_id) {
@@ -240,7 +252,8 @@ class BibleFileSetsController extends APIController
                         $fileset,
                         $normalized_book_id,
                         $chapter_id,
-                        null
+                        null,
+                        $expand_sections
                     );
                 }
             }
@@ -264,6 +277,10 @@ class BibleFileSetsController extends APIController
      *          @OA\Schema(ref="#/components/schemas/Book/properties/id")
      *     ),
      *     @OA\Parameter(name="limit", in="query", description="limit for the pagination of the query"
+     *     ),
+     *     @OA\Parameter(name="expand_sections", in="query",
+     *          description="Opt-in (default false). When true, section-segmented audio filesets (segmentation_type='section') return one playable item per section instead of a collapsed .m3u8 chapter playlist.",
+     *          @OA\Schema(type="boolean", default=false)
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -294,20 +311,21 @@ class BibleFileSetsController extends APIController
         $book_url_param = null,
         $cache_key = 'bible_filesets_show_bulk'
     ) {
-        $fileset_id   = checkParam('dam_id|fileset_id', true, $fileset_url_param);
-        $book_id      = checkParam('book_id', false, $book_url_param);
-        $type         = checkParam('type') ?? '';
-        $cache_params = [$this->v, $fileset_id, $book_id, $type];
-        $limit        = (int) (checkParam('limit') ?? 5000);
-        $limit        = max($limit, 5000);
-        $page         = checkParam('page') ?? 1;
-        $cache_key    = $cache_key . $page;
+        $fileset_id      = checkParam('dam_id|fileset_id', true, $fileset_url_param);
+        $book_id         = checkParam('book_id', false, $book_url_param);
+        $type            = checkParam('type') ?? '';
+        $expand_sections = checkBoolean('expand_sections', false);
+        $cache_params    = [$this->v, $fileset_id, $book_id, $type, $expand_sections];
+        $limit           = (int) (checkParam('limit') ?? 5000);
+        $limit           = max($limit, 5000);
+        $page            = checkParam('page') ?? 1;
+        $cache_key       = $cache_key . $page;
 
         $fileset_chapters = cacheRemember(
             $cache_key,
             $cache_params,
             now()->addHours(12),
-            function () use ($fileset_id, $book_id, $limit, $type) {
+            function () use ($fileset_id, $book_id, $limit, $type, $expand_sections) {
                 $fileset_from_id = BibleFileset::prioritizeTextPlainType($fileset_id)->first();
                 if (!$fileset_from_id) {
                     return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(
@@ -349,7 +367,8 @@ class BibleFileSetsController extends APIController
                         $fileset,
                         $normalized_book_id,
                         null,
-                        $limit
+                        $limit,
+                        $expand_sections
                     );
                 }
             }
