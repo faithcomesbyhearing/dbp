@@ -182,7 +182,10 @@ class UsersController extends APIController
      *     )),
      *     @OA\Response(
      *         response=200,
-     *         description="User successfully logged in",
+     *         description="User successfully logged in. When a social login was resolved through an
+     *                      account belonging to another project (first login into this project), the
+     *                      response additionally contains `linked_from_project` with the source
+     *                      project id, so clients can tell the user their existing account was linked",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_user_index"))
      *     ),
      *     @OA\Response(
@@ -190,7 +193,26 @@ class UsersController extends APIController
      *         description="Authentication failed. For social providers with autocreate=false,
      *                      this indicates the account doesn't exist and signup is required",
      *         @OA\JsonContent(
-     *             @OA\Property(property="error", type="string", example="No account found for this Facebook account. Please sign up first.")
+     *             @OA\Property(
+     *                 property="error",
+     *                 type="object",
+     *                 @OA\Property(property="message", type="string", example="No account found for this Facebook account. Please sign up first."),
+     *                 @OA\Property(property="status_code", type="integer", example=401),
+     *                 @OA\Property(property="action", type="string", example="")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="The given project_id does not exist",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="error",
+     *                 type="object",
+     *                 @OA\Property(property="message", type="string", example="Project Not found"),
+     *                 @OA\Property(property="status_code", type="integer", example=404),
+     *                 @OA\Property(property="action", type="string", example="")
+     *             )
      *         )
      *     )
      * )
@@ -208,6 +230,14 @@ class UsersController extends APIController
         $email = checkParam('email');
         $social_provider_id = checkParam('social_provider_id');
         $project_id = checkParam('project_id');
+
+        // Fail fast on an unknown project_id: without this, login proceeds and the
+        // user_accounts/project_members inserts below die on the projects FK with a 500.
+        if ($project_id && !Project::where('id', $project_id)->exists()) {
+            return $this->setStatusCode(404)->replyWithError(
+                trans('api.projects_404')
+            );
+        }
 
         if ($social_provider_id) {
             $social_provider_user_id = checkParam('social_provider_user_id');
@@ -359,10 +389,40 @@ class UsersController extends APIController
             'autocreate',
         ]);
 
+        // Cross-project fallback: this social account may already be linked to a user under
+        // another project (e.g. an existing Bible.is user logging into another client app for
+        // the first time with a provider that returns no email, like Apple or Facebook).
+        // Oldest account wins. NOTE: although the create migration declares an id column,
+        // the deployed user_accounts table has none — its primary key is the composite
+        // (user_id, provider_id, project_id), matching Account::setKeysForSaveQuery() —
+        // so order by created_at with user_id as tiebreak (ORDER BY id would error).
+        // whereHas('user') skips accounts whose user was soft deleted.
+        $user = null;
+        $linked_from_project = null;
+        $cross_project_account = Account::where('provider_id', $provider_id)
+            ->where('provider_user_id', $provider_user_id)
+            ->whereHas('user')
+            ->orderBy('created_at')
+            ->orderBy('user_id')
+            ->first();
+        if ($cross_project_account) {
+            $user = User::with('accounts', 'profile')
+                ->whereId($cross_project_account->user_id)
+                ->first();
+            if ($user) {
+                $linked_from_project = (int) $cross_project_account->project_id;
+                $cross_project_log = 'social provider login matched an account from another project.' .
+                                     ' request:' . json_encode($safe_log_fields) .
+                                     ', matched_project_id: ' . $cross_project_account->project_id .
+                                     ', user_id: ' . $user->id;
+                Log::info($cross_project_log);
+            }
+        }
+
         // Before erroring when autocreate=false, check if a user with this email exists
-        $user = $request->email
-            ? User::with('accounts', 'profile')->where('email', $request->email)->first()
-            : null;
+        if (!$user && $request->email) {
+            $user = User::with('accounts', 'profile')->where('email', $request->email)->first();
+        }
 
         // Return null (401) only when autocreate is false AND no user exists for this email
         if ($autocreate === false && !$user) {
@@ -422,7 +482,15 @@ class UsersController extends APIController
             Log::error($provider_error_message);
         }
 
-        return User::with('accounts', 'profile')->whereId($user->id)->first();
+        $logged_in_user = User::with('accounts', 'profile')->whereId($user->id)->first();
+        // Surface the cross-project link to the client (one-time event: the account row
+        // created above means the next login resolves through the project-scoped lookup),
+        // so apps can show a "we connected your existing account" notice.
+        if ($linked_from_project !== null) {
+            $logged_in_user->linked_from_project = $linked_from_project;
+        }
+
+        return $logged_in_user;
     }
 
     /**
