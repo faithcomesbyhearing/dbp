@@ -60,6 +60,9 @@ class BibleFileset extends Model
         self::TYPE_AUDIO_DRAMA_STREAM,
     ];
 
+    public const SEGMENTATION_TYPE_SECTION = 'section';
+    public const SEGMENTATION_TYPE_CHAPTER = 'chapter';
+
     public const NEW_TEXT_PLAIN_FILESET_LENGTH = 10;
     public const OLD_TEXT_PLAIN_FILESET_LENGTH = 6;
     public const V1_AUDIO_16_KBPS_FILESET_LENGTH = 12;
