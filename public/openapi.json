@@ -163,6 +163,15 @@
                         }
                     },
                     {
+                        "name": "expand_sections",
+                        "in": "query",
+                        "description": "Opt-in (default false). When true, section-segmented audio filesets (segmentation_type='section') return one playable item per section instead of a collapsed .m3u8 chapter playlist.",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    {
                         "$ref": "#/components/parameters/version_number"
                     }
                 ],
