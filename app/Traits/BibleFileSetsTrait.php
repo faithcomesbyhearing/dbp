@@ -266,9 +266,14 @@ trait BibleFileSetsTrait
         ->when($verse_end, function ($query) use ($verse_end) {
             return $query->where('verse_sequence', '<=', (int) $verse_end);
         })
-        ->orderBy('verse_sequence')
-        ->orderBy('books.name', 'ASC')
-        ->orderBy('bible_verses.chapter');
+        // book_order mixes a CHAR branch (bible_books.book_seq) and its ELSE fallback
+        // (bible_books.book_id, also CHAR) with a numeric branch (books.*_order) in
+        // BibleBook::getBookOrderSql(), so MySQL compares the whole CASE expression as
+        // a string; harmless today because bible_books.book_seq is populated
+        // (zero-padded) for every row in the dataset.
+        ->orderBy('book_order')
+        ->orderBy('bible_verses.chapter')
+        ->orderBy('bible_verses.verse_sequence');
 
         if ($bible && $bible->numeral_system_id) {
             $select_columns_extra = array_merge(
