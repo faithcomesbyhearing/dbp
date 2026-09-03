@@ -3,6 +3,7 @@
 namespace App\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Country\Country;
 
 /**
@@ -20,6 +21,13 @@ use App\Models\Country\Country;
  */
 class Profile extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\User\ProfileFactory::new();
+    }
+
     /**
      * The database table used by the model.
      *

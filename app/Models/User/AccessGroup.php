@@ -4,6 +4,7 @@ namespace App\Models\User;
 
 use App\Models\Bible\BibleFileset;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\User\AccessGroup
@@ -19,6 +20,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class AccessGroup extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\User\AccessGroupFactory::new();
+    }
+
     protected $connection = 'dbp';
     public $table = 'access_groups';
     public $fillable = ['name', 'description'];

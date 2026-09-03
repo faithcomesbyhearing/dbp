@@ -11,10 +11,10 @@ class OrganizationsRoutesTest extends ApiV4Test
      * @category Route Name: v4_organizations.all
      * @category Route Path: https://api.dbp.test/organizations/?v=4&key={key}
      * @see      \App\Http\Controllers\Organization\OrganizationsController::index
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function organizationsAll()
     {
         $path = route('v4_organizations.all', $this->params);
@@ -28,10 +28,10 @@ class OrganizationsRoutesTest extends ApiV4Test
      * @category Route Name: v4_organizations.one
      * @category Route Path: https://api.dbp.test/organizations/{organization_id}?v=4&key={key}
      * @see      \App\Http\Controllers\Organization\OrganizationsController::show
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function organizationsOne()
     {
         $path = route('v4_organizations.one', $this->params);
@@ -45,10 +45,10 @@ class OrganizationsRoutesTest extends ApiV4Test
      * @category Route Name: v4_organizations.compare
      * @category Route Path: https://api.dbp.test/organizations/compare/{org1}/to/{org2}?v=4&key={key}
      * @see      \App\Http\Controllers\Organization\OrganizationsController::compare
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function organizationsCompare()
     {
         $organizations = Organization::inRandomOrder()->take(2)->get();

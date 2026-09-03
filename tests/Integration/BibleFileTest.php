@@ -13,10 +13,10 @@ class BibleFileTest extends ApiV4NewTest
 
     /**
      * @category V4_API
-     * @group    V4
-     * @group    integration
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('integration')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function bibleFiles()
     {
         $bible_file = BibleFile::with('book')

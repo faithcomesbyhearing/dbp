@@ -9,11 +9,13 @@ use App\Models\Bible\Video;
 use App\Models\Country\CountryLanguage;
 use App\Models\Country\CountryRegion;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use App\Models\Country\Country;
 use App\Models\Resource\Resource;
+use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\Language\Language
@@ -89,6 +91,13 @@ use App\Models\Resource\Resource;
  */
 class Language extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Language\LanguageFactory::new();
+    }
+
     const ENGLISH_ID = 6414;
 
     protected $connection = 'dbp';
@@ -402,7 +411,7 @@ class Language extends Model
     public function scopeIncludeAutonymTranslation($query)
     {
         $query->leftJoin('language_translations as autonym', function ($join) {
-            $priority_q = \DB::raw('(select max(`priority`) FROM language_translations WHERE language_translation_id = languages.id AND language_source_id = languages.id LIMIT 1)');
+            $priority_q = DB::raw('(select max(`priority`) FROM language_translations WHERE language_translation_id = languages.id AND language_source_id = languages.id LIMIT 1)');
             $join->on('autonym.language_source_id', '=', 'languages.id')
               ->on('autonym.language_translation_id', '=', 'languages.id')
               ->where('autonym.priority', '=', $priority_q);
@@ -412,7 +421,7 @@ class Language extends Model
     public function scopeIncludeCurrentTranslation($query)
     {
         $query->leftJoin('language_translations as current_translation', function ($join) {
-            $priority_q = \DB::raw('(select max(`priority`) from language_translations WHERE language_source_id = languages.id LIMIT 1)');
+            $priority_q = DB::raw('(select max(`priority`) from language_translations WHERE language_source_id = languages.id LIMIT 1)');
             $join->on('current_translation.language_source_id', 'languages.id')
                 ->where('current_translation.language_translation_id', '=', $GLOBALS['i18n_id'])
                 ->where('current_translation.priority', '=', $priority_q);
@@ -494,10 +503,10 @@ class Language extends Model
             ->isContentAvailable($access_group_ids, $bible_fileset_filters)
             ->hasPriority();
 
-        $lang_union_query = \DB::table($lang)
+        $lang_union_query = DB::table($lang)
             ->unionAll($lang_trans);
 
-        $lang_union_all_group = \DB::table($lang_union_query, 'lang_and_trans_group')
+        $lang_union_all_group = DB::table($lang_union_query, 'lang_and_trans_group')
             ->groupBy('lang_and_trans_group.id');
 
         return $query->joinSub(
@@ -515,7 +524,7 @@ class Language extends Model
             $join->on('autonym.language_source_id', '=', 'languages.id')
                 ->on('autonym.language_translation_id', '=', 'languages.id')
                 ->where('autonym.priority', '=', function ($autonym_query) {
-                    $autonym_query->select(\DB::raw('MAX(`priority`)'))
+                    $autonym_query->select(DB::raw('MAX(`priority`)'))
                         ->from('language_translations')
                         ->whereColumn('language_translation_id', '=', 'languages.id')
                         ->whereColumn('language_source_id', '=', 'languages.id')
@@ -525,7 +534,7 @@ class Language extends Model
             $join->on('current_translation.language_source_id', 'languages.id')
                 ->where('current_translation.language_translation_id', $GLOBALS['i18n_id'])
                 ->where('current_translation.priority', '=', function ($current_translation_query) {
-                    $current_translation_query->select(\DB::raw('MAX(`priority`)'))
+                    $current_translation_query->select(DB::raw('MAX(`priority`)'))
                         ->from('language_translations')
                         ->whereColumn('language_source_id', '=', 'languages.id')
                         ->limit(1);
@@ -789,9 +798,9 @@ class Language extends Model
 
         $db_connection_name = $query->getConnection()->getName() ?? $this->connection;
 
-        $new_language_query = \DB::connection($db_connection_name)
+        $new_language_query = DB::connection($db_connection_name)
             ->table(
-                \DB::connection($db_connection_name)->raw(
+                DB::connection($db_connection_name)->raw(
                     "(
                     $subquery_code_v2_sql
                     UNION ALL

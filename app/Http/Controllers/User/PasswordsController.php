@@ -13,7 +13,9 @@ use App\Models\User\PasswordReset;
 use App\Mail\EmailPasswordReset;
 use App\Models\User\Role;
 use App\Traits\CheckProjectMembership;
-use Validator;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
@@ -116,7 +118,7 @@ class PasswordsController extends APIController
         ]);
         $user->token = $generatedToken->token;
 
-        \Mail::to($user)->send(new EmailPasswordReset($user, $connection->project, $language));
+        Mail::to($user)->send(new EmailPasswordReset($user, $connection->project, $language));
         if (!$this->api) {
             return view('auth.passwords.email-sent');
         }
@@ -201,13 +203,13 @@ class PasswordsController extends APIController
             return $this->setStatusCode(HttpResponse::HTTP_NOT_FOUND)->replyWithError(trans('api.users_errors_404'));
         }
 
-        $password_match = \Hash::check($request->old_password, $user->password);
+        $password_match = Hash::check($request->old_password, $user->password);
         if ($request->old_password && !$password_match) {
             return $this->setStatusCode(HttpResponse::HTTP_UNAUTHORIZED)->replyWithError(trans('auth.failed'));
         }
 
         $new_password = $request->new_password;
-        $user->password = \Hash::make($new_password);
+        $user->password = Hash::make($new_password);
         $user->save();
 
         $reset_path = url('/');

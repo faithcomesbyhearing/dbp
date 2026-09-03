@@ -7,6 +7,7 @@ use Illuminate\Auth\GuardHelpers;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Auth\UserProvider;
+use Illuminate\Support\Facades\DB;
 
 class APITokenGuard implements Guard
 {
@@ -98,7 +99,7 @@ class APITokenGuard implements Guard
     private function getApiToken($token)
     {
         return  APIToken::where('api_token', hash('sha256', $token))
-            ->where('created_at', '>', \DB::raw('DATE_SUB(NOW(), INTERVAL 1 YEAR)'))
+            ->where('created_at', '>', DB::raw('DATE_SUB(NOW(), INTERVAL 1 YEAR)'))
             ->first();
     }
 }

@@ -81,6 +81,22 @@ return [
 
     'prefix' => env('CACHE_PREFIX'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cache Serializable Classes
+    |--------------------------------------------------------------------------
+    |
+    | Laravel 13 defaults this to false, which blocks unserializing arbitrary
+    | classes from the cache to harden against deserialization attacks. This
+    | application caches Eloquent models and collections (see the cacheRemember*
+    | helpers in app/Helpers/Helpers.php), so we retain the previous permissive
+    | behavior here. TODO: tighten to an explicit class allow-list as a
+    | security-hardening follow-up.
+    |
+    */
+
+    'serializable_classes' => true,
+
     // Development mode TTL, it is not used in production and it is not
     // mandatory that env parameter is set
     'dev_ttl' => env('CACHE_DEV_TTL', 1),

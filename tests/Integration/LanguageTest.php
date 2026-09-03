@@ -11,10 +11,10 @@ class LanguageTest extends ApiV4NewTest
 
     /**
      * @category V4_API
-     * @group    V4
-     * @group    integration
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('integration')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function languagesRolvCodeNewColumn()
     {
         $language = Language::select('*')
