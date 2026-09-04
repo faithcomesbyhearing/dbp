@@ -46,7 +46,7 @@
         <h1 class="txt-h2">{{ __('auth.resetPassword') }}</h1>
       </div>
     </div>
-    <form id="password-reset" class="column is-half is-offset-one-quarter" method="POST" action="{{ route('v4_internal_user.password_reset', ['token' => $reset_request->token,'v' => 4, 'key' => 'tighten_37518dau8gb891ub']) }}">
+    <form id="password-reset" class="column is-half is-offset-one-quarter" method="POST" action="{{ route('v4_internal_user.password_reset', ['token' => $reset_request->token,'v' => 4, 'key' => config('services.web.key')]) }}">
         @csrf
         <div id="message-box"></div>
         <input type="hidden" name="token_id" value="{{ $reset_request->token }}">

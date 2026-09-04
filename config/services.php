@@ -29,6 +29,10 @@ return [
         'secret' => env('SPARKPOST_SECRET'),
     ],
 
+    'web' => [
+        'key' => env('WEB_KEY'),
+    ],
+
     // Bible APIs
     'bibleIs' => [
         'key' => env('BIS_API_KEY'),
