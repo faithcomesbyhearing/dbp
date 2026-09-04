@@ -64,7 +64,9 @@ $factory->define(\App\Models\Bible\BibleFileset::class, function (Faker $faker) 
         'asset_id'      => factory(\App\Models\Organization\Asset::class)->create()->id,
         'set_type_code' => factory(\App\Models\Bible\BibleFilesetType::class)->create()->id,
         'set_size_code' => factory(\App\Models\Bible\BibleFilesetSize::class)->create()->id,
-        'hidden'        => $faker->boolean(10)
+        'hidden'        => $faker->boolean(10),
+        'content_loaded' => true,
+        'archived'       => false,
     ];
 });
 
