@@ -41,7 +41,10 @@
     @else
 
     <div class="container">
-        <algolia-bible-search></algolia-bible-search>
+        <algolia-bible-search
+            app-id="{{ config('services.algolia.app_id') }}"
+            api-key="{{ config('services.algolia.api_key') }}"
+        ></algolia-bible-search>
     </div>
 
     @endif

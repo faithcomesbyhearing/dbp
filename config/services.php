@@ -33,6 +33,11 @@ return [
         'key' => env('WEB_KEY'),
     ],
 
+    'algolia' => [
+        'app_id' => env('ALGOLIA_APP_ID'),
+        'api_key' => env('ALGOLIA_API_KEY'),
+    ],
+
     // Bible APIs
     'bibleIs' => [
         'key' => env('BIS_API_KEY'),

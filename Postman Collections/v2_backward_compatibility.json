@@ -31,7 +31,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/audio/location?v={{version}}&key={{key}}",
+              "raw": "{{baseUrl}}/audio/location?v={{version}}&key={{DBP_API_KEY}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -46,7 +46,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 }
               ]
             }
@@ -85,7 +85,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/audio/path?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
+              "raw": "{{baseUrl}}/audio/path?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -100,7 +100,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "dam_id",
@@ -162,7 +162,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/book?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&language_code={{languageCode}}",
+              "raw": "{{baseUrl}}/library/book?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentAudioDamId}}&language_code={{languageCode}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -177,7 +177,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "dam_id",
@@ -224,7 +224,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=1",
+              "raw": "{{baseUrl}}/library/verse?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -239,7 +239,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "dam_id",
@@ -298,7 +298,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/volume?v={{version}}&key={{key}}&media=audio&language_code={{languageCode}}&delivery=web",
+              "raw": "{{baseUrl}}/library/volume?v={{version}}&key={{DBP_API_KEY}}&media=audio&language_code={{languageCode}}&delivery=web",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -313,7 +313,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "media",
@@ -369,7 +369,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/volumelanguagefamily?v={{version}}&key={{key}}",
+              "raw": "{{baseUrl}}/library/volumelanguagefamily?v={{version}}&key={{DBP_API_KEY}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -384,7 +384,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "delivery",
@@ -440,7 +440,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/text/verse?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=3",
+              "raw": "{{baseUrl}}/text/verse?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1&verse_start=1&verse_end=3",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -455,7 +455,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "dam_id",
@@ -514,7 +514,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/chapter?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}",
+              "raw": "{{baseUrl}}/library/chapter?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentAudioDamId}}&book_id={{newTestamentBook}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -530,7 +530,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
+                  "value": "{{DBP_API_KEY}}",
                   "type": "text"
                 },
                 {
@@ -580,7 +580,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/text/search?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&query=Saul&page=1",
+              "raw": "{{baseUrl}}/text/search?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentTextDamId}}&query=Saul&page=1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -595,7 +595,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "dam_id",
@@ -646,7 +646,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{basePath}}/library/bookname?v={{version}}&key={{key}}&organization_id=225&language_code={{languageCode}}",
+              "raw": "{{basePath}}/library/bookname?v={{version}}&key={{DBP_API_KEY}}&organization_id=225&language_code={{languageCode}}",
               "host": [
                 "{{basePath}}"
               ],
@@ -661,7 +661,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "organization_id",
@@ -708,7 +708,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/volumelanguage?v={{version}}&key={{key}}&language_code={{languageCode}}&media=text&delivery=web",
+              "raw": "{{baseUrl}}/library/volumelanguage?v={{version}}&key={{DBP_API_KEY}}&language_code={{languageCode}}&media=text&delivery=web",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -723,7 +723,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "language_code",
@@ -783,7 +783,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/bookorder?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}",
+              "raw": "{{baseUrl}}/library/bookorder?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -799,7 +799,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
+                  "value": "{{DBP_API_KEY}}",
                   "type": "text"
                 },
                 {
@@ -849,7 +849,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/metadata?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}",
+              "raw": "{{baseUrl}}/library/metadata?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentAudioDamId}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -864,7 +864,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "dam_id",
@@ -907,7 +907,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/audio/versestart?v={{version}}&key={{key}}&dam_id={{newTestamentAudioDamId}}&chapter_number=1&osis_code=Mark",
+              "raw": "{{baseUrl}}/audio/versestart?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentAudioDamId}}&chapter_number=1&osis_code=Mark",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -922,7 +922,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "dam_id",
@@ -973,7 +973,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/country/countrylang?v={{version}}&key={{key}}&lang_code={{languageCode}}&country_code=US",
+              "raw": "{{baseUrl}}/country/countrylang?v={{version}}&key={{DBP_API_KEY}}&lang_code={{languageCode}}&country_code=US",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -989,7 +989,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
+                  "value": "{{DBP_API_KEY}}",
                   "type": "text"
                 },
                 {
@@ -1039,7 +1039,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
+              "raw": "{{baseUrl}}/library/verseinfo?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1054,7 +1054,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "dam_id",
@@ -1111,7 +1111,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/text/verseinfo?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
+              "raw": "{{baseUrl}}/text/verseinfo?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentTextDamId}}&book_id={{newTestamentBook}}&chapter_id=1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1126,7 +1126,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "dam_id",
@@ -1177,7 +1177,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/text/volume?v={{version}}&key={{key}}&dam_id={{newTestamentTextDamId}}",
+              "raw": "{{baseUrl}}/text/volume?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentTextDamId}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1193,7 +1193,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
+                  "value": "{{DBP_API_KEY}}",
                   "type": "text"
                 },
                 {
@@ -1262,7 +1262,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/numbers?v={{version}}&key={{key}}&language_code={{languageCode}}&start=0&end=10",
+              "raw": "{{baseUrl}}/library/numbers?v={{version}}&key={{DBP_API_KEY}}&language_code={{languageCode}}&start=0&end=10",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1278,7 +1278,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
+                  "value": "{{DBP_API_KEY}}",
                   "type": "text"
                 },
                 {
@@ -1333,7 +1333,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/video/videopath?v={{version}}&key={{key}}&dam_id={{newTestamentVideoDamId}}&encoding=m3u8",
+              "raw": "{{baseUrl}}/video/videopath?v={{version}}&key={{DBP_API_KEY}}&dam_id={{newTestamentVideoDamId}}&encoding=m3u8",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1349,7 +1349,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}",
+                  "value": "{{DBP_API_KEY}}",
                   "type": "text"
                 },
                 {
@@ -1399,7 +1399,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/library/version?v={{version}}&key={{key}}&code=ESV",
+              "raw": "{{baseUrl}}/library/version?v={{version}}&key={{DBP_API_KEY}}&code=ESV",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1414,7 +1414,7 @@
                 },
                 {
                   "key": "key",
-                  "value": "{{key}}"
+                  "value": "{{DBP_API_KEY}}"
                 },
                 {
                   "key": "code",
@@ -1494,7 +1494,7 @@
               },
               {
                 "key": "key",
-                "value": "{{key}}",
+                "value": "{{DBP_API_KEY}}",
                 "type": "text"
               }
             ],
@@ -1578,7 +1578,7 @@
               },
               {
                 "key": "key",
-                "value": "{{key}}",
+                "value": "{{DBP_API_KEY}}",
                 "type": "text"
               }
             ],
@@ -1663,7 +1663,7 @@
               },
               {
                 "key": "key",
-                "value": "{{key}}",
+                "value": "{{DBP_API_KEY}}",
                 "type": "text"
               }
             ],
@@ -1733,7 +1733,7 @@
               },
               {
                 "key": "key",
-                "value": "{{key}}",
+                "value": "{{DBP_API_KEY}}",
                 "type": "text"
               }
             ],
@@ -1818,7 +1818,7 @@
               },
               {
                 "key": "key",
-                "value": "{{key}}",
+                "value": "{{DBP_API_KEY}}",
                 "type": "text"
               }
             ],
@@ -1903,7 +1903,7 @@
               },
               {
                 "key": "key",
-                "value": "{{key}}",
+                "value": "{{DBP_API_KEY}}",
                 "type": "text"
               }
             ],
@@ -2069,8 +2069,8 @@
     },
     {
       "id": "38de56df-043a-4719-a238-6ff5e06158c2",
-      "key": "key",
-      "value": "53355c32fca5f3cac4d7a670d2df2e09",
+      "key": "DBP_API_KEY",
+      "value": "",
       "type": "string"
     },
     {

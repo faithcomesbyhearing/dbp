@@ -337,7 +337,7 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: LibraryMetaData
      * @category Route Name: v2_library_metadata
      * @link Route Path: https://api.dbp.test/library/metadata?v=2&dam_id=ENGESVN1ET&key={key}
-     * @link Source Path: https://dbt.io/library/metadata?v=2&dam_id=ENGESVN1ET&key=53355c32fca5f3cac4d7a670d2df2e09
+     * @link Source Path: https://dbt.io/library/metadata?v=2&dam_id=ENGESVN1ET&key={key}
      * @group    V2
      * @group    non-travis
      * @test
@@ -411,7 +411,7 @@ class ApiV2Test extends TestCase
      * @category Swagger ID: LibraryVolumeLanguageFamily
      * @category Route Name: v2_library_volumeLanguageFamily
      * @link Route Path: https://api.dbp.test/library/volumelanguagefamily?v=2&pretty&key={key}
-     * @link Route Path: https://dbt.io/library/volumelanguagefamily?v=2&key=53355c32fca5f3cac4d7a670d2df2e09
+     * @link Route Path: https://dbt.io/library/volumelanguagefamily?v=2&key={key}
      * @group    V2
      * @group    travis
      * @test

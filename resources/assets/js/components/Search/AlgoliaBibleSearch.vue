@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<ais-index appId="2RX9IYYESE" apiKey="b0f47b41de23addbad23832d1ae03c2f" index-name="bibles_index">
+		<ais-index :appId="appId" :apiKey="apiKey" index-name="bibles_index">
 
 			<div class="columns">
 				<div class="column is-8 is-offset-2">
@@ -77,6 +77,16 @@
 <script>
 	export default {
 		name: 'bible-search',
+		props: {
+			appId: {
+				type: String,
+				required: true,
+			},
+			apiKey: {
+				type: String,
+				required: true,
+			},
+		},
 		methods: {
 			onPageChange() {
 				window.scrollTo(0, 0);
