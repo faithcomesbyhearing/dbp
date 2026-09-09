@@ -75,7 +75,7 @@ use Yosymfony\Toml\TomlBuilder;
  * )
  *
  * @OA\Parameter(parameter="version_number",name="v",in="query",description="The Version Number",required=true,@OA\Schema(type="integer",enum={4,2},example=4))
- * @OA\Parameter(parameter="key",name="key",in="query",description="The key granted to the API developer upon sign up",required=true,@OA\Schema(type="string",example="f4cdf23a-22c3-66c9-cc4f-05dc711b41c6"))
+ * @OA\Parameter(parameter="key",name="key",in="query",description="The key granted to the API developer upon sign up",required=true,@OA\Schema(type="string",example="YOUR_API_KEY"))
  * @OA\Parameter(parameter="limit", name="limit",  in="query", description="The number of search results to return", @OA\Schema(type="integer",default=25))
  * @OA\Parameter(parameter="page", name="page",  in="query", description="The current page of the results", @OA\Schema(type="integer",default=1))
  * @OA\Parameter(parameter="sort_by", name="sort_by", in="query", description="The field to sort by", @OA\Schema(type="string"))
