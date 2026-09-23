@@ -29,6 +29,19 @@ class UserPlan extends Model
     protected $hidden     = ['plan_id', 'created_at', 'updated_at'];
 
     /**
+     * Status of a user's relationship with a plan, exposed by the plans index when `user_status=true`.
+     *
+     * Resolved from playlist_items_completed, the same source calculatePercentageCompleted() uses,
+     * instead of the stored percentage_completed column. That column is an integer and rounds on
+     * write: one completed day of a 365-day plan is stored as 0 and 364 of 365 as 100, so it cannot
+     * tell "truly not started" or "truly finished" apart from "almost". A `saved` value (plan kept
+     * for later without starting it) is reserved for a future change and is not produced here.
+     */
+    const STATUS_NOT_STARTED = 'not_started';
+    const STATUS_IN_PROGRESS = 'in_progress';
+    const STATUS_COMPLETED   = 'completed';
+
+    /**
      *
      * @OA\Property(
      *   title="start_date",
@@ -165,5 +178,80 @@ class UserPlan extends Model
         })->where('user_plans.plan_id', $plan_id)
             ->select('user_plans.*')
             ->first();
+    }
+
+    /**
+     * Resolve the user's status for a plan from exact playlist item counts.
+     *
+     * not_started: nothing completed (a subscribed plan with no items also lands here, matching
+     *              calculatePercentageCompleted() which yields 0 for it).
+     * completed:   every item completed and the plan has at least one item.
+     * in_progress: anything in between. A single completed item of a 365-day plan is in_progress
+     *              even though the stored percentage rounds to 0.
+     *
+     * @param int $total_items
+     * @param int $total_items_completed
+     *
+     * @return string
+     */
+    public static function resolveStatus(int $total_items, int $total_items_completed) : string
+    {
+        if ($total_items_completed <= 0) {
+            return self::STATUS_NOT_STARTED;
+        }
+
+        // >= rather than === so a stray duplicate completion row can never hide a finished plan
+        if ($total_items > 0 && $total_items_completed >= $total_items) {
+            return self::STATUS_COMPLETED;
+        }
+
+        return self::STATUS_IN_PROGRESS;
+    }
+
+    /**
+     * Get the user's status for each of the given plans in one query, keyed by plan id.
+     *
+     * Anchored on user_plans so only plans the user has started (subscribed to) appear in the
+     * result; a plan id missing from the returned array means the user has no relationship with
+     * it. Days and items are LEFT JOINed so a subscribed plan with no items still resolves.
+     * Generalises PlanDay::scopeSummaryItemsCompletedByPlanId() from one plan to a page of plans.
+     *
+     * @param array $plan_ids
+     * @param int   $user_id
+     *
+     * @return array [plan_id => status]
+     */
+    public static function getStatusesByPlanIdsAndUserId(array $plan_ids, int $user_id) : array
+    {
+        if (empty($plan_ids)) {
+            return [];
+        }
+
+        $summaries = self::select([
+                'user_plans.plan_id',
+                \DB::raw('COUNT(playlist_items.id) AS total_items'),
+                \DB::raw('COUNT(playlist_items_completed.playlist_item_id) AS total_items_completed'),
+            ])
+            ->leftJoin('plan_days', 'plan_days.plan_id', '=', 'user_plans.plan_id')
+            ->leftJoin('playlist_items', 'playlist_items.playlist_id', '=', 'plan_days.playlist_id')
+            ->leftJoin('playlist_items_completed', function ($join) use ($user_id) {
+                $join
+                    ->on('playlist_items_completed.playlist_item_id', '=', 'playlist_items.id')
+                    ->where('playlist_items_completed.user_id', $user_id);
+            })
+            ->where('user_plans.user_id', $user_id)
+            ->whereIn('user_plans.plan_id', $plan_ids)
+            ->groupBy('user_plans.plan_id')
+            ->get();
+
+        $statuses = [];
+        foreach ($summaries as $summary) {
+            $statuses[(int) $summary->plan_id] = self::resolveStatus(
+                (int) $summary->total_items,
+                (int) $summary->total_items_completed
+            );
+        }
+
+        return $statuses;
     }
 }
