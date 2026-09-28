@@ -63,7 +63,7 @@ class PlansController extends APIController
      *          name="user_status",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When true and an api_token is supplied, each plan includes a `user_status` key: null (the user has not started the plan), `not_started`, `in_progress` or `completed`, resolved from the user's completed playlist items. The key is omitted otherwise, so existing calls are unchanged."
+     *          description="When true and an api_token is supplied, each plan includes a `user_status` key: null (the user has not started the plan), `in_progress` or `completed`, resolved from the user's completed playlist items. The key is omitted otherwise, so existing calls are unchanged."
      *     ),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Parameter(ref="#/components/parameters/page"),
@@ -91,8 +91,8 @@ class PlansController extends APIController
      *      property="user_status",
      *      type="string",
      *      nullable=true,
-     *      enum={"not_started", "in_progress", "completed"},
-     *      description="Present only when user_status=true and an api_token is supplied. null when the user has not started the plan."
+     *      enum={"in_progress", "completed"},
+     *      description="Present only when user_status=true and an api_token is supplied. null when the user has not started the plan; a plan the user has started but not finished is in_progress."
      *   )
      * )
      *

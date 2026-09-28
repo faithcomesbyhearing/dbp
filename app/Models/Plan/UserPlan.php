@@ -34,10 +34,14 @@ class UserPlan extends Model
      * Resolved from playlist_items_completed, the same source calculatePercentageCompleted() uses,
      * instead of the stored percentage_completed column. That column is an integer and rounds on
      * write: one completed day of a 365-day plan is stored as 0 and 364 of 365 as 100, so it cannot
-     * tell "truly not started" or "truly finished" apart from "almost". A `saved` value (plan kept
-     * for later without starting it) is reserved for a future change and is not produced here.
+     * tell "truly finished" apart from "almost". A `saved` value (plan kept for later without
+     * starting it) is reserved for a future change and is not produced here.
+     *
+     * Adopting a plan is itself progress: a user_plans row with nothing completed yet is
+     * in_progress, not a separate "not started" state. The absence of a user_plans row is what
+     * distinguishes a plan the user has no relationship with, and that is reported as null by
+     * the caller rather than as a status value here.
      */
-    const STATUS_NOT_STARTED = 'not_started';
     const STATUS_IN_PROGRESS = 'in_progress';
     const STATUS_COMPLETED   = 'completed';
 
@@ -183,11 +187,14 @@ class UserPlan extends Model
     /**
      * Resolve the user's status for a plan from exact playlist item counts.
      *
-     * not_started: nothing completed (a subscribed plan with no items also lands here, matching
-     *              calculatePercentageCompleted() which yields 0 for it).
+     * Only reached for a plan the user has adopted, so the question is simply whether they have
+     * finished it.
+     *
      * completed:   every item completed and the plan has at least one item.
-     * in_progress: anything in between. A single completed item of a 365-day plan is in_progress
-     *              even though the stored percentage rounds to 0.
+     * in_progress: everything else, including nothing completed yet and a subscribed plan with no
+     *              items at all. A single completed item of a 365-day plan is in_progress even
+     *              though the stored percentage rounds to 0, and so is 364 of 365, which rounds
+     *              to 100.
      *
      * @param int $total_items
      * @param int $total_items_completed
@@ -196,10 +203,6 @@ class UserPlan extends Model
      */
     public static function resolveStatus(int $total_items, int $total_items_completed) : string
     {
-        if ($total_items_completed <= 0) {
-            return self::STATUS_NOT_STARTED;
-        }
-
         // >= rather than === so a stray duplicate completion row can never hide a finished plan
         if ($total_items > 0 && $total_items_completed >= $total_items) {
             return self::STATUS_COMPLETED;

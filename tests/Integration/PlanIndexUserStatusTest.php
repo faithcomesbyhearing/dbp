@@ -23,14 +23,13 @@ use App\Models\User\Role;
  *
  * With `user_status=true` and an api_token, each plan gains `user_status`:
  *   null          no user_plans row (the user never started the plan)
- *   not_started   subscribed, nothing completed
- *   in_progress   some but not all playlist items completed
+ *   in_progress   subscribed and not finished, whether or not anything is completed yet
  *   completed     every playlist item completed
  * Without the parameter, with any value other than the literal `true`, or without a token
  * user, the key is omitted and the payload is identical to before the change.
  *
  * Seeds one featured plan with two days of one playlist item each, owned by the test-key
- * user, and drives the status through the four states by writing playlist_items_completed
+ * user, and drives the status through the three states by writing playlist_items_completed
  * rows directly (the same rows PlanDay::complete() and PlaylistItems::complete() write).
  */
 class PlanIndexUserStatusTest extends ApiV4Test
@@ -243,18 +242,22 @@ class PlanIndexUserStatusTest extends ApiV4Test
     }
 
     /**
+     * Adopting a plan is progress: a user_plans row with nothing completed is in_progress, not a
+     * separate "not started" state. This is the case that distinguishes in_progress from the null
+     * above, and the two are the only way a client can tell "saved but untouched" from "ignored".
+     *
      * @category V4_API
      * @category Route Name: v4_internal_plans.index
      * @see      \App\Http\Controllers\Plan\PlansController::index
      * @group    V4
      * @test
      */
-    public function notStartedWhenSubscribedWithNothingCompleted()
+    public function inProgressWhenSubscribedWithNothingCompleted()
     {
         $this->subscribe();
         $plan = $this->fetchSeededPlan(['user_status' => 'true']);
         $this->assertNotNull($plan);
-        $this->assertSame(UserPlan::STATUS_NOT_STARTED, $plan['user_status']);
+        $this->assertSame(UserPlan::STATUS_IN_PROGRESS, $plan['user_status']);
     }
 
     /**
