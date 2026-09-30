@@ -63,7 +63,7 @@ class PlansController extends APIController
      *          name="user_status",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When set to `true` (case-insensitive) and an api_token is supplied, each plan includes a `user_status` key: null (the user has not started the plan), `in_progress` or `completed`, resolved from the user's completed playlist items. Any other value, including `1`, leaves the key off, so existing calls are unchanged."
+     *          description="When set to `true` (case-insensitive) and an api_token is supplied, each plan includes a `user_status` key: null (the user has not adopted the plan: never started it, or stopped it), `in_progress` or `completed`, resolved from the user's completed playlist items. Creating a plan through the API adopts it for its creator. Any other value, including `1`, leaves the key off, so existing calls are unchanged."
      *     ),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Parameter(ref="#/components/parameters/page"),
@@ -92,7 +92,7 @@ class PlansController extends APIController
      *      type="string",
      *      nullable=true,
      *      enum={"in_progress", "completed"},
-     *      description="Present only when user_status=true and an api_token is supplied. null when the user has not started the plan; a plan the user has started but not finished is in_progress."
+     *      description="Present only when user_status=true and an api_token is supplied. null when the user has not adopted the plan (never started it, or stopped it). An adopted plan that is not finished is in_progress; creating a plan through the API adopts it for its creator."
      *   )
      * )
      *
@@ -191,7 +191,10 @@ class PlansController extends APIController
             unset($plan->days);
 
             if ($include_user_status) {
-                // null means the user has never started this plan (no user_plans row)
+                // null means the user has no user_plans row: never adopted the plan, or stopped it.
+                // POST /api/plans gives the creator a row and stop() keeps it, so a creator normally sees
+                // in_progress; plans made outside the API, or stopped by their creator before efe242ce
+                // (Feb 2020, when stop() still deleted every row), have none and read null.
                 $plan->user_status = $user_statuses[$plan->id] ?? null;
             }
         }

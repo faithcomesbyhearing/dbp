@@ -12,6 +12,7 @@ use App\Models\User\Key;
 use App\Models\User\Project;
 use App\Models\User\ProjectMember;
 use App\Models\User\Role;
+use Tests\TestCase;
 
 /**
  * Coverage for the optional `user_status` key on GET /api/plans (v4_internal_plans.index).
@@ -22,29 +23,43 @@ use App\Models\User\Role;
  * percentage_completed, an integer that rounds 1-of-365 to 0 and 364-of-365 to 100.
  *
  * With `user_status=true` and an api_token, each plan gains `user_status`:
- *   null          no user_plans row (the user never started the plan)
- *   in_progress   subscribed and not finished, whether or not anything is completed yet
+ *   null          no user_plans row (the user never adopted the plan, or stopped it)
+ *   in_progress   adopted and not finished, whether or not anything is completed yet
  *   completed     every playlist item completed
- * Without the parameter, with any value other than the literal `true`, or without a token
- * user, the key is omitted and the payload is identical to before the change.
+ * Without the parameter, with any value other than the word `true` (any case), or without a
+ * token user, the key is omitted and the payload is identical to before the change.
  *
- * Seeds one featured plan with two days of one playlist item each, owned by the test-key
- * user, and drives the status through the three states by writing playlist_items_completed
- * rows directly (the same rows PlanDay::complete() and PlaylistItems::complete() write).
+ * Seeds one featured plan with two days of one playlist item each, and drives the status
+ * through the three states by writing playlist_items_completed rows directly (the same rows
+ * PlanDay::complete() and PlaylistItems::complete() write). The plan's user_plans rows are
+ * created by the test itself (Plan::create, unlike POST /api/plans, adds none for the owner), so
+ * the test user, although the plan's owner, starts in the no-row state that reads null. What
+ * decides the status is the user_plans row, not who created the plan.
+ *
+ * Seeds data, so run it only against a throwaway test database, never a shared one: the
+ * featured plan would show on the Discover list while the test runs.
+ *
+ * Extends TestCase rather than ApiV4Test so that the stale @test methods in ApiV4Test, whose
+ * routes no longer exist, are not inherited and re-run with every run of this class.
  */
-class PlanIndexUserStatusTest extends ApiV4Test
+class PlanIndexUserStatusTest extends TestCase
 {
+    protected $key;
+    protected $params;
     private $plan_id;
     private $user_id;
     private $key_user;
     private $project_id;
+    private $created_role_id;
     private $playlist_item_ids = [];
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $key = Key::where('key', $this->key)->first();
+        $key = Key::where('name', 'test-key')->first();
+        $this->key      = $key->key;
+        $this->params   = ['v' => 4, 'key' => $this->key];
         $this->user_id  = $key->user_id;
         $this->key_user = $key->user;
 
@@ -61,10 +76,13 @@ class PlanIndexUserStatusTest extends ApiV4Test
             'id'   => $this->project_id,
             'name' => 'user_status test project',
         ]);
-        $role = Role::firstOrCreate(
-            ['slug' => 'developer'],
-            ['name' => 'developer', 'description' => 'Developer']
-        );
+        // Role declares no $fillable, so firstOrCreate() would throw MassAssignmentException on a
+        // database without this role; forceCreate() bypasses mass-assignment protection.
+        $role = Role::where('slug', 'developer')->first();
+        if (!$role) {
+            $role = Role::forceCreate(['name' => 'developer', 'slug' => 'developer', 'description' => 'Developer']);
+            $this->created_role_id = $role->id;
+        }
         ProjectMember::create([
             'project_id' => $this->project_id,
             'user_id'    => $this->user_id,
@@ -118,6 +136,9 @@ class PlanIndexUserStatusTest extends ApiV4Test
         Plan::where('id', $this->plan_id)->forceDelete();
         ProjectMember::where('project_id', $this->project_id)->delete();
         Project::withTrashed()->where('id', $this->project_id)->forceDelete();
+        if ($this->created_role_id) {
+            Role::where('id', $this->created_role_id)->delete();
+        }
         parent::tearDown();
     }
 
@@ -233,7 +254,7 @@ class PlanIndexUserStatusTest extends ApiV4Test
      * @group    V4
      * @test
      */
-    public function nullWhenUserHasNotStartedThePlan()
+    public function nullWhenUserHasNotAdoptedThePlan()
     {
         $plan = $this->fetchSeededPlan(['user_status' => 'true']);
         $this->assertNotNull($plan);
