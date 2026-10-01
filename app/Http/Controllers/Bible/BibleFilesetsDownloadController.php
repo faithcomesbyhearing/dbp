@@ -317,7 +317,7 @@ class BibleFilesetsDownloadController extends APIController
         }
 
         $baseUrl = rtrim((string) config('services.bbhub.url'), '/');
-        $url = $baseUrl . '/package/create-by-filesets';
+        $url = $baseUrl . '/audio/create-by-filesets';
         $timeout = (int) config('services.bbhub.service_timeout', 60);
 
         try {
