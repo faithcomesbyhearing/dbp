@@ -264,6 +264,12 @@ class PlansController extends APIController
      *          @OA\Schema(type="boolean"),
      *          description="Enable the full details of the plan and retrieve the text of the playlists items"
      *     ),
+     *     @OA\Parameter(
+     *          name="include_user_bible",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When true, the response includes `user_bible`, the Bible the token user chose for this plan (null when there is no token, the user has not started the plan, or none was chosen)"
+     *     ),
      *     @OA\Response(response=200, ref="#/components/responses/plan")
      * )
      *
@@ -305,13 +311,27 @@ class PlansController extends APIController
             $this->plan_service->setFlagEmptyPlaylistForEachPlanDay($plan);
         }
 
+        // Opt-in so the old Bible.is app, whose strict decoders may reject unknown keys, gets the
+        // same payload as before. When on, the key is always present: null for no token, no
+        // user_plans row, or no Bible chosen. Read here rather than in the shared
+        // Plan::scopeWithUserById select, which would change the Start/Update/Store replies too.
+        $include_user_bible = checkBoolean('include_user_bible');
+        $user_bible = null;
+        if ($include_user_bible && !empty($user)) {
+            $user_bible = UserPlan::where('plan_id', $plan->id)
+                ->where('user_id', $user->id)
+                ->value('user_bible');
+        }
+
         return $this->reply(fractal(
             $plan,
             new PlanDayPlaylistItemsTransformer(
                 [
                     'v' => $this->v,
                     'key' => $this->key,
-                    'show_details' => $show_details
+                    'show_details' => $show_details,
+                    'include_user_bible' => $include_user_bible,
+                    'user_bible' => $user_bible
                 ]
             ),
             new ArraySerializer()
@@ -466,7 +486,8 @@ class PlansController extends APIController
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
      *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="application/json",
      *          @OA\Schema(
-     *              @OA\Property(property="start_date", ref="#/components/schemas/UserPlan/properties/start_date")
+     *              @OA\Property(property="start_date", ref="#/components/schemas/UserPlan/properties/start_date"),
+     *              @OA\Property(property="user_bible", ref="#/components/schemas/v4_plan_user_bible/properties/user_bible")
      *          )
      *     )),
      *     @OA\Response(response=200, ref="#/components/responses/plan")
@@ -494,6 +515,10 @@ class PlansController extends APIController
 
         $start_date = checkParam('start_date', true);
 
+        // Optional: validated before anything is written, so a bad value (422) never leaves a
+        // started plan behind. Not sent means today's behaviour and any stored choice is kept.
+        $user_bible = $this->resolveUserBible(false);
+
         $user_plan = UserPlan::where('plan_id', $plan_id)->where('user_id', $user->id)->first();
 
         if (!$user_plan) {
@@ -503,11 +528,19 @@ class PlansController extends APIController
             ]);
         }
 
+        if ($user_bible !== null) {
+            $user_plan->user_bible = $user_bible;
+        }
         $user_plan->start_date = $start_date;
         $user_plan->save();
 
 
         $plan = $this->getPlan($plan_id, $user);
+
+        // Echoed only when sent, so the reply to the old app is unchanged.
+        if ($user_bible !== null && $plan) {
+            $plan->user_bible = $user_bible;
+        }
 
         return $this->reply($plan);
     }
@@ -875,6 +908,201 @@ class PlansController extends APIController
     }
 
     /**
+     * Set the Bible the user chose for a plan they follow, without copying the plan (unlike translate).
+     *
+     *  @OA\Put(
+     *     path="/plans/{plan_id}/bible",
+     *     tags={"Plans"},
+     *     summary="Set the user's Bible for a plan",
+     *     description="The user must already have started the plan. Sending the value already stored changes nothing.",
+     *     operationId="v4_internal_plans.bible_update",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
+     *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="application/json",
+     *          @OA\Schema(
+     *              required={"user_bible"},
+     *              @OA\Property(property="user_bible", ref="#/components/schemas/v4_plan_user_bible/properties/user_bible")
+     *          )
+     *     )),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_user_bible"))
+     *     )
+     * )
+     *
+     * @OA\Schema (
+     *   type="object",
+     *   schema="v4_plan_user_bible",
+     *   title="The user's Bible for a plan",
+     *   @OA\Property(
+     *      property="user_bible",
+     *      type="string",
+     *      maxLength=12,
+     *      nullable=true,
+     *      example="ENGESV",
+     *      description="A Bible id (not a fileset id). Must match an existing Bible; it is stored and returned in the Bible's own case. Not checked against the plan's passages or the key's access groups."
+     *   ),
+     *   @OA\Property(property="message", type="string", example="Plan Bible updated")
+     * )
+     *
+     * @param  int $plan_id
+     *
+     * @return array|\Illuminate\Http\Response
+     */
+    public function updateBible(Request $request, $plan_id)
+    {
+        $user_plan = $this->findUserPlanForBible($request, $plan_id);
+        if (!$user_plan instanceof UserPlan) {
+            return $user_plan;
+        }
+
+        $user_plan->user_bible = $this->resolveUserBible(true);
+        // Eloquent issues no UPDATE when the value is unchanged, so updated_at (and the
+        // last_interaction sort) only moves when the choice really changes.
+        $user_plan->save();
+
+        return $this->reply(['user_bible' => $user_plan->user_bible, 'message' => 'Plan Bible updated']);
+    }
+
+    /**
+     * Clear the Bible the user chose for a plan. Repeatable: clearing an empty choice returns the same reply.
+     *
+     *  @OA\Delete(
+     *     path="/plans/{plan_id}/bible",
+     *     tags={"Plans"},
+     *     summary="Clear the user's Bible for a plan",
+     *     operationId="v4_internal_plans.bible_destroy",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_user_bible"))
+     *     )
+     * )
+     *
+     * @param  int $plan_id
+     *
+     * @return array|\Illuminate\Http\Response
+     */
+    public function destroyBible(Request $request, $plan_id)
+    {
+        $user_plan = $this->findUserPlanForBible($request, $plan_id);
+        if (!$user_plan instanceof UserPlan) {
+            return $user_plan;
+        }
+
+        $user_plan->user_bible = null;
+        $user_plan->save();
+
+        return $this->reply(['user_bible' => null, 'message' => 'Plan Bible removed']);
+    }
+
+    /**
+     * The checks shared by updateBible and destroyBible, in the same order and with the same
+     * errors as reset and stop: project membership (401), plan (404), the user's row (404).
+     *
+     * @return UserPlan|\Illuminate\Http\JsonResponse the user's row, or the error response
+     */
+    private function findUserPlanForBible(Request $request, $plan_id)
+    {
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $plan = Plan::where('id', $plan_id)->first();
+
+        if (!$plan) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        $user_plan = UserPlan::where('plan_id', $plan->id)->where('user_id', $user->id)->first();
+
+        if (!$user_plan) {
+            return $this->setStatusCode(404)->replyWithError('User Plan Not Found');
+        }
+
+        return $user_plan;
+    }
+
+    /**
+     * Read and validate the `user_bible` input (header, then body or query string, via checkParam).
+     * Aborts 422 in the same shape Start already uses for a missing start_date, before any write.
+     *
+     * @param bool $required true for PUT /plans/{id}/bible; false for Start, where it is optional
+     *
+     * @return string|null the Bible's id as stored in `bibles` (canonical case), or null when not
+     *                     sent and not required
+     */
+    private function resolveUserBible(bool $required) : ?string
+    {
+        try {
+            $user_bible = self::normalizeUserBible(checkParam('user_bible'));
+        } catch (\InvalidArgumentException $e) {
+            abort(422, $e->getMessage());
+        }
+
+        if ($user_bible === null) {
+            if ($required) {
+                abort(
+                    422,
+                    "You need to provide the missing parameter 'user_bible'. Please append it to the url or the request Header."
+                );
+            }
+            return null;
+        }
+
+        // bibles.id is unique; the case-insensitive collation lets `engesv` match, and value('id')
+        // returns the stored spelling so that is what gets saved.
+        $bible_id = Bible::whereId($user_bible)->value('id');
+        if ($bible_id === null) {
+            abort(422, 'user_bible does not match any Bible.');
+        }
+
+        return $bible_id;
+    }
+
+    /**
+     * The DB-free part of the user_bible check, kept static so it can be unit tested.
+     *
+     * checkParam() has already dropped null, "", "0", 0, false and empty arrays, and body/query
+     * values arrive trimmed (TrimStrings, ConvertEmptyStringsToNull). Header values do not, so
+     * they are trimmed here, and a value that is blank after trimming counts as not sent.
+     *
+     * @param mixed $value what checkParam('user_bible') returned
+     *
+     * @return string|null the trimmed id, or null when not sent
+     * @throws \InvalidArgumentException with the 422 message for a non-string or too-long value
+     */
+    public static function normalizeUserBible($value) : ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (!is_string($value)) {
+            throw new \InvalidArgumentException('user_bible must be a string.');
+        }
+
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        // bibles.id and user_plans.user_bible are varchar(12); rejecting longer values here
+        // avoids a DB query that could never match.
+        if (mb_strlen($value) > 12) {
+            throw new \InvalidArgumentException('user_bible may not be longer than 12 characters.');
+        }
+
+        return $value;
+    }
+
+    /**
      *  @OA\Post(
      *     path="/plans/{plan_id}/draft",
      *     tags={"Plans"},
@@ -949,7 +1177,12 @@ class PlansController extends APIController
      *   allOf={
      *      @OA\Schema(ref="#/components/schemas/v4_plan"),
      *   },
-     *   @OA\Property(property="days",type="array",@OA\Items(ref="#/components/schemas/PlanDay"))
+     *   @OA\Property(property="days",type="array",@OA\Items(ref="#/components/schemas/PlanDay")),
+     *   @OA\Property(
+     *      property="user_bible",
+     *      ref="#/components/schemas/v4_plan_user_bible/properties/user_bible",
+     *      description="Only on GET /plans/{plan_id}?include_user_bible=true, and on Start when user_bible was sent"
+     *   )
      * )
      *
      *
