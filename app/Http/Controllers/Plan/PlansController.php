@@ -948,7 +948,7 @@ class PlansController extends APIController
      *
      * @param  int $plan_id
      *
-     * @return array|\Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
      */
     public function updateBible(Request $request, $plan_id)
     {
@@ -984,7 +984,7 @@ class PlansController extends APIController
      *
      * @param  int $plan_id
      *
-     * @return array|\Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
      */
     public function destroyBible(Request $request, $plan_id)
     {

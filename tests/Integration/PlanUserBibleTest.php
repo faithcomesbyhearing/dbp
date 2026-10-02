@@ -472,15 +472,27 @@ class PlanUserBibleTest extends TestCase
     }
 
     /**
-     * AC9: DELETE clears it, is repeatable, and leaves progress alone; no row → 404.
+     * AC9: no row → 404 User Plan Not Found; unknown plan → 404 Plan Not Found.
+     *
+     * Kept apart from the 200 cases: within one test the router reuses the controller instance,
+     * and replyWithError's setStatusCode(404) would carry over to a later successful reply on the
+     * same route (in production each request gets a fresh controller).
+     *
+     * @test
+     */
+    public function deleteReportsMissingRowsAndPlans()
+    {
+        $this->deleteBible()->assertNotFound()->assertJsonPath('error.message', 'User Plan Not Found');
+        $this->deleteBible($this->missingPlanId())->assertNotFound()->assertJsonPath('error.message', 'Plan Not Found');
+    }
+
+    /**
+     * AC9: DELETE clears it, is repeatable, and leaves progress alone.
      *
      * @test
      */
     public function deleteClearsTheBible()
     {
-        $this->deleteBible()->assertNotFound()->assertJsonPath('error.message', 'User Plan Not Found');
-        $this->deleteBible($this->missingPlanId())->assertNotFound()->assertJsonPath('error.message', 'Plan Not Found');
-
         $this->seedRow($this->bible_id, 30);
 
         foreach ([1, 2] as $attempt) {
