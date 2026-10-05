@@ -23,7 +23,7 @@ use Tests\TestCase;
  * percentage_completed, an integer that rounds 1-of-365 to 0 and 364-of-365 to 100.
  *
  * With `user_status=true` and an api_token, each plan gains `user_status`:
- *   null          no user_plans row (the user never adopted the plan, or stopped it)
+ *   null          no user_plans row (the user never adopted the plan, or stopped a plan someone else created)
  *   in_progress   adopted and not finished, whether or not anything is completed yet
  *   completed     every playlist item completed
  * Without the parameter, with any value other than the word `true` (any case), or without a
