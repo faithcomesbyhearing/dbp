@@ -63,7 +63,7 @@ class PlansController extends APIController
      *          name="user_status",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When set to `true` (case-insensitive) and an api_token is supplied, each plan includes a `user_status` key: null (the user has not adopted the plan: never started it, or stopped it), `in_progress` or `completed`, resolved from the user's completed playlist items. Creating a plan through the API adopts it for its creator. Any other value, including `1`, leaves the key off, so existing calls are unchanged."
+     *          description="When set to `true` (case-insensitive) and a valid api_token is supplied, each plan includes a `user_status` key: null (the user has not adopted the plan: never started it, or stopped a plan someone else created), `in_progress` or `completed`, resolved from the user's completed playlist items. Creating a plan through the API adopts it for its creator. Stopping a plan clears its progress and removes it from the user's plans, except for the plan's creator, who keeps it and sees `in_progress`. Any other value, including `1`, leaves the key off, so existing calls are unchanged."
      *     ),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Parameter(ref="#/components/parameters/page"),
@@ -92,7 +92,7 @@ class PlansController extends APIController
      *      type="string",
      *      nullable=true,
      *      enum={"in_progress", "completed"},
-     *      description="Present only when user_status=true and an api_token is supplied. null when the user has not adopted the plan (never started it, or stopped it). An adopted plan that is not finished is in_progress; creating a plan through the API adopts it for its creator."
+     *      description="Present only when user_status=true and an api_token is supplied. null when the user has not adopted the plan (never started it, or stopped a plan someone else created). An adopted plan that is not finished is in_progress; creating a plan through the API adopts it for its creator. Stopping a plan clears its progress and removes it from the user's plans, except for its creator, who keeps it and sees in_progress."
      *   )
      * )
      *
@@ -191,10 +191,14 @@ class PlansController extends APIController
             unset($plan->days);
 
             if ($include_user_status) {
-                // null means the user has no user_plans row: never adopted the plan, or stopped it.
-                // POST /api/plans gives the creator a row and stop() keeps it, so a creator normally sees
-                // in_progress; plans made outside the API, or stopped by their creator before efe242ce
-                // (Feb 2020, when stop() still deleted every row), have none and read null.
+                // null means the user has no user_plans row: never adopted the plan, or stopped a plan
+                // someone else created. stop() always clears progress but deletes the row only when the
+                // user is not the plan's creator (efe242ce, FCBH-1607 "Share plan", Feb 2020; before that
+                // it deleted every row). POST /api/plans and plan translation (PlanService::translate, also
+                // behind `artisan translate:plan`) give the creator a row, so a creator reads in_progress
+                // or completed, never null, and in_progress after stopping (progress cleared); plans inserted
+                // straight into the database, or stopped by their creator before efe242ce, have no creator
+                // row and read null.
                 $plan->user_status = $user_statuses[$plan->id] ?? null;
             }
         }
