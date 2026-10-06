@@ -24,7 +24,7 @@ use Tests\TestCase;
  * parameter, with any value other than the word `true` (any case), on featured listings, or without a
  * token user, the key is omitted and the payload is identical to before the change.
  *
- * Seeds one non-featured plan with four days of two playlist items each, adopted by the test user:
+ * Seeds one featured plan with four days of two playlist items each, adopted by the test user:
  *   day 1, day 2  marked complete with PlanDay::complete() (day row plus every item, as the API does)
  *   day 3         both items completed through item rows only, no day row: deliberately NOT counted
  *   day 4         untouched
@@ -82,13 +82,17 @@ class PlanIndexCompletedDaysTest extends TestCase
             'token'      => unique_random('dbp_users.project_members', 'token', 12),
         ]);
 
-        // Not featured, so it never shows on the Discover list while the test runs.
+        // Featured, so the featured-listing tests can assert the seeded plan is present and still lacks the key
+        // (an empty featured list would make them pass without checking anything). This is why the test must
+        // only run against a throwaway database.
         $plan = Plan::create([
             'user_id'              => $this->user_id,
             'name'                 => 'completed_days test plan',
             'suggested_start_date' => now()->toDateString(),
             'draft'                => false,
         ]);
+        $plan->featured = true; // not fillable
+        $plan->save();
         $this->plan_id = $plan->id;
 
         foreach ([1, 2, 3, 4] as $order) {
@@ -296,7 +300,10 @@ class PlanIndexCompletedDaysTest extends TestCase
     public function featuredListingOmitsKey()
     {
         $this->seedProgress();
-        $this->assertNoPlanHasCompletedDays($this->fetchPlans(['featured' => 'true', 'completed_days' => 'true']));
+        $data = $this->fetchPlans(['featured' => 'true', 'completed_days' => 'true']);
+
+        $this->assertNotNull($this->seededPlan($data));
+        $this->assertNoPlanHasCompletedDays($data);
     }
 
     /**
@@ -309,6 +316,9 @@ class PlanIndexCompletedDaysTest extends TestCase
     public function anonymousRequestOmitsKey()
     {
         $this->seedProgress();
-        $this->assertNoPlanHasCompletedDays($this->fetchPlans(['completed_days' => 'true'], false));
+        $data = $this->fetchPlans(['completed_days' => 'true'], false);
+
+        $this->assertNotNull($this->seededPlan($data));
+        $this->assertNoPlanHasCompletedDays($data);
     }
 }
