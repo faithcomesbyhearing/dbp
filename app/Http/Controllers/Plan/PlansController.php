@@ -63,6 +63,12 @@ class PlansController extends APIController
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/sort_by"),
      *     @OA\Parameter(ref="#/components/parameters/sort_dir"),
+     *     @OA\Parameter(
+     *          name="completed_days",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When set to `true` (case-insensitive) on the user's own plans (`featured=false` with a valid api_token), each plan includes `completed_days`: the number of its days the user has marked complete, the same days that show `completed: true` in the plan details. Any other value, including `1`, leaves the key off, so existing calls are unchanged."
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -79,6 +85,13 @@ class PlansController extends APIController
      *   schema="v4_plan_index_detail",
      *   allOf={
      *      @OA\Schema(ref="#/components/schemas/v4_plan"),
+     *      @OA\Schema(
+     *          @OA\Property(
+     *              property="completed_days",
+     *              type="integer",
+     *              description="Present only when completed_days=true on the user's own plans (featured=false with an api_token). The number of the plan's days the user has marked complete; 0 when none. A day whose items are all complete but which was never marked complete is not counted."
+     *          )
+     *      ),
      *   },
      *   @OA\Property(property="total_days", type="integer")
      * )
@@ -156,7 +169,39 @@ class PlansController extends APIController
             $plan->total_days = sizeof($plan->days);
             unset($plan->days);
         }
+        $this->addCompletedDays($plans, $featured, $user);
         return $plans;
+    }
+
+    /**
+     * Add completed_days to each plan of the user's own plans list, only when completed_days=true is sent, so
+     * every other request keeps today's exact payload (PBI 102548).
+     *
+     * The flag is read here rather than passed through getPlans() so this change does not touch the lines the
+     * user_status change (PBI 102131) edits in index() and getPlans(); the two can merge in either order.
+     *
+     * @param \Illuminate\Pagination\LengthAwarePaginator $plans
+     * @param bool $featured
+     * @param mixed $user
+     *
+     * @return void
+     */
+    private function addCompletedDays($plans, bool $featured, $user) : void
+    {
+        // Only the user's own plans carry progress (the user_plans join in getPlans); featured listings never
+        // get the key. $featured is already forced to true when there is no token user (index()).
+        if ($featured || empty($user) || !checkBoolean('completed_days')) {
+            return;
+        }
+
+        $completed_days = PlanDay::countCompletedByPlanIdsAndUserId(
+            $plans->getCollection()->pluck('id')->all(),
+            $user->id
+        );
+
+        foreach ($plans as $plan) {
+            $plan->completed_days = $completed_days[$plan->id] ?? 0;
+        }
     }
 
     /**
