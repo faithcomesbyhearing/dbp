@@ -27,6 +27,7 @@ class PlanRestartTest extends TestCase
             'leap day in a leap year'         => ['2028-02-29', '2028-02-29'],
             'surrounding spaces (header)'     => ['  2026-10-10 ', '2026-10-10'],
             'first day of the year'           => ['2027-01-01', '2027-01-01'],
+            'lowest year MySQL DATE stores'   => ['1000-01-01', '1000-01-01'],
         ];
     }
 
@@ -50,6 +51,8 @@ class PlanRestartTest extends TestCase
             'US format'                       => ['10/10/2026'],
             'day first'                       => ['10-10-2026'],
             'no leading zeros'                => ['2026-1-5'],
+            'year 0000 (outside MySQL DATE)'  => ['0000-01-01'],
+            'year 0999 (outside MySQL DATE)'  => ['0999-12-31'],
             'blank after trimming (header)'   => ['   '],
             'words'                           => ['tomorrow'],
             'JSON number'                     => [20261010],

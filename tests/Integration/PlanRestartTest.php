@@ -25,12 +25,13 @@ use Tests\TestCase;
  * user_bible, in one transaction on the users database, and never deletes the user_plans row. A plan the user
  * does not follow is a 404; a bad input is a 422; in every error case nothing changes.
  *
- * Seeds two plans of three days with two playlist items each: one created by the test user, and one featured
- * plan created by another user (the case where Stop would delete the row). Needs the user_plans.user_bible
- * column (PBI 102552; skipped without it) and a second user in the users database.
+ * Seeds two plans of three days with two playlist items each: one created by the test user, and one created by
+ * another user (the case where Stop would delete the user's row, as for a featured plan). Restart does not look at
+ * the featured flag, so neither plan is featured: a run that dies before tearDown leaves nothing on Discover.
+ * Needs the user_plans.user_bible column (PBI 102552), a second user, and the ENGESVN2DA fileset and MAT book the
+ * playlist items point at (foreign keys); skipped without them.
  *
- * Seeds data, including a featured plan that would appear on Discover, so run it only against a throwaway test
- * database, never a shared one. Extends TestCase rather than ApiV4Test so ApiV4Test's stale @test methods are not
+ * Seeds data, so run it only against a throwaway test database, never a shared one. Extends TestCase rather than ApiV4Test so ApiV4Test's stale @test methods are not
  * inherited.
  *
  * @group plans
@@ -46,7 +47,7 @@ class PlanRestartTest extends TestCase
     private $bible_id;
     private $other_bible_id;
     private $own_plan_id;
-    private $featured_plan_id;
+    private $other_plan_id;
     private $plan_days = [];
     private $playlist_item_ids = [];
 
@@ -63,6 +64,10 @@ class PlanRestartTest extends TestCase
         if ($this->bible_id === null || $this->other_bible_id === null) {
             $this->markTestSkipped('Needs the ENGESV Bible and at least one other Bible in the content database.');
         }
+        if (!DB::connection('dbp')->table('bible_filesets')->where('id', 'ENGESVN2DA')->exists()
+            || !DB::connection('dbp')->table('books')->where('id', 'MAT')->exists()) {
+            $this->markTestSkipped('Needs the ENGESVN2DA fileset and the MAT book, which the seeded playlist items reference.');
+        }
 
         $key = Key::where('name', 'test-key')->first();
         $this->key      = $key->key;
@@ -72,7 +77,7 @@ class PlanRestartTest extends TestCase
 
         $other_user_id = User::where('id', '!=', $this->user_id)->orderBy('id')->value('id');
         if ($other_user_id === null) {
-            $this->markTestSkipped('Needs a second user to own the featured plan.');
+            $this->markTestSkipped('Needs a second user to own the other plan.');
         }
 
         // v4_internal_plans.index (used to check the plan is still listed) sits behind UserDataAccess.
@@ -100,14 +105,14 @@ class PlanRestartTest extends TestCase
             'token'      => unique_random('dbp_users.project_members', 'token', 12),
         ]);
 
-        $this->own_plan_id = $this->seedPlan($this->user_id, false);
-        $this->featured_plan_id = $this->seedPlan($other_user_id, true);
+        $this->own_plan_id = $this->seedPlan($this->user_id);
+        $this->other_plan_id = $this->seedPlan($other_user_id);
     }
 
     protected function tearDown(): void
     {
         UserPlan::flushEventListeners();
-        foreach ([$this->own_plan_id, $this->featured_plan_id] as $plan_id) {
+        foreach ([$this->own_plan_id, $this->other_plan_id] as $plan_id) {
             if ($plan_id) {
                 // Playlists first: FK cascade removes playlist_items and playlist_items_completed.
                 Playlist::where('plan_id', $plan_id)->forceDelete();
@@ -126,7 +131,7 @@ class PlanRestartTest extends TestCase
     }
 
     /** A plan of three days, two playlist items each. Plan::create adds no user_plans row. */
-    private function seedPlan(int $owner_id, bool $featured): int
+    private function seedPlan(int $owner_id): int
     {
         $plan = Plan::create([
             'user_id'              => $owner_id,
@@ -134,8 +139,6 @@ class PlanRestartTest extends TestCase
             'suggested_start_date' => now()->toDateString(),
             'draft'                => false,
         ]);
-        $plan->featured = $featured; // not fillable
-        $plan->save();
 
         foreach ([1, 2, 3] as $order) {
             $playlist = Playlist::create([
@@ -170,9 +173,10 @@ class PlanRestartTest extends TestCase
     private function seedFollowing(int $plan_id, int $days_completed, ?string $user_bible = null): void
     {
         UserPlan::create([
-            'user_id'    => $this->user_id,
-            'plan_id'    => $plan_id,
-            'start_date' => '2026-01-01',
+            'user_id'              => $this->user_id,
+            'plan_id'              => $plan_id,
+            'start_date'           => '2026-01-01',
+            'percentage_completed' => 0,
         ]);
         foreach (array_slice($this->plan_days[$plan_id], 0, $days_completed, true) as $plan_day) {
             $plan_day->complete($this->user_id);
@@ -260,25 +264,26 @@ class PlanRestartTest extends TestCase
     }
 
     /**
-     * AC2: a featured plan made by someone else keeps the user's row (Stop would delete it) and stays listed.
+     * AC2: a plan made by someone else (a featured plan, in the app) keeps the user's row (Stop would delete it) and
+     * stays in the user's plans.
      *
      * @test
      */
-    public function restartKeepsAFeaturedPlanInTheUsersPlans()
+    public function restartKeepsSomeoneElsesPlanInTheUsersPlans()
     {
-        $this->seedFollowing($this->featured_plan_id, 3);
+        $this->seedFollowing($this->other_plan_id, 3);
 
-        $this->restart(['start_date' => '2026-10-10', 'user_bible' => $this->bible_id], $this->featured_plan_id)
+        $this->restart(['start_date' => '2026-10-10', 'user_bible' => $this->bible_id], $this->other_plan_id)
             ->assertOk();
 
-        $this->assertRestarted($this->featured_plan_id, '2026-10-10', $this->bible_id);
+        $this->assertRestarted($this->other_plan_id, '2026-10-10', $this->bible_id);
 
         $listed = $this->withHeaders($this->params)->get(route(
             'v4_internal_plans.index',
             $this->params + ['featured' => 'false', 'limit' => 1000, 'sort_by' => 'id', 'sort_dir' => 'desc']
         ));
         $listed->assertSuccessful();
-        $this->assertContains($this->featured_plan_id, array_map('intval', array_column($listed->json('data'), 'id')));
+        $this->assertContains($this->other_plan_id, array_map('intval', array_column($listed->json('data'), 'id')));
     }
 
     /**
@@ -294,11 +299,11 @@ class PlanRestartTest extends TestCase
             ->assertJsonPath('user_bible', $this->bible_id);
         $this->assertRestarted($this->own_plan_id, '2026-10-10', $this->bible_id);
 
-        $this->seedFollowing($this->featured_plan_id, 1);
-        $this->restart(['start_date' => '2026-10-10', 'user_bible' => '   '], $this->featured_plan_id)
+        $this->seedFollowing($this->other_plan_id, 1);
+        $this->restart(['start_date' => '2026-10-10', 'user_bible' => '   '], $this->other_plan_id)
             ->assertOk()
             ->assertJsonPath('user_bible', null);
-        $this->assertRestarted($this->featured_plan_id, '2026-10-10', null);
+        $this->assertRestarted($this->other_plan_id, '2026-10-10', null);
     }
 
     /**
@@ -332,10 +337,10 @@ class PlanRestartTest extends TestCase
             ->assertNotFound()
             ->assertJsonPath('error.message', 'Plan Not Found');
 
-        $this->restart(['start_date' => '2026-10-10'], $this->featured_plan_id)
+        $this->restart(['start_date' => '2026-10-10'], $this->other_plan_id)
             ->assertNotFound()
             ->assertJsonPath('error.message', 'User Plan Not Found');
-        $this->assertNull($this->rows($this->featured_plan_id)->first());
+        $this->assertNull($this->rows($this->other_plan_id)->first());
     }
 
     public static function badInputProvider(): array
@@ -378,8 +383,8 @@ class PlanRestartTest extends TestCase
      */
     public function aFailedWriteRollsEverythingBack()
     {
-        $this->seedFollowing($this->featured_plan_id, 3, $this->other_bible_id);
-        $before = $this->snapshot($this->featured_plan_id);
+        $this->seedFollowing($this->other_plan_id, 3, $this->other_bible_id);
+        $before = $this->snapshot($this->other_plan_id);
         $this->assertSame(3, $before['days_completed']);
 
         UserPlan::saving(function () {
@@ -388,10 +393,10 @@ class PlanRestartTest extends TestCase
 
         $response = $this->restart(
             ['start_date' => '2026-10-10', 'user_bible' => $this->bible_id],
-            $this->featured_plan_id
+            $this->other_plan_id
         );
 
         $response->assertStatus(500);
-        $this->assertSame($before, $this->snapshot($this->featured_plan_id));
+        $this->assertSame($before, $this->snapshot($this->other_plan_id));
     }
 }

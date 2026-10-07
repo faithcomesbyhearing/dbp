@@ -921,7 +921,8 @@ class PlansController extends APIController
         $user_bible = $this->resolveUserBible(false);
 
         // The transaction must be on dbp_users, where every plan table lives. \DB::transaction() (as in reset())
-        // would open it on the default content connection and roll none of these writes back (finding F23).
+        // would open it on the default content connection, a separate database server, and roll none of these
+        // writes back.
         // The row is re-read under a lock so a Stop arriving between the check above and this point cannot
         // delete it unnoticed; Restart is repeatable, so a deadlock is safely retried (3 attempts).
         $user_plan = DB::connection('dbp_users')->transaction(function () use ($plan, $user, $start_date, $user_bible) {
@@ -983,9 +984,10 @@ class PlansController extends APIController
         $value = trim($value);
 
         // The round trip rejects dates that do not exist (2026-02-30 would otherwise roll over to March)
-        // and loose forms PHP accepts for the format, such as 2026-1-5.
+        // and loose forms PHP accepts for the format, such as 2026-1-5. Years before 1000 are outside MySQL's
+        // DATE range, which the non-strict connection would store as-is or as zeros.
         $date = \DateTime::createFromFormat('!Y-m-d', $value);
-        if ($date === false || $date->format('Y-m-d') !== $value) {
+        if ($date === false || $date->format('Y-m-d') !== $value || (int) $date->format('Y') < 1000) {
             throw new \InvalidArgumentException($message);
         }
 
