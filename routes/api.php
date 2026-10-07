@@ -425,6 +425,9 @@ Route::name('v4_internal_plans.start')
 Route::name('v4_internal_plans.reset')
     ->middleware('APIToken:check')
     ->post('plans/{plan_id}/reset', 'Plan\PlansController@reset');
+Route::name('v4_internal_plans.restart')
+    ->middleware('APIToken:check')
+    ->post('plans/{plan_id}/restart', 'Plan\PlansController@restart');
 Route::name('v4_internal_plans.stop')
     ->middleware('APIToken:check')
     ->delete('plans/{plan_id}/stop', 'Plan\PlansController@stop');

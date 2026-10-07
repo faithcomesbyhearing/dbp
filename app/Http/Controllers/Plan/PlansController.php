@@ -845,6 +845,154 @@ class PlansController extends APIController
     }
 
     /**
+     * Restart a plan the user follows: clear their progress, set a new start date and, when sent, the Bible they
+     * chose for the new attempt, all in one transaction on the users database.
+     *
+     *  @OA\Post(
+     *     path="/plans/{plan_id}/restart",
+     *     tags={"Plans"},
+     *     summary="Restart a plan",
+     *     description="The user must already follow the plan. Deletes the user's completed items and days for the plan, sets percentage_completed to 0, sets start_date and, when sent, user_bible (not sent keeps the stored Bible). Never removes the plan from the user's plans. Either everything is saved or nothing is.",
+     *     operationId="v4_internal_plans.restart",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
+     *     @OA\RequestBody(required=true, @OA\MediaType(mediaType="application/json",
+     *          @OA\Schema(
+     *              required={"start_date"},
+     *              @OA\Property(property="start_date", type="string", format="date", example="2026-10-10", description="YYYY-MM-DD"),
+     *              @OA\Property(property="user_bible", ref="#/components/schemas/v4_plan_user_bible/properties/user_bible")
+     *          )
+     *     )),
+     *     @OA\Response(
+     *         response=200,
+     *         description="successful operation",
+     *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_plan_restart"))
+     *     )
+     * )
+     *
+     * @OA\Schema (
+     *   type="object",
+     *   schema="v4_plan_restart",
+     *   title="Restart plan response",
+     *   @OA\Property(property="start_date", type="string", format="date", example="2026-10-10"),
+     *   @OA\Property(property="percentage_completed", ref="#/components/schemas/UserPlan/properties/percentage_completed"),
+     *   @OA\Property(
+     *      property="user_bible",
+     *      ref="#/components/schemas/v4_plan_user_bible/properties/user_bible",
+     *      description="The Bible saved for the plan after the restart: the one sent, or the stored one when none was sent (null if none)"
+     *   ),
+     *   @OA\Property(property="message", type="string", example="Plan restarted")
+     * )
+     *
+     * @param  int $plan_id
+     *
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
+     */
+    public function restart(Request $request, $plan_id)
+    {
+        // Validate Project / User Connection
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $plan = Plan::where('id', $plan_id)->first();
+
+        if (!$plan) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        // Restart never creates the row: a plan the user does not follow is started with Start.
+        $user_plan_exists = UserPlan::where('plan_id', $plan->id)->where('user_id', $user->id)->exists();
+
+        if (!$user_plan_exists) {
+            return $this->setStatusCode(404)->replyWithError('User Plan Not Found');
+        }
+
+        // Every input is validated before anything is written, so a 422 leaves the plan exactly as it was.
+        try {
+            $start_date = self::normalizeRestartStartDate(checkParam('start_date', true));
+        } catch (\InvalidArgumentException $e) {
+            abort(422, $e->getMessage());
+        }
+
+        $user_bible = $this->resolveUserBible(false);
+
+        // The transaction must be on dbp_users, where every plan table lives. \DB::transaction() (as in reset())
+        // would open it on the default content connection and roll none of these writes back (finding F23).
+        // The row is re-read under a lock so a Stop arriving between the check above and this point cannot
+        // delete it unnoticed; Restart is repeatable, so a deadlock is safely retried (3 attempts).
+        $user_plan = DB::connection('dbp_users')->transaction(function () use ($plan, $user, $start_date, $user_bible) {
+            $user_plan = UserPlan::where('plan_id', $plan->id)
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$user_plan) {
+                return null;
+            }
+
+            // Deletes the user's completed items and days for the plan, zeroes the percentage, sets start_date.
+            $user_plan->reset($start_date, false, $user->id);
+            if ($user_bible !== null) {
+                $user_plan->user_bible = $user_bible;
+            }
+            // A restart is an interaction even when no column changes (a repeat call), and the completions it
+            // just deleted were what kept the plan near the top of the last_interaction sort.
+            $user_plan->updated_at = $user_plan->freshTimestamp();
+            $user_plan->save();
+
+            return $user_plan;
+        }, 3);
+
+        if (!$user_plan) {
+            return $this->setStatusCode(404)->replyWithError('User Plan Not Found');
+        }
+
+        // Built from the in-memory row: refresh()/fresh() do not work with UserPlan's composite key.
+        return $this->reply([
+            'start_date' => $start_date,
+            'percentage_completed' => (int) $user_plan->percentage_completed,
+            'user_bible' => $user_plan->user_bible,
+            'message' => 'Plan restarted'
+        ]);
+    }
+
+    /**
+     * The DB-free start_date check for restart(), kept static so it can be unit tested.
+     *
+     * Stricter than Start and Reset, which store any string: Restart deletes progress, so a value the database
+     * would silently turn into 0000-00-00 is rejected before anything is written.
+     *
+     * @param mixed $value what checkParam('start_date', true) returned
+     *
+     * @return string the date, YYYY-MM-DD
+     * @throws \InvalidArgumentException with the 422 message when it is not a real date in that format
+     */
+    public static function normalizeRestartStartDate($value) : string
+    {
+        $message = 'start_date must be a date in YYYY-MM-DD format.';
+
+        if (!is_string($value)) {
+            throw new \InvalidArgumentException($message);
+        }
+
+        // Header values arrive untrimmed (body and query values are trimmed by middleware).
+        $value = trim($value);
+
+        // The round trip rejects dates that do not exist (2026-02-30 would otherwise roll over to March)
+        // and loose forms PHP accepts for the format, such as 2026-1-5.
+        $date = \DateTime::createFromFormat('!Y-m-d', $value);
+        if ($date === false || $date->format('Y-m-d') !== $value) {
+            throw new \InvalidArgumentException($message);
+        }
+
+        return $value;
+    }
+
+    /**
      * Stop the specified plan.
      *
      *  @OA\Delete(
