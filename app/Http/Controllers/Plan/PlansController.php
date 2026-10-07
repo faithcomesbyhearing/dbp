@@ -59,6 +59,12 @@ class PlansController extends APIController
      *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
      *          description="The iso code to filter plans by. For a complete list see the `iso` field in the `/languages` route"
      *     ),
+     *     @OA\Parameter(
+     *          name="user_status",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When set to `true` (case-insensitive) and a valid api_token is supplied, each plan includes a `user_status` key: null (the user has not adopted the plan: never started it, or stopped a plan someone else created), `in_progress` or `completed`, resolved from the user's completed playlist items. Creating a plan through the API adopts it for its creator. Stopping a plan clears its progress and removes it from the user's plans, except for the plan's creator, who keeps it and sees `in_progress`. Any other value, including `1`, leaves the key off, so existing calls are unchanged."
+     *     ),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Parameter(ref="#/components/parameters/page"),
      *     @OA\Parameter(ref="#/components/parameters/sort_by"),
@@ -80,7 +86,14 @@ class PlansController extends APIController
      *   allOf={
      *      @OA\Schema(ref="#/components/schemas/v4_plan"),
      *   },
-     *   @OA\Property(property="total_days", type="integer")
+     *   @OA\Property(property="total_days", type="integer"),
+     *   @OA\Property(
+     *      property="user_status",
+     *      type="string",
+     *      nullable=true,
+     *      enum={"in_progress", "completed"},
+     *      description="Present only when user_status=true and an api_token is supplied. null when the user has not adopted the plan (never started it, or stopped a plan someone else created). An adopted plan that is not finished is in_progress; creating a plan through the API adopts it for its creator. Stopping a plan clears its progress and removes it from the user's plans, except for its creator, who keeps it and sees in_progress."
+     *   )
      * )
      *
      * @OA\Schema (
@@ -114,6 +127,7 @@ class PlansController extends APIController
         $sort_by    = checkParam('sort_by') ?? 'name';
         $sort_dir   = checkParam('sort_dir') ?? 'asc';
         $iso = checkParam('iso');
+        $user_status = checkBoolean('user_status');
 
         if($featured && $sort_by === 'last_interaction') {
             return $this->setStatusCode(SymfonyResponse::HTTP_BAD_REQUEST)->replyWithError('Sort by last_interaction is not supported for featured plans');
@@ -126,11 +140,20 @@ class PlansController extends APIController
             });
         }
 
-        return $this->reply($this->getPlans($featured, $limit, $sort_by, $sort_dir, $user, $language_id));
+        return $this->reply(
+            $this->getPlans($featured, $limit, $sort_by, $sort_dir, $user, $language_id, $user_status)
+        );
     }
 
-    private function getPlans($featured, $limit, $sort_by, $sort_dir, $user, $language_id)
-    {
+    private function getPlans(
+        $featured,
+        $limit,
+        $sort_by,
+        $sort_dir,
+        $user,
+        $language_id,
+        bool $user_status = false
+    ) {
         $plans = Plan::with('days')
             ->with('user')
             ->where('plans.draft', 0)
@@ -152,9 +175,32 @@ class PlansController extends APIController
             })
             ->orderBy($sort_by, $sort_dir)->paginate($limit);
 
+        // Resolve the caller's status per plan with one aggregate query, only when asked for and
+        // only for an authenticated token user, so every other request keeps today's exact payload.
+        $include_user_status = $user_status && !empty($user);
+        $user_statuses = [];
+        if ($include_user_status) {
+            $user_statuses = UserPlan::getStatusesByPlanIdsAndUserId(
+                $plans->getCollection()->pluck('id')->all(),
+                $user->id
+            );
+        }
+
         foreach ($plans as $plan) {
             $plan->total_days = sizeof($plan->days);
             unset($plan->days);
+
+            if ($include_user_status) {
+                // null means the user has no user_plans row: never adopted the plan, or stopped a plan
+                // someone else created. stop() always clears progress but deletes the row only when the
+                // user is not the plan's creator (efe242ce, FCBH-1607 "Share plan", Feb 2020; before that
+                // it deleted every row). POST /api/plans and plan translation (PlanService::translate, also
+                // behind `artisan translate:plan`) give the creator a row, so a creator reads in_progress
+                // or completed, never null, and in_progress after stopping (progress cleared); plans inserted
+                // straight into the database, or stopped by their creator before efe242ce, have no creator
+                // row and read null.
+                $plan->user_status = $user_statuses[$plan->id] ?? null;
+            }
         }
         return $plans;
     }
