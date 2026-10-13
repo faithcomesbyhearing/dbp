@@ -214,7 +214,8 @@ class PlanIndexUserStatusTest extends TestCase
     }
 
     /**
-     * Locks in checkBoolean()'s strict-'true' parsing: `user_status=1` is off.
+     * Locks in the controller's strict-'true' parsing (independent of checkBoolean()): `1`, `yes`, `no`, `off` and
+     * an array are all off, and the array does not cause a 500.
      *
      * @category V4_API
      * @category Route Name: v4_internal_plans.index
@@ -225,9 +226,29 @@ class PlanIndexUserStatusTest extends TestCase
     public function keyIsOmittedWhenParameterIsNotExactlyTrue()
     {
         $this->subscribe();
-        $plan = $this->fetchSeededPlan(['user_status' => '1']);
-        $this->assertNotNull($plan);
-        $this->assertArrayNotHasKey('user_status', $plan);
+        foreach (['1', 'yes', 'no', 'off', ['true']] as $value) {
+            $plan = $this->fetchSeededPlan(['user_status' => $value]);
+            $this->assertNotNull($plan);
+            $this->assertArrayNotHasKey('user_status', $plan, 'user_status=' . json_encode($value));
+        }
+    }
+
+    /**
+     * The word true is case-insensitive: `TRUE` and `True` turn the key on.
+     *
+     * @category V4_API
+     * @category Route Name: v4_internal_plans.index
+     * @see      \App\Http\Controllers\Plan\PlansController::index
+     * @group    V4
+     * @test
+     */
+    public function keyIsPresentForTrueInAnyCase()
+    {
+        foreach (['TRUE', 'True'] as $value) {
+            $plan = $this->fetchSeededPlan(['user_status' => $value]);
+            $this->assertNotNull($plan);
+            $this->assertArrayHasKey('user_status', $plan, 'user_status=' . $value);
+        }
     }
 
     /**

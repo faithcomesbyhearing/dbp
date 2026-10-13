@@ -127,7 +127,11 @@ class PlansController extends APIController
         $sort_by    = checkParam('sort_by') ?? 'name';
         $sort_dir   = checkParam('sort_dir') ?? 'asc';
         $iso = checkParam('iso');
-        $user_status = checkBoolean('user_status');
+        // Parsed by hand so it is strict whichever checkBoolean() a release carries (before #1062 it accepted any value
+        // but "false"): only the word true (any case) or a JSON true turns it on, and an array is ignored, not a 500.
+        $user_status_raw = checkParam('user_status');
+        $user_status = $user_status_raw === true
+            || (is_string($user_status_raw) && strtolower($user_status_raw) === 'true');
 
         if($featured && $sort_by === 'last_interaction') {
             return $this->setStatusCode(SymfonyResponse::HTTP_BAD_REQUEST)->replyWithError('Sort by last_interaction is not supported for featured plans');
