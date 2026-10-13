@@ -314,7 +314,7 @@ class PlansController extends APIController
      *          name="include_user_bible",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When true, the response includes `user_bible`, the Bible the token user chose for this plan (null when there is no token, the user has not started the plan, or none was chosen)"
+     *          description="When set to `true` (case-insensitive), the response includes `user_bible`, the Bible the token user chose for this plan (null when there is no token, the user has not started the plan, or none was chosen). Any other value, including `1` or a list, leaves the key off."
      *     ),
      *     @OA\Response(response=200, ref="#/components/responses/plan")
      * )
@@ -361,7 +361,11 @@ class PlansController extends APIController
         // same payload as before. When on, the key is always present: null for no token, no
         // user_plans row, or no Bible chosen. Read here rather than in the shared
         // Plan::scopeWithUserById select, which would change the Start/Update/Store replies too.
-        $include_user_bible = checkBoolean('include_user_bible');
+        // Parsed by hand so it is strict whichever checkBoolean() a release carries (before #1062 it accepted any value
+        // but "false"): only the word true (any case) or a JSON true turns it on, and an array is ignored, not a 500.
+        $include_user_bible_raw = checkParam('include_user_bible');
+        $include_user_bible = $include_user_bible_raw === true
+            || (is_string($include_user_bible_raw) && strtolower($include_user_bible_raw) === 'true');
         $user_bible = null;
         if ($include_user_bible && !empty($user)) {
             $user_bible = UserPlan::where('plan_id', $plan->id)

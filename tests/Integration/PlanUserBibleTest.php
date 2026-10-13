@@ -353,7 +353,9 @@ class PlanUserBibleTest extends TestCase
     }
 
     /**
-     * AC6: without the literal word true the payload has no user_bible key.
+     * AC6: without the literal word true the payload has no user_bible key. Locks in the controller's own strict
+     * parsing (independent of checkBoolean()): `1`, `yes`, `no`, `off`, `false` and an array are all off, and the
+     * array does not cause a 500.
      *
      * @test
      */
@@ -361,7 +363,9 @@ class PlanUserBibleTest extends TestCase
     {
         $this->seedRow($this->bible_id);
 
-        foreach ([[], ['include_user_bible' => '1'], ['include_user_bible' => 'yes'], ['include_user_bible' => 'false']] as $query) {
+        $values = ['1', 'yes', 'no', 'off', 'false', ['true']];
+        $queries = array_merge([[]], array_map(fn ($value) => ['include_user_bible' => $value], $values));
+        foreach ($queries as $query) {
             $response = $this->show($query);
             $response->assertOk();
             $this->assertArrayNotHasKey('user_bible', $response->json(), json_encode($query));
