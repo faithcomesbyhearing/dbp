@@ -353,6 +353,46 @@ class PlanDay extends Model implements Sortable
     }
 
     /**
+     * Count, for each plan, the days a user has marked complete: the days whose `completed` flag is true in the
+     * plan details response (same plan_days_completed join as scopeWithCompletedDay below).
+     *
+     * A day whose playlist items are all complete but which has no plan_days_completed row is not counted, on
+     * purpose: the API never writes that row by itself (verifyDayCompleted has no caller); the client sends a
+     * separate day-complete call. PBI 102548 keeps the count to the recorded days.
+     *
+     * DISTINCT guards against duplicate plan_days_completed rows; the original migration only declares a
+     * non-unique (user_id, plan_day_id) index.
+     *
+     * @param array $plan_ids
+     * @param int $user_id
+     *
+     * @return array [plan_id => completed day count]; plans without completed days are absent
+     */
+    public static function countCompletedByPlanIdsAndUserId(array $plan_ids, int $user_id) : array
+    {
+        if (empty($plan_ids)) {
+            return [];
+        }
+
+        return self::select([
+            'plan_days.plan_id',
+            \DB::raw('COUNT(DISTINCT plan_days_completed.plan_day_id) AS completed_days')
+        ])
+        ->join('plan_days_completed', function ($query_join) use ($user_id) {
+            $query_join
+                ->on('plan_days_completed.plan_day_id', '=', 'plan_days.id')
+                ->where('plan_days_completed.user_id', $user_id);
+        })
+        ->whereIn('plan_days.plan_id', $plan_ids)
+        ->groupBy('plan_days.plan_id')
+        ->pluck('completed_days', 'plan_id')
+        ->map(function ($completed_days) {
+            return (int) $completed_days;
+        })
+        ->all();
+    }
+
+    /**
      * Get the plan Day with the day completed relationship and the completed attribute is fetching into the query.
      *
      * @param Builder $query
