@@ -428,6 +428,12 @@ Route::name('v4_internal_plans.reset')
 Route::name('v4_internal_plans.stop')
     ->middleware('APIToken:check')
     ->delete('plans/{plan_id}/stop', 'Plan\PlansController@stop');
+Route::name('v4_internal_plans.bible_update')
+    ->middleware('APIToken:check')
+    ->put('plans/{plan_id}/bible', 'Plan\PlansController@updateBible');
+Route::name('v4_internal_plans.bible_destroy')
+    ->middleware('APIToken:check')
+    ->delete('plans/{plan_id}/bible', 'Plan\PlansController@destroyBible');
 Route::name('v4_internal_plans.translate')
     ->middleware(['APIToken:check', 'AccessControl'])
     ->get('plans/{plan_id}/translate', 'Plan\PlansController@translate');
