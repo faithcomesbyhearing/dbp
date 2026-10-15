@@ -11,7 +11,12 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
      */
     public function transform($plan)
     {
-        return [
+        // Only for show() with include_user_bible=true; omitted (not null) otherwise.
+        $user_bible_field = !empty($this->params['include_user_bible'])
+            ? ['user_bible' => $this->params['user_bible'] ?? null]
+            : [];
+
+        return array_merge([
             "id" => $plan->id,
             "name" => $plan->name,
             "thumbnail" => $plan->thumbnail,
@@ -22,6 +27,7 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
             "updated_at" => $plan->updated_at,
             "start_date" => $plan->start_date,
             "percentage_completed" => $plan->percentage_completed,
+        ], $user_bible_field, [
             "days" => $plan->days->map(function ($day) {
                 $day_result = [
                     "id" => $day->id,
@@ -42,6 +48,6 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
                 "id" => $plan->user->id,
                 "name" => $plan->user->name
             ]
-        ];
+        ]);
     }
 }
