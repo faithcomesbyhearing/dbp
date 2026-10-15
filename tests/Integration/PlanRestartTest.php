@@ -228,6 +228,45 @@ class PlanRestartTest extends TestCase
         );
     }
 
+    private function restartAs(User $user, array $body, int $plan_id)
+    {
+        $this->actingAs($user, 'tokens');
+        return $this->withHeaders($this->params)->postJson(
+            route('v4_internal_plans.restart', ['plan_id' => $plan_id]),
+            $body
+        );
+    }
+
+    /** A user who shares no project with the test key's owner, so compareProjects() answers 401 for them. */
+    private function userOutsideTheKeysProjects(): User
+    {
+        $key_projects = ProjectMember::where('user_id', $this->user_id)->pluck('project_id');
+        $outsider = User::where('id', '!=', $this->user_id)
+            ->whereNotIn('id', ProjectMember::whereIn('project_id', $key_projects)->select('user_id'))
+            ->orderBy('id')
+            ->first();
+        if (!$outsider) {
+            $this->markTestSkipped('Needs a user who shares no project with the test key\'s owner.');
+        }
+        return $outsider;
+    }
+
+    /** A second user in the test project, so compareProjects() passes for them; tearDown removes the membership. */
+    private function secondUserInTheProject(): User
+    {
+        $user = User::where('id', '!=', $this->user_id)->orderBy('id')->first();
+        if (!$user) {
+            $this->markTestSkipped('Needs a second user.');
+        }
+        ProjectMember::create([
+            'project_id' => $this->project_id,
+            'user_id'    => $user->id,
+            'role_id'    => Role::where('slug', 'developer')->value('id'),
+            'token'      => unique_random('dbp_users.project_members', 'token', 12),
+        ]);
+        return $user;
+    }
+
     private function assertRestarted(int $plan_id, string $start_date, ?string $user_bible): void
     {
         $after = $this->snapshot($plan_id);
@@ -342,6 +381,82 @@ class PlanRestartTest extends TestCase
             ->assertNotFound()
             ->assertJsonPath('error.message', 'User Plan Not Found');
         $this->assertNull($this->rows($this->other_plan_id)->first());
+    }
+
+    /**
+     * AC4: a user who shares no project with the key gets the existing 401 and nothing changes on the plan they
+     * targeted (QA could not run this on preview: no such account).
+     *
+     * @test
+     */
+    public function restartRejectsAUserOutsideTheKeysProjects()
+    {
+        $this->seedFollowing($this->own_plan_id, 2, $this->bible_id);
+        $before = $this->snapshot($this->own_plan_id);
+        $outsider = $this->userOutsideTheKeysProjects();
+
+        $this->restartAs($outsider, ['start_date' => '2026-10-10', 'user_bible' => $this->other_bible_id], $this->own_plan_id)
+            ->assertUnauthorized()
+            ->assertJsonPath('error.message', trans('api.projects_users_not_connected'));
+
+        $this->assertSame($before, $this->snapshot($this->own_plan_id));
+    }
+
+    /**
+     * AC4: another user of the same project cannot restart this user's plan. They have no row of their own, so it is
+     * a 404. The owner's progress, date and Bible are untouched, and no row is created for the other user.
+     *
+     * @test
+     */
+    public function anotherUserCannotRestartSomeoneElsesPlan()
+    {
+        $this->seedFollowing($this->own_plan_id, 2, $this->bible_id);
+        $before = $this->snapshot($this->own_plan_id);
+        $other = $this->secondUserInTheProject();
+
+        $this->restartAs($other, ['start_date' => '2026-10-10', 'user_bible' => $this->other_bible_id], $this->own_plan_id)
+            ->assertNotFound()
+            ->assertJsonPath('error.message', 'User Plan Not Found');
+
+        $this->assertSame($before, $this->snapshot($this->own_plan_id));
+        $this->assertFalse(
+            DB::connection('dbp_users')->table('user_plans')
+                ->where('plan_id', $this->own_plan_id)->where('user_id', $other->id)->exists()
+        );
+    }
+
+    /**
+     * AC4: when both users follow the plan, a Restart clears only the caller's progress and Bible choice; the other
+     * follower's progress, date and Bible are untouched.
+     *
+     * @test
+     */
+    public function restartByOneFollowerLeavesTheOtherFollowerUntouched()
+    {
+        $this->seedFollowing($this->own_plan_id, 2, $this->bible_id);
+        $before = $this->snapshot($this->own_plan_id);
+        $other = $this->secondUserInTheProject();
+        UserPlan::create([
+            'user_id'              => $other->id,
+            'plan_id'              => $this->own_plan_id,
+            'start_date'           => '2026-01-01',
+            'percentage_completed' => 0,
+        ]);
+        $this->plan_days[$this->own_plan_id][1]->complete($other->id);
+
+        $this->restartAs($other, ['start_date' => '2026-10-10', 'user_bible' => $this->other_bible_id], $this->own_plan_id)
+            ->assertOk()
+            ->assertJsonPath('user_bible', $this->other_bible_id);
+
+        $this->assertSame($before, $this->snapshot($this->own_plan_id));
+        $other_row = DB::connection('dbp_users')->table('user_plans')
+            ->where('plan_id', $this->own_plan_id)->where('user_id', $other->id)->first();
+        $this->assertSame($this->other_bible_id, $other_row->user_bible);
+        $this->assertStringStartsWith('2026-10-10', (string) $other_row->start_date);
+        $this->assertSame(0, DB::connection('dbp_users')->table('plan_days_completed')
+            ->where('user_id', $other->id)
+            ->whereIn('plan_day_id', collect($this->plan_days[$this->own_plan_id])->pluck('id'))
+            ->count());
     }
 
     public static function badInputProvider(): array

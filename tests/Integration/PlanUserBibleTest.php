@@ -9,6 +9,7 @@ use App\Models\User\Key;
 use App\Models\User\Project;
 use App\Models\User\ProjectMember;
 use App\Models\User\Role;
+use App\Models\User\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -186,6 +187,47 @@ class PlanUserBibleTest extends TestCase
     private function missingPlanId(): int
     {
         return (int) Plan::withTrashed()->max('id') + 1000;
+    }
+
+    /** A request as any user, with key and v in headers only, so a failing assertion cannot print the key. */
+    private function callAs(User $user, string $method, string $route, array $body = [], array $query = [])
+    {
+        $this->actingAs($user, 'tokens');
+        return $this->withHeaders($this->params)->json(
+            $method,
+            route($route, ['plan_id' => $this->plan_id] + $query),
+            $body
+        );
+    }
+
+    /** A user who shares no project with the test key's owner, so compareProjects() answers 401 for them. */
+    private function userOutsideTheKeysProjects(): User
+    {
+        $key_projects = ProjectMember::where('user_id', $this->user_id)->pluck('project_id');
+        $outsider = User::where('id', '!=', $this->user_id)
+            ->whereNotIn('id', ProjectMember::whereIn('project_id', $key_projects)->select('user_id'))
+            ->orderBy('id')
+            ->first();
+        if (!$outsider) {
+            $this->markTestSkipped('Needs a user who shares no project with the test key\'s owner.');
+        }
+        return $outsider;
+    }
+
+    /** A second user in the test project, so compareProjects() passes for them; tearDown removes the membership. */
+    private function secondUserInTheProject(): User
+    {
+        $user = User::where('id', '!=', $this->user_id)->orderBy('id')->first();
+        if (!$user) {
+            $this->markTestSkipped('Needs a second user.');
+        }
+        ProjectMember::create([
+            'project_id' => $this->project_id,
+            'user_id'    => $user->id,
+            'role_id'    => Role::where('slug', 'developer')->value('id'),
+            'token'      => unique_random('dbp_users.project_members', 'token', 12),
+        ]);
+        return $user;
     }
 
     public static function badValueProvider(): array
@@ -525,5 +567,91 @@ class PlanUserBibleTest extends TestCase
         $response = $this->show(['include_user_bible' => 'true']);
         $this->assertArrayHasKey('user_bible', $response->json());
         $this->assertNull($response->json('user_bible'));
+    }
+
+    /**
+     * AC8: a user who shares no project with the key gets the existing 401 on PUT and DELETE, and the owner's
+     * stored Bible is untouched. (Follow-up from the #1109 review, added with 102554.)
+     *
+     * @test
+     */
+    public function putAndDeleteRejectAUserOutsideTheKeysProjects()
+    {
+        $this->seedRow($this->bible_id);
+        $outsider = $this->userOutsideTheKeysProjects();
+
+        foreach (['PUT' => 'v4_internal_plans.bible_update', 'DELETE' => 'v4_internal_plans.bible_destroy'] as $method => $route) {
+            $this->callAs($outsider, $method, $route, ['user_bible' => $this->other_bible_id])
+                ->assertUnauthorized()
+                ->assertJsonPath('error.message', trans('api.projects_users_not_connected'));
+        }
+
+        $this->assertSame($this->bible_id, $this->row()->user_bible);
+    }
+
+    /**
+     * AC8: another user of the same project can neither read nor change this user's Bible. Details shows them null,
+     * and PUT and DELETE find no row of theirs (404). The owner's value is untouched. (Follow-up from the #1109
+     * review, added with 102554.) The 200 comes first: the test router reuses the controller, whose status code
+     * would carry over from a 404.
+     *
+     * @test
+     */
+    public function anotherUserCannotReadOrChangeTheBible()
+    {
+        $this->seedRow($this->bible_id);
+        $other = $this->secondUserInTheProject();
+
+        $details = $this->callAs($other, 'GET', 'v4_internal_plans.show', [], ['include_user_bible' => 'true']);
+        $details->assertOk();
+        $this->assertArrayHasKey('user_bible', $details->json());
+        $this->assertNull($details->json('user_bible'));
+
+        foreach (['PUT' => 'v4_internal_plans.bible_update', 'DELETE' => 'v4_internal_plans.bible_destroy'] as $method => $route) {
+            $this->callAs($other, $method, $route, ['user_bible' => $this->other_bible_id])
+                ->assertNotFound()
+                ->assertJsonPath('error.message', 'User Plan Not Found');
+        }
+
+        $this->assertSame($this->bible_id, $this->row()->user_bible);
+        $this->assertFalse(
+            DB::connection('dbp_users')->table('user_plans')
+                ->where('plan_id', $this->plan_id)->where('user_id', $other->id)->exists()
+        );
+    }
+
+    /**
+     * AC8: when both users follow the plan, each PUT and DELETE changes only the caller's own row (the save is keyed
+     * on user and plan), and each user's Details shows their own value.
+     *
+     * @test
+     */
+    public function twoFollowersEachChangeOnlyTheirOwnBible()
+    {
+        $this->seedRow($this->bible_id);
+        $other = $this->secondUserInTheProject();
+        UserPlan::create([
+            'user_id'              => $other->id,
+            'plan_id'              => $this->plan_id,
+            'start_date'           => '2026-01-01',
+            'percentage_completed' => 0,
+        ]);
+        $other_row = fn () => DB::connection('dbp_users')->table('user_plans')
+            ->where('plan_id', $this->plan_id)->where('user_id', $other->id)->first();
+
+        $this->callAs($other, 'PUT', 'v4_internal_plans.bible_update', ['user_bible' => $this->other_bible_id])
+            ->assertOk()
+            ->assertJsonPath('user_bible', $this->other_bible_id);
+        $this->assertSame($this->other_bible_id, $other_row()->user_bible);
+        $this->assertSame($this->bible_id, $this->row()->user_bible);
+
+        $this->callAs($other, 'GET', 'v4_internal_plans.show', [], ['include_user_bible' => 'true'])
+            ->assertJsonPath('user_bible', $this->other_bible_id);
+        $this->callAs($this->key_user, 'GET', 'v4_internal_plans.show', [], ['include_user_bible' => 'true'])
+            ->assertJsonPath('user_bible', $this->bible_id);
+
+        $this->callAs($other, 'DELETE', 'v4_internal_plans.bible_destroy')->assertOk();
+        $this->assertNull($other_row()->user_bible);
+        $this->assertSame($this->bible_id, $this->row()->user_bible);
     }
 }
