@@ -372,7 +372,7 @@ class PlansController extends APIController
      *          name="include_user_bible",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When set to `true` (case-insensitive), the response includes `user_bible`, the Bible the token user chose for this plan (null when there is no token, the user has not started the plan, or none was chosen). Any other value, including `1` or a list, leaves the key off."
+     *          description="When set to `true` (case-insensitive), the response includes `user_bible`, the Bible the token user chose for this plan (null when there is no token, the user has not saved or started the plan, or none was chosen). Any other value, including `1` or a list, leaves the key off."
      *     ),
      *     @OA\Response(response=200, ref="#/components/responses/plan")
      * )
@@ -646,6 +646,104 @@ class PlansController extends APIController
         $plan = $this->getPlan($plan_id, $user);
 
         // Echoed only when sent, so the reply to the old app is unchanged.
+        if ($user_bible !== null && $plan) {
+            $plan->user_bible = $user_bible;
+        }
+
+        return $this->reply($plan);
+    }
+
+    /**
+     * Save a plan for later: add it to the user's plans with no start date, without starting it.
+     *
+     *  @OA\Post(
+     *     path="/plans/{plan_id}/save",
+     *     tags={"Plans"},
+     *     summary="Save a plan for later",
+     *     description="Gives the user a record for the plan with no start date and 0% completed. If the user already has the plan (saved, started or completed), nothing changes except user_bible when sent; the call still succeeds. Draft plans cannot be saved (404). Start the plan later with Start; remove it with Stop.",
+     *     operationId="v4_internal_plans.save",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
+     *     @OA\RequestBody(required=false, @OA\MediaType(mediaType="application/json",
+     *          @OA\Schema(
+     *              @OA\Property(property="user_bible", ref="#/components/schemas/v4_plan_user_bible/properties/user_bible")
+     *          )
+     *     )),
+     *     @OA\Response(response=200, ref="#/components/responses/plan")
+     * )
+     *
+     * @param  int $plan_id
+     *
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
+     */
+    public function save(Request $request, $plan_id)
+    {
+        // Validate Project / User Connection
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $plan = Plan::where('id', (int) $plan_id)->first();
+
+        // A draft is hidden from both plan lists, its creator already has a row, and DeleteDraftPlaylistsPlans
+        // deletes it after a day, so a saved draft could never be used. Answered like a plan that does not exist.
+        if (!$plan || $plan->draft) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        // Optional, as on Start: validated before anything is written, so a bad value (422) saves nothing.
+        $user_bible = $this->resolveUserBible(false);
+
+        // The transaction must be on dbp_users, where every plan table lives (\DB::transaction() would open it on
+        // the default content connection). (user_id, plan_id) is not unique, so two Saves at once (a double tap)
+        // must not both insert. They queue on a lock on the plan's own row: locking the user_plans row that does not
+        // exist yet would take a gap lock on the shared (user_id, plan_id) index, which also blocks or deadlocks
+        // other users' first Saves and Starts. The user_plans read below is a plain read taken after the lock, so it
+        // sees a row the previous Save committed, under REPEATABLE READ or READ COMMITTED alike.
+        $saved = DB::connection('dbp_users')->transaction(function () use ($plan, $user, $user_bible) {
+            $locked_plan = Plan::where('id', $plan->id)->lockForUpdate()->first();
+
+            // Checked again under the lock: the creator may have deleted the plan or made it a draft since the
+            // check above.
+            if (!$locked_plan || $locked_plan->draft) {
+                return false;
+            }
+
+            $user_plan = UserPlan::where('plan_id', $plan->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$user_plan) {
+                // percentage_completed has no column default; Start and translate rely on the non-strict
+                // connection inserting 0, which would break if strict mode were turned on.
+                $user_plan = new UserPlan([
+                    'user_id'              => $user->id,
+                    'plan_id'              => $plan->id,
+                    'percentage_completed' => 0,
+                ]);
+            }
+
+            // An existing row keeps its start date, progress and updated_at (a repeat Save is not an interaction,
+            // so the plan does not move up the last_interaction sort). Only a sent user_bible changes it, and
+            // Eloquent writes nothing when the value is already stored. Not fillable, so set as a property.
+            if ($user_bible !== null) {
+                $user_plan->user_bible = $user_bible;
+            }
+            $user_plan->save();
+
+            return true;
+        }, 3);
+
+        if (!$saved) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        $plan = $this->getPlan($plan->id, $user);
+
+        // Echoed only when sent, as Start does.
         if ($user_bible !== null && $plan) {
             $plan->user_bible = $user_bible;
         }
@@ -1172,7 +1270,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/bible",
      *     tags={"Plans"},
      *     summary="Set the user's Bible for a plan",
-     *     description="The user must already have started the plan. Sending the value already stored changes nothing.",
+     *     description="The user must already have saved or started the plan. Sending the value already stored changes nothing.",
      *     operationId="v4_internal_plans.bible_update",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
@@ -1439,7 +1537,7 @@ class PlansController extends APIController
      *   @OA\Property(
      *      property="user_bible",
      *      ref="#/components/schemas/v4_plan_user_bible/properties/user_bible",
-     *      description="Only on GET /plans/{plan_id}?include_user_bible=true, and on Start when user_bible was sent"
+     *      description="Only on GET /plans/{plan_id}?include_user_bible=true, and on Start or Save when user_bible was sent"
      *   )
      * )
      *
