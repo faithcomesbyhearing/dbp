@@ -549,6 +549,33 @@ class PlanSaveTest extends TestCase
     }
 
     /**
+     * AC11: with duplicate records (user_plans has no unique key), one started record is enough to refuse, and
+     * neither record is deleted.
+     *
+     * @test
+     */
+    public function unsaveRefusesWhenAnyDuplicateRecordIsStarted()
+    {
+        UserPlan::create([
+            'user_id'              => $this->user_id,
+            'plan_id'              => $this->shared_plan_id,
+            'percentage_completed' => 0,
+        ]);
+        UserPlan::create([
+            'user_id'              => $this->user_id,
+            'plan_id'              => $this->shared_plan_id,
+            'start_date'           => '2026-10-20',
+            'percentage_completed' => 0,
+        ]);
+        $before = $this->rowValues($this->shared_plan_id);
+        $this->assertCount(2, $before);
+
+        $this->unsave($this->shared_plan_id)->assertStatus(409);
+
+        $this->assertSame($before, $this->rowValues($this->shared_plan_id));
+    }
+
+    /**
      * AC12: a plan the user created is refused with 409; their record (which keeps it in My Plans) stays.
      *
      * @test
@@ -585,22 +612,55 @@ class PlanSaveTest extends TestCase
         $this->save($this->shared_plan_id)->assertOk();
         $this->unsave($this->shared_plan_id)->assertOk();
         $this->unsave($this->shared_plan_id)->assertOk();
-        $this->assertSame([], $this->rowValues($this->shared_plan_id));
+        $this->assertCount(0, $this->rowValues($this->shared_plan_id));
     }
 
     /**
-     * AC14: drafts and unknown plans are a 404; no token is a 401 and leaves the saved plan in place.
+     * AC10: a plan its creator turned back into a draft after it was saved can still be unsaved (Plan Details and
+     * library search still show it); a draft the user never saved returns 200 with nothing to do.
+     *
+     * @test
+     */
+    public function unsaveWorksOnAPlanTurnedBackIntoADraft()
+    {
+        $this->save($this->shared_plan_id)->assertOk();
+        DB::connection('dbp_users')->table('plans')->where('id', $this->shared_plan_id)->update(['draft' => 1]);
+
+        $this->unsave($this->shared_plan_id)->assertOk()->assertJsonPath('start_date', null);
+        $this->assertSame([], $this->rowValues($this->shared_plan_id));
+
+        $this->unsave($this->others_draft_id)->assertOk();
+        $this->assertSame([], $this->rowValues($this->others_draft_id));
+    }
+
+    /**
+     * AC14: an unknown plan is a 404; no token, or a user outside the key's projects, is a 401 and leaves the saved
+     * plan in place.
      *
      * @test
      */
     public function unsaveErrors()
     {
-        $this->unsave($this->others_draft_id)->assertNotFound()->assertJsonPath('error.message', 'Plan Not Found');
         $missing_id = (int) Plan::withTrashed()->max('id') + 1000;
         $this->unsave($missing_id)->assertNotFound()->assertJsonPath('error.message', 'Plan Not Found');
 
         $this->save($this->shared_plan_id)->assertOk();
         $this->app['auth']->forgetGuards();
+        $this->withHeaders($this->params)->deleteJson(
+            route('v4_internal_plans.unsave', ['plan_id' => $this->shared_plan_id])
+        )->assertUnauthorized();
+        $this->assertCount(1, $this->rowValues($this->shared_plan_id));
+
+        // A user outside the key's projects: 401 before anything is read or deleted.
+        $key_projects = ProjectMember::where('user_id', $this->user_id)->pluck('project_id');
+        $outsider = User::where('id', '!=', $this->user_id)
+            ->whereNotIn('id', ProjectMember::whereIn('project_id', $key_projects)->select('user_id'))
+            ->orderBy('id')
+            ->first();
+        if (!$outsider) {
+            $this->markTestSkipped('Needs a user who shares no project with the test key\'s owner.');
+        }
+        $this->actingAs($outsider, 'tokens');
         $this->withHeaders($this->params)->deleteJson(
             route('v4_internal_plans.unsave', ['plan_id' => $this->shared_plan_id])
         )->assertUnauthorized();
