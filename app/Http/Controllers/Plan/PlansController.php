@@ -11,6 +11,7 @@ use App\Models\Language\Language;
 use App\Models\Plan\Plan;
 use App\Traits\CheckProjectMembership;
 use App\Models\Plan\PlanDay;
+use App\Models\Plan\PlanDayComplete;
 use App\Models\Plan\UserPlan;
 use App\Models\Playlist\Playlist;
 use App\Transformers\PlanTransformer;
@@ -374,6 +375,12 @@ class PlansController extends APIController
      *          @OA\Schema(type="boolean", default=false),
      *          description="When set to `true` (case-insensitive), the response includes `user_bible`, the Bible the token user chose for this plan (null when there is no token, the user has not started the plan, or none was chosen). Any other value, including `1` or a list, leaves the key off."
      *     ),
+     *     @OA\Parameter(
+     *          name="include_completed_at",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When set to `true` (case-insensitive), every item in `days` includes `completed_at`: when the token user marked that day complete, as a UTC timestamp in the format of the plan's `created_at` (for example `2026-10-13T19:37:53.000000Z`), or null when the day is not completed or there is no token. It is the first completion since the day was last un-completed or the plan was restarted, stopped or reset without `save_progress=true` (a reset that saves progress keeps it); completing the day again keeps it. Any other value, including `1` or a list, leaves the key off."
+     *     ),
      *     @OA\Response(response=200, ref="#/components/responses/plan")
      * )
      *
@@ -431,6 +438,18 @@ class PlansController extends APIController
                 ->value('user_bible');
         }
 
+        // Opt-in like include_user_bible and parsed the same strict way. When on, every day gets completed_at: when the
+        // token user marked it complete (UTC), or null (not completed, or no token). One query, only when on with a
+        // token, kept out of the shared PlanDay::scopeWithCompletedDay select, whose days the Start, Update and Store
+        // replies serialise directly.
+        $include_completed_at_raw = checkParam('include_completed_at');
+        $include_completed_at = $include_completed_at_raw === true
+            || (is_string($include_completed_at_raw) && strtolower($include_completed_at_raw) === 'true');
+        $completed_at_by_day = [];
+        if ($include_completed_at && !empty($user)) {
+            $completed_at_by_day = PlanDayComplete::getCompletedAtByPlanAndUserId($plan->id, $user->id);
+        }
+
         return $this->reply(fractal(
             $plan,
             new PlanDayPlaylistItemsTransformer(
@@ -438,6 +457,8 @@ class PlansController extends APIController
                     'v' => $this->v,
                     'key' => $this->key,
                     'show_details' => $show_details,
+                    'include_completed_at' => $include_completed_at,
+                    'completed_at_by_day' => $completed_at_by_day,
                     'include_user_bible' => $include_user_bible,
                     'user_bible' => $user_bible
                 ]

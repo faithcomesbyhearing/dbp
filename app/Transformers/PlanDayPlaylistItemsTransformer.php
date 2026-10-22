@@ -35,6 +35,14 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
                     "completed" => $day->completed
                 ];
 
+                // Only for show() with include_completed_at=true; omitted (not null) otherwise. It follows `completed`,
+                // so a day that is not completed never carries a date.
+                if (!empty($this->params['include_completed_at'])) {
+                    $day_result['completed_at'] = $day->completed
+                        ? ($this->params['completed_at_by_day'][$day->id] ?? null)
+                        : null;
+                }
+
                 if ($this->params['show_details']) {
                     $day_result["playlist"] = $this->parsePlaylistData($day->playlist);
                 } else {
