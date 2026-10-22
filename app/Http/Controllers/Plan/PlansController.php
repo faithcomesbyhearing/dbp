@@ -759,7 +759,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/save",
      *     tags={"Plans"},
      *     summary="Unsave a plan",
-     *     description="Removes the plan from the user's plans when it has no start date, together with anything completed in it. Repeatable: a plan that is not in the user's plans returns 200 and nothing changes. A started plan returns 409 and nothing changes (end it with Stop). A plan the user created returns 409 (delete the plan instead). Draft or unknown plans return 404.",
+     *     description="Removes the plan from the user's plans when it has no start date, together with anything completed in it. Repeatable: a plan that is not in the user's plans returns 200 and nothing changes. A started plan returns 409 and nothing changes (end it with Stop). A plan the user created returns 409 (delete the plan instead): the user's own unstarted plans also read user_status saved, so offer Unsave only when the plan's user.id is not the signed-in user. An unknown plan returns 404.",
      *     operationId="v4_internal_plans.unsave",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
@@ -783,8 +783,10 @@ class PlansController extends APIController
 
         $plan = Plan::where('id', (int) $plan_id)->first();
 
-        // The same rule as save(): a draft can never have been saved.
-        if (!$plan || $plan->draft) {
+        // Unlike save(), a draft is not refused: its creator can turn a published plan back into a draft after others
+        // saved it, and Plan Details and library search still show it to them, so they must be able to unsave it.
+        // Removing a record is safe for a draft; only creating one is not.
+        if (!$plan) {
             return $this->setStatusCode(404)->replyWithError('Plan Not Found');
         }
 
@@ -800,7 +802,7 @@ class PlansController extends APIController
         $outcome = DB::connection('dbp_users')->transaction(function () use ($plan, $user) {
             $locked_plan = Plan::where('id', $plan->id)->lockForUpdate()->first();
 
-            if (!$locked_plan || $locked_plan->draft) {
+            if (!$locked_plan) {
                 return 'not_found';
             }
 
