@@ -374,7 +374,7 @@ class PlansController extends APIController
      *          name="include_user_bible",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When set to `true` (case-insensitive), the response includes `user_bible`, the Bible the token user chose for this plan (null when there is no token, the user has not started the plan, or none was chosen). Any other value, including `1` or a list, leaves the key off."
+     *          description="When set to `true` (case-insensitive), the response includes `user_bible`, the Bible the token user chose for this plan (null when there is no token, the user has not saved or started the plan, or none was chosen). Any other value, including `1` or a list, leaves the key off."
      *     ),
      *     @OA\Parameter(
      *          name="include_completed_at",
@@ -673,6 +673,194 @@ class PlansController extends APIController
         }
 
         return $this->reply($plan);
+    }
+
+    /**
+     * Save a plan for later: add it to the user's plans with no start date, without starting it.
+     *
+     *  @OA\Post(
+     *     path="/plans/{plan_id}/save",
+     *     tags={"Plans"},
+     *     summary="Save a plan for later",
+     *     description="Gives the user a record for the plan with no start date and 0% completed. If the user already has the plan (saved, started or completed), nothing changes except user_bible when sent; the call still succeeds. Draft plans cannot be saved (404). Start the plan later with Start; remove it with DELETE /plans/{plan_id}/save (Unsave).",
+     *     operationId="v4_internal_plans.save",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
+     *     @OA\RequestBody(required=false, @OA\MediaType(mediaType="application/json",
+     *          @OA\Schema(
+     *              @OA\Property(property="user_bible", ref="#/components/schemas/v4_plan_user_bible/properties/user_bible")
+     *          )
+     *     )),
+     *     @OA\Response(response=200, ref="#/components/responses/plan")
+     * )
+     *
+     * @param  int $plan_id
+     *
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
+     */
+    public function save(Request $request, $plan_id)
+    {
+        // Validate Project / User Connection
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $plan = Plan::where('id', (int) $plan_id)->first();
+
+        // A draft is hidden from both plan lists, its creator already has a row, and DeleteDraftPlaylistsPlans
+        // deletes it after a day, so a saved draft could never be used. Answered like a plan that does not exist.
+        if (!$plan || $plan->draft) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        // Optional, as on Start: validated before anything is written, so a bad value (422) saves nothing.
+        $user_bible = $this->resolveUserBible(false);
+
+        // The transaction must be on dbp_users, where every plan table lives (\DB::transaction() would open it on
+        // the default content connection). (user_id, plan_id) is not unique, so two Saves at once (a double tap)
+        // must not both insert. They queue on a lock on the plan's own row: locking the user_plans row that does not
+        // exist yet would take a gap lock on the shared (user_id, plan_id) index, which also blocks or deadlocks
+        // other users' first Saves and Starts. The user_plans read below is a plain read taken after the lock, so it
+        // sees a row the previous Save committed, under REPEATABLE READ or READ COMMITTED alike.
+        $saved = DB::connection('dbp_users')->transaction(function () use ($plan, $user, $user_bible) {
+            $locked_plan = Plan::where('id', $plan->id)->lockForUpdate()->first();
+
+            // Checked again under the lock: the creator may have deleted the plan or made it a draft since the
+            // check above.
+            if (!$locked_plan || $locked_plan->draft) {
+                return false;
+            }
+
+            $user_plan = UserPlan::where('plan_id', $plan->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$user_plan) {
+                // percentage_completed has no column default; Start and translate rely on the non-strict
+                // connection inserting 0, which would break if strict mode were turned on.
+                $user_plan = new UserPlan([
+                    'user_id'              => $user->id,
+                    'plan_id'              => $plan->id,
+                    'percentage_completed' => 0,
+                ]);
+            }
+
+            // An existing row keeps its start date, progress and updated_at (a repeat Save is not an interaction,
+            // so the plan does not move up the last_interaction sort). Only a sent user_bible changes it, and
+            // Eloquent writes nothing when the value is already stored. Not fillable, so set as a property.
+            if ($user_bible !== null) {
+                $user_plan->user_bible = $user_bible;
+            }
+            $user_plan->save();
+
+            return true;
+        }, 3);
+
+        if (!$saved) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        $plan = $this->getPlan($plan->id, $user);
+
+        // Echoed only when sent, as Start does.
+        if ($user_bible !== null && $plan) {
+            $plan->user_bible = $user_bible;
+        }
+
+        return $this->reply($plan);
+    }
+
+    /**
+     * Unsave a plan: remove a saved (not started) plan from the user's plans. A started plan is refused, so an
+     * out-of-date screen cannot wipe progress the way Stop would.
+     *
+     *  @OA\Delete(
+     *     path="/plans/{plan_id}/save",
+     *     tags={"Plans"},
+     *     summary="Unsave a plan",
+     *     description="Removes the plan from the user's plans when it has no start date, together with anything completed in it. Repeatable: a plan that is not in the user's plans returns 200 and nothing changes. A started plan returns 409 and nothing changes (end it with Stop). A plan the user created returns 409 (delete the plan instead): the user's own unstarted plans also read user_status saved, so offer Unsave only when the plan's user.id is not the signed-in user. An unknown plan returns 404.",
+     *     operationId="v4_internal_plans.unsave",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
+     *     @OA\Response(response=200, ref="#/components/responses/plan"),
+     *     @OA\Response(response=409, description="The plan has been started, or the user created it; nothing changed")
+     * )
+     *
+     * @param  int $plan_id
+     *
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
+     */
+    public function unsave(Request $request, $plan_id)
+    {
+        // Validate Project / User Connection
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $plan = Plan::where('id', (int) $plan_id)->first();
+
+        // Unlike save(), a draft is not refused: its creator can turn a published plan back into a draft after others
+        // saved it, and Plan Details and library search still show it to them, so they must be able to unsave it.
+        // Removing a record is safe for a draft; only creating one is not.
+        if (!$plan) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        // The creator's record is how their own plan stays in My Plans (stop() keeps it for the same reason), so it is
+        // never removed here. Compared as ints so a string attribute cannot make every user look like a non-creator.
+        if ((int) $plan->user_id === (int) $user->id) {
+            return $this->setStatusCode(409)->replyWithError('This plan was created by the user. Delete the plan instead of unsaving it.');
+        }
+
+        // Same transaction and plan lock as save(), so a Save and an Unsave of the same plan never interleave. The
+        // user's own records are then read with a lock (a current read), so a record started a moment ago is seen and
+        // refused rather than deleted.
+        $outcome = DB::connection('dbp_users')->transaction(function () use ($plan, $user) {
+            $locked_plan = Plan::where('id', $plan->id)->lockForUpdate()->first();
+
+            if (!$locked_plan) {
+                return 'not_found';
+            }
+
+            $user_plans = UserPlan::where('plan_id', $plan->id)
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->get();
+
+            if ($user_plans->isEmpty()) {
+                return 'not_saved';
+            }
+
+            // (user_id, plan_id) is not unique: if any of the user's records has a start date, the plan is started.
+            if ($user_plans->contains(function ($user_plan) {
+                return $user_plan->start_date !== null;
+            })) {
+                return 'started';
+            }
+
+            // What Stop would clear: completions only exist on an unstarted plan through direct API calls.
+            UserPlan::removePlanDaysCompleteByPlanId($plan->id, $user->id);
+            UserPlan::where('plan_id', $plan->id)->where('user_id', $user->id)->delete();
+
+            return 'unsaved';
+        }, 3);
+
+        if ($outcome === 'not_found') {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        if ($outcome === 'started') {
+            return $this->setStatusCode(409)->replyWithError('This plan has been started. Stop it instead of unsaving it.');
+        }
+
+        // Unsaved, or it was not in the user's plans: either way it is not there now.
+        return $this->reply($this->getPlan($plan->id, $user));
     }
 
     /**
@@ -1194,7 +1382,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/bible",
      *     tags={"Plans"},
      *     summary="Set the user's Bible for a plan",
-     *     description="The user must already have started the plan. Sending the value already stored changes nothing.",
+     *     description="The user must already have saved or started the plan. Sending the value already stored changes nothing.",
      *     operationId="v4_internal_plans.bible_update",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
@@ -1461,7 +1649,7 @@ class PlansController extends APIController
      *   @OA\Property(
      *      property="user_bible",
      *      ref="#/components/schemas/v4_plan_user_bible/properties/user_bible",
-     *      description="Only on GET /plans/{plan_id}?include_user_bible=true, and on Start when user_bible was sent"
+     *      description="Only on GET /plans/{plan_id}?include_user_bible=true, and on Start or Save when user_bible was sent"
      *   )
      * )
      *
