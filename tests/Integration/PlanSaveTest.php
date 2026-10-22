@@ -24,10 +24,12 @@ use Tests\TestCase;
  * Save gives the user a user_plans row with no start date and 0% completed, without starting the plan. A user who
  * already has the plan keeps everything but a sent user_bible. Drafts are a 404 for everyone. Start, Stop, Restart
  * and Complete day then work on the saved row as on any other (Liubov's review: Start and Stop after Save).
+ * DELETE /plans/{id}/save (v4_internal_plans.unsave) removes a saved plan, refuses a started plan or one the user
+ * created (409), and does nothing for a plan the user does not have (Todd's review of #1124).
  *
  * Seeds three plans of three days with two playlist items each: one created by another user (the shared case; for a
  * featured plan the code path is the same, since Save, Start and Stop never look at the featured flag), one draft by
- * that user and one draft by the test user. None is featured, so a run that dies before tearDown leaves nothing on
+ * that user, one draft by the test user, and one published plan by the test user. None is featured, so a run that dies before tearDown leaves nothing on
  * Discover. Needs the user_plans.user_bible column (PBI 102552), a second user, and the ENGESVN2DA fileset and MAT
  * book the playlist items point at (foreign keys); skipped without them.
  *
@@ -49,6 +51,7 @@ class PlanSaveTest extends TestCase
     private $shared_plan_id;
     private $others_draft_id;
     private $own_draft_id;
+    private $own_plan_id;
     private $plan_days = [];
 
     protected function setUp(): void
@@ -108,11 +111,12 @@ class PlanSaveTest extends TestCase
         $this->shared_plan_id = $this->seedPlan($other_user_id, false);
         $this->others_draft_id = $this->seedPlan($other_user_id, true);
         $this->own_draft_id = $this->seedPlan($this->user_id, true);
+        $this->own_plan_id = $this->seedPlan($this->user_id, false);
     }
 
     protected function tearDown(): void
     {
-        foreach ([$this->shared_plan_id, $this->others_draft_id, $this->own_draft_id] as $plan_id) {
+        foreach ([$this->shared_plan_id, $this->others_draft_id, $this->own_draft_id, $this->own_plan_id] as $plan_id) {
             if ($plan_id) {
                 // Playlists first: FK cascade removes playlist_items and playlist_items_completed.
                 Playlist::where('plan_id', $plan_id)->forceDelete();
@@ -215,6 +219,27 @@ class PlanSaveTest extends TestCase
         return $this->withHeaders($this->params)->deleteJson(
             route('v4_internal_plans.stop', ['plan_id' => $plan_id])
         );
+    }
+
+    private function unsave(int $plan_id)
+    {
+        $this->actingAs($this->key_user, 'tokens');
+        echo "\nTesting: v4_internal_plans.unsave";
+        return $this->withHeaders($this->params)->deleteJson(
+            route('v4_internal_plans.unsave', ['plan_id' => $plan_id])
+        );
+    }
+
+    /** The user's completed days and items for the plan. */
+    private function completions(int $plan_id): int
+    {
+        $day_ids = collect($this->plan_days[$plan_id])->pluck('id');
+        $playlist_ids = collect($this->plan_days[$plan_id])->pluck('playlist_id');
+        return DB::connection('dbp_users')->table('plan_days_completed')
+                ->where('user_id', $this->user_id)->whereIn('plan_day_id', $day_ids)->count()
+            + DB::connection('dbp_users')->table('playlist_items_completed as pic')
+                ->join('playlist_items as pli', 'pli.id', '=', 'pic.playlist_item_id')
+                ->where('pic.user_id', $this->user_id)->whereIn('pli.playlist_id', $playlist_ids)->count();
     }
 
     /** The user's own plans list (My Plans), as plan id => entries, so a duplicate row shows as two entries. */
@@ -469,5 +494,116 @@ class PlanSaveTest extends TestCase
         )->assertUnauthorized();
         $this->assertSame(0, DB::connection('dbp_users')->table('user_plans')
             ->where('plan_id', $this->shared_plan_id)->where('user_id', $outsider->id)->count());
+    }
+
+    /**
+     * AC10: Unsave removes a saved plan, with anything completed in it through the API, and it can be saved again.
+     *
+     * @test
+     */
+    public function unsaveRemovesASavedPlan()
+    {
+        $this->save($this->shared_plan_id)->assertOk();
+        $this->actingAs($this->key_user, 'tokens');
+        $this->withHeaders($this->params)->postJson(
+            route('v4_internal_plans_days.complete', ['day_id' => $this->plan_days[$this->shared_plan_id][1]->id])
+        )->assertOk();
+        $this->assertGreaterThan(0, $this->completions($this->shared_plan_id));
+
+        $this->unsave($this->shared_plan_id)
+            ->assertOk()
+            ->assertJsonPath('id', $this->shared_plan_id)
+            ->assertJsonPath('start_date', null)
+            ->assertJsonPath('percentage_completed', null);
+
+        $this->assertSame([], $this->rowValues($this->shared_plan_id));
+        $this->assertSame(0, $this->completions($this->shared_plan_id));
+        $this->assertArrayNotHasKey($this->shared_plan_id, $this->myPlans());
+
+        $this->save($this->shared_plan_id)->assertOk()->assertJsonPath('percentage_completed', 0);
+        $this->assertCount(1, $this->rowValues($this->shared_plan_id));
+    }
+
+    /**
+     * AC11: a started plan is refused with 409 and nothing changes (Todd: a stale screen must not wipe progress).
+     *
+     * @test
+     */
+    public function unsaveRefusesAStartedPlan()
+    {
+        $this->save($this->shared_plan_id, ['user_bible' => $this->bible_id])->assertOk();
+        $this->start($this->shared_plan_id, ['start_date' => '2026-10-20'])->assertOk();
+        $this->actingAs($this->key_user, 'tokens');
+        $this->withHeaders($this->params)->postJson(
+            route('v4_internal_plans_days.complete', ['day_id' => $this->plan_days[$this->shared_plan_id][1]->id])
+        )->assertOk();
+        $before = $this->rowValues($this->shared_plan_id);
+        $completions = $this->completions($this->shared_plan_id);
+
+        $this->unsave($this->shared_plan_id)
+            ->assertStatus(409)
+            ->assertJsonPath('error.message', 'This plan has been started. Stop it instead of unsaving it.');
+
+        $this->assertSame($before, $this->rowValues($this->shared_plan_id));
+        $this->assertSame($completions, $this->completions($this->shared_plan_id));
+    }
+
+    /**
+     * AC12: a plan the user created is refused with 409; their record (which keeps it in My Plans) stays.
+     *
+     * @test
+     */
+    public function unsaveRefusesThePlansCreator()
+    {
+        UserPlan::create([
+            'user_id'              => $this->user_id,
+            'plan_id'              => $this->own_plan_id,
+            'percentage_completed' => 0,
+        ]);
+        $before = $this->rowValues($this->own_plan_id);
+
+        $this->unsave($this->own_plan_id)
+            ->assertStatus(409)
+            ->assertJsonPath('error.message', 'This plan was created by the user. Delete the plan instead of unsaving it.');
+
+        $this->assertSame($before, $this->rowValues($this->own_plan_id));
+    }
+
+    /**
+     * AC13: a plan the user does not have returns 200 and nothing is written (repeatable, like Save).
+     *
+     * @test
+     */
+    public function unsaveIsRepeatable()
+    {
+        $this->unsave($this->shared_plan_id)
+            ->assertOk()
+            ->assertJsonPath('id', $this->shared_plan_id)
+            ->assertJsonPath('start_date', null);
+        $this->assertSame([], $this->rowValues($this->shared_plan_id));
+
+        $this->save($this->shared_plan_id)->assertOk();
+        $this->unsave($this->shared_plan_id)->assertOk();
+        $this->unsave($this->shared_plan_id)->assertOk();
+        $this->assertSame([], $this->rowValues($this->shared_plan_id));
+    }
+
+    /**
+     * AC14: drafts and unknown plans are a 404; no token is a 401 and leaves the saved plan in place.
+     *
+     * @test
+     */
+    public function unsaveErrors()
+    {
+        $this->unsave($this->others_draft_id)->assertNotFound()->assertJsonPath('error.message', 'Plan Not Found');
+        $missing_id = (int) Plan::withTrashed()->max('id') + 1000;
+        $this->unsave($missing_id)->assertNotFound()->assertJsonPath('error.message', 'Plan Not Found');
+
+        $this->save($this->shared_plan_id)->assertOk();
+        $this->app['auth']->forgetGuards();
+        $this->withHeaders($this->params)->deleteJson(
+            route('v4_internal_plans.unsave', ['plan_id' => $this->shared_plan_id])
+        )->assertUnauthorized();
+        $this->assertCount(1, $this->rowValues($this->shared_plan_id));
     }
 }
