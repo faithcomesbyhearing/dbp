@@ -72,7 +72,7 @@ class PlanShowCompletedAtTest extends TestCase
         } while (Project::withTrashed()->where('id', $this->project_id)->exists());
         Project::create([
             'id'   => $this->project_id,
-            'name' => 'completed_at test project',
+            'name' => 'plan details completion time test project',
         ]);
         // Role declares no $fillable; forceCreate() bypasses mass-assignment protection.
         $role = Role::where('slug', 'developer')->first();
@@ -87,7 +87,8 @@ class PlanShowCompletedAtTest extends TestCase
             'token'      => unique_random('dbp_users.project_members', 'token', 12),
         ]);
 
-        [$this->plan_id, $this->plan_days] = $this->createPlan('completed_at test plan', 3);
+        // The name avoids the text "completed_at", so it can never be mistaken for the key.
+        [$this->plan_id, $this->plan_days] = $this->createPlan('plan details completion time test plan', 3);
     }
 
     protected function tearDown(): void
@@ -496,15 +497,43 @@ class PlanShowCompletedAtTest extends TestCase
             ['start_date' => now()->toDateString()]
         );
         $this->assertStatusWithoutKey($start, 200);
-        $this->assertStringContainsString('"days"', $start->getContent());
-        $this->assertStringNotContainsString('completed_at', $start->getContent());
+        // Keys only, never the text: a value such as a plan name must not decide the result (review of #1122).
+        $this->assertCount(3, $start->json('days') ?? [], 'Start returns the plan with its 3 days');
+        $this->assertSame([], $this->keyPaths('completed_at', $start->json()), 'Start reply');
 
         $index = $this->withHeaders($this->params)->get(route('v4_internal_plans.index', [
             'featured' => 'false', 'limit' => 1000, 'include_completed_at' => 'true',
             'user_status' => 'true', 'completed_days' => 'true',
         ]));
         $this->assertStatusWithoutKey($index, 200);
-        $this->assertStringNotContainsString('completed_at', $index->getContent());
+        $this->assertContains(
+            (int) $this->plan_id,
+            array_map('intval', array_column($index->json('data') ?? [], 'id')),
+            'the plans list includes the seeded plan'
+        );
+        $this->assertSame([], $this->keyPaths('completed_at', $index->json()), 'plans list');
+    }
+
+    /**
+     * Where $key occurs as a key anywhere in decoded JSON, as paths like `$.days.0.completed_at`. Looks at keys only,
+     * so text inside a value cannot match.
+     */
+    private function keyPaths(string $key, $data, string $path = '$'): array
+    {
+        if (!is_array($data)) {
+            return [];
+        }
+
+        $found = [];
+        foreach ($data as $k => $value) {
+            $here = $path . '.' . $k;
+            if ((string) $k === $key) {
+                $found[] = $here;
+            }
+            $found = array_merge($found, $this->keyPaths($key, $value, $here));
+        }
+
+        return $found;
     }
 
     /**
