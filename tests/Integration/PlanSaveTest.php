@@ -497,18 +497,13 @@ class PlanSaveTest extends TestCase
     }
 
     /**
-     * AC10: Unsave removes a saved plan, with anything completed in it through the API, and it can be saved again.
+     * AC10: Unsave removes a saved plan with nothing completed in it, and it can be saved again.
      *
      * @test
      */
     public function unsaveRemovesASavedPlan()
     {
         $this->save($this->shared_plan_id)->assertOk();
-        $this->actingAs($this->key_user, 'tokens');
-        $this->withHeaders($this->params)->postJson(
-            route('v4_internal_plans_days.complete', ['day_id' => $this->plan_days[$this->shared_plan_id][1]->id])
-        )->assertOk();
-        $this->assertGreaterThan(0, $this->completions($this->shared_plan_id));
 
         $this->unsave($this->shared_plan_id)
             ->assertOk()
@@ -665,5 +660,78 @@ class PlanSaveTest extends TestCase
             route('v4_internal_plans.unsave', ['plan_id' => $this->shared_plan_id])
         )->assertUnauthorized();
         $this->assertCount(1, $this->rowValues($this->shared_plan_id));
+    }
+
+    /**
+     * AC15 (Todd's follow-up on #1124): a plan with no start date but a completed day, or only a completed item,
+     * is refused with 409 and nothing is removed: Unsave never deletes progress.
+     *
+     * @test
+     */
+    public function unsaveRefusesAPlanWithProgress()
+    {
+        // A completed day (the day row and its items), through the API, on a saved plan.
+        $this->save($this->shared_plan_id)->assertOk();
+        $this->actingAs($this->key_user, 'tokens');
+        $this->withHeaders($this->params)->postJson(
+            route('v4_internal_plans_days.complete', ['day_id' => $this->plan_days[$this->shared_plan_id][1]->id])
+        )->assertOk();
+        $before = $this->rowValues($this->shared_plan_id);
+        $completions = $this->completions($this->shared_plan_id);
+        $this->assertGreaterThan(0, $completions);
+
+        $this->unsave($this->shared_plan_id)
+            ->assertStatus(409)
+            ->assertJsonPath('error.message', 'This plan has progress. Stop it instead of unsaving it.');
+        $this->assertSame($before, $this->rowValues($this->shared_plan_id));
+        $this->assertSame($completions, $this->completions($this->shared_plan_id));
+
+        // Only a completed item (no day row): still progress, still refused.
+        $this->stop($this->shared_plan_id)->assertOk();
+        $this->assertSame(0, $this->completions($this->shared_plan_id));
+        $this->save($this->shared_plan_id)->assertOk();
+        $item_id = PlaylistItems::where('playlist_id', $this->plan_days[$this->shared_plan_id][2]->playlist_id)->value('id');
+        DB::connection('dbp_users')->table('playlist_items_completed')
+            ->insert(['user_id' => $this->user_id, 'playlist_item_id' => $item_id]);
+
+        $this->unsave($this->shared_plan_id)
+            ->assertStatus(409)
+            ->assertJsonPath('error.message', 'This plan has progress. Stop it instead of unsaving it.');
+        $this->assertCount(1, $this->rowValues($this->shared_plan_id));
+        $this->assertSame(1, $this->completions($this->shared_plan_id));
+
+        // Only a completed day row (its items un-completed later): still progress, still refused.
+        $this->stop($this->shared_plan_id)->assertOk();
+        $this->save($this->shared_plan_id)->assertOk();
+        DB::connection('dbp_users')->table('plan_days_completed')->insert([
+            'user_id'     => $this->user_id,
+            'plan_day_id' => $this->plan_days[$this->shared_plan_id][3]->id,
+        ]);
+
+        $this->unsave($this->shared_plan_id)
+            ->assertStatus(409)
+            ->assertJsonPath('error.message', 'This plan has progress. Stop it instead of unsaving it.');
+        $this->assertCount(1, $this->rowValues($this->shared_plan_id));
+    }
+
+    /**
+     * AC15: another user's progress in the same plan does not block this user's Unsave.
+     *
+     * @test
+     */
+    public function unsaveIgnoresOtherUsersProgress()
+    {
+        $other_user_id = User::where('id', '!=', $this->user_id)->orderBy('id')->value('id');
+        $plan_day = $this->plan_days[$this->shared_plan_id][1];
+        DB::connection('dbp_users')->table('plan_days_completed')
+            ->insert(['user_id' => $other_user_id, 'plan_day_id' => $plan_day->id]);
+        DB::connection('dbp_users')->table('playlist_items_completed')->insert([
+            'user_id'          => $other_user_id,
+            'playlist_item_id' => PlaylistItems::where('playlist_id', $plan_day->playlist_id)->value('id'),
+        ]);
+
+        $this->save($this->shared_plan_id)->assertOk();
+        $this->unsave($this->shared_plan_id)->assertOk();
+        $this->assertSame([], $this->rowValues($this->shared_plan_id));
     }
 }
