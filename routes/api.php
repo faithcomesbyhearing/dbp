@@ -459,6 +459,28 @@ Route::name('v4_internal_plans_days.delete')
     ->middleware('APIToken:check')
     ->delete('plans/{plan_id}/day', 'Plan\PlansController@deleteDays');
 
+// VERSION 4 | Plan localizations (bible.is private)
+Route::name('v4_internal_plans_localizations.index')
+    ->middleware('APIToken:check')
+    ->get('plans/{plan_id}/localizations', 'Plan\PlanLocalizationsController@index')
+    ->whereNumber('plan_id');
+Route::name('v4_internal_plans_localizations.store')
+    ->middleware('APIToken:check')
+    ->post('plans/{plan_id}/localizations', 'Plan\PlanLocalizationsController@store')
+    ->whereNumber('plan_id');
+Route::name('v4_internal_plans_localizations.show')
+    ->middleware('APIToken:check')
+    ->get('plans/localizations/{localization_id}', 'Plan\PlanLocalizationsController@show')
+    ->whereNumber('localization_id');
+Route::name('v4_internal_plans_localizations.update')
+    ->middleware('APIToken:check')
+    ->put('plans/localizations/{localization_id}', 'Plan\PlanLocalizationsController@update')
+    ->whereNumber('localization_id');
+Route::name('v4_internal_plans_localizations.destroy')
+    ->middleware('APIToken:check')
+    ->delete('plans/localizations/{localization_id}', 'Plan\PlanLocalizationsController@destroy')
+    ->whereNumber('localization_id');
+
 // VERSION 4 | Accounts (bible.is private)
 Route::name('v4_internal_user_accounts.index')
     ->middleware(['UserDataAccess', 'UserDataAuditLog'])
