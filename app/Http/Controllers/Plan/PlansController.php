@@ -381,7 +381,7 @@ class PlansController extends APIController
      *          name="include_completed_at",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When set to `true` (case-insensitive), every item in `days` includes `completed_at`: when the token user marked that day complete, as a UTC timestamp in the format of the plan's `created_at` (for example `2026-10-13T19:37:53.000000Z`), or null when the day is not completed or there is no token. It is the first completion since the day was last un-completed or the plan was restarted, stopped or reset without `save_progress=true` (a reset that saves progress keeps it); completing the day again keeps it. Any other value, including `1` or a list, leaves the key off."
+     *          description="When set to `true` (case-insensitive), every item in `days` includes `completed_at`: when the token user marked that day complete, as a UTC timestamp in the format of the plan's `created_at` (for example `2026-10-13T19:37:53.000000Z`), or null when the day is not completed or there is no token. A few old completions were stored with a zero date; those days read `completed: true` with `completed_at: null`. It is the first completion since the day was last un-completed or the plan was restarted, stopped or reset without `save_progress=true` (a reset that saves progress keeps it); completing the day again keeps it. Any other value, including `1` or a list, leaves the key off."
      *     ),
      *     @OA\Response(response=200, ref="#/components/responses/plan")
      * )
@@ -441,7 +441,8 @@ class PlansController extends APIController
         }
 
         // Opt-in like include_user_bible and parsed the same strict way. When on, every day gets completed_at: when the
-        // token user marked it complete (UTC), or null (not completed, or no token). One query, only when on with a
+        // token user marked it complete (UTC), or null (not completed, no token, or a stored zero date, which leaves a
+        // completed day with no time). One query, only when on with a
         // token, kept out of the shared PlanDay::scopeWithCompletedDay select, whose days the Start, Update and Store
         // replies serialise directly.
         $include_completed_at_raw = checkParam('include_completed_at');
