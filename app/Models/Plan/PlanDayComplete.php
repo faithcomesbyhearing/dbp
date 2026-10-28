@@ -113,7 +113,8 @@ class PlanDayComplete extends Model
      * six decimals, Z. TIMESTAMP columns hold whole seconds, so the decimals are always zero.
      *
      * A NULL created_at (UNIX_TIMESTAMP gives NULL) or a zero date (it gives 0) is not a real completion time, so it
-     * is null rather than 1970-01-01. The column is NOT NULL with a default on dev; prod's was not checked.
+     * is null rather than 1970-01-01, and such a day reads `completed: true` with `completed_at: null`. The column is
+     * NOT NULL with a default on dev and prod; prod holds 568 zero dates from 4 users (checked 2026-10-28).
      *
      * @param int|null $unix
      *
