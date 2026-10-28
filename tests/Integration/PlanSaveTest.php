@@ -24,14 +24,15 @@ use Tests\TestCase;
  * Save gives the user a user_plans row with no start date and 0% completed, without starting the plan. A user who
  * already has the plan keeps everything but a sent user_bible. Drafts are a 404 for everyone. Start, Stop, Restart
  * and Complete day then work on the saved row as on any other (Liubov's review: Start and Stop after Save).
- * DELETE /plans/{id}/save (v4_internal_plans.unsave) removes a saved plan, refuses a started plan or one the user
- * created (409), and does nothing for a plan the user does not have (Todd's review of #1124).
+ * DELETE /plans/{id}/save (v4_internal_plans.unsave) removes a saved plan, refuses with 409 a started plan, a plan
+ * with any completed day or item (it never deletes progress), or one the user created, and does nothing for a plan
+ * the user does not have (Todd's reviews of #1124 and #1131).
  *
- * Seeds three plans of three days with two playlist items each: one created by another user (the shared case; for a
+ * Seeds four plans of three days with two playlist items each: one created by another user (the shared case; for a
  * featured plan the code path is the same, since Save, Start and Stop never look at the featured flag), one draft by
- * that user, one draft by the test user, and one published plan by the test user. None is featured, so a run that dies before tearDown leaves nothing on
- * Discover. Needs the user_plans.user_bible column (PBI 102552), a second user, and the ENGESVN2DA fileset and MAT
- * book the playlist items point at (foreign keys); skipped without them.
+ * that user, one draft by the test user, and one published plan by the test user. None is featured, so a run that
+ * dies before tearDown leaves nothing on Discover. Needs the user_plans.user_bible column (PBI 102552), a second
+ * user, and the ENGESVN2DA fileset and MAT book the playlist items point at (foreign keys); skipped without them.
  *
  * Seeds data, so run it only against a throwaway test database, never a shared one. Extends TestCase rather than
  * ApiV4Test so ApiV4Test's stale @test methods are not inherited.
