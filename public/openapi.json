@@ -15,7 +15,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8080/api",
+            "url": "https://4.dbt.io/api",
             "description": "Production Server",
             "variables": {
                 "schema": {
@@ -324,115 +324,6 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/v4_bible_filesets_download.list"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/download/package-create": {
-            "post": {
-                "tags": [
-                    "Bibles"
-                ],
-                "summary": "Create a download package from filesets",
-                "description": "Accepts a JSON payload containing fileset IDs and an encryption type, then proxies the request to BBHub package creation.",
-                "operationId": "v4_download_package_create",
-                "parameters": [
-                    {
-                        "$ref": "#/components/parameters/version_number"
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "filesets",
-                                    "encryptionType"
-                                ],
-                                "properties": {
-                                    "filesets": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "minLength": 1
-                                        },
-                                        "minItems": 1,
-                                        "uniqueItems": true,
-                                        "example": [
-                                            "ENGESVN2DA",
-                                            "ENGESVO1DA"
-                                        ]
-                                    },
-                                    "encryptionType": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Response from the upstream BBHub service (status and body are proxied).",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "additionalProperties": true
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Request body must be valid JSON.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Request body must be valid JSON."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation failed for the request body.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
-                                            "type": "string",
-                                            "example": "The filesets field is required."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "503": {
-                        "description": "BBHub is unavailable.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
-                                            "type": "string",
-                                            "example": "BBHub is unavailable."
-                                        }
-                                    },
-                                    "type": "object"
                                 }
                             }
                         }
@@ -2071,13 +1962,43 @@
                     },
                     {
                         "properties": {
+                            "completed_days": {
+                                "description": "Present only when completed_days=true on the user's own plans (featured=false with an api_token). The number of the plan's days the user has marked complete; 0 when none. A day whose items are all complete but which was never marked complete is not counted.",
+                                "type": "integer"
+                            },
                             "total_days": {
                                 "type": "integer"
+                            },
+                            "user_status": {
+                                "description": "Present only when user_status=true and an api_token is supplied. null when the user has not adopted the plan (never started it, or stopped a plan someone else created). An adopted plan that is not finished is in_progress; creating a plan through the API adopts it for its creator. Stopping a plan clears its progress and removes it from the user's plans, except for its creator, who keeps it and sees in_progress.",
+                                "type": "string",
+                                "enum": [
+                                    "in_progress",
+                                    "completed"
+                                ],
+                                "nullable": true
                             }
                         },
                         "type": "object"
                     }
                 ]
+            },
+            "v4_plan_user_bible": {
+                "title": "The user's Bible for a plan",
+                "properties": {
+                    "user_bible": {
+                        "description": "A Bible id (not a fileset id). Must match an existing Bible; it is stored and returned in the Bible's own case. Not checked against the plan's passages or the key's access groups.",
+                        "type": "string",
+                        "maxLength": 12,
+                        "example": "ENGESV",
+                        "nullable": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Plan Bible updated"
+                    }
+                },
+                "type": "object"
             },
             "v4_plan": {
                 "properties": {
@@ -2139,6 +2060,9 @@
                                 "items": {
                                     "$ref": "#/components/schemas/PlanDay"
                                 }
+                            },
+                            "user_bible": {
+                                "$ref": "#/components/schemas/v4_plan_user_bible/properties/user_bible"
                             }
                         },
                         "type": "object"
