@@ -65,15 +65,15 @@ class UsersController extends APIController
         $limit = checkParam('limit') ?? 100;
         $project_id = checkParam('project_id');
 
-        $users_by_project = \DB::table('dbp_users.project_members')
+        $users_by_project = \DB::connection('dbp_users')->table('project_members')
             ->select(['user_id'])
-            ->where('dbp_users.project_members.project_id', $project_id)
+            ->where('project_members.project_id', $project_id)
             ->distinct()
             ->paginate($limit);
 
         $users_by_project_ids = $users_by_project->pluck('user_id')->toArray();
 
-        $userCollection = \DB::table('dbp_users.users')
+        $userCollection = \DB::connection('dbp_users')->table('users')
             ->whereIn('id', $users_by_project_ids)
             ->select(['id', 'name', 'email'])
             ->get();
