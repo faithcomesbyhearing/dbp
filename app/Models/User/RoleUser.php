@@ -20,7 +20,7 @@ use App\Models\Organization\Organization;
 class RoleUser extends Model
 {
     protected $connection = 'dbp_users';
-    protected $table = 'dbp_users.role_user';
+    protected $table = 'role_user';
     public $fillable = ['organization_id','user_id','role_id'];
 
     /**
