@@ -26,7 +26,8 @@ use Tests\TestCase;
  * and Complete day then work on the saved row as on any other (Liubov's review: Start and Stop after Save).
  * DELETE /plans/{id}/save (v4_internal_plans.unsave) removes a saved plan, refuses with 409 a started plan, a plan
  * with any completed day or item (it never deletes progress), or one the user created, and does nothing for a plan
- * the user does not have (Todd's reviews of #1124 and #1131).
+ * the user does not have (Todd's reviews of #1124 and #1131). Start takes the same plan lock as Save, so a Save and a
+ * Start (or two Starts) at once leave one row (bug 104662).
  *
  * Seeds four plans of three days with two playlist items each: one created by another user (the shared case; for a
  * featured plan the code path is the same, since Save, Start and Stop never look at the featured flag), one draft by
@@ -401,6 +402,74 @@ class PlanSaveTest extends TestCase
         );
 
         $this->assertCount(1, $this->myPlans()[$this->shared_plan_id] ?? []);
+    }
+
+    /**
+     * Bug 104662 AC3, AC4: Start on a plan the user does not have creates one row with the sent date; starting it
+     * again updates that row, never adds a second. The plan is in My Plans once.
+     *
+     * @test
+     */
+    public function startingAgainKeepsOneRow()
+    {
+        echo "\nTesting: v4_internal_plans.start";
+        $this->start($this->shared_plan_id, ['start_date' => '2026-10-20'])
+            ->assertOk()
+            ->assertJsonPath('id', $this->shared_plan_id)
+            ->assertJsonPath('start_date', '2026-10-20');
+        $rows = $this->rowValues($this->shared_plan_id);
+        $this->assertCount(1, $rows);
+        $this->assertSame(['2026-10-20', 0, null], array_slice($rows[0], 0, 3));
+
+        $this->start($this->shared_plan_id, ['start_date' => '2026-10-21', 'user_bible' => $this->bible_id])
+            ->assertOk()
+            ->assertJsonPath('start_date', '2026-10-21')
+            ->assertJsonPath('user_bible', $this->bible_id);
+        $rows = $this->rowValues($this->shared_plan_id);
+        $this->assertCount(1, $rows);
+        $this->assertSame(['2026-10-21', 0, $this->bible_id], array_slice($rows[0], 0, 3));
+
+        $this->assertCount(1, $this->myPlans()[$this->shared_plan_id] ?? []);
+    }
+
+    /**
+     * Bug 104662 AC7: Start queues on the plan's row lock, the one Save and Unsave take, so a Save or Start racing it
+     * cannot insert a second row. A second connection holds a shared lock on the plan's row: the exclusive lock Start
+     * now takes must wait for it, so Start, given a one-second lock wait, fails (after the transaction's three
+     * attempts) without writing anything. A shared lock, not FOR UPDATE, because inserting into user_plans takes a
+     * shared lock on the plan's row for its foreign key: an exclusive holder would block Start with or without the
+     * fix, while a shared one lets Start without the fix through (200, a row written). Once the lock is released the
+     * same Start succeeds with one row.
+     *
+     * @test
+     */
+    public function startWaitsForThePlanLock()
+    {
+        // A separate session on the same database, so the lock is not this test's own.
+        config(['database.connections.dbp_users_lock_holder' => config('database.connections.dbp_users')]);
+        $holder = DB::connection('dbp_users_lock_holder');
+        $users = DB::connection('dbp_users');
+        $wait = (int) $users->selectOne('select @@session.innodb_lock_wait_timeout as wait')->wait;
+
+        $holder->beginTransaction();
+        try {
+            $holder->table('plans')->where('id', $this->shared_plan_id)->sharedLock()->first();
+            $users->statement('set session innodb_lock_wait_timeout = 1');
+
+            echo "\nTesting: v4_internal_plans.start";
+            $response = $this->start($this->shared_plan_id, ['start_date' => '2026-10-20']);
+        } finally {
+            $users->statement('set session innodb_lock_wait_timeout = ' . $wait);
+            $holder->rollBack();
+            DB::purge('dbp_users_lock_holder');
+        }
+
+        // Lock wait timeout on every attempt: the QueryException is rendered as a 500.
+        $this->assertSame(500, $response->status(), 'Start must wait for the plan lock, not write past it');
+        $this->assertSame([], $this->rowValues($this->shared_plan_id));
+
+        $this->start($this->shared_plan_id, ['start_date' => '2026-10-20'])->assertOk();
+        $this->assertCount(1, $this->rowValues($this->shared_plan_id));
     }
 
     /**

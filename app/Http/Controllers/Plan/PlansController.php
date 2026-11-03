@@ -651,23 +651,42 @@ class PlansController extends APIController
         // started plan behind. Not sent means today's behaviour and any stored choice is kept.
         $user_bible = $this->resolveUserBible(false);
 
-        $user_plan = UserPlan::where('plan_id', $plan_id)->where('user_id', $user->id)->first();
+        // Same transaction and plan lock as save() (bug 104662): (user_id, plan_id) is not unique, so a Start and a
+        // Save, or two Starts, of a plan the user does not have yet must not both insert. They queue on the plan's
+        // own row; save() explains why not on the missing user_plans row. The user_plans read below is a plain read
+        // taken after the lock, so it sees a row the previous holder committed.
+        $started = DB::connection('dbp_users')->transaction(function () use ($plan, $user, $start_date, $user_bible) {
+            $locked_plan = Plan::where('id', $plan->id)->lockForUpdate()->first();
 
-        if (!$user_plan) {
-            $user_plan = UserPlan::create([
-                'user_id'               => $user->id,
-                'plan_id'               => $plan->id
-            ]);
+            // Checked again under the lock: the creator may have deleted the plan since the check above. Drafts are
+            // not refused here, as they never were by Start.
+            if (!$locked_plan) {
+                return false;
+            }
+
+            $user_plan = UserPlan::where('plan_id', $plan->id)->where('user_id', $user->id)->first();
+
+            if (!$user_plan) {
+                $user_plan = UserPlan::create([
+                    'user_id'               => $user->id,
+                    'plan_id'               => $plan->id
+                ]);
+            }
+
+            if ($user_bible !== null) {
+                $user_plan->user_bible = $user_bible;
+            }
+            $user_plan->start_date = $start_date;
+            $user_plan->save();
+
+            return true;
+        }, 3);
+
+        if (!$started) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
         }
 
-        if ($user_bible !== null) {
-            $user_plan->user_bible = $user_bible;
-        }
-        $user_plan->start_date = $start_date;
-        $user_plan->save();
-
-
-        $plan = $this->getPlan($plan_id, $user);
+        $plan = $this->getPlan($plan->id, $user);
 
         // Echoed only when sent, so the reply to the old app is unchanged.
         if ($user_bible !== null && $plan) {
