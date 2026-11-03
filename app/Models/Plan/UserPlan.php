@@ -34,14 +34,18 @@ class UserPlan extends Model
      * Resolved from playlist_items_completed, the same source calculatePercentageCompleted() uses,
      * instead of the stored percentage_completed column. That column is an integer and rounds on
      * write: one completed day of a 365-day plan is stored as 0 and 364 of 365 as 100, so it cannot
-     * tell "truly finished" apart from "almost". A `saved` value (plan kept for later without
-     * starting it) is reserved for a future change and is not produced here.
+     * tell "truly finished" apart from "almost".
      *
-     * Adopting a plan is itself progress: a user_plans row with nothing completed yet is
-     * in_progress, not a separate "not started" state. The absence of a user_plans row is what
-     * distinguishes a plan the user has no relationship with, and that is reported as null by
-     * the caller rather than as a status value here.
+     * The start date alone separates saved from started: a user_plans row with no start_date is
+     * saved (the plan is in the user's plans but was never started), whatever is completed in it.
+     * That row is left by creating a plan, by translating one, and by the creator stopping their own
+     * plan (progress and start_date cleared, row kept). Clients only complete items of a started
+     * plan; the API does not enforce that, so a row with no start date and completed items can
+     * exist (old data, or translate copying progress) and still reads saved. The absence of a
+     * user_plans row is what distinguishes a plan the user has no relationship with, and that is
+     * reported as null by the caller rather than as a status value here.
      */
+    const STATUS_SAVED       = 'saved';
     const STATUS_IN_PROGRESS = 'in_progress';
     const STATUS_COMPLETED   = 'completed';
 
@@ -187,22 +191,26 @@ class UserPlan extends Model
     /**
      * Resolve the user's status for a plan from exact playlist item counts.
      *
-     * Only reached for a plan the user has adopted, so the question is simply whether they have
-     * finished it.
+     * Only reached for a plan the user has a user_plans row for. Checked in this order:
      *
-     * completed:   every item completed and the plan has at least one item.
-     * in_progress: everything else, including nothing completed yet and a subscribed plan with no
-     *              items at all. A single completed item of a 365-day plan is in_progress even
-     *              though the stored percentage rounds to 0, and so is 364 of 365, which rounds
-     *              to 100.
+     * saved:       no start date, whatever is completed (the start date alone decides started).
+     * completed:   started, every item completed and the plan has at least one item.
+     * in_progress: started and not completed, including nothing completed yet and a plan with no
+     *              items. A single completed item of a 365-day plan is in_progress even though the
+     *              stored percentage rounds to 0, and so is 364 of 365, which rounds to 100.
      *
-     * @param int $total_items
-     * @param int $total_items_completed
+     * @param int  $total_items
+     * @param int  $total_items_completed
+     * @param bool $started true when the user_plans row has a start_date
      *
      * @return string
      */
-    public static function resolveStatus(int $total_items, int $total_items_completed) : string
+    public static function resolveStatus(int $total_items, int $total_items_completed, bool $started) : string
     {
+        if (!$started) {
+            return self::STATUS_SAVED;
+        }
+
         // >= rather than === so a stray duplicate completion row can never hide a finished plan
         if ($total_items > 0 && $total_items_completed >= $total_items) {
             return self::STATUS_COMPLETED;
@@ -214,10 +222,13 @@ class UserPlan extends Model
     /**
      * Get the user's status for each of the given plans in one query, keyed by plan id.
      *
-     * Anchored on user_plans so only plans the user has started (subscribed to) appear in the
-     * result; a plan id missing from the returned array means the user has no relationship with
-     * it. Days and items are LEFT JOINed so a subscribed plan with no items still resolves.
-     * Generalises PlanDay::scopeSummaryItemsCompletedByPlanId() from one plan to a page of plans.
+     * Anchored on user_plans so only plans the user has a row for appear in the result; a plan id
+     * missing from the returned array means the user has no relationship with it. Days and items
+     * are LEFT JOINed so a plan with no items still resolves. Generalises
+     * PlanDay::scopeSummaryItemsCompletedByPlanId() from one plan to a page of plans.
+     *
+     * user_plans has no unique key on (user_id, plan_id), so the start date is read with MAX: a
+     * duplicated pair counts as started when any of its rows has a date.
      *
      * @param array $plan_ids
      * @param int   $user_id
@@ -234,6 +245,9 @@ class UserPlan extends Model
                 'user_plans.plan_id',
                 \DB::raw('COUNT(playlist_items.id) AS total_items'),
                 \DB::raw('COUNT(playlist_items_completed.playlist_item_id) AS total_items_completed'),
+                // Not aliased start_date: inside this class $summary->start_date would read the
+                // declared protected $start_date property (always null), not the selected column.
+                \DB::raw('MAX(user_plans.start_date) AS max_start_date'),
             ])
             ->leftJoin('plan_days', 'plan_days.plan_id', '=', 'user_plans.plan_id')
             ->leftJoin('playlist_items', 'playlist_items.playlist_id', '=', 'plan_days.playlist_id')
@@ -251,7 +265,8 @@ class UserPlan extends Model
         foreach ($summaries as $summary) {
             $statuses[(int) $summary->plan_id] = self::resolveStatus(
                 (int) $summary->total_items,
-                (int) $summary->total_items_completed
+                (int) $summary->total_items_completed,
+                !is_null($summary->max_start_date)
             );
         }
 

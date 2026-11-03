@@ -64,7 +64,7 @@ class PlansController extends APIController
      *          name="user_status",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When set to `true` (case-insensitive) and a valid api_token is supplied, each plan includes a `user_status` key: null (the user has not adopted the plan: never started it, or stopped a plan someone else created), `in_progress` or `completed`, resolved from the user's completed playlist items. Creating a plan through the API adopts it for its creator. Stopping a plan clears its progress and removes it from the user's plans, except for the plan's creator, who keeps it and sees `in_progress`. Any other value, including `1`, leaves the key off, so existing calls are unchanged."
+     *          description="When set to `true` (case-insensitive) and a valid api_token is supplied, each plan includes a `user_status` key: null (the plan is not in the user's plans: never added, unsaved, or stopped when someone else created it), `saved` (in the user's plans with no start date: not started), `in_progress` (has a start date and is not completed, including a plan with no playlist items yet) or `completed` (has a start date, at least one playlist item, and every playlist item completed). Creating a plan, or saving one (POST /plans/{plan_id}/save), adds it to the user's plans as `saved` until it is started; Unsave (DELETE /plans/{plan_id}/save) removes it again, unless the user created it, started it, or has completed something in it (then 409; see Unsave). Stopping a plan clears its progress and removes it from the user's plans, except for the plan's creator, who keeps it and sees `saved`. Any other value, including `1`, leaves the key off, so existing calls are unchanged."
      *     ),
      *     @OA\Parameter(ref="#/components/parameters/limit"),
      *     @OA\Parameter(ref="#/components/parameters/page"),
@@ -105,8 +105,8 @@ class PlansController extends APIController
      *      property="user_status",
      *      type="string",
      *      nullable=true,
-     *      enum={"in_progress", "completed"},
-     *      description="Present only when user_status=true and an api_token is supplied. null when the user has not adopted the plan (never started it, or stopped a plan someone else created). An adopted plan that is not finished is in_progress; creating a plan through the API adopts it for its creator. Stopping a plan clears its progress and removes it from the user's plans, except for its creator, who keeps it and sees in_progress."
+     *      enum={"saved", "in_progress", "completed"},
+     *      description="Present only when user_status=true and an api_token is supplied. null when the plan is not in the user's plans (never added, unsaved, or stopped when someone else created it). saved when it has no start date (not started), whatever is completed in it. With a start date: completed when the plan has at least one playlist item and every one is completed, otherwise in_progress (including a plan with no items yet). Creating a plan, or saving one (POST /plans/{plan_id}/save), adds it to the user's plans as saved; Unsave (DELETE /plans/{plan_id}/save) removes it again, unless the user created it, started it, or has completed something in it (then 409; see Unsave). Stopping a plan clears its progress and removes it from the user's plans, except for its creator, who keeps it and sees saved."
      *   )
      * )
      *
@@ -209,12 +209,14 @@ class PlansController extends APIController
             unset($plan->days);
 
             if ($include_user_status) {
-                // null means the user has no user_plans row: never adopted the plan, or stopped a plan
-                // someone else created. stop() always clears progress but deletes the row only when the
+                // null means the user has no user_plans row: never added the plan, unsaved it (unsave()), or
+                // stopped a plan someone else created. save() adds a row with no start date (saved). stop() always
+                // clears progress but deletes the row only when the
                 // user is not the plan's creator (efe242ce, FCBH-1607 "Share plan", Feb 2020; before that
                 // it deleted every row). POST /api/plans and plan translation (PlanService::translate, also
-                // behind `artisan translate:plan`) give the creator a row, so a creator reads in_progress
-                // or completed, never null, and in_progress after stopping (progress cleared); plans inserted
+                // behind `artisan translate:plan`) give the creator a row with no start date, so a creator
+                // never reads null: saved until the plan is started (given a start date), and saved again
+                // after stopping (progress and start date cleared); plans inserted
                 // straight into the database, or stopped by their creator before efe242ce, have no creator
                 // row and read null.
                 $plan->user_status = $user_statuses[$plan->id] ?? null;
@@ -373,13 +375,13 @@ class PlansController extends APIController
      *          name="include_user_bible",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When set to `true` (case-insensitive), the response includes `user_bible`, the Bible the token user chose for this plan (null when there is no token, the user has not started the plan, or none was chosen). Any other value, including `1` or a list, leaves the key off."
+     *          description="When set to `true` (case-insensitive), the response includes `user_bible`, the Bible the token user chose for this plan (null when there is no token, the user has not saved or started the plan, or none was chosen). Any other value, including `1` or a list, leaves the key off."
      *     ),
      *     @OA\Parameter(
      *          name="include_completed_at",
      *          in="query",
      *          @OA\Schema(type="boolean", default=false),
-     *          description="When set to `true` (case-insensitive), every item in `days` includes `completed_at`: when the token user marked that day complete, as a UTC timestamp in the format of the plan's `created_at` (for example `2026-10-13T19:37:53.000000Z`), or null when the day is not completed or there is no token. It is the first completion since the day was last un-completed or the plan was restarted, stopped or reset without `save_progress=true` (a reset that saves progress keeps it); completing the day again keeps it. Any other value, including `1` or a list, leaves the key off."
+     *          description="When set to `true` (case-insensitive), every item in `days` includes `completed_at`: when the token user marked that day complete, as a UTC timestamp in the format of the plan's `created_at` (for example `2026-10-13T19:37:53.000000Z`), or null when the day is not completed or there is no token. A few old completions were stored with a zero date; those days read `completed: true` with `completed_at: null`. It is the first completion since the day was last un-completed or the plan was restarted, stopped or reset without `save_progress=true` (a reset that saves progress keeps it); completing the day again keeps it. Any other value, including `1` or a list, leaves the key off."
      *     ),
      *     @OA\Response(response=200, ref="#/components/responses/plan")
      * )
@@ -439,7 +441,8 @@ class PlansController extends APIController
         }
 
         // Opt-in like include_user_bible and parsed the same strict way. When on, every day gets completed_at: when the
-        // token user marked it complete (UTC), or null (not completed, or no token). One query, only when on with a
+        // token user marked it complete (UTC), or null (not completed, no token, or a stored zero date, which leaves a
+        // completed day with no time). One query, only when on with a
         // token, kept out of the shared PlanDay::scopeWithCompletedDay select, whose days the Start, Update and Store
         // replies serialise directly.
         $include_completed_at_raw = checkParam('include_completed_at');
@@ -672,6 +675,209 @@ class PlansController extends APIController
         }
 
         return $this->reply($plan);
+    }
+
+    /**
+     * Save a plan for later: add it to the user's plans with no start date, without starting it.
+     *
+     *  @OA\Post(
+     *     path="/plans/{plan_id}/save",
+     *     tags={"Plans"},
+     *     summary="Save a plan for later",
+     *     description="Gives the user a record for the plan with no start date and 0% completed. If the user already has the plan (saved, started or completed), nothing changes except user_bible when sent; the call still succeeds. Draft plans cannot be saved (404). Start the plan later with Start; remove it with DELETE /plans/{plan_id}/save (Unsave).",
+     *     operationId="v4_internal_plans.save",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
+     *     @OA\RequestBody(required=false, @OA\MediaType(mediaType="application/json",
+     *          @OA\Schema(
+     *              @OA\Property(property="user_bible", ref="#/components/schemas/v4_plan_user_bible/properties/user_bible")
+     *          )
+     *     )),
+     *     @OA\Response(response=200, ref="#/components/responses/plan")
+     * )
+     *
+     * @param  int $plan_id
+     *
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
+     */
+    public function save(Request $request, $plan_id)
+    {
+        // Validate Project / User Connection
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $plan = Plan::where('id', (int) $plan_id)->first();
+
+        // A draft is hidden from both plan lists, its creator already has a row, and DeleteDraftPlaylistsPlans
+        // deletes it after a day, so a saved draft could never be used. Answered like a plan that does not exist.
+        if (!$plan || $plan->draft) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        // Optional, as on Start: validated before anything is written, so a bad value (422) saves nothing.
+        $user_bible = $this->resolveUserBible(false);
+
+        // The transaction must be on dbp_users, where every plan table lives (\DB::transaction() would open it on
+        // the default content connection). (user_id, plan_id) is not unique, so two Saves at once (a double tap)
+        // must not both insert. They queue on a lock on the plan's own row: locking the user_plans row that does not
+        // exist yet would take a gap lock on the shared (user_id, plan_id) index, which also blocks or deadlocks
+        // other users' first Saves and Starts. The user_plans read below is a plain read taken after the lock, so it
+        // sees a row the previous Save committed, under REPEATABLE READ or READ COMMITTED alike.
+        $saved = DB::connection('dbp_users')->transaction(function () use ($plan, $user, $user_bible) {
+            $locked_plan = Plan::where('id', $plan->id)->lockForUpdate()->first();
+
+            // Checked again under the lock: the creator may have deleted the plan or made it a draft since the
+            // check above.
+            if (!$locked_plan || $locked_plan->draft) {
+                return false;
+            }
+
+            $user_plan = UserPlan::where('plan_id', $plan->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$user_plan) {
+                // percentage_completed has no column default; Start and translate rely on the non-strict
+                // connection inserting 0, which would break if strict mode were turned on.
+                $user_plan = new UserPlan([
+                    'user_id'              => $user->id,
+                    'plan_id'              => $plan->id,
+                    'percentage_completed' => 0,
+                ]);
+            }
+
+            // An existing row keeps its start date, progress and updated_at (a repeat Save is not an interaction,
+            // so the plan does not move up the last_interaction sort). Only a sent user_bible changes it, and
+            // Eloquent writes nothing when the value is already stored. Not fillable, so set as a property.
+            if ($user_bible !== null) {
+                $user_plan->user_bible = $user_bible;
+            }
+            $user_plan->save();
+
+            return true;
+        }, 3);
+
+        if (!$saved) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        $plan = $this->getPlan($plan->id, $user);
+
+        // Echoed only when sent, as Start does.
+        if ($user_bible !== null && $plan) {
+            $plan->user_bible = $user_bible;
+        }
+
+        return $this->reply($plan);
+    }
+
+    /**
+     * Unsave a plan: remove a saved plan (no start date, nothing completed) from the user's plans. A started plan, or one
+     * with any progress, is refused, so an out-of-date screen cannot wipe progress the way Stop would.
+     *
+     *  @OA\Delete(
+     *     path="/plans/{plan_id}/save",
+     *     tags={"Plans"},
+     *     summary="Unsave a plan",
+     *     description="Removes the plan from the user's plans when it has no start date and nothing completed in it. Repeatable: a plan that is not in the user's plans returns 200 and nothing changes. A started plan, or one with any completed day or item (possible through the API even without a start date; such a plan still reads user_status saved), returns 409 and nothing changes (end it with Stop). A plan the user created returns 409 (delete the plan instead): the user's own unstarted plans also read user_status saved, so offer Unsave only when the plan's user.id is not the signed-in user. An unknown plan returns 404.",
+     *     operationId="v4_internal_plans.unsave",
+     *     security={{"api_token":{}}},
+     *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
+     *     @OA\Response(response=200, ref="#/components/responses/plan"),
+     *     @OA\Response(response=409, description="The plan has been started, has progress, or the user created it; nothing changed")
+     * )
+     *
+     * @param  int $plan_id
+     *
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Response
+     */
+    public function unsave(Request $request, $plan_id)
+    {
+        // Validate Project / User Connection
+        $user = $request->user();
+        $user_is_member = $this->compareProjects($user->id, $this->key);
+
+        if (!$user_is_member) {
+            return $this->setStatusCode(401)->replyWithError(trans('api.projects_users_not_connected'));
+        }
+
+        $plan = Plan::where('id', (int) $plan_id)->first();
+
+        // Unlike save(), a draft is not refused: its creator can turn a published plan back into a draft after others
+        // saved it, and Plan Details and library search still show it to them, so they must be able to unsave it.
+        // Removing a record is safe for a draft; only creating one is not.
+        if (!$plan) {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        // The creator's record is how their own plan stays in My Plans (stop() keeps it for the same reason), so it is
+        // never removed here. Compared as ints so a string attribute cannot make every user look like a non-creator.
+        if ((int) $plan->user_id === (int) $user->id) {
+            return $this->setStatusCode(409)->replyWithError('This plan was created by the user. Delete the plan instead of unsaving it.');
+        }
+
+        // Same transaction and plan lock as save(), so a Save and an Unsave of the same plan never interleave. The
+        // user's own records are then read with a lock (a current read), so a record started a moment ago is seen and
+        // refused rather than deleted. The progress check below is this transaction's first plain read, so it sees
+        // everything committed up to that moment.
+        $outcome = DB::connection('dbp_users')->transaction(function () use ($plan, $user) {
+            $locked_plan = Plan::where('id', $plan->id)->lockForUpdate()->first();
+
+            if (!$locked_plan) {
+                return 'not_found';
+            }
+
+            $user_plans = UserPlan::where('plan_id', $plan->id)
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->get();
+
+            if ($user_plans->isEmpty()) {
+                return 'not_saved';
+            }
+
+            // (user_id, plan_id) is not unique: if any of the user's records has a start date, the plan is started.
+            if ($user_plans->contains(function ($user_plan) {
+                return $user_plan->start_date !== null;
+            })) {
+                return 'started';
+            }
+
+            // Completing a day or an item needs only the record, not a start date, so a plan with no start date can still
+            // hold progress (only through direct API calls; the apps complete days of started plans). Unsave never
+            // deletes progress: like a started plan, such a plan is refused and nothing is removed.
+            $has_completed_days = DB::connection('dbp_users')->table('plan_days_completed as pdc')
+                ->join('plan_days as pd', 'pd.id', '=', 'pdc.plan_day_id')
+                ->where('pd.plan_id', $plan->id)
+                ->where('pdc.user_id', $user->id)
+                ->exists();
+            if ($has_completed_days || !empty(PlanDay::getPlaylistIdsByPlanAndUser($plan->id, $user->id))) {
+                return 'has_progress';
+            }
+
+            UserPlan::where('plan_id', $plan->id)->where('user_id', $user->id)->delete();
+
+            return 'unsaved';
+        }, 3);
+
+        if ($outcome === 'not_found') {
+            return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        if ($outcome === 'started') {
+            return $this->setStatusCode(409)->replyWithError('This plan has been started. Stop it instead of unsaving it.');
+        }
+
+        if ($outcome === 'has_progress') {
+            return $this->setStatusCode(409)->replyWithError('This plan has progress. Stop it instead of unsaving it.');
+        }
+
+        // Unsaved, or it was not in the user's plans: either way it is not there now.
+        return $this->reply($this->getPlan($plan->id, $user));
     }
 
     /**
@@ -1193,7 +1399,7 @@ class PlansController extends APIController
      *     path="/plans/{plan_id}/bible",
      *     tags={"Plans"},
      *     summary="Set the user's Bible for a plan",
-     *     description="The user must already have started the plan. Sending the value already stored changes nothing.",
+     *     description="The user must already have saved or started the plan. Sending the value already stored changes nothing.",
      *     operationId="v4_internal_plans.bible_update",
      *     security={{"api_token":{}}},
      *     @OA\Parameter(name="plan_id", in="path", required=true, @OA\Schema(ref="#/components/schemas/Plan/properties/id")),
@@ -1460,7 +1666,7 @@ class PlansController extends APIController
      *   @OA\Property(
      *      property="user_bible",
      *      ref="#/components/schemas/v4_plan_user_bible/properties/user_bible",
-     *      description="Only on GET /plans/{plan_id}?include_user_bible=true, and on Start when user_bible was sent"
+     *      description="Only on GET /plans/{plan_id}?include_user_bible=true, and on Start or Save when user_bible was sent"
      *   )
      * )
      *

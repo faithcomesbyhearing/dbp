@@ -12,6 +12,7 @@ use App\Models\User\Key;
 use App\Models\User\Project;
 use App\Models\User\ProjectMember;
 use App\Models\User\Role;
+use PHPUnit\Framework\ExpectationFailedException;
 use Tests\TestCase;
 
 /**
@@ -23,14 +24,15 @@ use Tests\TestCase;
  * percentage_completed, an integer that rounds 1-of-365 to 0 and 364-of-365 to 100.
  *
  * With `user_status=true` and an api_token, each plan gains `user_status`:
- *   null          no user_plans row (the user never adopted the plan, or stopped a plan someone else created)
- *   in_progress   adopted and not finished, whether or not anything is completed yet
- *   completed     every playlist item completed
+ *   null          no user_plans row (the user never added the plan, or stopped a plan someone else created)
+ *   saved         a row with no start_date (not started), whatever is completed
+ *   in_progress   a row with a start_date, not finished (including a plan with no items yet)
+ *   completed     a row with a start_date, at least one playlist item, every one completed
  * Without the parameter, with any value other than the word `true` (any case), or without a
  * token user, the key is omitted and the payload is identical to before the change.
  *
  * Seeds one featured plan with two days of one playlist item each, and drives the status
- * through the three states by writing playlist_items_completed rows directly (the same rows
+ * through the four states by writing playlist_items_completed rows directly (the same rows
  * PlanDay::complete() and PlaylistItems::complete() write). The plan's user_plans rows are
  * created by the test itself (Plan::create, unlike POST /api/plans, adds none for the owner), so
  * the test user, although the plan's owner, starts in the no-row state that reads null. What
@@ -142,11 +144,16 @@ class PlanIndexUserStatusTest extends TestCase
         parent::tearDown();
     }
 
-    private function subscribe(): void
+    /**
+     * Give the test user a user_plans row: started (as POST /plans/{id}/start leaves it) by
+     * default, or with no start_date (as POST /plans, translate and a creator's stop leave it).
+     */
+    private function subscribe(?string $start_date = '2026-10-01'): void
     {
         UserPlan::create([
             'user_id'              => $this->user_id,
             'plan_id'              => $this->plan_id,
+            'start_date'           => $start_date,
             'percentage_completed' => 0,
         ]);
     }
@@ -165,16 +172,28 @@ class PlanIndexUserStatusTest extends TestCase
         // regardless of how many featured plans the test database holds.
         return route(
             'v4_internal_plans.index',
-            array_merge(
-                $this->params,
-                ['featured' => 'true', 'limit' => 1000, 'sort_by' => 'id', 'sort_dir' => 'desc'],
-                $extra
-            )
+            array_merge(['featured' => 'true', 'limit' => 1000, 'sort_by' => 'id', 'sort_dir' => 'desc'], $extra)
         );
     }
 
     /**
+     * Assert a 2xx without letting the key reach the test output: on a failed request Laravel appends the logged
+     * exception, whose SQL bindings include the key.
+     */
+    private function assertSuccessfulWithoutKey($response): void
+    {
+        try {
+            $response->assertSuccessful();
+        } catch (ExpectationFailedException $e) {
+            throw new ExpectationFailedException(str_replace($this->key, '<KEY>', $e->getMessage()));
+        }
+    }
+
+    /**
      * Call the index and return the seeded plan's item from `data`, or null if it is absent.
+     *
+     * `key` and `v` travel only as headers (checkParam reads headers first), so the URL holds no secret. Only the
+     * route name and the extra query parameters are echoed.
      */
     private function fetchSeededPlan(array $extra = [], bool $as_token_user = true): ?array
     {
@@ -183,10 +202,9 @@ class PlanIndexUserStatusTest extends TestCase
             $this->actingAs($this->key_user, 'tokens');
         }
 
-        $path = $this->indexRoute($extra);
-        echo "\nTesting: $path";
-        $response = $this->withHeaders($this->params)->get($path);
-        $response->assertSuccessful();
+        echo "\nTesting: v4_internal_plans.index " . json_encode($extra);
+        $response = $this->withHeaders($this->params)->get($this->indexRoute($extra));
+        $this->assertSuccessfulWithoutKey($response);
 
         foreach ($response->json('data') as $plan) {
             if ((int) $plan['id'] === (int) $this->plan_id) {
@@ -284,9 +302,7 @@ class PlanIndexUserStatusTest extends TestCase
     }
 
     /**
-     * Adopting a plan is progress: a user_plans row with nothing completed is in_progress, not a
-     * separate "not started" state. This is the case that distinguishes in_progress from the null
-     * above, and the two are the only way a client can tell "saved but untouched" from "ignored".
+     * A started plan is in_progress even with nothing completed yet.
      *
      * @category V4_API
      * @category Route Name: v4_internal_plans.index
@@ -294,7 +310,7 @@ class PlanIndexUserStatusTest extends TestCase
      * @group    V4
      * @test
      */
-    public function inProgressWhenSubscribedWithNothingCompleted()
+    public function inProgressWhenStartedWithNothingCompleted()
     {
         $this->subscribe();
         $plan = $this->fetchSeededPlan(['user_status' => 'true']);
@@ -357,5 +373,112 @@ class PlanIndexUserStatusTest extends TestCase
         $this->assertSame(UserPlan::STATUS_IN_PROGRESS, $plan['user_status']);
         $this->assertArrayHasKey('percentage_completed', $plan);
         $this->assertArrayHasKey('start_date', $plan);
+    }
+
+    /**
+     * A row with no start_date is saved: the plan is in the user's plans but was never started. This
+     * is what distinguishes saved from the null above.
+     *
+     * @category V4_API
+     * @category Route Name: v4_internal_plans.index
+     * @see      \App\Http\Controllers\Plan\PlansController::index
+     * @group    V4
+     * @test
+     */
+    public function savedWhenNotStartedWithNothingCompleted()
+    {
+        $this->subscribe(null);
+        $plan = $this->fetchSeededPlan(['user_status' => 'true']);
+        $this->assertNotNull($plan);
+        $this->assertSame(UserPlan::STATUS_SAVED, $plan['user_status']);
+
+        $own = $this->fetchSeededPlan(['featured' => 'false', 'user_status' => 'true']);
+        $this->assertNotNull($own, 'a saved plan is on the featured=false list');
+        $this->assertSame(UserPlan::STATUS_SAVED, $own['user_status']);
+        $this->assertNull($own['start_date']);
+    }
+
+    /**
+     * The start date alone decides started: completed items in a plan with no start_date (old data, or
+     * translate copying progress; clients cannot do it) still read saved, at 1 of 2 and at 2 of 2.
+     *
+     * @category V4_API
+     * @category Route Name: v4_internal_plans.index
+     * @see      \App\Http\Controllers\Plan\PlansController::index
+     * @group    V4
+     * @test
+     */
+    public function savedWhenNotStartedEvenWithItemsCompleted()
+    {
+        $this->subscribe(null);
+        $this->completeItem(0);
+        $plan = $this->fetchSeededPlan(['user_status' => 'true']);
+        $this->assertNotNull($plan);
+        $this->assertSame(UserPlan::STATUS_SAVED, $plan['user_status'], '1 of 2 items, no start date');
+
+        $this->completeItem(1);
+        $plan = $this->fetchSeededPlan(['user_status' => 'true']);
+        $this->assertNotNull($plan);
+        $this->assertSame(UserPlan::STATUS_SAVED, $plan['user_status'], '2 of 2 items, no start date');
+    }
+
+    /**
+     * The test user created the seeded plan, so stopping it (DELETE /plans/{id}/stop) clears progress and the start
+     * date but keeps the row: the plan reads saved, not null. Also catches stop() deleting the creator's row.
+     *
+     * @category V4_API
+     * @category Route Name: v4_internal_plans.index
+     * @see      \App\Http\Controllers\Plan\PlansController::stop
+     * @group    V4
+     * @test
+     */
+    public function creatorStoppingTheirOwnPlanReadsSaved()
+    {
+        $this->subscribe();
+        $this->completeItem(0);
+        $this->assertSame(
+            UserPlan::STATUS_IN_PROGRESS,
+            $this->fetchSeededPlan(['user_status' => 'true'])['user_status']
+        );
+
+        $this->actingAs($this->key_user, 'tokens');
+        echo "\nTesting: v4_internal_plans.stop";
+        $this->assertSuccessfulWithoutKey(
+            $this->withHeaders($this->params)->delete(route('v4_internal_plans.stop', ['plan_id' => $this->plan_id]))
+        );
+
+        $plan = $this->fetchSeededPlan(['featured' => 'false', 'user_status' => 'true']);
+        $this->assertNotNull($plan, "the creator's stopped plan stays on their featured=false list");
+        $this->assertSame(UserPlan::STATUS_SAVED, $plan['user_status']);
+        $this->assertNull($plan['start_date']);
+    }
+
+    /**
+     * Starting a saved plan (POST /plans/{id}/start) sets the start date, so it reads in_progress.
+     *
+     * @category V4_API
+     * @category Route Name: v4_internal_plans.index
+     * @see      \App\Http\Controllers\Plan\PlansController::start
+     * @group    V4
+     * @test
+     */
+    public function savedPlanReadsInProgressAfterStart()
+    {
+        $this->subscribe(null);
+        $this->assertSame(
+            UserPlan::STATUS_SAVED,
+            $this->fetchSeededPlan(['user_status' => 'true'])['user_status']
+        );
+
+        $this->actingAs($this->key_user, 'tokens');
+        echo "\nTesting: v4_internal_plans.start";
+        $this->assertSuccessfulWithoutKey(
+            $this->withHeaders($this->params)
+                ->post(route('v4_internal_plans.start', ['plan_id' => $this->plan_id]), ['start_date' => '2026-10-16'])
+        );
+
+        $plan = $this->fetchSeededPlan(['user_status' => 'true']);
+        $this->assertNotNull($plan);
+        $this->assertSame(UserPlan::STATUS_IN_PROGRESS, $plan['user_status']);
     }
 }
