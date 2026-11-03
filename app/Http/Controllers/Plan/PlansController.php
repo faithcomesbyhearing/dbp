@@ -686,7 +686,7 @@ class PlansController extends APIController
             return $this->setStatusCode(404)->replyWithError('Plan Not Found');
         }
 
-        $plan = $this->getPlan($plan_id, $user);
+        $plan = $this->getPlan($plan->id, $user);
 
         // Echoed only when sent, so the reply to the old app is unchanged.
         if ($user_bible !== null && $plan) {
