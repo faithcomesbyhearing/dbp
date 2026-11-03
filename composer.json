@@ -34,7 +34,7 @@
         "sunra/php-simple-html-dom-parser": "1.5.2",
         "symfony/http-client": "7.4.1",
         "symfony/psr-http-message-bridge": "7.2.0",
-        "symfony/yaml": "7.1.4",
+        "symfony/yaml": "7.4.18",
         "torann/geoip": "3.0.7",
         "yosymfony/toml": "1.0.4",
         "zircote/swagger-php": "4.8.3"
