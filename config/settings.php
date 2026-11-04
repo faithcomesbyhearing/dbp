@@ -127,6 +127,12 @@ return [
       'DOWNLOAD_ACCESS_GROUP_LIST',
       '12,15,16,17,18,19,20,21,22,23,24,181,183,185,191,193,141,143,145,1051,1053,1055,1021,1023,1025,1031,1033,1035'
   ),
+
+  /*
+   * Access groups whose API keys may call POST /download/package-create (comma separated ids).
+   * No default on purpose: when unset or empty, every caller gets 403.
+   */
+  'package_create_access_group_ids' => env('PACKAGE_CREATE_ACCESS_GROUP_IDS'),
   'backward_compatibility' => [
       'app_name' => [
         'bibleis' => env('BIBLEIS_COMPATIBILITY_APP_NAME', 'Bible.is'),
