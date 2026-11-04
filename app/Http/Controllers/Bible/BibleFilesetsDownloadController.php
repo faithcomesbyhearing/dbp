@@ -12,6 +12,8 @@ use App\Traits\AccessControlAPI;
 use App\Traits\CallsBucketsTrait;
 use App\Traits\BibleFileSetsTrait;
 use App\Http\Controllers\APIController;
+use App\Models\User\AccessGroup;
+use App\Models\User\AccessGroupKey;
 use App\Models\User\UserDownload;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\Book;
@@ -233,8 +235,8 @@ class BibleFilesetsDownloadController extends APIController
     }
 
     /**
-     * Proxies package creation to BBHub (POST /package/create-by-filesets).
-     * Same API key rules as v2 `/library/language`: `key` + `v`, no AccessControl.
+     * Proxies package creation to BBHub (POST /audio/create-by-filesets).
+     * Only API keys in an access group listed in settings.package_create_access_group_ids may call it.
      *
      * @OA\Post(
      *     path="/download/package-create",
@@ -281,6 +283,14 @@ class BibleFilesetsDownloadController extends APIController
      *         )
      *     ),
      *     @OA\Response(
+     *         response=403,
+     *         description="The API key is not in an access group allowed to create packages.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="This API key is not allowed to create packages.")
+     *         )
+     *     ),
+     *     @OA\Response(
      *         response=422,
      *         description="Validation failed for the request body.",
      *         @OA\JsonContent(
@@ -300,6 +310,11 @@ class BibleFilesetsDownloadController extends APIController
      */
     public function packageCreate(Request $request): Response|JsonResponse
     {
+        if (!$this->keyMayCreatePackages($this->key)) {
+            $this->setStatusCode(Response::HTTP_FORBIDDEN);
+            return $this->replyWithError('This API key is not allowed to create packages.');
+        }
+
         $payload = json_decode($request->getContent(), true);
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($payload)) {
             $this->setStatusCode(Response::HTTP_BAD_REQUEST);
@@ -344,5 +359,44 @@ class BibleFilesetsDownloadController extends APIController
         }
 
         return $response;
+    }
+
+    /**
+     * Whether the API key belongs to an access group listed in settings.package_create_access_group_ids.
+     * An unset or empty setting, a key with no access groups, or a group id that does not exist
+     * all mean "not allowed".
+     *
+     * The key's groups are read from the AccessControl cache entry, not from the request input:
+     * when a key has no groups the middleware does not set middleware_access_group_ids,
+     * so a caller could send that field itself.
+     *
+     * @param string $api_key
+     *
+     * @return bool
+     */
+    private function keyMayCreatePackages(string $api_key): bool
+    {
+        $allowed_group_ids = collect(explode(',', (string) config('settings.package_create_access_group_ids')))
+            ->map(fn ($group_id) => trim($group_id))
+            ->filter(fn ($group_id) => ctype_digit($group_id))
+            ->map(fn ($group_id) => (int) $group_id);
+
+        if ($allowed_group_ids->isEmpty()) {
+            return false;
+        }
+
+        $key_group_ids = cacheRemember(
+            'access_control_middleware',
+            removeSpaceAndCntrlFromCacheParameters([$api_key]),
+            now()->addDay(),
+            fn () => AccessGroupKey::getAccessGroupIdsByApiKey($api_key)
+        );
+
+        $matching_group_ids = $allowed_group_ids
+            ->intersect(collect($key_group_ids)->map(fn ($group_id) => (int) $group_id))
+            ->values();
+
+        return $matching_group_ids->isNotEmpty()
+            && AccessGroup::whereIn('id', $matching_group_ids)->exists();
     }
 }
