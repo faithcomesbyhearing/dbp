@@ -1,4 +1,11 @@
 #!/bin/sh
+set -e
+
+# Prebuild hooks run on every deploy. If igbinary and memcached are already installed
+# (for example on a redeploy to an existing instance), skip the build.
+if php -m | grep -qix memcached && php -m | grep -qix igbinary; then
+    exit 0
+fi
 
 sudo yum groupinstall "Development Tools" -y
 
@@ -20,7 +27,8 @@ cd libmemcached-1.0.18
 ./configure CXXFLAGS="-fpermissive"
 
 # Compile and install
-make && sudo make install
+make
+sudo make install
 
 sudo pecl channel-update pecl.php.net
 /usr/bin/yes 'no'| /usr/bin/pecl install igbinary
