@@ -334,9 +334,9 @@ class PlansController extends APIController
             || empty($user);
 
         // index()'s refusal, answered first as there (the check order is part of the contract: this, then the locale
-        // errors, then the sort errors), but on the featured value parsed above. index() returns here before its own
-        // copy, which reads checkBoolean().
-        if ($featured && $sort_by === 'last_interaction') {
+        // errors, then the sort errors), but on the featured value parsed above and in any case, as the sort check
+        // reads sort_by. index() returns here before its own copy, which reads checkBoolean().
+        if ($featured && is_string($sort_by) && strtolower($sort_by) === 'last_interaction') {
             return $this->setStatusCode(SymfonyResponse::HTTP_BAD_REQUEST)->replyWithError('Sort by last_interaction is not supported for featured plans');
         }
 
@@ -414,8 +414,8 @@ class PlansController extends APIController
      * plans, last_interaction; sort_dir asc or desc. Returns ['sort_by' => the lower-case value (getPlans() compares
      * it to 'last_interaction' to add the joins that alias needs), 'sort_dir', 'column' => the ORDER BY column,
      * 'error' => ?string]; on an error the other keys are null. The errors are checked in this order: sort_by, then
-     * last_interaction on featured plans in any case (localizedIndex() has already refused exactly `last_interaction`
-     * there, before the locale errors), then sort_dir.
+     * last_interaction on featured plans in any case (localizedIndex() has already refused it there, before the
+     * locale errors), then sort_dir.
      *
      * @param mixed $sort_by_raw
      * @param mixed $sort_dir_raw
