@@ -9,6 +9,7 @@ use App\Http\Controllers\APIController;
 use App\Models\Bible\Bible;
 use App\Models\Language\Language;
 use App\Models\Plan\Plan;
+use App\Models\Plan\PlanLocalization;
 use App\Traits\CheckProjectMembership;
 use App\Models\Plan\PlanDay;
 use App\Models\Plan\PlanDayComplete;
@@ -539,6 +540,24 @@ class PlansController extends APIController
      *          description="The plan id"
      *     ),
      *     @OA\Parameter(
+     *          name="localized",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When set to `true` (case-insensitive), the plan is shown in the app language: `iso` (required: missing or empty gives 422) and the optional `alt_locale` name the app locale. The localization used is the one for exactly that `iso` and `alt_locale`, else the one for `iso` with no `alt_locale`, else the lowest-id one for `iso`, matched case-insensitively: the same one the plan list (GET /plans with `localized=true`) shows for the same parameters, whether or not the plan is featured or a draft. `name` is the localization's and `thumbnail` the localization's unless it has none. Two keys follow `thumbnail`: `description`, the localization's description or null, and `localization`, the localization used (schema `v4_plan_localization_match`, whose `bible_id` is the recommended Bible as stored, not checked against the key's access) or null. A plan without a localization in that language is still returned, with its own `name` and `thumbnail` and both keys null. `days` and every other key are unchanged. A list-valued `iso` or `alt_locale` gives 422. Any other value of `localized`, including `1`, leaves both keys off and the response as it is without it."
+     *     ),
+     *     @OA\Parameter(
+     *          name="iso",
+     *          in="query",
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
+     *          description="Only with `localized=true`, where it is required: the app language, matched case-insensitively. A language with no localization for the plan keeps the plan's own values. Ignored without `localized=true`."
+     *     ),
+     *     @OA\Parameter(
+     *          name="alt_locale",
+     *          in="query",
+     *          @OA\Schema(type="string", example="fr-CA"),
+     *          description="Only with `localized=true`: the app's locale code within the `iso` language (for example `fr-CA`), matched case-insensitively. A plan with no localization for it falls back as described under `localized`. Empty means not sent; ignored without `localized=true`."
+     *     ),
+     *     @OA\Parameter(
      *          name="show_details",
      *          in="query",
      *          @OA\Schema(type="boolean"),
@@ -584,6 +603,26 @@ class PlansController extends APIController
 
         if (!$plan) {
             return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        // localized=true shows the plan in the app language (PBI 104292) through the plans_localization row the plan
+        // list picks for the same parameters (the shared parseAppLocale() and PlanLocalization::scopeForAppLocale()), so
+        // a list row and its details always agree. Any other value: no query, and the response is as it was. A row
+        // applies whatever the plan's featured or draft state, as on the user's own plans list (P3). Checked before the
+        // days' playlists, items and verse text are loaded, so a refused request skips that work; an unknown plan is
+        // still the 404 above.
+        $locale = self::parseAppLocale(checkParam('localized'), checkParam('iso'), checkParam('alt_locale'));
+        $localization = null;
+        if ($locale !== null) {
+            if ($locale['error'] !== null) {
+                return $this->setStatusCode(422)->replyWithError($locale['error']);
+            }
+
+            // Explicit columns: a row read without one of them would make the transformer fall back to the plan's own
+            // value without any sign.
+            $localization = PlanLocalization::where('plan_id', $plan->id)
+                ->forAppLocale($locale['iso'], $locale['alt_locale'])
+                ->first(['id', 'iso', 'alt_locale', 'name', 'thumbnail', 'description', 'bible_id']);
         }
 
         $show_details = checkBoolean('show_details');
@@ -636,6 +675,8 @@ class PlansController extends APIController
             $plan,
             new PlanDayPlaylistItemsTransformer(
                 [
+                    'localized' => $locale !== null,
+                    'localization' => $localization,
                     'v' => $this->v,
                     'key' => $this->key,
                     'show_details' => $show_details,
@@ -1865,6 +1906,18 @@ class PlansController extends APIController
      *      property="user_bible",
      *      ref="#/components/schemas/v4_plan_user_bible/properties/user_bible",
      *      description="Only on GET /plans/{plan_id}?include_user_bible=true, and on Start or Save when user_bible was sent"
+     *   ),
+     *   @OA\Property(
+     *      property="description",
+     *      type="string",
+     *      nullable=true,
+     *      description="Only on GET /plans/{plan_id}?localized=true, right after thumbnail: the description of the plan localization used, or null when it has none or the plan has no localization in the app language"
+     *   ),
+     *   @OA\Property(
+     *      property="localization",
+     *      nullable=true,
+     *      description="Only on GET /plans/{plan_id}?localized=true, after description: the plan localization whose name (and thumbnail, when it has one) is shown, the same one the plan list shows for the same parameters; null when the plan has no localization in the app language, which then keeps its own name and thumbnail.",
+     *      allOf={@OA\Schema(ref="#/components/schemas/v4_plan_localization_match")}
      *   )
      * )
      *
