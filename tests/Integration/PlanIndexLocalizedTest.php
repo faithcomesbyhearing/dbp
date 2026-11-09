@@ -25,7 +25,8 @@ use Tests\TestCase;
  * Seeds, in a language code no language uses (so no other row can join): plan A, featured, with a (qqz, NULL) row
  * without thumbnail and a (qqz, qq-CA) row; plan B, featured, with only a (qqz, qq-CA) row; plan C, featured, with
  * only a row in another code; plan D, not featured. The test-key user has A, C and D in its plans. A was created
- * before B, so created_at orders them apart from the name order.
+ * before B, so created_at orders them apart from the name order. Two tests seed one more featured plan, E, of their
+ * own.
  *
  * Seeds data, so run it only against a throwaway test database, never a shared one: the featured plans would show
  * on the Discover list while the test runs. The DB-free parts (parse, sort checks, SQL) are in
@@ -285,6 +286,29 @@ class PlanIndexLocalizedTest extends TestCase
     }
 
     /**
+     * AC3: with two alt_locale variants in the language, neither matching and no row without alt_locale, the
+     * lowest-id variant is used. E's first row is qq-US, which sorts after its second, qq-AU, so the id decides.
+     *
+     * @group V4
+     * @test
+     */
+    public function withoutAMatchTheLowestIdVariantIsUsed()
+    {
+        $e = $this->seedPlan('zz localized test E', 'e.png', true, '2024-01-01 00:00:00');
+        $this->seedLocalization($e, self::ISO, 'qq-US', 'Echo US', 'e-us.png', null);
+        $this->seedLocalization($e, self::ISO, 'qq-AU', 'Echo AU', 'e-au.png', null);
+
+        foreach (['qq-GB', ''] as $alt_locale) {
+            $plan = $this->seeded($this->discover(['alt_locale' => $alt_locale]))[$e];
+            $this->assertSame('Echo US', $plan['name'], $alt_locale);
+            $this->assertSame('e-us.png', $plan['thumbnail'], $alt_locale);
+            $this->assertSame('qq-US', $plan['localization']['alt_locale'], $alt_locale);
+        }
+
+        $this->assertSame('Echo AU', $this->seeded($this->discover(['alt_locale' => 'qq-AU']))[$e]['name']);
+    }
+
+    /**
      * AC5: My Plans keeps every plan the plain My Plans list has; one with no row keeps its own name and thumbnail
      * and reads `localization: null`, including one that is not featured.
      *
@@ -343,6 +367,59 @@ class PlanIndexLocalizedTest extends TestCase
         }
     }
 
+    /**
+     * AC6 on My Plans: sort_by name is the displayed name over a mix of plans shown through a row and plans showing
+     * their own name. In qqy only C has a row ('Other'), which sorts before the own names of A and D; by own name C
+     * would sit between them.
+     *
+     * @group V4
+     * @test
+     */
+    public function myPlansSortByTheDisplayedName()
+    {
+        $asc = $this->seeded($this->myPlans(['iso' => self::OTHER_ISO, 'sort_by' => 'name']));
+        $this->assertSame([$this->c, $this->a, $this->d], array_keys($asc));
+        $this->assertSame('Other', $asc[$this->c]['name']);
+        $this->assertNull($asc[$this->a]['localization']);
+        $this->assertSame('zz localized test A', $asc[$this->a]['name']);
+
+        $desc = $this->seeded($this->myPlans(['iso' => self::OTHER_ISO, 'sort_by' => 'name', 'sort_dir' => 'desc']));
+        $this->assertSame([$this->d, $this->a, $this->c], array_keys($desc));
+    }
+
+    /**
+     * AC6: sort_by updated_at is the plan's own updated_at. A was created before B; updated after it here, so the
+     * updated_at order is the reverse of the created_at one.
+     *
+     * @group V4
+     * @test
+     */
+    public function sortByUpdatedAtUsesThePlansDate()
+    {
+        // toBase() skips Eloquent's timestamps, which would overwrite the value with now().
+        Plan::whereKey($this->a)->toBase()->update(['updated_at' => '2025-01-01 00:00:00']);
+
+        $this->assertSame([$this->b, $this->a], array_keys($this->seeded($this->discover(['sort_by' => 'updated_at']))));
+        $this->assertSame([$this->a, $this->b], array_keys($this->seeded($this->discover(['sort_by' => 'Updated_At', 'sort_dir' => 'desc']))));
+        $this->assertSame([$this->a, $this->b], array_keys($this->seeded($this->discover(['sort_by' => 'created_at']))));
+    }
+
+    /**
+     * AC6: plans with the same displayed name are ordered by plan id, ascending in both directions. E shows the same
+     * name as A and was seeded after it, but its own name and created_at sort before A's, so only the id puts A first.
+     *
+     * @group V4
+     * @test
+     */
+    public function nameTiesAreBrokenByPlanId()
+    {
+        $e = $this->seedPlan('zz localized test 0', 'e.png', true, '2019-01-01 00:00:00');
+        $this->seedLocalization($e, self::ISO, null, 'Bravo', null, null);
+
+        $this->assertSame([$this->a, $e, $this->b], array_keys($this->seeded($this->discover(['sort_by' => 'name']))));
+        $this->assertSame([$this->b, $this->a, $e], array_keys($this->seeded($this->discover(['sort_by' => 'name', 'sort_dir' => 'desc']))));
+    }
+
     public static function refusedProvider(): array
     {
         $sort_by = 'sort_by must be one of: name, created_at, updated_at, last_interaction';
@@ -361,6 +438,7 @@ class PlanIndexLocalizedTest extends TestCase
             'iso empty'                 => [['iso' => ''], 422, $missing],
             // AC9
             'Discover last_interaction before missing iso' => [['iso' => null, 'sort_by' => 'last_interaction'], 400, 'Sort by last_interaction is not supported for featured plans'],
+            'Discover LAST_INTERACTION before missing iso' => [['iso' => null, 'sort_by' => 'LAST_INTERACTION'], 400, 'Sort by last_interaction is not supported for featured plans'],
             'iso list'                  => [['iso' => [self::ISO]], 422, 'iso must be a single value'],
             'alt_locale list'           => [['alt_locale' => ['qq-CA']], 422, 'alt_locale must be a single value'],
             'iso list before missing'   => [['iso' => [self::ISO], 'alt_locale' => ['qq-CA']], 422, 'iso must be a single value'],
