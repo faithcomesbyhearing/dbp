@@ -178,7 +178,9 @@ Route::name('v4_bible_filesets_download.list')
     'Bible\BibleFilesetsDownloadController@list'
 );
 
-Route::name('v4_bible_filesets_download.package_create')->post(
+Route::name('v4_bible_filesets_download.package_create')
+->middleware('AccessControl')
+->post(
     'download/package-create',
     'Bible\BibleFilesetsDownloadController@packageCreate'
 );
