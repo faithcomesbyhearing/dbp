@@ -159,8 +159,13 @@ class PackageCreateAccessGroupTest extends TestCase
     {
         config(['settings.package_create_access_group_ids' => (string) $this->allowedGroupId]);
 
+        // An empty cache entry must survive the request. The middleware does not
+        // replace middleware_access_group_ids when the cached list is empty, so a
+        // controller that read the request body would accept the spoofed group.
+        $this->seedAccessControlCacheForKey($this->keyWithoutGroups, []);
+
         Http::fake();
-        $response = $this->callPackageCreate($this->keyWithoutGroups, [
+        $response = $this->callPackageCreateWithSeededCache($this->keyWithoutGroups, [
             'middleware_access_group_ids' => [$this->allowedGroupId],
         ]);
 
@@ -181,10 +186,12 @@ class PackageCreateAccessGroupTest extends TestCase
     {
         config(['settings.package_create_access_group_ids' => (string) self::NON_EXISTENT_GROUP_ID]);
 
+        // The seeded group must survive the request. Clearing it loads the key's
+        // real group, and the 403 then comes from a mismatch before exists() runs.
         $this->seedAccessControlCacheForKey($this->allowedKey, [self::NON_EXISTENT_GROUP_ID]);
 
         Http::fake();
-        $response = $this->callPackageCreate($this->allowedKey);
+        $response = $this->callPackageCreateWithSeededCache($this->allowedKey);
 
         $response->assertStatus(403)->assertJson([
             'error' => [
@@ -199,6 +206,16 @@ class PackageCreateAccessGroupTest extends TestCase
     {
         $this->clearAccessControlCacheForKey($apiKey);
 
+        return $this->postPackageCreate($apiKey, $extraPayload);
+    }
+
+    private function callPackageCreateWithSeededCache(string $apiKey, array $extraPayload = [])
+    {
+        return $this->postPackageCreate($apiKey, $extraPayload);
+    }
+
+    private function postPackageCreate(string $apiKey, array $extraPayload = [])
+    {
         $payload = array_merge([
             'filesets' => [self::KNOWN_FILESET_ID],
             'encryptionType' => self::ENCRYPTION_TYPE,
