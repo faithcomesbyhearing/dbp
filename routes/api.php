@@ -446,6 +446,9 @@ Route::name('v4_internal_plans.unsave')
 Route::name('v4_internal_plans.translate')
     ->middleware(['APIToken:check', 'AccessControl'])
     ->get('plans/{plan_id}/translate', 'Plan\PlansController@translate');
+Route::name('v4_internal_plans.compatibility')
+    ->middleware(['APIToken', 'UserDataAccess', 'UserDataAuditLog', 'AccessControl'])
+    ->post('plans/compatibility', 'Plan\PlanCompatibilityController@check');
 Route::name('v4_internal_plans_days.store')
     ->middleware('APIToken:check')
     ->post('plans/{plan_id}/day', 'Plan\PlansController@storeDay');
