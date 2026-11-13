@@ -9,6 +9,7 @@ use App\Http\Controllers\APIController;
 use App\Models\Bible\Bible;
 use App\Models\Language\Language;
 use App\Models\Plan\Plan;
+use App\Models\Plan\PlanLocalization;
 use App\Traits\CheckProjectMembership;
 use App\Models\Plan\PlanDay;
 use App\Models\Plan\PlanDayComplete;
@@ -76,6 +77,18 @@ class PlansController extends APIController
      *          @OA\Schema(type="boolean", default=false),
      *          description="When set to `true` (case-insensitive) on the user's own plans (`featured=false` with a valid api_token), each plan includes `completed_days`: the number of its days the user has marked complete, the same days that show `completed: true` in the plan details. Any other value, including `1` or a list, leaves the key off, so existing calls are unchanged."
      *     ),
+     *     @OA\Parameter(
+     *          name="localized",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When set to `true` (case-insensitive), each plan is shown in the app language: `iso` (required: missing or empty gives 422) and the optional `alt_locale` name the app locale, and the plan's own language is ignored. Per plan the localization used is the one for exactly that `iso` and `alt_locale`, else the one for `iso` with no `alt_locale`, else the lowest-id one for `iso`, matched case-insensitively. `name` is the localization's, `thumbnail` the localization's unless it has none, and `localization` names the localization used. Featured plans (`featured=true`, or no api_token) without a localization in that language are left out and not counted; the user's own plans (`featured=false`) are all returned, a plan without one keeping its own `name` and `thumbnail` with `localization: null`. `sort_by` accepts `name` (the displayed name), `created_at`, `updated_at` and, on the user's own plans, `last_interaction`, in any case, with the plan id breaking ties; `sort_dir` accepts `asc` or `desc` in any case. Any other `sort_by` or `sort_dir` gives 400, and a list-valued `iso` or `alt_locale` gives 422. Any other value of `localized`, including `1`, leaves the call as it is without it, so existing calls are unchanged."
+     *     ),
+     *     @OA\Parameter(
+     *          name="alt_locale",
+     *          in="query",
+     *          @OA\Schema(type="string", example="fr-CA"),
+     *          description="Only with `localized=true`: the app's locale code within the `iso` language (for example `fr-CA`), matched case-insensitively. A plan with no localization for it falls back as described under `localized`. Empty means not sent; ignored without `localized=true`."
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="successful operation",
@@ -100,6 +113,12 @@ class PlansController extends APIController
      *          )
      *      ),
      *   },
+     *   @OA\Property(
+     *      property="localization",
+     *      nullable=true,
+     *      description="Present only when localized=true. The plan localization whose name (and thumbnail, when it has one) is shown; null on the user's own plans for a plan with no localization in the app language, which then keeps its own name and thumbnail.",
+     *      allOf={@OA\Schema(ref="#/components/schemas/v4_plan_localization_match")}
+     *   ),
      *   @OA\Property(property="total_days", type="integer"),
      *   @OA\Property(
      *      property="user_status",
@@ -124,6 +143,17 @@ class PlansController extends APIController
      *      @OA\Items(ref="#/components/schemas/v4_plan_index_detail")
      *   )
      * )
+     *
+     * @OA\Schema (
+     *   type="object",
+     *   schema="v4_plan_localization_match",
+     *   description="Which plan localization a localized response used (localized=true).",
+     *   title="Plan localization used",
+     *   @OA\Property(property="id", type="integer", description="The localization's id"),
+     *   @OA\Property(property="iso", type="string", description="Its language, as stored", example="fra"),
+     *   @OA\Property(property="alt_locale", type="string", nullable=true, description="Its locale code within the language, as stored; null for the language as a whole", example="fr-CA"),
+     *   @OA\Property(property="bible_id", type="string", nullable=true, description="The Bible it recommends, as stored; null when none", example="FRALSG")
+     * )
      */
 
 
@@ -146,6 +176,12 @@ class PlansController extends APIController
         $user_status_raw = checkParam('user_status');
         $user_status = $user_status_raw === true
             || (is_string($user_status_raw) && strtolower($user_status_raw) === 'true');
+
+        // localized=true shows each plan in the app language (PBI 102556); every other request runs the lines below.
+        $locale = self::parseAppLocale(checkParam('localized'), $iso, checkParam('alt_locale'));
+        if ($locale !== null) {
+            return $this->localizedIndex($locale, $limit, $sort_by, $sort_dir, $user, $user_status);
+        }
 
         if($featured && $sort_by === 'last_interaction') {
             return $this->setStatusCode(SymfonyResponse::HTTP_BAD_REQUEST)->replyWithError('Sort by last_interaction is not supported for featured plans');
@@ -170,7 +206,8 @@ class PlansController extends APIController
         $sort_dir,
         $user,
         $language_id,
-        bool $user_status = false
+        bool $user_status = false,
+        ?array $locale = null
     ) {
         $plans = Plan::with('days')
             ->with('user')
@@ -191,7 +228,14 @@ class PlansController extends APIController
 
                 $q->addSelect(['plans.*', 'user_plans.start_date', 'user_plans.percentage_completed']);
             })
-            ->orderBy($sort_by, $sort_dir)->paginate($limit);
+            ->when($locale !== null, function ($q) use ($locale, $featured, $user) {
+                $q->withAppLocalization($locale['iso'], $locale['alt_locale'], $featured || empty($user));
+            })
+            ->orderBy($locale['sort_column'] ?? $sort_by, $sort_dir)
+            ->when($locale !== null, function ($q) {
+                $q->orderBy('plans.id');
+            })
+            ->paginate($limit);
 
         // Resolve the caller's status per plan with one aggregate query, only when asked for and
         // only for an authenticated token user, so every other request keeps today's exact payload.
@@ -264,6 +308,142 @@ class PlansController extends APIController
         foreach ($plans as $plan) {
             $plan->completed_days = $completed_days[$plan->id] ?? 0;
         }
+    }
+
+    /**
+     * The plans list with localized=true (PBI 102556): each plan through its plans_localization row for the app
+     * locale. Discover leaves out plans with no row in the language; the user's own plans keep every plan, falling
+     * back to its own name and thumbnail. index() returns here before the language lookup, so `iso` is the app
+     * language here, never a filter on the plan's own language.
+     *
+     * @param array $locale parseAppLocale()'s result
+     * @param int $limit
+     * @param mixed $sort_by as sent, or the default `name`
+     * @param mixed $sort_dir as sent, or the default `asc`
+     * @param mixed $user
+     * @param bool $user_status
+     *
+     * @return mixed
+     */
+    private function localizedIndex(array $locale, $limit, $sort_by, $sort_dir, $user, bool $user_status)
+    {
+        // Parsed by hand so featured=1 means the same on every release (checkBoolean() before #1062 accepted any
+        // value but "false"); no token user always means Discover, as in index().
+        $featured_raw = checkParam('featured');
+        $featured = $featured_raw === true
+            || (is_string($featured_raw) && strtolower($featured_raw) === 'true')
+            || empty($user);
+
+        // index()'s refusal, answered first as there (the check order is part of the contract: this, then the locale
+        // errors, then the sort errors), but on the featured value parsed above and in any case, as the sort check
+        // reads sort_by. index() returns here before its own copy, which reads checkBoolean().
+        if ($featured && is_string($sort_by) && strtolower($sort_by) === 'last_interaction') {
+            return $this->setStatusCode(SymfonyResponse::HTTP_BAD_REQUEST)->replyWithError('Sort by last_interaction is not supported for featured plans');
+        }
+
+        if ($locale['error'] !== null) {
+            return $this->setStatusCode(SymfonyResponse::HTTP_UNPROCESSABLE_ENTITY)->replyWithError($locale['error']);
+        }
+
+        $sort = self::resolveLocalizedSort($sort_by, $sort_dir, $featured);
+        if ($sort['error'] !== null) {
+            return $this->setStatusCode(SymfonyResponse::HTTP_BAD_REQUEST)->replyWithError($sort['error']);
+        }
+
+        $plans = $this->getPlans(
+            $featured,
+            $limit,
+            $sort['sort_by'],
+            $sort['sort_dir'],
+            $user,
+            null,
+            $user_status,
+            $locale + ['sort_column' => $sort['column']]
+        );
+
+        foreach ($plans as $plan) {
+            $plan->applyAppLocalization();
+        }
+
+        return $this->reply($plans);
+    }
+
+    /**
+     * Read the app-locale parameters of the plan calls: null unless `localized` is the word true (any case) or a
+     * JSON true, parsed by hand so it is strict on every release and a list is off, not a 500. When on:
+     * ['iso' => ?string, 'alt_locale' => ?string, 'error' => ?string], where `error` is the whole 422 message, checked
+     * in this order: a list-valued iso, a list-valued alt_locale, a missing or empty iso. An empty alt_locale counts
+     * as not sent. Shared with Plan Details (PBI 104292) so the two calls cannot drift.
+     *
+     * @param mixed $localized_raw checkParam('localized')
+     * @param mixed $iso_raw checkParam('iso')
+     * @param mixed $alt_locale_raw checkParam('alt_locale')
+     *
+     * @return array|null
+     */
+    public static function parseAppLocale($localized_raw, $iso_raw, $alt_locale_raw) : ?array
+    {
+        $localized = $localized_raw === true
+            || (is_string($localized_raw) && strtolower($localized_raw) === 'true');
+        if (!$localized) {
+            return null;
+        }
+
+        $error = null;
+        if (is_array($iso_raw)) {
+            $error = 'iso must be a single value';
+        } elseif (is_array($alt_locale_raw)) {
+            $error = 'alt_locale must be a single value';
+        } elseif ($iso_raw === null || $iso_raw === '') {
+            $error = 'iso is required when localized=true';
+        }
+
+        if ($error !== null) {
+            return ['iso' => null, 'alt_locale' => null, 'error' => $error];
+        }
+
+        return [
+            'iso'        => (string) $iso_raw,
+            'alt_locale' => $alt_locale_raw === null || $alt_locale_raw === '' ? null : (string) $alt_locale_raw,
+            'error'      => null,
+        ];
+    }
+
+    /**
+     * Check sort_by and sort_dir for the localized lists, case-insensitively, so a bad value is a 400 rather than a
+     * 500 or an unknown column: sort_by name (the displayed name), created_at, updated_at or, on the user's own
+     * plans, last_interaction; sort_dir asc or desc. Returns ['sort_by' => the lower-case value (getPlans() compares
+     * it to 'last_interaction' to add the joins that alias needs), 'sort_dir', 'column' => the ORDER BY column,
+     * 'error' => ?string]; on an error the other keys are null. The errors are checked in this order: sort_by, then
+     * last_interaction on featured plans in any case (localizedIndex() has already refused it there, before the
+     * locale errors), then sort_dir.
+     *
+     * @param mixed $sort_by_raw
+     * @param mixed $sort_dir_raw
+     * @param bool $featured
+     *
+     * @return array
+     */
+    public static function resolveLocalizedSort($sort_by_raw, $sort_dir_raw, bool $featured) : array
+    {
+        $sort_by = is_string($sort_by_raw) ? strtolower($sort_by_raw) : null;
+        $sort_dir = is_string($sort_dir_raw) ? strtolower($sort_dir_raw) : null;
+        $column = $sort_by === null ? null : Plan::localizedSortColumn($sort_by);
+
+        $error = null;
+        if ($column === null) {
+            $error = 'sort_by must be one of: name, created_at, updated_at, last_interaction';
+        } elseif ($featured && $sort_by === 'last_interaction') {
+            $error = 'Sort by last_interaction is not supported for featured plans';
+        } elseif ($sort_dir !== 'asc' && $sort_dir !== 'desc') {
+            $error = 'sort_dir must be asc or desc';
+        }
+
+        if ($error !== null) {
+            return ['sort_by' => null, 'sort_dir' => null, 'column' => null, 'error' => $error];
+        }
+
+        return ['sort_by' => $sort_by, 'sort_dir' => $sort_dir, 'column' => $column, 'error' => null];
     }
 
     /**
@@ -360,6 +540,24 @@ class PlansController extends APIController
      *          description="The plan id"
      *     ),
      *     @OA\Parameter(
+     *          name="localized",
+     *          in="query",
+     *          @OA\Schema(type="boolean", default=false),
+     *          description="When set to `true` (case-insensitive), the plan is shown in the app language: `iso` (required: missing or empty gives 422) and the optional `alt_locale` name the app locale. The localization used is the one for exactly that `iso` and `alt_locale`, else the one for `iso` with no `alt_locale`, else the lowest-id one for `iso`, matched case-insensitively: the same one the plan list (GET /plans with `localized=true`) shows for the same parameters, whether or not the plan is featured or a draft. `name` is the localization's and `thumbnail` the localization's unless it has none. Two keys follow `thumbnail`: `description`, the localization's description or null, and `localization`, the localization used (schema `v4_plan_localization_match`, whose `bible_id` is the recommended Bible as stored, not checked against the key's access) or null. A plan without a localization in that language is still returned, with its own `name` and `thumbnail` and both keys null. `days` and every other key are unchanged. A list-valued `iso` or `alt_locale` gives 422. Any other value of `localized`, including `1`, leaves both keys off and the response as it is without it."
+     *     ),
+     *     @OA\Parameter(
+     *          name="iso",
+     *          in="query",
+     *          @OA\Schema(ref="#/components/schemas/Language/properties/iso"),
+     *          description="Only with `localized=true`, where it is required: the app language, matched case-insensitively. A language with no localization for the plan keeps the plan's own values. Ignored without `localized=true`."
+     *     ),
+     *     @OA\Parameter(
+     *          name="alt_locale",
+     *          in="query",
+     *          @OA\Schema(type="string", example="fr-CA"),
+     *          description="Only with `localized=true`: the app's locale code within the `iso` language (for example `fr-CA`), matched case-insensitively. A plan with no localization for it falls back as described under `localized`. Empty means not sent; ignored without `localized=true`."
+     *     ),
+     *     @OA\Parameter(
      *          name="show_details",
      *          in="query",
      *          @OA\Schema(type="boolean"),
@@ -405,6 +603,26 @@ class PlansController extends APIController
 
         if (!$plan) {
             return $this->setStatusCode(404)->replyWithError('Plan Not Found');
+        }
+
+        // localized=true shows the plan in the app language (PBI 104292) through the plans_localization row the plan
+        // list picks for the same parameters (the shared parseAppLocale() and PlanLocalization::scopeForAppLocale()), so
+        // a list row and its details always agree. Any other value: no query, and the response is as it was. A row
+        // applies whatever the plan's featured or draft state, as on the user's own plans list (P3). Checked before the
+        // days' playlists, items and verse text are loaded, so a refused request skips that work; an unknown plan is
+        // still the 404 above.
+        $locale = self::parseAppLocale(checkParam('localized'), checkParam('iso'), checkParam('alt_locale'));
+        $localization = null;
+        if ($locale !== null) {
+            if ($locale['error'] !== null) {
+                return $this->setStatusCode(422)->replyWithError($locale['error']);
+            }
+
+            // Explicit columns: a row read without one of them would make the transformer fall back to the plan's own
+            // value without any sign.
+            $localization = PlanLocalization::where('plan_id', $plan->id)
+                ->forAppLocale($locale['iso'], $locale['alt_locale'])
+                ->first(['id', 'iso', 'alt_locale', 'name', 'thumbnail', 'description', 'bible_id']);
         }
 
         $show_details = checkBoolean('show_details');
@@ -457,6 +675,8 @@ class PlansController extends APIController
             $plan,
             new PlanDayPlaylistItemsTransformer(
                 [
+                    'localized' => $locale !== null,
+                    'localization' => $localization,
                     'v' => $this->v,
                     'key' => $this->key,
                     'show_details' => $show_details,
@@ -1667,6 +1887,18 @@ class PlansController extends APIController
      *      property="user_bible",
      *      ref="#/components/schemas/v4_plan_user_bible/properties/user_bible",
      *      description="Only on GET /plans/{plan_id}?include_user_bible=true, and on Start or Save when user_bible was sent"
+     *   ),
+     *   @OA\Property(
+     *      property="description",
+     *      type="string",
+     *      nullable=true,
+     *      description="Only on GET /plans/{plan_id}?localized=true, right after thumbnail: the description of the plan localization used, or null when it has none or the plan has no localization in the app language"
+     *   ),
+     *   @OA\Property(
+     *      property="localization",
+     *      nullable=true,
+     *      description="Only on GET /plans/{plan_id}?localized=true, after description: the plan localization whose name (and thumbnail, when it has one) is shown, the same one the plan list shows for the same parameters; null when the plan has no localization in the app language, which then keeps its own name and thumbnail.",
+     *      allOf={@OA\Schema(ref="#/components/schemas/v4_plan_localization_match")}
      *   )
      * )
      *
