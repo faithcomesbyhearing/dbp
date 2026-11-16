@@ -1383,12 +1383,13 @@ JSON,
 
     public function testWithNoVerseNumberForAChapterAnItemsLastVerseCantBeToldFromTheChaptersEnd()
     {
-        // Review of #1161 (Todd), left as it is: PSA 23:1-6 on chapter files with no end verse, in a Bible whose only
-        // text is USX (no verse numbers either). Nothing gives PSA 23's last verse, so verse 6 can't be told from a
-        // verse inside the chapter, and the item reads as a verse range: mismatch on the chapter files (approximate
-        // with allow_chapter_audio). Plan Details reads it the same way: full_chapter is true only for an item with no
+        // Review of #1161 (Todd): PSA 23:1-6 on chapter files with no end verse, in a Bible whose only text is USX (no
+        // verse numbers either), when the plan's own Bible doesn't give PSA 23's last verse either (no
+        // plan_bible_last_verse: its Bible has no plain text). Nothing gives it, so verse 6 can't be told from a verse
+        // inside the chapter, and the item reads as a verse range: mismatch on the chapter files (approximate with
+        // allow_chapter_audio). Plan Details reads it the same way: full_chapter is true only for an item with no
         // verses (PlaylistItems::getFullChapterAttribute). Plain text, or a chapter file numbered to verse 6, makes it
-        // exact.
+        // exact; so does the plan's own Bible (the next test).
         $usx = self::fileset('XO_ET-usx', 'text_usx', ['PSA' => [[1, 1, 150, null]]]);
         $files = self::chapterFiles(['PSA' => [[23, 1, 23, null]]]);
         $item = $this->item('PSA', 23, 1, 6);
@@ -1400,6 +1401,75 @@ JSON,
         $text = self::fileset('XO_ET', 'text_plain', ['PSA' => [[23, 1, 23, 6]]]);
         $this->assertSame('exact', $this->word($item, [$usx, $text, $files], 'non_drama'));
         $this->assertSame('exact', $this->word($item, [$usx, self::chapterFiles(['PSA' => [[23, 1, 23, 6]]])], 'non_drama'));
+    }
+
+    public function testThePlansOwnBibleGivesTheLastVerseOfTheItemsLastChapter()
+    {
+        $last = PlanCompatibilityService::lastVersesOfPieces(
+            PlanCompatibilityService::piecesFromVerseRows([
+                ['book_id' => 'PSA', 'chapter' => 23, 'verse_min' => 1, 'verse_max' => 6],
+                ['book_id' => 'PSA', 'chapter' => 24, 'verse_min' => 1, 'verse_max' => 10],
+            ]) + ['MAT' => [[13, 1, 13, null], [13, 1, 13, 50], [13, 51, 13, 58]]]
+        );
+        $this->assertSame(['PSA' => [23 => 6, 24 => 10], 'MAT' => [13 => 58]], $last);
+
+        $item = ['book_id' => 'PSA', 'chapter_start' => '23', 'chapter_end' => null, 'verse_start' => '1', 'verse_end' => '6'];
+        $this->assertSame(6, PlanCompatibilityService::planBibleLastVerse($item, $last));
+        $this->assertSame(10, PlanCompatibilityService::planBibleLastVerse(['chapter_end' => '24'] + $item, $last), 'its last chapter');
+        $this->assertNull(PlanCompatibilityService::planBibleLastVerse(['book_id' => 'GEN'] + $item, $last));
+        $this->assertNull(PlanCompatibilityService::planBibleLastVerse($item, []), 'no plain text in the plan\'s own Bible');
+    }
+
+    public function testWhereNothingNumbersAChapterThePlansOwnBibleTellsAWholeChapterFromPartOfOne()
+    {
+        // Review of #1161 (Todd); Sam, 2026-11-16. The item carries the last verse of its last chapter in the plan's
+        // own Bible (plan_bible_last_verse, PlanCompatibilityService::getPlanItems()). Where nothing in the Bible
+        // being checked numbers that chapter, an end at or past that verse reaches the end of the chapter.
+        $usx = self::fileset('XO_ET-usx', 'text_usx', ['PSA' => [[1, 1, 150, null]], 'MAT' => [[1, 1, 28, null]]]);
+        $files = self::chapterFiles(['PSA' => [[22, 1, 22, null], [23, 1, 23, null]], 'MAT' => [[13, 1, 13, null]]]);
+        $bible = [$usx, $files];
+        $whole = $this->item('PSA', 23, 1, 6) + ['plan_bible_last_verse' => 6];
+        $part = $this->item('MAT', 13, 1, 23) + ['plan_bible_last_verse' => 58];
+
+        $this->assertSame('exact', $this->word($whole, $bible, 'non_drama'));
+        $this->assertSame('exact', $this->word($whole, $bible, 'text'));
+        $this->assertSame('full', $this->evaluate([$whole], $bible)['status']);
+        $this->assertSame('mismatch', $this->word($part, $bible, 'non_drama'));
+        $this->assertSame('approximate', $this->word($part, $bible, 'non_drama', ['allow_chapter_audio' => true]));
+        $this->assertSame('mismatch', $this->evaluate([$whole, $part], $bible)['status'], 'the part of a chapter still counts');
+
+        $this->assertSame('exact', $this->word($this->item('PSA', 23, 1, 7) + ['plan_bible_last_verse' => 6], $bible, 'non_drama'), 'an end past it');
+        $this->assertSame('mismatch', $this->word($this->item('PSA', 23, 3, 6) + ['plan_bible_last_verse' => 6], $bible, 'non_drama'), 'a start inside the chapter');
+        $this->assertSame('exact', $this->word($this->item('PSA', 22, 1, 6, null, 23) + ['plan_bible_last_verse' => 6], $bible, 'non_drama'), 'the end of a longer item');
+        $this->assertSame('mismatch', $this->word($this->item('PSA', 22, 1, 6, null, 23) + ['plan_bible_last_verse' => 8], $bible, 'non_drama'));
+
+        // The Bible's own number wins wherever it has one: plain text, or a chapter file numbered to its end.
+        $text = self::fileset('XO_ET', 'text_plain', ['PSA' => [[23, 1, 23, 8]]]);
+        $this->assertSame('mismatch', $this->word($whole, [$usx, $text, $files], 'non_drama'));
+        $this->assertSame('exact', $this->word($whole, [$usx, $text, $files], 'text'));
+        $this->assertSame('mismatch', $this->word($whole, [$usx, self::chapterFiles(['PSA' => [[23, 1, 23, 8]]])], 'non_drama'));
+
+        // So do its pieces where they give a number but leave the last verse unknown (review of ca227bbc, L1-1/L3-1):
+        // drama sections 23:1-6 and 23:7- (this Bible's PSA 23 runs on); Hebrew-numbered MAL 3 in sections with the
+        // plan's MAL 3 ending at 18; LUK 7:1-35 beside a section from 7:36 into chapter 8; a section starting at 23:7
+        // beside chapter files with no number.
+        $drama = self::fileset('XO2DA', 'audio_drama', ['PSA' => [[23, 1, 23, 6], [23, 7, 23, null]], 'MAL' => [[3, 1, 3, 12], [3, 13, 3, 18], [3, 19, 3, null]]], 'section');
+        $this->assertSame('exact', $this->word($whole, [$usx, $drama], 'drama'));
+        $this->assertSame('exact', $this->word($this->item('MAL', 3, 13, 18) + ['plan_bible_last_verse' => 18], [$usx, $drama], 'drama'));
+        $luk = [self::fileset('XN_ET-usx', 'text_usx', ['LUK' => [[1, 1, 24, null]]]), self::sections(['LUK' => [[7, 1, 7, 35], [7, 36, 8, 3]]])];
+        $this->assertSame('exact', $this->word($this->item('LUK', 7, 1, 35) + ['plan_bible_last_verse' => 35], $luk, 'non_drama'));
+        $this->assertSame('full', $this->evaluate([$this->item('LUK', 7, 1, 35) + ['plan_bible_last_verse' => 35]], $luk)['status']);
+        $from_seven = self::fileset('XO2DA', 'audio_drama', ['PSA' => [[23, 7, 24, 3]]], 'section');
+        $this->assertSame('mismatch', $this->word($whole, [$usx, $files, $from_seven], 'non_drama'));
+
+        // A backwards item keeps no verse anywhere (rankItem()), whatever the plan's number.
+        $this->assertSame('missing', $this->word($this->item('PSA', 23, 8, 7) + ['plan_bible_last_verse' => 6], [$usx, $files], 'text'));
+        $this->assertSame('missing', $this->word($this->item('PSA', 23, 8, 7) + ['plan_bible_last_verse' => 6], [$usx, $files], 'non_drama'));
+
+        // Video reads it the same way, with include_video.
+        $clips = self::clips(['PSA' => [[23, 1, 23, null]]]);
+        $this->assertSame('exact', $this->word($whole, [$usx, $clips], 'video', ['include_video' => true]));
+        $this->assertSame('approximate', $this->word($this->item('PSA', 23, 1, 6), [$usx, $clips], 'video', ['include_video' => true]));
     }
 
     public function testACombinedVerseNeverMakesTextOrAStreamInexact()
@@ -1579,7 +1649,7 @@ JSON,
         $this->assertSame('mismatch', $this->word($this->item('MAT', 1, '2b', '10'), $files, 'non_drama'));
         $this->assertSame('mismatch', $this->word($this->item('MAT', 1, '3', null), $files, 'non_drama'), 'from verse 3 to the end');
         $this->assertSame('exact', $this->word($this->item('MAT', 1, '3', null), $files, 'text'));
-        $this->assertSame(['book_id' => 'MAT', 'chapter_start' => 5, 'chapter_end' => 5, 'verse_start' => null, 'verse_end' => 2], PlanCompatibilityCalculator::parseItem(['book_id' => 'MAT', 'chapter_start' => 5, 'chapter_end' => 3, 'verse_start' => '', 'verse_end' => '02']));
+        $this->assertSame(['book_id' => 'MAT', 'chapter_start' => 5, 'chapter_end' => 5, 'verse_start' => null, 'verse_end' => 2, 'plan_bible_last_verse' => null], PlanCompatibilityCalculator::parseItem(['book_id' => 'MAT', 'chapter_start' => 5, 'chapter_end' => 3, 'verse_start' => '', 'verse_end' => '02']));
         $this->assertSame(5, PlanCompatibilityCalculator::parseItem(['book_id' => 'MAT', 'chapter_start' => '5', 'chapter_end' => null, 'verse_start' => null, 'verse_end' => null])['chapter_end']);
     }
 

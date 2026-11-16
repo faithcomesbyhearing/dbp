@@ -18,8 +18,8 @@ namespace App\Services\Plans;
  * Pieces may span chapters.
  *
  * Per item and fileset the answer is exact, approximate, mismatch or missing (the item's end is first clamped to the
- * chapter's last verse in this Bible; a chapter's part is covered when its first and last verse are, gaps inside a
- * chapter not counting):
+ * chapter's last verse in this Bible, or in the plan's own Bible where nothing in this one numbers that chapter; a
+ * chapter's part is covered when its first and last verse are, gaps inside a chapter not counting):
  *  - missing: none of the item's verses is covered (revision 4; an item covered only in part is inexact, below);
  *  - exact: every part of the item is covered, and on chapter and section pieces, in each chapter of the item a single
  *    piece starts and ends exactly on the item's part of that chapter, with no piece running outside the item.
@@ -209,6 +209,7 @@ class PlanCompatibilityCalculator
                 'cut'            => in_array($set_type, self::CUT_ANYWHERE_SET_TYPES, true),
                 'chapters'       => $this->indexPieces($fileset['pieces'] ?? [], $last['verses']),
                 'last_verses'    => $last['verses'],
+                'numbered'       => $last['numbered'],
                 'open_past_last' => self::openPastLastVerse($fileset['pieces'] ?? [], $last),
             ];
         }
@@ -222,8 +223,11 @@ class PlanCompatibilityCalculator
      * fileset's only piece in that chapter, from verse 1 to a numbered end). A last verse that only sections or other
      * pieces give may stop short of the chapter's end (openPastLastVerse()).
      *
-     * @return array 'verses' => book_id => chapter => verse, a chapter absent when its last verse is unknown; and
-     *               'sure' => book_id => chapter => true, the chapters whose last verse is sure
+     * @return array 'verses' => book_id => chapter => verse, a chapter absent when its last verse is unknown;
+     *               'sure' => book_id => chapter => true, the chapters whose last verse is sure; and 'numbered' =>
+     *               book_id => chapter => true, the chapters where some piece gives a verse number (a numbered end,
+     *               or a start past verse 1), their last verse known or not (rankItem(): the plan's own number is only
+     *               for the others)
      */
     private static function lastVerses(array $filesets) : array
     {
@@ -295,7 +299,18 @@ class PlanCompatibilityCalculator
             }
         }
 
-        return ['verses' => $last_verses, 'sure' => $sure];
+        $numbered = [];
+        foreach ([$any_last, $open_start] as $verses_by_book) {
+            foreach ($verses_by_book as $book => $chapters) {
+                foreach ($chapters as $chapter => $verse) {
+                    if ($verse > 1) {
+                        $numbered[$book][$chapter] = true;
+                    }
+                }
+            }
+        }
+
+        return ['verses' => $last_verses, 'sure' => $sure, 'numbered' => $numbered];
     }
 
     /**
@@ -335,7 +350,8 @@ class PlanCompatibilityCalculator
      * The answer for one plan and one prepared Bible: status, items and formats, plus playlist_items when ids were
      * asked for: the asked items that are in this plan, in the order asked ([] when none is).
      *
-     * @param array $items each: id, book_id, chapter_start, chapter_end, verse_start, verse_end (as stored)
+     * @param array $items each: id, book_id, chapter_start, chapter_end, verse_start, verse_end (as stored), and
+     *                     optionally plan_bible_last_verse (parseItem())
      * @param array $bible from prepareBible()
      * @param array|null $playlist_item_ids the ids asked for, de-duplicated; null when none was asked for
      */
@@ -464,6 +480,13 @@ class PlanCompatibilityCalculator
     private function rankItem(array $item, array $fileset, array $last_verses) : int
     {
         $book = $item['book_id'];
+        if (isset($fileset['numbered'][$book][$item['chapter_end']])) {
+            // The plan's own number is only for a chapter this Bible doesn't number at all (itemPart()). Where some
+            // piece gives a number there but the last verse is unknown (an open piece starts past a numbered end,
+            // lastVerses()), this Bible's own pieces decide, as before: PSA 23:1-6 on sections 23:1-6 and 23:7-, in
+            // a Bible whose PSA 23 runs past the plan's verse 6, stays exact on the first section.
+            $item['plan_bible_last_verse'] = null;
+        }
         // Exact so far: every part covered, each by one piece matching it.
         $exact = true;
         // Some verse of the item is covered: otherwise it is missing (revision 4).
@@ -621,12 +644,18 @@ class PlanCompatibilityCalculator
      * chapter", and an end at or past the chapter's last verse is clamped to END. A start past the last verse gives a
      * start greater than the end: the item has no verse in this chapter. Not with $may_go_past (openPastLastVerse()):
      * the part then runs from its start to the end of the chapter.
+     *
+     * Where nothing in this Bible numbers the item's last chapter, its end is clamped to that chapter's last verse in
+     * the plan's own Bible instead (plan_bible_last_verse, parseItem()): PSA 23:1-6, written against a Bible whose
+     * PSA 23 ends at verse 6, is the whole chapter on chapter files with no end verse (review of #1161; Sam,
+     * 2026-11-16), while MAT 13:1-23 of 58 stays a verse range. This Bible's own number wins wherever it has one, and
+     * the start is never compared with the plan's number.
      */
     private static function itemPart(array $item, int $chapter, ?int $last_verse, bool $may_go_past = false) : array
     {
         $start = $chapter === $item['chapter_start'] && $item['verse_start'] !== null ? $item['verse_start'] : 1;
         $end = $chapter === $item['chapter_end'] && $item['verse_end'] !== null
-            ? self::resolveEnd($item['verse_end'], $last_verse)
+            ? self::resolveEnd($item['verse_end'], $last_verse ?? ($item['plan_bible_last_verse'] ?? null))
             : self::END;
 
         if ($last_verse !== null && $start > $last_verse && !$may_go_past) {
@@ -727,19 +756,25 @@ class PlanCompatibilityCalculator
     /**
      * A plan item as the engine reads it. Like PlaylistItems::getFullChapterAttribute, an empty or 0 verse is no verse:
      * the item then starts at the beginning, or runs to the end, of its chapter. A missing or backwards chapter_end is
-     * the chapter_start.
+     * the chapter_start. plan_bible_last_verse, when the item has it (PlanCompatibilityService::getPlanItems()), is
+     * the last verse of the item's last chapter in the plan's own Bible (itemPart()); null when absent, and for a
+     * backwards item (MAT 1:15-11), which keeps no verse anywhere.
      */
     public static function parseItem(array $item) : array
     {
         $chapter_start = (int) $item['chapter_start'];
-        $chapter_end = isset($item['chapter_end']) ? (int) $item['chapter_end'] : $chapter_start;
+        $chapter_end = max($chapter_start, isset($item['chapter_end']) ? (int) $item['chapter_end'] : $chapter_start);
+        $verse_start = self::verseNumber($item['verse_start'] ?? null);
+        $verse_end = self::verseNumber($item['verse_end'] ?? null);
+        $backwards = $chapter_start === $chapter_end && $verse_end !== null && $verse_end < ($verse_start ?? 1);
 
         return [
-            'book_id'       => (string) $item['book_id'],
-            'chapter_start' => $chapter_start,
-            'chapter_end'   => max($chapter_start, $chapter_end),
-            'verse_start'   => self::verseNumber($item['verse_start'] ?? null),
-            'verse_end'     => self::verseNumber($item['verse_end'] ?? null),
+            'book_id'               => (string) $item['book_id'],
+            'chapter_start'         => $chapter_start,
+            'chapter_end'           => $chapter_end,
+            'verse_start'           => $verse_start,
+            'verse_end'             => $verse_end,
+            'plan_bible_last_verse' => $backwards ? null : self::verseNumber($item['plan_bible_last_verse'] ?? null),
         ];
     }
 

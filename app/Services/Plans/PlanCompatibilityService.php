@@ -16,9 +16,11 @@ use Illuminate\Support\Facades\DB;
  * items, a Bible's visible filesets and each fileset's pieces. All content reads are on connection dbp and the plan
  * on dbp_users; nothing joins across the two.
  *
- * Caches (both a day, design section 8): plan_compat_bible_filesets per Bible and access groups, holding the visible
+ * Caches (each a day, design section 8): plan_compat_bible_filesets per Bible and access groups, holding the visible
  * filesets of every counted type whatever the request's options; plan_compat_fileset per hash_id and updated_at,
- * holding the pieces. Plan items and results are not cached.
+ * holding the pieces; plan_compat_plan_bible_text per plan item fileset_id, holding the fileset row of the plan's own
+ * Bible's plain text, whose pieces then come from plan_compat_fileset (getPlanBibleLastVerses(); design R28). Plan
+ * items and results are not cached.
  */
 class PlanCompatibilityService
 {
@@ -34,8 +36,14 @@ class PlanCompatibilityService
      * out, and so are the items Playlist::findWithFollowersByUserAndIds filters out by fileset tag (in practice the
      * opus ones), so the items always match Plan Details.
      *
+     * An item that names its last verse also gets plan_bible_last_verse: the last verse of its last chapter in the
+     * plan's own Bible, which a Bible that doesn't number that chapter uses to tell PSA 23:1-6 (the whole chapter)
+     * from MAT 13:1-23 (part of one) (PlanCompatibilityCalculator::itemPart(); Sam, 2026-11-16). Looked up only for
+     * such items, so a plan of whole chapters (every featured plan on dev, 2026-11-16) costs nothing more.
+     *
      * @return array|null null when there is no such plan; else a list of items
-     *                    (id, book_id, chapter_start, chapter_end, verse_start, verse_end)
+     *                    (id, book_id, chapter_start, chapter_end, verse_start, verse_end, and plan_bible_last_verse
+     *                    for an item with a verse_end: an int, or null when the plan's own Bible doesn't give one)
      */
     public function getPlanItems(int $plan_id) : ?array
     {
@@ -47,6 +55,7 @@ class PlanCompatibilityService
         $this->plan_service->setPlaylistItemsForEachPlaylist($plan, 0);
 
         $items = [];
+        $last_verses_by_fileset = [];
         foreach ($plan->days as $day) {
             // Set as an attribute by setPlaylistItemsForEachPlaylist(); reading $day->playlist when it was not set
             // would lazy-load the relation, without the item filter.
@@ -55,7 +64,7 @@ class PlanCompatibilityService
                 continue;
             }
             foreach ($playlist->items as $item) {
-                $items[] = [
+                $entry = [
                     'id'            => (int) $item->id,
                     'book_id'       => $item->book_id,
                     'chapter_start' => $item->chapter_start,
@@ -63,10 +72,89 @@ class PlanCompatibilityService
                     'verse_start'   => $item->verse_start,
                     'verse_end'     => $item->verse_end,
                 ];
+                if (PlanCompatibilityCalculator::parseItem($entry)['verse_end'] !== null) {
+                    $fileset_id = (string) $item->fileset_id;
+                    $last_verses_by_fileset[$fileset_id] ??= $this->getPlanBibleLastVerses($fileset_id);
+                    $entry['plan_bible_last_verse'] = self::planBibleLastVerse(
+                        $entry,
+                        $last_verses_by_fileset[$fileset_id]
+                    );
+                }
+                $items[] = $entry;
             }
         }
 
         return $items;
+    }
+
+    /**
+     * The last verse of an item's last chapter in the plan's own Bible.
+     *
+     * @param array $item as getPlanItems() builds it
+     * @param array $last_verses from getPlanBibleLastVerses()
+     */
+    public static function planBibleLastVerse(array $item, array $last_verses) : ?int
+    {
+        $parsed = PlanCompatibilityCalculator::parseItem($item);
+
+        return $last_verses[$parsed['book_id']][$parsed['chapter_end']] ?? null;
+    }
+
+    /**
+     * Each chapter's last verse in the plan's own Bible: the plain text of the Bible of the fileset the item was
+     * written against (playlist_items.fileset_id), found as Plan Details finds an item's verse text and verse count
+     * (BibleFileset::filesetTypeTextPlainAssociated(), PlaylistItems::getVerseText() and calculateVerses()). Like
+     * them, it reads that text whatever the key may see: only where its chapters end is used, and nothing of it is
+     * returned. The text's pieces come from getPieces(), the same cache entry as when that Bible is itself checked.
+     *
+     * @return array book_id => chapter => verse; [] when the fileset, its Bible or a plain text is missing
+     */
+    public function getPlanBibleLastVerses(string $fileset_id) : array
+    {
+        if ($fileset_id === '') {
+            return [];
+        }
+        $text = cacheRemember(
+            'plan_compat_plan_bible_text',
+            [$fileset_id],
+            now()->addDay(),
+            function () use ($fileset_id) {
+                // filesetTypeTextPlainAssociated() reads the Bible of whichever row with this id comes first, without
+                // checking that it has one; an id can be shared by several filesets, so every one of them must.
+                $filesets = BibleFileset::select(['hash_id', 'id'])->with('bible')->where('id', $fileset_id)->get();
+                if ($filesets->isEmpty() || $filesets->contains(function ($fileset) {
+                    return !$fileset->bible->first();
+                })) {
+                    return [];
+                }
+                $text = BibleFileset::filesetTypeTextPlainAssociated($fileset_id);
+
+                return $text ? self::filesetFromRow($text->getAttributes()) : [];
+            }
+        );
+
+        return empty($text) ? [] : self::lastVersesOfPieces($this->getPieces($text));
+    }
+
+    /**
+     * The highest numbered end in each chapter of these pieces.
+     *
+     * @param array $pieces_by_book from getPieces()
+     *
+     * @return array book_id => chapter => verse
+     */
+    public static function lastVersesOfPieces(array $pieces_by_book) : array
+    {
+        $last_verses = [];
+        foreach ($pieces_by_book as $book => $pieces) {
+            foreach ($pieces as [, , $chapter_end, $verse_end]) {
+                if ($verse_end !== null) {
+                    $last_verses[$book][$chapter_end] = max($last_verses[$book][$chapter_end] ?? 0, (int) $verse_end);
+                }
+            }
+        }
+
+        return $last_verses;
     }
 
     /**
