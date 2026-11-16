@@ -2,6 +2,7 @@
 
 namespace App\Models\Plan;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
@@ -43,5 +44,29 @@ class PlanLocalization extends Model
     public function plan()
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    /**
+     * Order a plan's rows in one app language so the row that applies to the app locale comes first: the exact
+     * (iso, alt_locale) row, else the row with no alt_locale, else the lowest id in that language. Only the
+     * ordering: the caller filters the plan and takes the first row (PBI 102556; Plan Details, PBI 104292, the same).
+     *
+     * Matching is case-insensitive through the columns' collation (utf8mb4_unicode_ci), so `FR-ca` finds `fr-CA`.
+     * With no alt_locale, `<=> NULL` is true for the NULL row, which therefore already comes first.
+     *
+     * @param Builder $query
+     * @param string $iso
+     * @param string|null $alt_locale
+     *
+     * @return Builder
+     */
+    public function scopeForAppLocale(Builder $query, string $iso, ?string $alt_locale) : Builder
+    {
+        $query->where('plans_localization.iso', $iso)
+            ->orderByRaw('plans_localization.alt_locale <=> ? DESC', [$alt_locale])
+            ->orderByRaw('plans_localization.alt_locale IS NULL DESC')
+            ->orderBy('plans_localization.id');
+
+        return $query;
     }
 }

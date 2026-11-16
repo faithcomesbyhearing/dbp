@@ -16,10 +16,28 @@ class PlanDayPlaylistItemsTransformer extends PlanTransformerBase
             ? ['user_bible' => $this->params['user_bible'] ?? null]
             : [];
 
+        // Only for show() with localized=true (PBI 104292): the plans_localization row for the app locale, or null when
+        // the plan has none in that language. Off, nothing changes: no row, so name and thumbnail are the plan's own,
+        // and the two keys are omitted (not null). On, both keys are always present, null when there is no value.
+        $localized = !empty($this->params['localized']);
+        $localization = $localized ? ($this->params['localization'] ?? null) : null;
+        $localized_fields = $localized
+            ? [
+                'description' => $localization->description ?? null,
+                'localization' => $localization === null ? null : [
+                    'id' => $localization->id,
+                    'iso' => $localization->iso,
+                    'alt_locale' => $localization->alt_locale,
+                    'bible_id' => $localization->bible_id,
+                ],
+            ]
+            : [];
+
         return array_merge([
             "id" => $plan->id,
-            "name" => $plan->name,
-            "thumbnail" => $plan->thumbnail,
+            'name' => $localization->name ?? $plan->name,
+            'thumbnail' => $localization->thumbnail ?? $plan->thumbnail,
+            ...$localized_fields,
             "featured" => $plan->featured,
             "suggested_start_date" => $plan->suggested_start_date,
             "draft" => $plan->draft,

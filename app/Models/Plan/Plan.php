@@ -7,6 +7,7 @@ use App\Models\Playlist\PlaylistItemsComplete;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Expression;
 use Carbon\Carbon;
 use App\Models\User\User;
 use Illuminate\Database\Query\JoinClause;
@@ -325,5 +326,130 @@ class Plan extends Model
             COALESCE(user_playlists_interation.max_updated_at, "1970-01-01 00:00:00"),
             COALESCE(plans.updated_at, "1970-01-01 00:00:00")
         ) as last_interaction'));
+    }
+
+    /**
+     * The localization columns applyAppLocalization() reads, selected under these aliases so the row's id and name
+     * never overwrite the plan's own.
+     */
+    const LOCALIZATION_ROW_COLUMNS = [
+        'localization_row_id'         => 'id',
+        'localization_row_iso'        => 'iso',
+        'localization_row_alt_locale' => 'alt_locale',
+        'localization_row_bible_id'   => 'bible_id',
+        'localization_row_name'       => 'name',
+        'localization_row_thumbnail'  => 'thumbnail',
+    ];
+
+    /**
+     * Join each plan to the one plans_localization row that applies to the app locale (PlanLocalization::
+     * scopeForAppLocale) and select that row's columns as localization_row_* aliases (PBI 102556).
+     *
+     * $required: an inner join (Discover: a plan with no row in the language is left out, and not counted) or a
+     * left join (the user's own plans: every plan stays, with NULL aliases when it has no row).
+     *
+     * The join's own plan_id and iso equalities are implied by the subquery, but they let Discover start from the
+     * iso index instead of scanning every plan.
+     *
+     * @param Builder $query
+     * @param string $iso
+     * @param string|null $alt_locale
+     * @param bool $required
+     *
+     * @return Builder
+     */
+    public function scopeWithAppLocalization(
+        Builder $query,
+        string $iso,
+        ?string $alt_locale,
+        bool $required
+    ) : Builder {
+        // Discover has no select yet: an unaliased * over the join would let the row's id and name replace the plan's,
+        // and addSelect() on an empty select list would drop the plan's columns altogether.
+        if ($query->getQuery()->columns === null) {
+            $query->select('plans.*');
+        }
+
+        $match = PlanLocalization::select('plans_localization.id')
+            ->whereColumn('plans_localization.plan_id', 'plans.id')
+            ->forAppLocale($iso, $alt_locale)
+            ->limit(1);
+
+        $query->join('plans_localization as localization', function (JoinClause $join) use ($iso, $match) {
+            $join->on('localization.plan_id', '=', 'plans.id')
+                ->where('localization.iso', '=', $iso)
+                ->where('localization.id', '=', $match);
+        }, null, null, $required ? 'inner' : 'left');
+
+        $columns = [];
+        foreach (self::LOCALIZATION_ROW_COLUMNS as $alias => $column) {
+            $columns[] = 'localization.' . $column . ' as ' . $alias;
+        }
+        $query->addSelect($columns);
+
+        return $query;
+    }
+
+    /**
+     * Show the plan through the localization row withAppLocalization() selected: its name, its thumbnail unless the
+     * row has none, and `localization` naming the row; a plan with no row keeps its own values and gets
+     * `localization: null`. The localization_row_* aliases are removed either way.
+     *
+     * getAttribute()/setAttribute()/offsetUnset() are called explicitly: the swagger properties declared above
+     * ($id, $name, $thumbnail) are real protected properties, so $this->name inside the class would write the
+     * property instead of the attribute.
+     *
+     * @return void
+     */
+    public function applyAppLocalization() : void
+    {
+        $row_id = $this->getAttribute('localization_row_id');
+
+        if ($row_id !== null) {
+            $this->setAttribute('name', $this->getAttribute('localization_row_name'));
+
+            $thumbnail = $this->getAttribute('localization_row_thumbnail');
+            if ($thumbnail !== null) {
+                $this->setAttribute('thumbnail', $thumbnail);
+            }
+
+            $this->setAttribute('localization', [
+                'id'         => (int) $row_id,
+                'iso'        => $this->getAttribute('localization_row_iso'),
+                'alt_locale' => $this->getAttribute('localization_row_alt_locale'),
+                'bible_id'   => $this->getAttribute('localization_row_bible_id'),
+            ]);
+        } else {
+            $this->setAttribute('localization', null);
+        }
+
+        foreach (array_keys(self::LOCALIZATION_ROW_COLUMNS) as $alias) {
+            $this->offsetUnset($alias);
+        }
+    }
+
+    /**
+     * The ORDER BY column for a sort_by value of the localized lists, or null for a value they do not accept.
+     * `name` is the displayed name (the localization's, else the plan's); `last_interaction` is the alias
+     * scopeSortByLastInteraction() selects. An Expression rather than \DB::raw() keeps this free of the app container.
+     *
+     * @param string $sort_by
+     *
+     * @return Expression|string|null
+     */
+    public static function localizedSortColumn(string $sort_by) : Expression|string|null
+    {
+        switch ($sort_by) {
+            case 'name':
+                return new Expression('COALESCE(localization.name, plans.name)');
+            case 'created_at':
+                return 'plans.created_at';
+            case 'updated_at':
+                return 'plans.updated_at';
+            case 'last_interaction':
+                return 'last_interaction';
+            default:
+                return null;
+        }
     }
 }
