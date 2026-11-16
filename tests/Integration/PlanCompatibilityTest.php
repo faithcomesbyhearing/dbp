@@ -114,15 +114,21 @@ class PlanCompatibilityTest extends TestCase
     }
 
     /**
-     * Post a body; only the route name and the body's keys are echoed.
+     * Post a body; only the route name and the body's keys are echoed. An error status must come with an error body:
+     * within one test the route keeps its controller, so after one error a good answer would still carry that status
+     * (review of #1161).
      */
     private function postCompatibility(array $body, int $status = 200): array
     {
         echo "\nTesting: v4_internal_plans.compatibility " . json_encode(array_keys($body));
         $response = $this->withHeaders($this->params)->postJson(route('v4_internal_plans.compatibility'), $body);
         $response->assertStatus($status);
+        $json = $response->json() ?? [];
+        if ($status >= 400) {
+            $this->assertSame($status, $json['error']['status_code'] ?? null, 'an error body, not a stale status');
+        }
 
-        return $response->json() ?? [];
+        return $json;
     }
 
     /** AC10 */
@@ -146,6 +152,9 @@ class PlanCompatibilityTest extends TestCase
             return 'ZZ' . $n;
         }, range(1, 84))], 422);
         $this->postCompatibility(['plan_ids' => [$this->plan_id], 'bible_ids' => ['ENGESV'], 'exact_threshold' => 101], 422);
+        // checkParam() reads false and an empty list as absent; they are not a number (review of #1161).
+        $this->postCompatibility(['plan_ids' => [$this->plan_id], 'bible_ids' => ['ENGESV'], 'exact_threshold' => false], 422);
+        $this->postCompatibility(['plan_ids' => [$this->plan_id], 'bible_ids' => ['ENGESV'], 'exact_threshold' => []], 422);
 
         $error = $this->postCompatibility(['plan_ids' => ['x'], 'bible_ids' => ['ENG-ESV']], 422)['error'];
         $this->assertSame(422, $error['status_code']);
@@ -156,14 +165,30 @@ class PlanCompatibilityTest extends TestCase
     /** AC9: the item-check limit is counted after the plans load */
     public function testTooManyItemChecksAnswers422()
     {
-        $items = array_fill(0, 2001, ['MAT', 1, null, null]);
-        $big_plan_id = $this->createPlan('compatibility limit test plan', $items);
-        $bible_ids = array_map(function ($n) {
-            return 'ZZ' . $n;
-        }, range(1, 100));
+        // 2,001 items times 100 Bibles is 200,100 checks.
+        $this->postCompatibility(['plan_ids' => [$this->bigPlan()], 'bible_ids' => $this->manyBibleIds(100)], 422);
+    }
 
-        $this->postCompatibility(['plan_ids' => [$big_plan_id], 'bible_ids' => $bible_ids], 422);
-        $this->postCompatibility(['plan_ids' => [$big_plan_id], 'bible_ids' => array_slice($bible_ids, 0, 99)], 200);
+    /**
+     * AC9: just under the limit. A test of its own, not a second call in the test above: within one test the route
+     * keeps its controller, whose status code the first call's 422 would leave set (review of #1161).
+     */
+    public function testItemChecksJustUnderTheLimitAnswer200()
+    {
+        // 2,001 items times 99 Bibles is 198,099 checks.
+        $this->postCompatibility(['plan_ids' => [$this->bigPlan()], 'bible_ids' => $this->manyBibleIds(99)], 200);
+    }
+
+    private function bigPlan() : int
+    {
+        return $this->createPlan('compatibility limit test plan', array_fill(0, 2001, ['MAT', 1, null, null]));
+    }
+
+    private function manyBibleIds(int $count) : array
+    {
+        return array_map(function ($n) {
+            return 'ZZ' . $n;
+        }, range(1, $count));
     }
 
     /** AC9 */

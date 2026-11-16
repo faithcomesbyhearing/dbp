@@ -4,12 +4,17 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\Plan\PlanCompatibilityController;
 use App\Services\Plans\PlanCompatibilityService;
+use Illuminate\Container\Container;
+use Illuminate\Http\Request;
+use Illuminate\Session\ArraySessionHandler;
+use Illuminate\Session\Store;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Unit coverage for the DB-free inputs of POST /plans/compatibility (API task 102553):
  *  - PlanCompatibilityController::normalizeRequest(), the request check (AC9's validation, the strict flags, the
- *    de-duplication), with values as checkParam() returns them: null for absent, 0, "0", false or an empty list;
+ *    de-duplication), with values as checkParam() returns them: null for absent, 0, "0", false or an empty list
+ *    (playlist_item_ids and exact_threshold arrive as sent, so their 0, false and empty list are tested too);
  *  - PlanCompatibilityController::itemsOfNoRequestedPlan(), which ignores an asked item of a requested plan that is
  *    deleted (revision 5, R24);
  *  - PlanCompatibilityService::filesetFromRow(), which marks Opus by the id or the codec tag (design section 12: the
@@ -19,7 +24,7 @@ use PHPUnit\Framework\TestCase;
  * The 403 for a key off the user-data whitelist, unknown ids in meta.not_found, the item-check limit, an item in none
  * of the plans and visibility need the database: tests/Integration/PlanCompatibilityTest.php.
  *
- * Runs without a database or the Laravel container.
+ * Runs without a database or the Laravel application (one test sets up a bare container to hold a request).
  *
  * @group plans
  */
@@ -152,12 +157,50 @@ class PlanCompatibilityInputTest extends TestCase
         $this->assertRejected(['playlist_item_ids' => range(1, 21)], 'playlist_item_ids takes at most 20 playlist item ids.');
     }
 
+    public function testExactThresholdArrivesAsSent()
+    {
+        // Review of #1161: false and [] must reach normalizeRequest() (a 422), where checkParam() alone reads them as
+        // absent (off). A bare container holds the request and an empty session, as checkParam() reads both.
+        $previous = Container::getInstance();
+        $container = new Container();
+        Container::setInstance($container);
+        $container->instance('session', new Store('test', new ArraySessionHandler(1)));
+        $read = new \ReflectionMethod(PlanCompatibilityController::class, 'exactThresholdAsSent');
+        $post = function (string $json) use ($container) {
+            $container->instance('request', Request::create(
+                '/api/plans/compatibility',
+                'POST',
+                [],
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                $json
+            ));
+        };
+        try {
+            foreach ([[false, false], [[], []], [0, 0], ['0', '0'], [25, 25], [null, null]] as [$sent, $expected]) {
+                $post(json_encode(['exact_threshold' => $sent]));
+                $this->assertSame($expected, $read->invoke(null), json_encode($sent));
+            }
+            $post('{}');
+            $this->assertNull($read->invoke(null), 'absent');
+        } finally {
+            Container::setInstance($previous);
+        }
+    }
+
     public function testExactThreshold()
     {
         $this->assertSame(0, $this->check(['exact_threshold' => null])['values']['exact_threshold']);
         $this->assertSame(25, $this->check(['exact_threshold' => 25])['values']['exact_threshold']);
         $this->assertSame(100, $this->check(['exact_threshold' => '100'])['values']['exact_threshold']);
-        foreach ([101, -1, 2.5, '25%', 'abc', true, [25]] as $bad) {
+        // 0 is off, and it now arrives as sent (exactThresholdAsSent()); false and a list, empty or not, are a 422
+        // (review of #1161: checkParam() used to read them as absent).
+        foreach ([0, '0'] as $off) {
+            $this->assertSame(['errors' => []], array_intersect_key($this->check(['exact_threshold' => $off]), ['errors' => 1]));
+            $this->assertSame(0, $this->check(['exact_threshold' => $off])['values']['exact_threshold']);
+        }
+        foreach ([101, -1, 2.5, '25%', 'abc', '00', '07', true, false, [], [25]] as $bad) {
             $this->assertRejected(['exact_threshold' => $bad], 'exact_threshold must be a whole number from 0 to 100.');
         }
     }

@@ -1315,6 +1315,93 @@ JSON,
         );
     }
 
+    public function testAShortSectionDoesntHideTheRestOfTheChapterFromAFilesetThatRunsToItsEnd()
+    {
+        // Review of #1161 (Todd): complete USX for MAT and a drama section of MAT 1:1-10 only, no plain text. The
+        // section's end (10) is MAT 1's last verse as far as the numbers go, but the USX runs on to the chapter's real
+        // end, so MAT 1:11-15 is there in the text, and only the drama lacks it.
+        $usx = self::fileset('XN_ET-usx', 'text_usx', ['MAT' => [[1, 1, 28, null]]]);
+        $drama = self::fileset('XN2DA', 'audio_drama', ['MAT' => [[1, 1, 1, 10]]], 'section');
+        $item = $this->item('MAT', 1, 11, 15);
+
+        $this->assertSame('exact', $this->word($item, [$usx, $drama], 'text'));
+        $this->assertSame('missing', $this->word($item, [$usx, $drama], 'drama'));
+        $this->assertSame('full', $this->evaluate([$item], [$usx, $drama])['status'], 'as with the USX alone');
+        $this->assertSame('full', $this->evaluate([$item], [$usx])['status']);
+        $this->assertSame('missing', $this->word($this->item('MAT', 1, 15, 11), [$usx, $drama], 'text'), 'a backwards item has no verse');
+
+        // The same with chapter audio that has no end verse, in place of the USX: the chapter file covers MAT 1:11-15,
+        // which starts inside the chapter, so mismatch (approximate with allow_chapter_audio), not missing.
+        $files = self::chapterFiles(['MAT' => [[1, 1, 1, null]]]);
+        $this->assertSame('mismatch', $this->word($item, [$files, $drama], 'non_drama'));
+        $this->assertSame('missing', $this->word($item, [$files, $drama], 'drama'));
+        $this->assertSame('approximate', $this->word($item, [$files, $drama], 'non_drama', ['allow_chapter_audio' => true]));
+        $this->assertSame('incompatible_mismatch', $this->evaluate([$item], [$files, $drama])['status']);
+        // An item that ends at or past the section's end still reads as running to the end of the chapter, on the
+        // section and on the chapter files alike: nothing tells a short section from a complete one, and complete
+        // ones are the usual case (review of the fix).
+        $this->assertSame('exact', $this->word($this->item('MAT', 1, 1, 15), [$files, $drama], 'non_drama'));
+        $this->assertSame('exact', $this->word($this->item('MAT', 1), [$files, $drama], 'non_drama'));
+        $this->assertSame('exact', $this->word($this->item('MAT', 1, 1, 15), [$files, $drama], 'drama'));
+
+        // Plain text tells which verses a chapter has: past its last verse, no fileset has any.
+        $short_text = self::fileset('XN_ET', 'text_plain', ['MAT' => [[1, 1, 1, 10]]]);
+        $this->assertSame('missing', $this->word($item, [$usx, $short_text, $drama], 'text'));
+        $this->assertSame('missing', $this->word($item, [$short_text, $files], 'non_drama'));
+
+        // Only an item of one chapter: GEN 1:32-3 is still GEN 2-3 on every fileset, whole chapters on chapter files
+        // with no end verse, where GEN 1's last verse (31) comes from a drama section and no text (review of the fix).
+        $gen_files = self::chapterFiles(['GEN' => [[1, 1, 1, null], [2, 1, 2, null], [3, 1, 3, null]]]);
+        $gen_drama = self::fileset('XO2DA', 'audio_drama', ['GEN' => [[1, 1, 1, 31]]], 'section');
+        $gen_usx = self::fileset('XO_ET-usx', 'text_usx', ['GEN' => [[1, 1, 50, null]]]);
+        $this->assertSame('exact', $this->word($this->item('GEN', 1, 32, null, null, 3), [$gen_files, $gen_drama], 'non_drama'));
+        $this->assertSame('exact', $this->word($this->item('GEN', 1, 32, null, null, 3), [$gen_files, $gen_drama, $gen_usx], 'text'));
+
+        // The cost, accepted, where sections give the number and are in fact complete: an item of one chapter wholly
+        // past the real end (GEN 1:32-40 where GEN 1 has 31 verses, say from another versification) is found on a
+        // fileset that runs to the end, as the engine can't tell it from MAT 1:11-15 above. With plain text it is
+        // missing everywhere (testAFirstChapterPartPastTheLastVerseIsLeftOut). An item ending on the sections' last
+        // verse is still the whole chapter on the chapter files.
+        $this->assertSame('exact', $this->word($this->item('GEN', 1, 32, 40), [$gen_usx, $gen_drama], 'text'));
+        $this->assertSame('missing', $this->word($this->item('GEN', 1, 32, 40), [$gen_usx, $gen_drama], 'drama'));
+        $psa_files = self::chapterFiles(['PSA' => [[23, 1, 23, null]], 'JOL' => [[2, 1, 2, null]]]);
+        $psa_sections = self::fileset('XO2DA', 'audio_drama', ['PSA' => [[23, 1, 23, 3], [23, 4, 23, 6]]], 'section');
+        $this->assertSame('exact', $this->word($this->item('PSA', 23, 1, 6), [$psa_files, $psa_sections], 'non_drama'));
+        $this->assertSame('approximate', $this->word($this->item('PSA', 23, 1, 6), [$psa_files, $psa_sections], 'drama'), 'the whole chapter, in two sections');
+
+        // A whole-chapter file's numbered end is the chapter's end, and is kept (review of the fix: on dev, open
+        // non-drama files beside drama files numbered to each chapter's end, no text, is the common shape): PSA 23:1-6
+        // is the whole chapter on the open files too, and JOL 2:28-32, past JOL 2's 27 verses in a Bible numbered like
+        // the Hebrew, has no verse there.
+        $whole_drama = self::fileset('XO2DA', 'audio_drama', ['PSA' => [[23, 1, 23, 6]], 'JOL' => [[2, 1, 2, 27]]]);
+        $this->assertSame('exact', $this->word($this->item('PSA', 23, 1, 6), [$psa_files, $whole_drama], 'non_drama'));
+        $this->assertSame('exact', $this->word($this->item('PSA', 23, 1, 6), [$psa_files, $whole_drama], 'drama'));
+        $this->assertSame('missing', $this->word($this->item('JOL', 2, 28, 32), [$psa_files, $whole_drama], 'non_drama'));
+        $jol_usx = self::fileset('XO_ET-usx', 'text_usx', ['JOL' => [[1, 1, 3, null]]]);
+        $this->assertSame('missing', $this->word($this->item('JOL', 2, 28, 32), [$psa_files, $whole_drama, $jol_usx], 'text'));
+    }
+
+    public function testWithNoVerseNumberForAChapterAnItemsLastVerseCantBeToldFromTheChaptersEnd()
+    {
+        // Review of #1161 (Todd), left as it is: PSA 23:1-6 on chapter files with no end verse, in a Bible whose only
+        // text is USX (no verse numbers either). Nothing gives PSA 23's last verse, so verse 6 can't be told from a
+        // verse inside the chapter, and the item reads as a verse range: mismatch on the chapter files (approximate
+        // with allow_chapter_audio). Plan Details reads it the same way: full_chapter is true only for an item with no
+        // verses (PlaylistItems::getFullChapterAttribute). Plain text, or a chapter file numbered to verse 6, makes it
+        // exact.
+        $usx = self::fileset('XO_ET-usx', 'text_usx', ['PSA' => [[1, 1, 150, null]]]);
+        $files = self::chapterFiles(['PSA' => [[23, 1, 23, null]]]);
+        $item = $this->item('PSA', 23, 1, 6);
+
+        $this->assertSame('mismatch', $this->word($item, [$usx, $files], 'non_drama'));
+        $this->assertSame('approximate', $this->word($item, [$usx, $files], 'non_drama', ['allow_chapter_audio' => true]));
+        $this->assertSame('exact', $this->word($this->item('PSA', 23), [$usx, $files], 'non_drama'), 'stored as a whole chapter');
+
+        $text = self::fileset('XO_ET', 'text_plain', ['PSA' => [[23, 1, 23, 6]]]);
+        $this->assertSame('exact', $this->word($item, [$usx, $text, $files], 'non_drama'));
+        $this->assertSame('exact', $this->word($item, [$usx, self::chapterFiles(['PSA' => [[23, 1, 23, 6]]])], 'non_drama'));
+    }
+
     public function testACombinedVerseNeverMakesTextOrAStreamInexact()
     {
         // R21, on purpose (Sam, 2026-11-12): ENGCEV's plain text joins MAT 1:2-11 into one verse, and 1:12-16. Its
