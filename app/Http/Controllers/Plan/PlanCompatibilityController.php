@@ -118,7 +118,7 @@ class PlanCompatibilityController extends APIController
             'plan_ids'              => checkParam('plan_ids'),
             'bible_ids'             => checkParam('bible_ids'),
             'playlist_item_ids'     => self::playlistItemIdsAsSent(),
-            'exact_threshold'       => checkParam('exact_threshold'),
+            'exact_threshold'       => self::exactThresholdAsSent(),
             'include_video'         => checkParam('include_video'),
             'include_opus'          => checkParam('include_opus'),
             'allow_video_only'      => checkParam('allow_video_only'),
@@ -277,13 +277,15 @@ class PlanCompatibilityController extends APIController
      * (the first spelling is kept, and echoed). The limits apply to the distinct ids. The four flags are on only for
      * JSON true or the word true in any case, so a release whose checkBoolean() is older behaves the same; anything
      * else, including a list, is off. allow_video_only without include_video is not an error: it adds nothing, as there
-     * is no video to count (R26). exact_threshold is 0 to 100, 0 (or absent) meaning off. Absent values arrive as null:
+     * is no video to count (R26). exact_threshold is a whole number from 0 to 100, 0, null or absent meaning off; it
+     * arrives as sent (exactThresholdAsSent()), so false or a list is a 422. Other absent values arrive as null:
      * checkParam() also returns null for 0, "0", false and an empty list. playlist_item_ids arrives as sent
      * (playlistItemIdsAsSent()), so a 0 or false is rejected as not a list; an empty list, or none, is null in the
      * values. Its ids are whole numbers of 1 or more, at most 20 distinct, repeated ids counting once.
      *
      * @param array $raw plan_ids, bible_ids, playlist_item_ids, exact_threshold, include_video, include_opus,
-     *                   allow_video_only, allow_chapter_audio, as checkParam() returns them
+     *                   allow_video_only, allow_chapter_audio, as checkParam() returns them (playlist_item_ids and
+     *                   exact_threshold as sent)
      *
      * @return array ['errors' => list of messages, 'values' => the normalized request]
      */
@@ -386,8 +388,9 @@ class PlanCompatibilityController extends APIController
         }
 
         $exact_threshold = 0;
-        if (($raw['exact_threshold'] ?? null) !== null) {
-            $threshold = self::positiveInteger($raw['exact_threshold']);
+        $raw_threshold = $raw['exact_threshold'] ?? null;
+        if ($raw_threshold !== null) {
+            $threshold = $raw_threshold === 0 || $raw_threshold === '0' ? 0 : self::positiveInteger($raw_threshold);
             if ($threshold === null || $threshold > 100) {
                 $errors[] = 'exact_threshold must be a whole number from 0 to 100.';
             } else {
@@ -444,6 +447,17 @@ class PlanCompatibilityController extends APIController
     private static function playlistItemIdsAsSent()
     {
         return checkParam('playlist_item_ids') ?? getAndCheckParam('playlist_item_ids');
+    }
+
+    /**
+     * exact_threshold as the client sent it. checkParam() reads 0, "0", false and an empty list as absent, but false and
+     * a list are not a whole number from 0 to 100, which the contract answers with a 422 (review of #1161), so when
+     * checkParam() finds nothing the request itself is asked. Not getAndCheckParam(), as for playlist_item_ids: its
+     * return type turns false into 0. A JSON null, or no exact_threshold, comes back as null: off.
+     */
+    private static function exactThresholdAsSent()
+    {
+        return checkParam('exact_threshold') ?? request()->input('exact_threshold');
     }
 
     /**

@@ -161,7 +161,9 @@ class PlanCompatibilityCalculator
      * and JSON rows run to the end with no number, so they give none); without a numbered text end for that chapter,
      * the highest verse any fileset's piece ends on there. Unknown when no piece gives a number, or when a piece with
      * no numbered end there (it reaches the end, whatever the number) starts after that verse. Video's pieces count
-     * only toward video's own last verses, so include_video changes nothing but video.
+     * only toward video's own last verses, so include_video changes nothing but video. A last verse that neither text
+     * nor a whole-chapter file gives may stop short of the chapter's end, so a fileset running to that end with no
+     * number still covers an item of one chapter that starts past it (openPastLastVerse()).
      *
      * @param array $filesets each: set_type_code, segmentation_type, is_opus, and pieces
      *                        (book_id => list of [chapter_start, verse_start, chapter_end, verse_end])
@@ -203,10 +205,11 @@ class PlanCompatibilityCalculator
             $set_type = $fileset['set_type_code'];
             $last = self::FORMAT_BY_SET_TYPE[$set_type] === self::FORMAT_VIDEO ? $video_last_verses : $last_verses;
             $prepared[] = [
-                'format'      => self::FORMAT_BY_SET_TYPE[$set_type],
-                'cut'         => in_array($set_type, self::CUT_ANYWHERE_SET_TYPES, true),
-                'chapters'    => $this->indexPieces($fileset['pieces'] ?? [], $last),
-                'last_verses' => $last,
+                'format'         => self::FORMAT_BY_SET_TYPE[$set_type],
+                'cut'            => in_array($set_type, self::CUT_ANYWHERE_SET_TYPES, true),
+                'chapters'       => $this->indexPieces($fileset['pieces'] ?? [], $last['verses']),
+                'last_verses'    => $last['verses'],
+                'open_past_last' => self::openPastLastVerse($fileset['pieces'] ?? [], $last),
             ];
         }
 
@@ -214,18 +217,41 @@ class PlanCompatibilityCalculator
     }
 
     /**
-     * Each chapter's last verse in this Bible, from these filesets (see prepareBible()).
+     * Each chapter's last verse in this Bible, from these filesets (see prepareBible()), and whether it is sure: given
+     * by a numbered text end, or by the end of a whole-chapter file, which is the chapter's end by nature (a non-section
+     * fileset's only piece in that chapter, from verse 1 to a numbered end). A last verse that only sections or other
+     * pieces give may stop short of the chapter's end (openPastLastVerse()).
      *
-     * @return array book_id => chapter => verse; a chapter is absent when its last verse is unknown
+     * @return array 'verses' => book_id => chapter => verse, a chapter absent when its last verse is unknown; and
+     *               'sure' => book_id => chapter => true, the chapters whose last verse is sure
      */
     private static function lastVerses(array $filesets) : array
     {
         $text_last = [];
         $any_last = [];
+        $whole_last = [];
         $open_start = [];
         foreach ($filesets as $fileset) {
             $is_text = self::FORMAT_BY_SET_TYPE[$fileset['set_type_code']] === self::FORMAT_TEXT;
+            $may_have_whole_files = !$is_text && ($fileset['segmentation_type'] ?? null) !== 'section';
             foreach ($fileset['pieces'] ?? [] as $book => $pieces) {
+                // This fileset's distinct pieces in each chapter, to find a chapter it holds as one file.
+                $in_chapter = [];
+                foreach ($pieces as $piece) {
+                    for ($chapter = $piece[0]; $chapter <= $piece[2]; $chapter++) {
+                        $in_chapter[$chapter][implode(':', $piece)] = $piece;
+                    }
+                }
+                if ($may_have_whole_files) {
+                    foreach ($in_chapter as $chapter => $chapter_pieces) {
+                        [$chapter_start, $verse_start, $chapter_end, $verse_end] = reset($chapter_pieces);
+                        if (count($chapter_pieces) === 1 && $chapter_start === $chapter_end && $verse_end !== null
+                            && (int) $verse_start <= 1
+                        ) {
+                            $whole_last[$book][$chapter] = max($whole_last[$book][$chapter] ?? 0, $verse_end);
+                        }
+                    }
+                }
                 foreach ($pieces as [$chapter_start, $verse_start, $chapter_end, $verse_end]) {
                     // Where the piece runs to the end of a chapter with no number (an open end, or on into the next
                     // chapter), the highest verse it starts on there.
@@ -260,7 +286,49 @@ class PlanCompatibilityCalculator
             }
         }
 
-        return $last_verses;
+        $sure = [];
+        foreach ($last_verses as $book => $chapters) {
+            foreach ($chapters as $chapter => $verse) {
+                if (isset($text_last[$book][$chapter]) || ($whole_last[$book][$chapter] ?? null) === $verse) {
+                    $sure[$book][$chapter] = true;
+                }
+            }
+        }
+
+        return ['verses' => $last_verses, 'sure' => $sure];
+    }
+
+    /**
+     * The chapters where this fileset runs to the end with no number (an open end, or on into the next chapter) while
+     * the chapter's last verse is known but not sure (lastVerses()): only sections or other part-chapter pieces give
+     * it, and they may stop short of the chapter's end, which this fileset reaches, wherever it is. So on this fileset
+     * an item of one chapter that starts past that verse is still looked for, not taken as having no verse there
+     * (review of #1161: complete USX beside a drama section of MAT 1:1-10 made MAT 1:11-15 missing, text included).
+     * Everything else keeps the last verse: an item that ends at or past it reads as running to the end of the
+     * chapter, as the sections themselves do, since nothing tells a short section from a complete one, and complete
+     * ones are the usual case; and a longer item's first-chapter part past it is left out (rankItem()). The cost, where
+     * the sections are in fact complete: an item of one chapter wholly past the real end (another versification's
+     * verse) is found on this fileset.
+     *
+     * @param array $last from lastVerses()
+     *
+     * @return array book_id => chapter => true
+     */
+    private static function openPastLastVerse(array $pieces_by_book, array $last) : array
+    {
+        $open = [];
+        foreach ($pieces_by_book as $book => $pieces) {
+            foreach ($pieces as [$chapter_start, , $chapter_end, $verse_end]) {
+                $last_open = $verse_end === null ? $chapter_end : $chapter_end - 1;
+                for ($chapter = $chapter_start; $chapter <= $last_open; $chapter++) {
+                    if (isset($last['verses'][$book][$chapter]) && !isset($last['sure'][$book][$chapter])) {
+                        $open[$book][$chapter] = true;
+                    }
+                }
+            }
+        }
+
+        return $open;
     }
 
     /**
@@ -405,7 +473,18 @@ class PlanCompatibilityCalculator
         $whole_chapters = true;
 
         for ($chapter = $item['chapter_start']; $chapter <= $item['chapter_end']; $chapter++) {
-            [$start, $end] = self::itemPart($item, $chapter, $last_verses[$book][$chapter] ?? null);
+            // On a fileset that runs to the end of this chapter with no number, an item of one chapter that starts past
+            // a last verse neither text nor a whole-chapter file gives is still looked for (openPastLastVerse()). A
+            // longer item's first-chapter part past the last verse is left out on every fileset alike (GEN 1:32-3,
+            // below). Not for a backwards item (MAT 1:15-11), which has no verse anywhere.
+            [$start, $end] = self::itemPart(
+                $item,
+                $chapter,
+                $last_verses[$book][$chapter] ?? null,
+                $item['chapter_start'] === $item['chapter_end']
+                    && ($item['verse_end'] === null || $item['verse_end'] >= ($item['verse_start'] ?? 1))
+                    && isset($fileset['open_past_last'][$book][$chapter])
+            );
             if ($start > $end) {
                 // The item's part of this chapter starts past its last verse in this Bible: no verse to cover here,
                 // and no chapter for the item to start inside (GEN 1:32-3 with 31 verses in GEN 1 is GEN 2-3).
@@ -540,16 +619,17 @@ class PlanCompatibilityCalculator
     /**
      * The item's part of one of its chapters, as [start, end] verse positions; end is END for "to the end of the
      * chapter", and an end at or past the chapter's last verse is clamped to END. A start past the last verse gives a
-     * start greater than the end: the item has no verse in this chapter.
+     * start greater than the end: the item has no verse in this chapter. Not with $may_go_past (openPastLastVerse()):
+     * the part then runs from its start to the end of the chapter.
      */
-    private static function itemPart(array $item, int $chapter, ?int $last_verse) : array
+    private static function itemPart(array $item, int $chapter, ?int $last_verse, bool $may_go_past = false) : array
     {
         $start = $chapter === $item['chapter_start'] && $item['verse_start'] !== null ? $item['verse_start'] : 1;
         $end = $chapter === $item['chapter_end'] && $item['verse_end'] !== null
             ? self::resolveEnd($item['verse_end'], $last_verse)
             : self::END;
 
-        if ($last_verse !== null && $start > $last_verse) {
+        if ($last_verse !== null && $start > $last_verse && !$may_go_past) {
             $end = $start - 1;
         }
 
