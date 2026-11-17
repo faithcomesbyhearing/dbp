@@ -2,6 +2,8 @@
 
 namespace Tests\Integration;
 
+use App\Http\Controllers\Plan\PlanCompatibilityController;
+use App\Models\Bible\Bible;
 use App\Models\Bible\BibleFileset;
 use App\Models\Plan\Plan;
 use App\Models\Plan\PlanDay;
@@ -12,17 +14,23 @@ use App\Models\User\Key;
 use App\Services\Plans\PlanCompatibilityCalculator;
 use App\Services\Plans\PlanCompatibilityService;
 use App\Support\AccessGroupsCollection;
+use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 /**
  * Coverage for POST /api/plans/compatibility (v4_internal_plans.compatibility), API task 102553, where it needs the
  * database: the playlist items (AC7), validation and meta.not_found (AC9), the user-data whitelist (AC10), visibility
- * (AC11) and an asked item of a deleted plan (AC24, revision 5). The rules themselves are covered without a database by tests/Feature/PlanCompatibilityCalculatorTest.php
- * and tests/Feature/PlanCompatibilityInputTest.php.
+ * (AC11) and an asked item of a deleted plan (AC24, revision 5); revision 6's old-format rules on the candidate rows
+ * only (speed design section 4) and its time limit (AC4). The rules themselves are covered without a database by
+ * tests/Feature/PlanCompatibilityCalculatorTest.php, tests/Feature/PlanCompatibilityInputTest.php and
+ * tests/Feature/PlanCompatibilitySpeedTest.php.
  *
  * Seeds one plan of two days (MAT 1, and MAT 5:1-12) and, for the item-check limit, one plan of 2,001 items. Needs
- * the ENGESV Bible with its filesets and a key named test-key.
+ * the ENGESV Bible with its filesets and a key named test-key. The old-format test seeds two Bibles of its own
+ * (ZZOLDFMT1, ZZOLDFMT2) with their filesets, and the time-limit test gives the key an access group when it has
+ * none (a throwaway database); both remove what they add.
  *
  * The API key is sent only as a request header, never in the URL, and nothing that contains it is printed.
  *
@@ -38,6 +46,14 @@ class PlanCompatibilityTest extends TestCase
     private $plan_ids = [];
     private $plan_id;
     private $item_ids = [];
+    private $seeded_hash_ids = [];
+    /** The access group linked to the key by the time-limit test, when the key had none; null otherwise. */
+    private $seeded_key_group = null;
+    private $seeded_group = false;
+
+    private const OLD_FORMAT_BIBLES = ['ZZOLDFMT1', 'ZZOLDFMT2'];
+    /** An access group made for the time-limit test only on a database that has none. */
+    private const LOCAL_ACCESS_GROUP_ID = 990001;
 
     protected function setUp(): void
     {
@@ -67,6 +83,20 @@ class PlanCompatibilityTest extends TestCase
             // Playlists first, soft-deleted ones too: FK cascade removes playlist_items.
             Playlist::withTrashed()->where('plan_id', $plan_id)->forceDelete();
             Plan::withTrashed()->where('id', $plan_id)->forceDelete();
+        }
+        if ($this->seeded_hash_ids) {
+            DB::connection('dbp')->table('bible_fileset_connections')->whereIn('hash_id', $this->seeded_hash_ids)->delete();
+            DB::connection('dbp')->table('bible_filesets')->whereIn('hash_id', $this->seeded_hash_ids)->delete();
+            DB::connection('dbp')->table('bibles')->whereIn('id', self::OLD_FORMAT_BIBLES)->delete();
+        }
+        if ($this->seeded_key_group !== null) {
+            DB::connection('dbp_users')->table('access_group_api_keys')
+                ->where('access_group_id', $this->seeded_key_group)
+                ->where('key_id', Key::where('name', 'test-key')->value('id'))
+                ->delete();
+        }
+        if ($this->seeded_group) {
+            DB::connection('dbp')->table('access_groups')->where('id', self::LOCAL_ACCESS_GROUP_ID)->delete();
         }
         parent::tearDown();
     }
@@ -344,5 +374,118 @@ class PlanCompatibilityTest extends TestCase
         foreach (array_column($service->getVisibleFilesets('ENGESV', $nobody), 'hash_id') as $hash_id) {
             $this->assertTrue(BibleFileset::where('bible_filesets.hash_id', $hash_id)->isContentAvailable($nobody)->exists());
         }
+    }
+
+    /**
+     * Revision 6 (speed design section 4): the old-format rules now run only on the candidate rows, and the list is
+     * the one the full query with both rules gives. Seeds Bible ZZOLDFMT1 with an old six-character text that its
+     * ten-character text replaces and one with no replacement, one whose replacement is archived, old 16 kbps audio
+     * with and without its -opus16 copy, and a candidate that isn't visible; and ZZOLDFMT2, with nothing visible. No
+     * license group, so every key may see them, as isContentAvailable() lets every caller see such a fileset.
+     */
+    public function testTheOldFormatRulesDropWhatTheFullQueryDrops()
+    {
+        $this->seedOldFormatBibles();
+
+        $expected = [
+            'ZZOLDAN1DA', 'ZZOLDAN1DA-opus16', 'ZZOLDAN_ET', 'ZZOLDB', 'ZZOLDBN1DA16', 'ZZOLDC',
+        ];
+        foreach ([new AccessGroupsCollection([-1]), new AccessGroupsCollection([-2, -3])] as $groups) {
+            $visible = array_column((new PlanCompatibilityService())->getVisibleFilesets('ZZOLDFMT1', $groups), 'id');
+            sort($visible);
+            $this->assertSame($expected, $visible, 'ZZOLDA and ZZOLDAN1DA16 are replaced; ZZOLDD is not visible');
+
+            // Today's builder, with both rules on the whole list (the query before revision 6).
+            $full = Bible::find('ZZOLDFMT1')->filesetsWithoutMeta()
+                ->isContentAvailable($groups)
+                ->conditionToExcludeOldTextFormat()
+                ->conditionToExcludeOldDA16Format()
+                ->pluck('bible_filesets.id')
+                ->sort()
+                ->values()
+                ->all();
+            $this->assertSame($full, $visible, 'the same list as the full query');
+
+            $this->assertSame([], (new PlanCompatibilityService())->getVisibleFilesets('ZZOLDFMT2', $groups));
+        }
+
+        // Only the candidates were checked: ZZOLDA, ZZOLDB, ZZOLDC, ZZOLDAN1DA16 and ZZOLDBN1DA16 (the array store off
+        // prod keeps a verdict for a second, so a fresh service in a new second checks them again).
+        sleep(2);
+        $service = new PlanCompatibilityService();
+        $service->getVisibleFilesets('ZZOLDFMT1', new AccessGroupsCollection([-4]));
+        $this->assertSame(5, $service->counts()['old_format_checks']);
+    }
+
+    private function seedOldFormatBibles() : void
+    {
+        $db = DB::connection('dbp');
+        $db->table('bibles')->insert([
+            ['id' => 'ZZOLDFMT1', 'language_id' => 6414],
+            ['id' => 'ZZOLDFMT2', 'language_id' => 6414],
+        ]);
+        // [id, set_type_code, set_size_code, content_loaded, archived, Bible]
+        $filesets = [
+            ['ZZOLDA', 'text_plain', 'NT', 1, 0, 'ZZOLDFMT1'],              // replaced by ZZOLDAN_ET
+            ['ZZOLDAN_ET', 'text_plain', 'NT', 1, 0, 'ZZOLDFMT1'],
+            ['ZZOLDB', 'text_plain', 'C', 1, 0, 'ZZOLDFMT1'],               // no ten-character text
+            ['ZZOLDC', 'text_plain', 'OT', 1, 0, 'ZZOLDFMT1'],              // its replacement is archived
+            ['ZZOLDCO_ET', 'text_plain', 'OT', 1, 1, 'ZZOLDFMT1'],
+            ['ZZOLDD', 'text_plain', 'NT', 0, 0, 'ZZOLDFMT1'],              // a candidate the key can't see
+            ['ZZOLDAN1DA16', 'audio', 'NT', 1, 0, 'ZZOLDFMT1'],             // replaced by ZZOLDAN1DA-opus16
+            ['ZZOLDAN1DA-opus16', 'audio', 'NT', 1, 0, 'ZZOLDFMT1'],
+            ['ZZOLDAN1DA', 'audio', 'NT', 1, 0, 'ZZOLDFMT1'],               // not a candidate
+            ['ZZOLDBN1DA16', 'audio', 'NT', 1, 0, 'ZZOLDFMT1'],             // no -opus16 copy
+            ['ZZOLDEN1DA', 'audio', 'NT', 1, 1, 'ZZOLDFMT2'],               // archived: nothing visible
+        ];
+        foreach ($filesets as $n => [$id, $type, $size, $loaded, $archived, $bible_id]) {
+            $hash_id = sprintf('zzoldfmt%04d', $n);
+            $this->seeded_hash_ids[] = $hash_id;
+            $db->table('bible_filesets')->insert([
+                'id' => $id, 'hash_id' => $hash_id, 'set_type_code' => $type, 'set_size_code' => $size, 'mode_id' => 1,
+                'content_loaded' => $loaded, 'archived' => $archived,
+            ]);
+            $db->table('bible_fileset_connections')->insert(['hash_id' => $hash_id, 'bible_id' => $bible_id]);
+        }
+    }
+
+    /** AC4 (revision 6): past the time limit, a call answers 503 with its own action, and logs that it timed out */
+    public function testACallPastTheTimeLimitAnswers503WithItsOwnAction()
+    {
+        if (AccessGroupKey::getAccessGroupIdsByApiKey($this->key)->isEmpty()) {
+            // AccessControl answers 422 for a key with no access group (a throwaway database). The link needs a real
+            // group where the foreign key is enforced (review X1-5): an existing one, else one made for the test.
+            $group_id = DB::connection('dbp')->table('access_groups')->min('id');
+            if ($group_id === null) {
+                DB::connection('dbp')->table('access_groups')->insert([
+                    'id'          => self::LOCAL_ACCESS_GROUP_ID,
+                    'name'        => 'local test group',
+                    'description' => 'Throwaway local test database only',
+                ]);
+                $group_id = self::LOCAL_ACCESS_GROUP_ID;
+                $this->seeded_group = true;
+            }
+            DB::connection('dbp_users')->table('access_group_api_keys')->insert([
+                'access_group_id' => $group_id,
+                'key_id'          => Key::where('name', 'test-key')->value('id'),
+            ]);
+            $this->seeded_key_group = (int) $group_id;
+        }
+        config(['plan_compat.time_limit' => -1]);
+        $logged = [];
+        Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$logged) {
+            if ($event->message === 'plan_compatibility') {
+                $logged[] = $event->context;
+            }
+        });
+
+        $error = $this->postCompatibility(['plan_ids' => [$this->plan_id], 'bible_ids' => ['ENGESV']], 503)['error'];
+
+        $this->assertSame(PlanCompatibilityController::TIME_LIMIT_ACTION, $error['action']);
+        $this->assertSame(PlanCompatibilityController::TIME_LIMIT_MESSAGE, $error['message']);
+        $this->assertCount(1, $logged, 'one log line per call');
+        $this->assertTrue($logged[0]['timed_out']);
+        $this->assertSame(0, $logged[0]['bibles_checked']);
+        $this->assertSame(1, $logged[0]['plans']);
     }
 }

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Plan;
 use App\Http\Controllers\APIController;
 use App\Services\Plans\PlanCompatibilityCalculator;
 use App\Services\Plans\PlanCompatibilityService;
+use App\Support\AccessGroupsCollection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /**
@@ -28,6 +30,14 @@ class PlanCompatibilityController extends APIController
     public const MAX_ITEM_CHECKS = 200000;
     public const MAX_PLAYLIST_ITEMS = 20;
     private const MAX_BIBLE_ID_LENGTH = 12;
+
+    /**
+     * The 503 of a call stopped by the time limit (config plan_compat.time_limit; revision 6, P2). Its own action, so
+     * the apps can tell it from the access-control 503 (AccessControl's "Service unavailable", in the error handler's
+     * shape, with no action).
+     */
+    public const TIME_LIMIT_ACTION = 'plan_compatibility_time_limit';
+    public const TIME_LIMIT_MESSAGE = 'The compatibility check took too long. Send fewer Bibles at a time.';
 
     private $service;
 
@@ -61,7 +71,8 @@ class PlanCompatibilityController extends APIController
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v4_internal_plans.compatibility"))
      *     ),
      *     @OA\Response(response=403, description="The API key is not authorized to access user data"),
-     *     @OA\Response(response=422, description="A list is missing, empty, too long or malformed; a limit is exceeded; exact_threshold is not 0 to 100; or a playlist item id is malformed or an item of none of the plans (one of a requested plan that is deleted is ignored)")
+     *     @OA\Response(response=422, description="A list is missing, empty, too long or malformed; a limit is exceeded; exact_threshold is not 0 to 100; or a playlist item id is malformed or an item of none of the plans (one of a requested plan that is deleted is ignored)"),
+     *     @OA\Response(response=503, description="The call ran out of time (60 seconds) before its last Bible: error.action is plan_compatibility_time_limit. Send fewer Bibles at a time")
      * )
      *
      * One schema with nothing referenced in it: openApi:generate drops this unreferenced internal schema, but would keep
@@ -114,6 +125,10 @@ class PlanCompatibilityController extends APIController
      */
     public function check(Request $request)
     {
+        // The time limit counts from when PHP got the request, database time included: PHP's own limit doesn't count
+        // it on Linux (revision 6, speed design T4).
+        $started = (float) ($request->server('REQUEST_TIME_FLOAT') ?: microtime(true));
+
         $normalized = self::normalizeRequest([
             'plan_ids'              => checkParam('plan_ids'),
             'bible_ids'             => checkParam('bible_ids'),
@@ -181,14 +196,87 @@ class PlanCompatibilityController extends APIController
             $values['allow_chapter_audio']
         );
 
-        // One Bible at a time, so only one Bible's pieces are held in memory, and only for the books the plans touch.
+        $answer = self::checkBibles(
+            $this->service,
+            $calculator,
+            $plans,
+            $values['bible_ids'],
+            $access_group_ids,
+            $playlist_item_ids,
+            $started,
+            (float) config('plan_compat.time_limit', 60),
+            function () {
+                return microtime(true);
+            }
+        );
+        try {
+            Log::info('plan_compatibility', self::logContext(
+                $plans,
+                count($values['bible_ids']),
+                $answer,
+                $this->service->counts(),
+                microtime(true) - $started
+            ));
+        } catch (\Throwable $exception) {
+            // The line is for diagnosis only: a log that can't be written (a full disk) must not fail a finished call
+            // (review X2-1).
+        }
+
+        if ($answer['timed_out']) {
+            return $this->setStatusCode(SymfonyResponse::HTTP_SERVICE_UNAVAILABLE)
+                ->replyWithError(self::TIME_LIMIT_MESSAGE, self::TIME_LIMIT_ACTION);
+        }
+
+        return $this->reply([
+            'data' => self::entries($plans, $answer['results']),
+            'meta' => [
+                'not_found' => [
+                    'plan_ids'  => $not_found_plan_ids,
+                    'bible_ids' => $answer['not_found'],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Each Bible in turn, so only one Bible's pieces are held in memory, and only for the books the plans touch. A call
+     * still working after the time limit stops before its next Bible (revision 6, P2), and the caller answers 503:
+     * a legal 100-Bible call that is cold everywhere can take 20 to 30 seconds.
+     *
+     * @param array $plans plan_id => items, in request order
+     * @param array $bible_ids the asked ids, de-duplicated, in request order
+     * @param array|null $playlist_item_ids the asked ids, de-duplicated; null when none was asked for
+     * @param float $started when the call started, in the clock's seconds
+     * @param float $time_limit seconds
+     * @param callable $clock the time now in seconds (microtime(true); a fake clock in the tests)
+     *
+     * @return array 'results' => list of [bible_id, bibleResults()] in request order, 'not_found' => the Bible ids with
+     *               nothing visible to the key, 'checked' => how many Bibles were looked at, 'filesets' => how many
+     *               filesets counted, and 'timed_out'
+     */
+    public static function checkBibles(
+        PlanCompatibilityService $service,
+        PlanCompatibilityCalculator $calculator,
+        array $plans,
+        array $bible_ids,
+        AccessGroupsCollection $access_group_ids,
+        ?array $playlist_item_ids,
+        float $started,
+        float $time_limit,
+        callable $clock
+    ) : array {
         $books = self::planBooks($plans);
-        $bible_results = [];
-        $not_found_bible_ids = [];
-        foreach ($values['bible_ids'] as $bible_id) {
-            $visible = $this->service->getVisibleFilesets($bible_id, $access_group_ids);
+        $answer = ['results' => [], 'not_found' => [], 'checked' => 0, 'filesets' => 0, 'timed_out' => false];
+        foreach ($bible_ids as $bible_id) {
+            if ($clock() - $started > $time_limit) {
+                $answer['timed_out'] = true;
+                break;
+            }
+            $answer['checked']++;
+
+            $visible = $service->getVisibleFilesets($bible_id, $access_group_ids);
             if (empty($visible)) {
-                $not_found_bible_ids[] = $bible_id;
+                $answer['not_found'][] = $bible_id;
                 continue;
             }
             if (empty($plans)) {
@@ -199,12 +287,13 @@ class PlanCompatibilityController extends APIController
             $filesets = [];
             foreach ($visible as $fileset) {
                 if ($calculator->keepsFileset($fileset)) {
-                    $fileset['pieces'] = $this->service->getPieces($fileset);
+                    $fileset['pieces'] = $service->getPieces($fileset);
                     $filesets[] = $fileset;
                 }
             }
+            $answer['filesets'] += count($filesets);
 
-            $bible_results[] = [
+            $answer['results'][] = [
                 $bible_id,
                 self::bibleResults(
                     $calculator,
@@ -215,15 +304,45 @@ class PlanCompatibilityController extends APIController
             ];
         }
 
-        return $this->reply([
-            'data' => self::entries($plans, $bible_results),
-            'meta' => [
-                'not_found' => [
-                    'plan_ids'  => $not_found_plan_ids,
-                    'bible_ids' => $not_found_bible_ids,
-                ],
-            ],
-        ]);
+        return $answer;
+    }
+
+    /**
+     * The plan_compatibility log line, one per call that gets past the request checks (revision 6, AC3): counts and
+     * times only, never the key, the user, a token or a plan id. pieces_built against pieces tells a cold call from a
+     * warm one; on prod, Monday's lines show the weekly expiry.
+     *
+     * @param array $plans plan_id => items, the plans found
+     * @param array $answer from checkBibles()
+     * @param array $counts from PlanCompatibilityService::counts()
+     * @param float $elapsed seconds since the call started
+     */
+    public static function logContext(
+        array $plans,
+        int $bibles_asked,
+        array $answer,
+        array $counts,
+        float $elapsed
+    ) : array {
+        $items = 0;
+        foreach ($plans as $plan_items) {
+            $items += count($plan_items);
+        }
+
+        return [
+            'plans'             => count($plans),
+            'items'             => $items,
+            'bibles_asked'      => $bibles_asked,
+            'bibles_checked'    => $answer['checked'],
+            'bibles_found'      => $answer['checked'] - count($answer['not_found']),
+            'filesets'          => $answer['filesets'],
+            'pieces'            => $counts['pieces'],
+            'pieces_built'      => $counts['pieces_built'],
+            'pieces_cached'     => $counts['pieces'] - $counts['pieces_built'],
+            'old_format_checks' => $counts['old_format_checks'],
+            'elapsed_ms'        => (int) round($elapsed * 1000),
+            'timed_out'         => $answer['timed_out'],
+        ];
     }
 
     /**
