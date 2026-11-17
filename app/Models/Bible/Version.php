@@ -3,6 +3,7 @@
 namespace App\Models\Bible;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 /**
  * App\Models\Bible\Version
@@ -74,7 +75,7 @@ class Version extends Model
         return $query
             ->select(['id', 'name', 'english_name'])
             ->whereIn('id', function ($query) use ($english_id) {
-                $query->select(\DB::raw('SUBSTR(bt.bible_id, 4, 3)'))
+                $query->select(DB::raw('SUBSTR(bt.bible_id, 4, 3)'))
                     ->from('bible_translations as bt')
                     ->where('bt.language_id', $english_id);
             });

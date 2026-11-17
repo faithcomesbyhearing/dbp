@@ -7,11 +7,8 @@ use Illuminate\Support\Facades\Request;
 
 class InternalStatusTest extends ApiV4Test
 {
-    /**
-     *
-     * @group    travis
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function ensureStatusChecksAreSuccessful()
     {
         Request::replace($this->params);

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\User\AccessGroupKey;
 use App\Services\IAMAPI\IAMAPIClientService;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 use Closure;
@@ -48,7 +49,7 @@ class AccessControl
                     try {
                         return $this->iam_client->getAccessGroupIdsByUserKey($api_key);
                     } catch (\Exception $e) {
-                        \Log::channel('errorlog')->error($e->getMessage());
+                        Log::channel('errorlog')->error($e->getMessage());
                         abort(HttpResponse::HTTP_SERVICE_UNAVAILABLE, 'Service unavailable');
                     }
                 } else {

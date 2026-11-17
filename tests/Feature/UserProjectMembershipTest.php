@@ -16,13 +16,12 @@ class UserProjectMembershipTest extends TestCase
 
     /**
      * A basic test example.
-     *
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function itReturnsTrueIfUserSharesAProjectWithADeveloper()
     {
-        $developer_user = factory(User::class)->state('developer')->create();
-        $project = factory(Project::class)->create();
+        $developer_user = User::factory()->developer()->create();
+        $project = Project::factory()->create();
         $role = Role::firstOrCreate(['name' => 'developer']);
 
         ProjectMember::create([
@@ -32,8 +31,8 @@ class UserProjectMembershipTest extends TestCase
             'token'      => unique_random('project_members', 'token', 12)
         ]);
 
-        $user = factory(User::class)->create();
-        $role = factory(Role::class)->create(['name' => 'user']);
+        $user = User::factory()->create();
+        $role = Role::factory()->create(['name' => 'user']);
 
         ProjectMember::create([
             'user_id'    => $user->id,
@@ -46,11 +45,11 @@ class UserProjectMembershipTest extends TestCase
         $this->assertTrue($membershipBoolean);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function itReturnsFalseIfUserHasNoProjects()
     {
-        $developer_user = factory(User::class)->state('developer')->create();
-        $project = factory(Project::class)->create();
+        $developer_user = User::factory()->developer()->create();
+        $project = Project::factory()->create();
         $role = Role::firstOrCreate(['name' => 'developer']);
 
         ProjectMember::create([
@@ -60,17 +59,17 @@ class UserProjectMembershipTest extends TestCase
             'token'      => unique_random('project_members', 'token', 12)
         ]);
 
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $membershipBoolean = $this->compareProjects($user->id, $developer_user->keys->first()->key);
         $this->assertFalse($membershipBoolean);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function itReturnsFalseIfUserAndDeveloperShareNoProjects()
     {
-        $developer_user = factory(User::class)->state('developer')->create();
-        $project = factory(Project::class)->create();
+        $developer_user = User::factory()->developer()->create();
+        $project = Project::factory()->create();
         $role = Role::firstOrCreate(['name' => 'developer']);
 
         ProjectMember::create([
@@ -80,7 +79,7 @@ class UserProjectMembershipTest extends TestCase
             'token'      => unique_random('project_members', 'token', 12)
         ]);
 
-        $user = factory(User::class)->create();
+        $user = User::factory()->create();
 
         $membershipBoolean = $this->compareProjects($user->id, $developer_user->keys->first()->key);
         $this->assertFalse($membershipBoolean);

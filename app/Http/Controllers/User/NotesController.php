@@ -7,7 +7,7 @@ use App\Models\User\Study\Note;
 use App\Transformers\UserNotesTransformer;
 use Illuminate\Http\Request;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 use App\Traits\CheckProjectMembership;
 use App\Traits\AnnotationTags;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;

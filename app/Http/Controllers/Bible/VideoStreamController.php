@@ -11,6 +11,7 @@ use App\Traits\ArclightConnection;
 use App\Models\Bible\Book;
 use App\Models\Language\LanguageCode;
 use Exception;
+use Illuminate\Support\Facades\Log;
 use App\Services\Arclight\ArclightService;
 use App\Transformers\JesusFilmChapterTransformer;
 use Illuminate\Support\Collection;
@@ -113,11 +114,11 @@ class VideoStreamController extends APIController
         try {
             $media_components = $arclight_service->getContent($media_components_response);
         } catch (ServerException $e) {
-            \Log::channel('errorlog')
+            Log::channel('errorlog')
                 ->error(["Arclight - ServerException Error (media-components): '{$e->getMessage()}" ]);
             return [];
         } catch (Exception $e) {
-            \Log::channel('errorlog')->error(["Arclight - Exception Error (media-components): '{$e->getMessage()}" ]);
+            Log::channel('errorlog')->error(["Arclight - Exception Error (media-components): '{$e->getMessage()}" ]);
             return [];
         }
         $films = $this->getJesusFilmsFromMediaComponents($media_components, $verses, $book->id_osis, $chapter);

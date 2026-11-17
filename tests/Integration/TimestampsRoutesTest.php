@@ -10,10 +10,10 @@ class TimestampsRoutesTest extends ApiV4Test
      * @category Route Name: v4_internal_timestamps'
      * @category Route Path: https://api.dbp.test/timestamps?v=4&key={key}
      * @see      \App\Http\Controllers\Bible\AudioController::availableTimestamps
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function timestamps()
     {
         $path = route('v4_internal_timestamps', $this->params);
@@ -27,10 +27,10 @@ class TimestampsRoutesTest extends ApiV4Test
      * @category Route Name: v4_internal_timestamps.tag
      * @category Route Path: https://api.dbp.test/timestamps/{fileset_id}/{query}?v=4&key={key}
      * @see      \App\Http\Controllers\Bible\AudioController::timestampsByTag
-     * @group    V4
-     * @group    travis
-     * @test
      */
+    #[\PHPUnit\Framework\Attributes\Group('V4')]
+    #[\PHPUnit\Framework\Attributes\Group('travis')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function timestampsTag()
     {
         $additional_params = [

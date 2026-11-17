@@ -29,10 +29,8 @@ class ThrottleWhitelistTest extends TestCase
         });
     }
 
-    /**
-     * @group throttle_whitelist
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Group('throttle_whitelist')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function whitelisted_ip_bypasses_rate_limit()
     {
         config(['app.ip_trusted_no_rate_limit' => self::TRUSTED_IP_1]);
@@ -48,10 +46,8 @@ class ThrottleWhitelistTest extends TestCase
         );
     }
 
-    /**
-     * @group throttle_whitelist
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Group('throttle_whitelist')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function non_whitelisted_ip_is_rate_limited()
     {
         config(['app.ip_trusted_no_rate_limit' => self::TRUSTED_IP_1]);
@@ -67,10 +63,8 @@ class ThrottleWhitelistTest extends TestCase
         );
     }
 
-    /**
-     * @group throttle_whitelist
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Group('throttle_whitelist')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function empty_whitelist_applies_rate_limiting_to_all()
     {
         config(['app.ip_trusted_no_rate_limit' => '']);
@@ -86,10 +80,8 @@ class ThrottleWhitelistTest extends TestCase
         );
     }
 
-    /**
-     * @group throttle_whitelist
-     * @test
-     */
+    #[\PHPUnit\Framework\Attributes\Group('throttle_whitelist')]
+    #[\PHPUnit\Framework\Attributes\Test]
     public function multiple_ips_in_whitelist()
     {
         $whitelist = implode(', ', [self::TRUSTED_IP_1, self::TRUSTED_IP_2, self::TRUSTED_IP_3]);
