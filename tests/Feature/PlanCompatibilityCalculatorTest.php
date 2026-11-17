@@ -16,7 +16,8 @@ use PHPUnit\Framework\TestCase;
  *    allow_video_only, Sample G with exact_threshold and Sample H with allow_chapter_audio;
  *  - Sam's examples of audio as a whole, and of audio outranking text (design section 12);
  *  - the single rules, the options and the roll-ups of PlanCompatibilityCalculator, with revision 5's USX and JSON
- *    text, combined verses, exact_threshold's upper side (no lower side) and allow_chapter_audio.
+ *    text, combined verses, exact_threshold's upper side (no lower side) and allow_chapter_audio, and revision 6's
+ *    verse ranges across chapters (A3) and plain text's last verse (P1).
  *
  * The fixtures follow the contract's made-up Bibles. Verse counts are the real ones for Matthew and the Psalms used,
  * and 31 for every chapter of the other books.
@@ -1475,8 +1476,8 @@ JSON,
     public function testACombinedVerseNeverMakesTextOrAStreamInexact()
     {
         // R21, on purpose (Sam, 2026-11-12): ENGCEV's plain text joins MAT 1:2-11 into one verse, and 1:12-16. Its
-        // bible_verses rows for MAT 1 come to one piece (PlanCompatibilityService::verseRows takes the lowest verse and
-        // the highest verse end), so the engine never sees inside the combined verse.
+        // bible_verses rows for MAT 1 come to one piece (PlanCompatibilityService::verseRows takes the lowest and the
+        // highest verse start), so the engine never sees inside the combined verse.
         $text = self::fileset('XN_ET', 'text_plain', PlanCompatibilityService::piecesFromVerseRows([
             ['book_id' => 'MAT', 'chapter' => 1, 'verse_min' => 1, 'verse_max' => 25],
         ]));
@@ -1540,6 +1541,58 @@ JSON,
         $this->assertSame('mismatch', $this->word($this->item('LUK', 7, 36, 50), $sections, 'non_drama'), 'a verse range; the section runs on into chapter 8');
         $this->assertSame('approximate', $this->word($this->item('LUK', 8), $sections, 'non_drama'), 'verses 1-3 come from a section that starts in chapter 7');
         $this->assertSame('approximate', $this->word($this->item('LUK', 7, null, null, null, 8), $sections, 'non_drama'));
+    }
+
+    public function testAVerseRangeAcrossChaptersIsExactOnlyOnOnePiece()
+    {
+        // Revision 6, A3 (per the contract: exact "on one section that matches it exactly", never on sections that line
+        // up with its first and last verse). Before it, MAT 1:10-2:5 was exact on sections 1:10-25 and 2:1-5.
+        $pieces = ['MAT' => [[1, 1, 1, 9], [1, 10, 1, 25], [2, 1, 2, 5], [2, 6, 2, 23]]];
+        $item = $this->item('MAT', 1, 10, 5, null, 2);
+        $text = self::text();
+
+        $this->assertSame('mismatch', $this->word($item, [self::sections($pieces), $text], 'non_drama'));
+        $this->assertSame('approximate', $this->word($item, [self::sections($pieces), $text], 'non_drama', ['allow_chapter_audio' => true]));
+        $this->assertSame('mismatch', $this->word($item, [self::sections($pieces, 'audio_drama'), $text], 'drama'));
+        $this->assertSame('approximate', $this->word($item, [self::clips($pieces), $text], 'video', ['include_video' => true]), 'video clips');
+        $this->assertSame('mismatch', $this->word($this->item('MAT', 2, null, 9, null, 3), [self::sections(['MAT' => [[2, 1, 2, 23], [3, 1, 3, 9], [3, 10, 3, 17]]]), $text], 'non_drama'), 'the whole of MAT 2, then MAT 3:1-9: two sections');
+        $this->assertSame('exact', $this->word($this->item('MAT', 2, null, 9, null, 3), [self::sections(['MAT' => [[2, 1, 3, 9], [3, 10, 3, 17]]]), $text], 'non_drama'), 'the same on one section');
+        $this->assertSame('mismatch', $this->word($this->item('MAT', 1, 10, null, null, 3), [self::sections(['MAT' => [[1, 1, 1, 9], [1, 10, 1, 25], [2, 1, 2, 23], [3, 1, 3, 17]]]), $text], 'non_drama'), 'MAT 1:10, then MAT 2 and 3 whole: three sections');
+
+        // Unchanged: one piece covering the item (LUK 7:36-8:3), items of whole chapters, chapter files, streams, text.
+        $this->assertSame('exact', $this->word($this->item('LUK', 7, 36, 3, null, 8), [self::sections(['LUK' => [[7, 1, 7, 35], [7, 36, 8, 3], [8, 4, 8, 56]]])], 'non_drama'));
+        $this->assertSame('exact', $this->word($this->item('LUK', 7, 36, 3, null, 8), [self::clips(['LUK' => [[7, 1, 7, 35], [7, 36, 8, 3]]])], 'video', ['include_video' => true]));
+        $by_chapter = self::sections(['MAT' => [[1, 1, 1, 25], [2, 1, 2, 23]]]);
+        $this->assertSame('exact', $this->word($this->item('MAT', 1, null, null, null, 2), [$by_chapter, $text], 'non_drama'), 'whole chapters');
+        $this->assertSame('exact', $this->word($this->item('MAT', 1, 1, 23, null, 2), [$by_chapter, $text], 'non_drama'), 'whole chapters, verses given');
+        $files = self::chapterFiles(self::chapterPieces(self::NT));
+        $this->assertSame('mismatch', $this->word($item, [$files, $text], 'non_drama'));
+        $this->assertSame('exact', $this->word($this->item('MAT', 1, null, null, null, 2), [$files, $text], 'non_drama'));
+        $this->assertSame('exact', $this->word($item, [self::fileset('XN1SA', 'audio_stream', self::chapterPieces(self::NT)), $text], 'non_drama'), 'a stream');
+        $this->assertSame('exact', $this->word($item, [$text], 'text'));
+        $this->assertSame('exact', $this->word($this->item('MAT', 1, 10, 25), [self::sections($pieces), $text], 'non_drama'), 'one chapter, one section');
+    }
+
+    public function testAChapterEndingOnACombinedVerseEndsAtItsFirstNumber()
+    {
+        // Revision 6, P1 (Sam, 2026-11-17: speed over exactness). PlanCompatibilityService::verseRows reads the
+        // highest verse start, so a MAT 1 ending on a combined verse "25-26" ends at 25, for the whole Bible.
+        $text = self::fileset('XN_ET', 'text_plain', PlanCompatibilityService::piecesFromVerseRows([
+            ['book_id' => 'MAT', 'chapter' => 1, 'verse_min' => 1, 'verse_max' => 25],
+            ['book_id' => 'MAT', 'chapter' => 2, 'verse_min' => 1, 'verse_max' => 23],
+        ]));
+        $files = self::chapterFiles(['MAT' => [[1, 1, 1, null], [2, 1, 2, null]]]);
+
+        $this->assertSame('exact', $this->word($this->item('MAT', 1, 20, 26), [$text], 'text'), 'an item ending there reads to the end');
+        $this->assertSame('exact', $this->word($this->item('MAT', 1, 1, 26), [$text, $files], 'non_drama'), 'the whole chapter');
+        // So does one ending on the first number (review L3-2): MAT 1:1-25 is now the whole chapter on chapter files
+        // (it was a verse range, mismatch), and a section ending on 25 runs to the chapter's end.
+        $this->assertSame('exact', $this->word($this->item('MAT', 1, 1, 25), [$text, $files], 'non_drama'));
+        $split = self::sections(['MAT' => [[1, 1, 1, 25], [1, 26, 1, 26]]]);
+        $this->assertSame('approximate', $this->word($this->item('MAT', 1, 1, 25), [$text, $split], 'non_drama'), 'the whole chapter in two sections, the second past the end (it was exact on the first)');
+        $this->assertSame('missing', $this->word($this->item('MAT', 1, 26, 26), [$text, $files], 'text'), 'starting on 26: no verse of it in this Bible');
+        $this->assertSame('missing', $this->word($this->item('MAT', 1, 26, 26), [$text, $files], 'non_drama'), 'in every format');
+        $this->assertSame(['MAT' => [1 => 25, 2 => 23]], PlanCompatibilityService::lastVersesOfPieces($text['pieces']), 'the plan\'s own Bible gives 25 too');
     }
 
     public function testARecordingThatStartsLateIsPartlyThere()

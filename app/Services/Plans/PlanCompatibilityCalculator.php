@@ -22,9 +22,10 @@ namespace App\Services\Plans;
  * chapter's part is covered when its first and last verse are, gaps inside a chapter not counting):
  *  - missing: none of the item's verses is covered (revision 4; an item covered only in part is inexact, below);
  *  - exact: every part of the item is covered, and on chapter and section pieces, in each chapter of the item a single
- *    piece starts and ends exactly on the item's part of that chapter, with no piece running outside the item.
- *    Cut-anywhere filesets (text, SA streams): covered is exact. A whole chapter on chapter files is exact, and so is a
- *    multi-chapter item of whole chapters;
+ *    piece starts and ends exactly on the item's part of that chapter, with no piece running outside the item; and an
+ *    item that starts or ends inside a chapter, one piece in all (revision 6, A3: MAT 1:10-2:5 on sections 1:10-25
+ *    and 2:1-5 is not exact). Cut-anywhere filesets (text, SA streams): covered is exact. A whole chapter on chapter
+ *    files is exact, and so is a multi-chapter item of whole chapters;
  *  - otherwise inexact, which inexactAnswer() splits: on audio with chapter or section pieces, mismatch when the item
  *    starts or ends inside a chapter (it can't be cut there), whether it is covered fully or in part, else approximate
  *    (the app plays every piece that overlaps, or the part that is there); on text, streams and video, approximate.
@@ -88,7 +89,8 @@ class PlanCompatibilityCalculator
      * (Sam, 2026-11-12, design R21), that includes an item that starts or ends inside a combined verse (MAT 1:1-6 in a
      * text that joins MAT 1:2-11 into one verse): the app shows the whole combined verse, which it can't avoid, and
      * calling such items approximate would change the status of many Bibles. A text piece runs from a chapter's lowest
-     * verse to its highest verse end (PlanCompatibilityService::verseRows), so the engine never sees inside one.
+     * verse to its highest verse start (PlanCompatibilityService::verseRows), so the engine never sees inside one; a
+     * combined verse that ends the chapter ends it at its first number (revision 6, P1).
      */
     private const CUT_ANYWHERE_SET_TYPES = [
         'text_usx', 'text_json', 'text_plain', 'text_format', 'audio_stream', 'audio_drama_stream',
@@ -494,6 +496,8 @@ class PlanCompatibilityCalculator
         // Whole chapters: the item starts at the beginning of its first chapter and runs to the end of its last
         // (after clamping). Otherwise it starts or ends inside a chapter.
         $whole_chapters = true;
+        // The pieces (indexPieces() ids) matching the item's part of each chapter, while it is exact so far.
+        $piece_ids = [];
 
         for ($chapter = $item['chapter_start']; $chapter <= $item['chapter_end']; $chapter++) {
             // On a fileset that runs to the end of this chapter with no number, an item of one chapter that starts past
@@ -557,11 +561,22 @@ class PlanCompatibilityCalculator
                     && $overlapping[0][1] === $end
                     && $overlapping[0][2] >= $item['chapter_start']
                     && $overlapping[0][3] <= $item['chapter_end'];
+                if ($exact) {
+                    $piece_ids[$overlapping[0][4]] = true;
+                }
             }
         }
 
         if (!$covered_somewhere) {
             return self::RANK_MISSING;
+        }
+        // A3 (revision 6, per the contract): on chapter and section pieces, an item that starts or ends inside a chapter
+        // is exact only on one piece that matches it, never on several that line up with its first and last verse,
+        // even one per chapter (MAT 1:10-2:5 on sections 1:10-25 and 2:1-5: mismatch, or approximate on video and with
+        // allow_chapter_audio). A section running from LUK 7:36 to 8:3 is one piece. Items of whole chapters keep
+        // their answers, and text and streams are exact when covered.
+        if ($exact && !$fileset['cut'] && !$whole_chapters && count($piece_ids) > 1) {
+            $exact = false;
         }
 
         return $exact ? self::RANK_EXACT : $this->inexactAnswer($fileset, $whole_chapters);
@@ -666,9 +681,10 @@ class PlanCompatibilityCalculator
     }
 
     /**
-     * Index a fileset's pieces by book and chapter. Each entry is [start, end, chapter_start, chapter_end] for that
-     * chapter: a piece spanning chapters appears under each of them, from its start (or verse 1) to its end (or END).
-     * Pieces that resolve to the same positions (video renditions, duplicated rows) are one piece.
+     * Index a fileset's pieces by book and chapter. Each entry is [start, end, chapter_start, chapter_end, id] for that
+     * chapter: a piece spanning chapters appears under each of them, from its start (or verse 1) to its end (or END),
+     * with the same id, which is unique within the book (rankItem(): one piece or several). Pieces that resolve to the
+     * same positions (video renditions, duplicated rows) are one piece.
      */
     private function indexPieces(array $pieces_by_book, array $last_verses) : array
     {
@@ -682,6 +698,7 @@ class PlanCompatibilityCalculator
                 if (isset($seen[$key])) {
                     continue;
                 }
+                $id = count($seen);
                 $seen[$key] = true;
 
                 for ($chapter = $chapter_start; $chapter <= $chapter_end; $chapter++) {
@@ -690,6 +707,7 @@ class PlanCompatibilityCalculator
                         $chapter === $chapter_end ? $end : self::END,
                         $chapter_start,
                         $chapter_end,
+                        $id,
                     ];
                 }
             }
