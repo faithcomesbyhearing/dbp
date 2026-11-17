@@ -96,4 +96,19 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Deprecations Log Channel
+    |--------------------------------------------------------------------------
+    |
+    | PHP and library deprecation notices (E_DEPRECATED) are written to this
+    | channel. Using "daily" keeps them in the application log, not Bugsnag.
+    |
+    */
+
+    'deprecations' => [
+        'channel' => 'daily',
+        'trace'   => false,
+    ],
+
 ];
