@@ -420,11 +420,7 @@ class PlanCompatibilityTest extends TestCase
     private function seedOldFormatBibles() : void
     {
         $db = DB::connection('dbp');
-        $db->table('bibles')->insert([
-            ['id' => 'ZZOLDFMT1', 'language_id' => 6414],
-            ['id' => 'ZZOLDFMT2', 'language_id' => 6414],
-        ]);
-        // [id, set_type_code, set_size_code, content_loaded, archived, Bible]
+        // [id, set_type_code, set_size_code, content_loaded, archived, Bible]; row n gets hash_id zzoldfmt000n
         $filesets = [
             ['ZZOLDA', 'text_plain', 'NT', 1, 0, 'ZZOLDFMT1'],              // replaced by ZZOLDAN_ET
             ['ZZOLDAN_ET', 'text_plain', 'NT', 1, 0, 'ZZOLDFMT1'],
@@ -438,8 +434,19 @@ class PlanCompatibilityTest extends TestCase
             ['ZZOLDBN1DA16', 'audio', 'NT', 1, 0, 'ZZOLDFMT1'],             // no -opus16 copy
             ['ZZOLDEN1DA', 'audio', 'NT', 1, 1, 'ZZOLDFMT2'],               // archived: nothing visible
         ];
+        $hash_ids = array_map(function ($n) {
+            return sprintf('zzoldfmt%04d', $n);
+        }, array_keys($filesets));
+        // Exactly the rows this seeds, in case a crashed run left them behind (review of #1164).
+        $db->table('bible_fileset_connections')->whereIn('hash_id', $hash_ids)->delete();
+        $db->table('bible_filesets')->whereIn('hash_id', $hash_ids)->delete();
+        $db->table('bibles')->whereIn('id', self::OLD_FORMAT_BIBLES)->delete();
+        $db->table('bibles')->insert([
+            ['id' => 'ZZOLDFMT1', 'language_id' => 6414],
+            ['id' => 'ZZOLDFMT2', 'language_id' => 6414],
+        ]);
         foreach ($filesets as $n => [$id, $type, $size, $loaded, $archived, $bible_id]) {
-            $hash_id = sprintf('zzoldfmt%04d', $n);
+            $hash_id = $hash_ids[$n];
             $this->seeded_hash_ids[] = $hash_id;
             $db->table('bible_filesets')->insert([
                 'id' => $id, 'hash_id' => $hash_id, 'set_type_code' => $type, 'set_size_code' => $size, 'mode_id' => 1,
