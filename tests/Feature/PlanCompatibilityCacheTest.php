@@ -33,10 +33,23 @@ class PlanCompatibilityCacheTest extends TestCase
 
     public function testTheWeeklyExpiryGoesThroughCacheRememberOnTheProdPath()
     {
-        Carbon::setTestNow(Carbon::parse('2026-11-16 16:30:00', 'UTC'));
+        // Built mid-week: kept until the next Monday 17:00 UTC (plus its spread), gone after it.
+        $this->assertKeptFromUntil('midweek', '2026-11-18 10:00:00', '2026-11-23 16:59:00', '2026-11-23 18:00:00');
+        // Built on a Monday at 16:30 UTC, while the weekly push may still run: gone that same afternoon, not a week
+        // later (review of #1164).
+        $this->assertKeptFromUntil('monday', '2026-11-16 16:30:00', '2026-11-16 16:59:00', '2026-11-16 18:00:00');
+    }
+
+    /**
+     * An entry stored through cacheRemember() at $built is read back from the cache (built once), is still there at
+     * $kept, and is gone at $gone. Spread of key 'k': 3421 s, so it expires at 17:57:01.
+     */
+    private function assertKeptFromUntil(string $name, string $built, string $kept, string $gone) : void
+    {
+        Carbon::setTestNow(Carbon::parse($built, 'UTC'));
         $calls = 0;
-        $remember = function () use (&$calls) {
-            return cacheRemember('plan_compat_test', ['abc'], PlanCompatibilityService::cacheUntilMonday('k'), function () use (&$calls) {
+        $remember = function () use ($name, &$calls) {
+            return cacheRemember('plan_compat_test', [$name], PlanCompatibilityService::cacheUntilMonday('k'), function () use (&$calls) {
                 $calls++;
 
                 return ['MAT' => [[1, 1, 1, 25]]];
@@ -44,15 +57,14 @@ class PlanCompatibilityCacheTest extends TestCase
         };
 
         $this->assertSame(['MAT' => [[1, 1, 1, 25]]], $remember());
-        $this->assertSame(['MAT' => [[1, 1, 1, 25]]], $remember(), 'read back from the cache');
-        $this->assertSame(1, $calls, 'built once: the expiry is in the future, so the entry was kept');
+        $this->assertSame(['MAT' => [[1, 1, 1, 25]]], $remember(), $name . ': read back from the cache');
+        $this->assertSame(1, $calls, $name . ': built once, so the entry was kept');
 
-        // Kept until the next Monday 17:00 UTC (plus its spread), gone after it.
-        $key = generateCacheString('plan_compat_test', ['abc']);
-        Carbon::setTestNow(Carbon::parse('2026-11-23 16:59:00', 'UTC'));
-        $this->assertNotNull(Cache::get($key));
-        Carbon::setTestNow(Carbon::parse('2026-11-23 18:00:00', 'UTC'));
-        $this->assertNull(Cache::get($key));
+        $key = generateCacheString('plan_compat_test', [$name]);
+        Carbon::setTestNow(Carbon::parse($kept, 'UTC'));
+        $this->assertNotNull(Cache::get($key), $name . ': still there at ' . $kept);
+        Carbon::setTestNow(Carbon::parse($gone, 'UTC'));
+        $this->assertNull(Cache::get($key), $name . ': gone at ' . $gone);
     }
 
     public function testTheOldFormatVerdictIsReadFromItsOwnEntry()

@@ -153,18 +153,21 @@ class PlanCompatibilitySpeedTest extends TestCase
     {
         $key = 'plan_compat_fileset_v2:abc123';
         $spread = self::spread($key);
-        // 2026-11-16 is a Monday.
+        // 2026-11-16 is a Monday. Before 17:00 UTC on a Monday, the same afternoon (review of #1164: an entry built
+        // while the weekly push runs, or just after it, must not last the week).
         $cases = [
-            '2026-11-16 15:59:00 UTC' => '2026-11-16 17:00:00', // 61 minutes left: the same day
-            '2026-11-16 16:00:00 UTC' => '2026-11-16 17:00:00', // an hour left exactly
-            '2026-11-16 16:01:00 UTC' => '2026-11-23 17:00:00', // 59 minutes left: the next week
-            '2026-11-16 17:00:00 UTC' => '2026-11-23 17:00:00',
-            '2026-11-16 23:30:00 UTC' => '2026-11-23 17:00:00',
             '2026-11-16 00:00:00 UTC' => '2026-11-16 17:00:00',
+            '2026-11-16 15:59:00 UTC' => '2026-11-16 17:00:00',
+            '2026-11-16 16:00:00 UTC' => '2026-11-16 17:00:00',
+            '2026-11-16 16:01:00 UTC' => '2026-11-16 17:00:00',
+            '2026-11-16 16:59:59 UTC' => '2026-11-16 17:00:00',
+            '2026-11-16 09:30:00 America/Denver' => '2026-11-16 17:00:00', // 16:30 UTC
+            '2026-11-16 17:00:00 UTC' => '2026-11-23 17:00:00', // at 17:00 the next week
+            '2026-11-16 23:30:00 UTC' => '2026-11-23 17:00:00',
             '2026-11-17 09:00:00 UTC' => '2026-11-23 17:00:00', // Tuesday
+            '2026-11-18 10:00:00 UTC' => '2026-11-23 17:00:00', // Wednesday: a week's life
             '2026-11-22 23:59:59 UTC' => '2026-11-23 17:00:00', // Sunday
             '2026-11-22 12:00:00 America/Denver' => '2026-11-23 17:00:00', // Sunday in Denver, Sunday 19:00 UTC
-            '2026-11-16 09:30:00 America/Denver' => '2026-11-23 17:00:00', // 16:30 UTC: under an hour left
         ];
         foreach ($cases as $now => $expected) {
             $expiry = self::untilMonday($now, $key);
@@ -220,17 +223,32 @@ class PlanCompatibilitySpeedTest extends TestCase
         $this->assertEquals(self::untilMonday($now, 'same key'), self::untilMonday($now, 'same key'), 'the same key, the same second');
     }
 
-    public function testTheWeeklyExpiryIsNeverLessThanAnHourAway()
+    public function testTheWeeklyExpiryIsNeverLessThanAMinuteAway()
     {
-        // Every 7 minutes for a week (Repository::put() deletes an entry whose time is up).
+        // Every 7 minutes for a week, and every second of the last minute before Monday 17:00 UTC
+        // (Repository::put() deletes an entry whose time is up).
         $start = Carbon::parse('2026-11-16 00:00:00', 'UTC');
+        $times = [];
         for ($minutes = 0; $minutes < 7 * 24 * 60; $minutes += 7) {
-            $now = $start->copy()->addMinutes($minutes);
-            Carbon::setTestNow($now);
-            $seconds = $now->diffInSeconds(PlanCompatibilityService::cacheUntilMonday('k' . $minutes), false);
-            $this->assertGreaterThanOrEqual(3600, $seconds, $now->toDateTimeString());
-            $this->assertLessThanOrEqual(7 * 86400 + 2 * 3600, $seconds, $now->toDateTimeString());
+            $times[] = $start->copy()->addMinutes($minutes);
         }
+        for ($second = 1; $second <= 60; $second++) {
+            $times[] = Carbon::parse('2026-11-16 17:00:00', 'UTC')->subSeconds($second);
+        }
+        foreach ($times as $n => $now) {
+            Carbon::setTestNow($now);
+            $seconds = $now->diffInSeconds(PlanCompatibilityService::cacheUntilMonday('k' . $n), false);
+            $this->assertGreaterThanOrEqual(60, $seconds, $now->toDateTimeString());
+            $this->assertLessThanOrEqual(7 * 86400 + 3600, $seconds, $now->toDateTimeString());
+        }
+
+        // A key whose spread is under 10 seconds, 5 seconds before 17:00: kept a minute, not 5 seconds.
+        $n = 0;
+        while (self::spread('short' . $n) >= 10) {
+            $n++;
+        }
+        $expiry = self::untilMonday('2026-11-16 16:59:55 UTC', 'short' . $n);
+        $this->assertSame('2026-11-16 17:00:55', $expiry->format('Y-m-d H:i:s'));
     }
 
     // ---------------------------------------------------------------------------------------------------------------

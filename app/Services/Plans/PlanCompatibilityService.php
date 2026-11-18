@@ -40,6 +40,8 @@ class PlanCompatibilityService
     private const WEEKLY_EXPIRY_HOUR_UTC = 17;
     /** Entries expire up to an hour after it, each at its own second, so they don't all expire at once. */
     private const WEEKLY_EXPIRY_SPREAD_SECONDS = 3600;
+    /** No entry is stored for less than this (cacheUntilMonday()). */
+    private const WEEKLY_EXPIRY_MINIMUM_SECONDS = 60;
 
     private $plan_service;
 
@@ -64,21 +66,25 @@ class PlanCompatibilityService
     }
 
     /**
-     * The expiry of a weekly cache entry: the next Monday 17:00 UTC, rolled on a week when less than an hour is left
-     * (so an entry stored just before it lasts the week), plus up to an hour that depends on the key. Never less than
-     * an hour away: Cache::put() deletes an entry whose time is up. An Illuminate\Support\Carbon, the type
-     * cacheRemember() takes; UTC, so the time of year changes nothing.
+     * The expiry of a weekly cache entry: this week's Monday 17:00 UTC while it is still ahead, else the next
+     * Monday's, plus up to an hour that depends on the key. So an entry built on a Monday before 17:00 UTC, while the
+     * weekly push runs or just after it, expires that afternoon, not a week later (review of #1164). At least a minute
+     * away: Cache::put() deletes an entry whose time is up, and a request waiting on cacheRemember()'s lock would then
+     * find nothing. An Illuminate\Support\Carbon, the type cacheRemember() takes; UTC, so the time of year changes
+     * nothing.
      */
     public static function cacheUntilMonday(string $key) : Carbon
     {
         $now = Carbon::now('UTC');
         // This ISO week's Monday (dayOfWeekIso: Monday 1 to Sunday 7).
         $expiry = $now->copy()->subDays($now->dayOfWeekIso - 1)->setTime(self::WEEKLY_EXPIRY_HOUR_UTC, 0);
-        if ($expiry->lt($now->copy()->addHour())) {
+        if ($expiry->lte($now)) {
             $expiry->addWeek();
         }
+        $expiry->addSeconds(crc32($key) % self::WEEKLY_EXPIRY_SPREAD_SECONDS);
+        $soonest = $now->copy()->addSeconds(self::WEEKLY_EXPIRY_MINIMUM_SECONDS);
 
-        return $expiry->addSeconds(crc32($key) % self::WEEKLY_EXPIRY_SPREAD_SECONDS);
+        return $expiry->lt($soonest) ? $soonest : $expiry;
     }
 
     /**
