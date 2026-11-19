@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Connections;
 
 use App\Http\Controllers\APIController;
+use Illuminate\Support\Facades\Log;
 
 class MobileAppsController extends APIController
 {
@@ -24,7 +25,7 @@ class MobileAppsController extends APIController
 
             return view('layouts.partials.deeplink-redirect', compact($data));
         } catch (\Exception $e) {
-            \Log::error(__METHOD__ . ' ' . $e->getMessage());
+            Log::error(__METHOD__ . ' ' . $e->getMessage());
             abort(500, $e->getMessage());
         }
         return null;

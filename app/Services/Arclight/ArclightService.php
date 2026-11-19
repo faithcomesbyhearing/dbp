@@ -2,6 +2,7 @@
 
 namespace App\Services\Arclight;
 
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -28,7 +29,7 @@ class ArclightService
      */
     public function doRequest(
         string $path,
-        string $language_id = null,
+        ?string $language_id = null,
         bool $include_refs = false,
         string $parameters = ''
     ) : ResponseInterface {
@@ -56,7 +57,7 @@ class ArclightService
         }
 
         if (!$this->isSuccessful($response)) {
-            \Log::channel('errorlog')
+            Log::channel('errorlog')
             ->error([
                 "Arclight - Error URL:{$response->getInfo('url')} Error Code: '{$response->getStatusCode()}"
             ]);
@@ -82,14 +83,14 @@ class ArclightService
      *
      * @return \Symfony\Contracts\HttpClient\ResponseStreamInterface
      */
-    public function stream(ResponseInterface|iterable $responses, float $timeout = null) : ResponseStreamInterface
+    public function stream(ResponseInterface|iterable $responses, ?float $timeout = null) : ResponseStreamInterface
     {
         return $this->client->stream($responses, $timeout);
     }
 
     public static function createPath(
         string $path,
-        string $language_id = null,
+        ?string $language_id = null,
         bool $include_refs = false,
         string $parameters = ''
     ) : string {

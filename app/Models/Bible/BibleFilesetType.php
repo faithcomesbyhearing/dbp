@@ -2,6 +2,7 @@
 
 namespace App\Models\Bible;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -21,6 +22,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class BibleFilesetType extends Model
 {
+    use HasFactory;
+
     protected $connection = 'dbp';
     public $table = 'bible_fileset_types';
 
@@ -90,6 +93,11 @@ class BibleFilesetType extends Model
      * @property \Carbon\Carbon $updated_at
      */
     protected $updated_at;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Bible\BibleFilesetTypeFactory::new();
+    }
 
     public function fileset()
     {

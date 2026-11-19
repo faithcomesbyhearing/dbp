@@ -3,6 +3,7 @@
 namespace App\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * Class ProjectOauthProvider
@@ -18,6 +19,13 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ProjectOauthProvider extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\User\ProjectOauthProviderFactory::new();
+    }
+
     protected $connection = 'dbp_users';
     protected $table = 'project_oauth_providers';
     protected $fillable = ['id','project_id','name','client_secret','client_id','callback_url','callback_url_alt','description'];

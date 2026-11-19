@@ -5,6 +5,7 @@ namespace App\Models\Plan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\ModelBase;
+use Illuminate\Support\Facades\DB;
 
 class PlanDayComplete extends Model
 {
@@ -68,7 +69,7 @@ class PlanDayComplete extends Model
     {
         return self::select('plan_day_id')
             ->whereExists(function ($sub_query) use ($plan_id) {
-                return $sub_query->select(\DB::raw(1))
+                return $sub_query->select(DB::raw(1))
                     ->from('plan_days as pld')
                     ->where('pld.plan_id', $plan_id)
                     ->whereColumn('pld.id', '=', 'plan_days_completed.plan_day_id');

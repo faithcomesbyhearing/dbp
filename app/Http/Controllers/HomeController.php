@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use App\Models\Bible\BibleFileset;
 use App\Models\Country\Country;
 use App\Models\Language\Alphabet;
@@ -23,7 +24,7 @@ class HomeController extends APIController
      */
     public function index()
     {
-        $user = \Auth::user();
+        $user = Auth::user();
 
         return view('home', compact('user'));
     }

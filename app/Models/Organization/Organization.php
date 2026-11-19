@@ -9,6 +9,7 @@ use App\Models\LicenseGroup\LicenseGroupLicensor;
 use App\Models\User\Role;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use OpenApi\Annotations\License;
 
 /**
@@ -79,7 +80,13 @@ use OpenApi\Annotations\License;
  */
 class Organization extends Model
 {
+    use HasFactory;
     use SoftDeletes;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Organization\OrganizationFactory::new();
+    }
 
     const SIL_LICENSOR_ID = 19;
     const USED_WITH_PERMISSION = 'used with permission';
@@ -88,8 +95,14 @@ class Organization extends Model
     protected $connection = 'dbp';
     // The attributes excluded from the model's JSON form.
     protected $hidden = ['logo','facebook','twitter','code','created_at','updated_at','deleted_at','notes'];
-    protected $dates  = ['deleted_at'];
     protected $fillable = ['name', 'email', 'password','facebook','twitter','website','address','phone'];
+
+    protected function casts(): array
+    {
+        return [
+            'deleted_at' => 'datetime',
+        ];
+    }
 
     /**
      *

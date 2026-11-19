@@ -498,7 +498,10 @@ class PlaylistItems extends Model implements Sortable
 
             if ($verse_start && $verse_end) {
                 $audioTimestamps =  Arr::where($audioTimestamps, function ($timestamp) use ($verse_start, $verse_end) {
-                    return (int)$timestamp->verse_start >= (int)$verse_start && (int)$timestamp->verse_start <= (int)$verse_end;
+                    // $timestamp may be an array (Collection->toArray()) or a stdClass (DB::select);
+                    // data_get() reads "verse_start" correctly from either shape.
+                    $timestamp_verse_start = data_get($timestamp, 'verse_start');
+                    return (int)$timestamp_verse_start >= (int)$verse_start && (int)$timestamp_verse_start <= (int)$verse_end;
                 });
             }
 
@@ -659,7 +662,7 @@ class PlaylistItems extends Model implements Sortable
             'verse_sequence',
             'verses',
             'duration',
-            \DB::Raw('IF(playlist_items_completed.playlist_item_id, true, false) as completed'),
+            DB::Raw('IF(playlist_items_completed.playlist_item_id, true, false) as completed'),
         ])
         ->leftJoin('playlist_items_completed', function ($query_join) use ($user_id) {
             $query_join
@@ -708,7 +711,7 @@ class PlaylistItems extends Model implements Sortable
             'order_column',
             'verses',
             'duration',
-            \DB::Raw('false as completed'),
+            DB::Raw('false as completed'),
         ])
             ->whereIn('playlist_id', $playlist_ids)
             ->with(['fileset' => function ($query_fileset) {
@@ -734,7 +737,7 @@ class PlaylistItems extends Model implements Sortable
      */
     public static function getLastItemsByPlaylistId(
         int $playlist_id,
-        int $limit = null
+        ?int $limit = null
     ) : Collection {
         return PlaylistItems::select([
             'id',
@@ -749,7 +752,7 @@ class PlaylistItems extends Model implements Sortable
             'order_column',
             'verses',
             'duration',
-            \DB::Raw('false as completed'),
+            DB::Raw('false as completed'),
         ])
             ->where('playlist_id', $playlist_id)
             ->with(['fileset' => function ($query_fileset) {

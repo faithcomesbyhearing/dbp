@@ -2,6 +2,7 @@
 
 namespace App\Models\Bible;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -30,6 +31,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class BibleFilesetSize extends Model
 {
+    use HasFactory;
+
     public const SIZE_COMPLETE = 'C';
     public const SIZE_NEW_TESTAMENT = 'NT';
     public const SIZE_NEW_TESTAMENT_OLD_TESTAMENT_PORTION = 'NTOTP';
@@ -89,6 +92,11 @@ class BibleFilesetSize extends Model
      * property string $name
      */
     protected $name;
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\Bible\BibleFilesetSizeFactory::new();
+    }
 
     public function filesetConnection()
     {
