@@ -280,7 +280,7 @@ class PlanCompatibilitySpeedTest extends TestCase
         };
     }
 
-    private static function checkBibles(PlanCompatibilityService $service, array $bible_ids, array $times, float $limit = 60) : array
+    private static function checkBibles(PlanCompatibilityService $service, array $bible_ids, array $times, float $limit = 45) : array
     {
         $plans = [7 => [['id' => 1, 'book_id' => 'MAT', 'chapter_start' => 1, 'chapter_end' => 1, 'verse_start' => null, 'verse_end' => null]]];
         $clock = function () use (&$times) {
@@ -303,8 +303,8 @@ class PlanCompatibilitySpeedTest extends TestCase
     public function testACallPastTheTimeLimitStopsBeforeTheNextBible()
     {
         $service = self::service();
-        // The clock is read before each Bible: 0 s, 30 s, then 60.5 s in.
-        $answer = self::checkBibles($service, ['ENGA', 'ENGB', 'ENGC', 'ENGD'], [1000.0, 1030.0, 1060.5, 1061.0]);
+        // The clock is read before each Bible: 0 s, 30 s, then 45.5 s in.
+        $answer = self::checkBibles($service, ['ENGA', 'ENGB', 'ENGC', 'ENGD'], [1000.0, 1030.0, 1045.5, 1046.0]);
 
         $this->assertTrue($answer['timed_out']);
         $this->assertSame(['ENGA', 'ENGB'], $service->asked, 'ENGC and ENGD are never looked at');
@@ -315,8 +315,8 @@ class PlanCompatibilitySpeedTest extends TestCase
     public function testACallWithinTheTimeLimitChecksEveryBible()
     {
         $service = self::service();
-        // 60 s in is not past the limit.
-        $answer = self::checkBibles($service, ['ENGA', 'ZZNONE', 'ENGC'], [1000.0, 1059.0, 1060.0]);
+        // 45 s in is not past the limit.
+        $answer = self::checkBibles($service, ['ENGA', 'ZZNONE', 'ENGC'], [1000.0, 1044.0, 1045.0]);
 
         $this->assertFalse($answer['timed_out']);
         $this->assertSame(['ENGA', 'ZZNONE', 'ENGC'], $service->asked);
@@ -337,10 +337,11 @@ class PlanCompatibilitySpeedTest extends TestCase
         $this->assertSame(0, $answer['checked']);
     }
 
-    public function testTheTimeLimitIsSixtySecondsWithItsOwnAnswer()
+    public function testTheTimeLimitIsFortyFiveSecondsWithItsOwnAnswer()
     {
+        // Under production's 60-second gateway and PHP limits, so a slow call normally gets the 503, not a 504 (#1165).
         $config = require __DIR__ . '/../../config/plan_compat.php';
-        $this->assertSame(60, $config['time_limit']);
+        $this->assertSame(45, $config['time_limit']);
         $this->assertSame('plan_compatibility_time_limit', PlanCompatibilityController::TIME_LIMIT_ACTION);
         $this->assertSame('The compatibility check took too long. Send fewer Bibles at a time.', PlanCompatibilityController::TIME_LIMIT_MESSAGE);
     }
