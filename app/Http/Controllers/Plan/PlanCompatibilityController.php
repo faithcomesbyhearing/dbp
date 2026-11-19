@@ -72,7 +72,7 @@ class PlanCompatibilityController extends APIController
      *     ),
      *     @OA\Response(response=403, description="The API key is not authorized to access user data"),
      *     @OA\Response(response=422, description="A list is missing, empty, too long or malformed; a limit is exceeded; exact_threshold is not 0 to 100; or a playlist item id is malformed or an item of none of the plans (one of a requested plan that is deleted is ignored)"),
-     *     @OA\Response(response=503, description="The call ran out of time (60 seconds) before its last Bible: error.action is plan_compatibility_time_limit. Send fewer Bibles at a time")
+     *     @OA\Response(response=503, description="The call ran out of time (45 seconds) before its last Bible: error.action is plan_compatibility_time_limit. Send fewer Bibles at a time")
      * )
      *
      * One schema with nothing referenced in it: openApi:generate drops this unreferenced internal schema, but would keep
@@ -204,7 +204,7 @@ class PlanCompatibilityController extends APIController
             $access_group_ids,
             $playlist_item_ids,
             $started,
-            (float) config('plan_compat.time_limit', 60),
+            (float) config('plan_compat.time_limit', 45),
             function () {
                 return microtime(true);
             }
