@@ -109,13 +109,12 @@ class TextSearchTest extends ApiV4Test
         foreach (["ENGESV'", "ENGESV' OR '1'='1", "ENGESV'; DROP TABLE bible_verses; --", 'ENGESV) UNION SELECT 1 --'] as $dam_id) {
             $this->params['dam_id'] = $dam_id;
             $path = route('v2_text_search', $this->params);
-            echo "\n Testing " . $path;
             $this->get($path)->assertStatus(422);
         }
     }
 
     /**
-     * PBI 106796 (H-01): a well-formed id that matches no fileset is a 4xx, not an empty 200.
+     * PBI 106796 (H-01): a well-formed id that matches no fileset keeps the v2 contract: 200 [].
      *
      * @category V2_Text
      * @see \App\Http\Controllers\Bible\TextControllerV2::search()
@@ -130,8 +129,7 @@ class TextSearchTest extends ApiV4Test
         $this->params['query']  = 'God';
         $this->params['dam_id'] = 'ZZZZZZN2ET';
         $path = route('v2_text_search', $this->params);
-        echo "\n Testing " . $path;
-        $this->get($path)->assertStatus(404);
+        $this->get($path)->assertOk()->assertExactJson([]);
     }
 
     /**
@@ -154,7 +152,6 @@ class TextSearchTest extends ApiV4Test
         $this->params['limit']  = 6;
 
         $path = route('v2_text_search', $this->params);
-        echo "\n Testing " . $path;
         $response = $this->get($path);
         $response->assertSuccessful();
 

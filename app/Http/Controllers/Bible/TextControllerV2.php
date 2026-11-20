@@ -123,7 +123,6 @@ class TextControllerV2 extends APIController
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v2_text_search"))
      *     ),
-     *     @OA\Response(response=404, description="No fileset matches the provided fileset_id / dam_id"),
      *     @OA\Response(response=422, description="The fileset_id / dam_id is malformed")
      * )
      *
@@ -167,8 +166,7 @@ class TextControllerV2 extends APIController
             )
             ->first();
         if (!$fileset) {
-            // replyWithError() answers v2 clients with an empty 200 body; a missing fileset must be a 4xx.
-            return response()->json(['error' => 'No fileset found for the provided params'], 404);
+            return $this->setStatusCode(404)->replyWithError('No fileset found for the provided params');
         }
         $bible = $fileset->bible->first();
 
