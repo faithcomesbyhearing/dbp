@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers\Bible;
 
-use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 use App\Traits\AccessControlAPI;
 use App\Traits\CallsBucketsTrait;
 use App\Traits\BibleFileSetsTrait;
 use App\Http\Controllers\APIController;
+use App\Models\User\AccessGroup;
+use App\Models\User\AccessGroupKey;
 use App\Models\User\UserDownload;
 use App\Models\Bible\BibleFileset;
 use App\Models\Bible\Book;
@@ -227,5 +232,176 @@ class BibleFilesetsDownloadController extends APIController
         );
 
         return $this->reply(fractal($filesets, new BibleFileSetsDownloadTransFormer));
+    }
+
+    /**
+     * Proxies package creation to BBHub (POST /audio/create-by-filesets).
+     * Only API keys in an access group listed in settings.package_create_access_group_ids may call it.
+     *
+     * @OA\Post(
+     *     path="/download/package-create",
+     *     operationId="v4_internal_download_package_create",
+     *     tags={"Bibles"},
+     *     summary="Create a download package from filesets",
+     *     description="Accepts a JSON payload containing fileset IDs and an encryption type, then proxies the request to BBHub package creation.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"filesets","encryptionType"},
+     *             @OA\Property(
+     *                 property="filesets",
+     *                 type="array",
+     *                 minItems=1,
+     *                 uniqueItems=true,
+     *                 @OA\Items(type="string", minLength=1),
+     *                 example={"ENGESVN2DA","ENGESVO1DA"}
+     *             ),
+     *             @OA\Property(
+     *                 property="encryptionType",
+     *                 type="integer",
+     *                 example=1
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Response from the upstream BBHub service (status and body are proxied).",
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 additionalProperties=true
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Request body must be valid JSON.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="Request body must be valid JSON.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="The API key is not in an access group allowed to create packages.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="This API key is not allowed to create packages.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation failed for the request body.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="The filesets field is required.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=503,
+     *         description="BBHub is unavailable.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string", example="BBHub is unavailable.")
+     *         )
+     *     )
+     * )
+     */
+    public function packageCreate(Request $request): Response|JsonResponse
+    {
+        if (!$this->keyMayCreatePackages($this->key)) {
+            $this->setStatusCode(Response::HTTP_FORBIDDEN);
+            return $this->replyWithError('This API key is not allowed to create packages.');
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($payload)) {
+            $this->setStatusCode(Response::HTTP_BAD_REQUEST);
+            return $this->replyWithError('Request body must be valid JSON.');
+        }
+
+        $validator = Validator::make($payload, [
+            'filesets'         => 'required|array|min:1',
+            'filesets.*'       => 'string|min:1|distinct',
+            'encryptionType'   => 'required|integer',
+        ]);
+        if ($validator->fails()) {
+            $this->setStatusCode(Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->replyWithError($validator->errors()->first());
+        }
+
+        $baseUrl = rtrim((string) config('services.bbhub.url'), '/');
+        if ($baseUrl === '') {
+            \Log::warning('BBHub is not configured: BBHUB_BASE_URL is empty');
+            $this->setStatusCode(Response::HTTP_SERVICE_UNAVAILABLE);
+            return $this->replyWithError('BBHub is unavailable.');
+        }
+        $url =$baseUrl . '/audio/create-by-filesets';
+        $timeout = (int) config('services.bbhub.service_timeout', 60);
+
+        try {
+            $upstream = Http::retry(3, 100, function ($exception) {
+                return $exception instanceof ConnectionException;
+            })
+                ->timeout($timeout)
+                ->acceptJson()
+                ->asJson()
+                ->post($url, $payload);
+        } catch (ConnectionException $e) {
+            \Log::warning('BBHub connection failed after retries', [
+                'url' => $url,
+                'exception' => $e->getMessage(),
+            ]);
+            $this->setStatusCode(Response::HTTP_SERVICE_UNAVAILABLE);
+            return $this->replyWithError('BBHub is unavailable.');
+        }
+
+        $response = response($upstream->body(), $upstream->status());
+        $contentType = $upstream->header('Content-Type');
+        if ($contentType) {
+            $response->header('Content-Type', $contentType);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Whether the API key belongs to an access group listed in settings.package_create_access_group_ids.
+     * An unset or empty setting, a key with no access groups, or a group id that does not exist
+     * all mean "not allowed".
+     *
+     * The key's groups are read from the AccessControl cache entry, not from the request input:
+     * when a key has no groups the middleware does not set middleware_access_group_ids,
+     * so a caller could send that field itself.
+     *
+     * @param string $api_key
+     *
+     * @return bool
+     */
+    private function keyMayCreatePackages(string $api_key): bool
+    {
+        $allowed_group_ids = collect(explode(',', (string) config('settings.package_create_access_group_ids')))
+            ->map(fn ($group_id) => trim($group_id))
+            ->filter(fn ($group_id) => ctype_digit($group_id))
+            ->map(fn ($group_id) => (int) $group_id);
+
+        if ($allowed_group_ids->isEmpty()) {
+            return false;
+        }
+
+        $key_group_ids = cacheRemember(
+            'access_control_middleware',
+            removeSpaceAndCntrlFromCacheParameters([$api_key]),
+            now()->addDay(),
+            fn () => AccessGroupKey::getAccessGroupIdsByApiKey($api_key)
+        );
+
+        $matching_group_ids = $allowed_group_ids
+            ->intersect(collect($key_group_ids)->map(fn ($group_id) => (int) $group_id))
+            ->values();
+
+        return $matching_group_ids->isNotEmpty()
+            && AccessGroup::whereIn('id', $matching_group_ids)->exists();
     }
 }
