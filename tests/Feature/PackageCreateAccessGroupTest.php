@@ -135,6 +135,22 @@ class PackageCreateAccessGroupTest extends TestCase
      * @group package_create
      * @test
      */
+    public function package_create_returns_503_when_hub_url_is_not_set(): void
+    {
+        config(['settings.package_create_access_group_ids' => (string) $this->allowedGroupId]);
+        config(['services.bbhub.url' => null]);
+
+        Http::fake();
+        $response = $this->callPackageCreate($this->allowedKey);
+
+        $response->assertStatus(503);
+        Http::assertNothingSent();
+    }
+
+    /**
+     * @group package_create
+     * @test
+     */
     public function package_create_refuses_when_key_is_outside_allowed_group(): void
     {
         config(['settings.package_create_access_group_ids' => (string) $this->allowedGroupId]);

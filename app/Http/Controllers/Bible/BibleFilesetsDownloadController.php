@@ -332,7 +332,12 @@ class BibleFilesetsDownloadController extends APIController
         }
 
         $baseUrl = rtrim((string) config('services.bbhub.url'), '/');
-        $url = $baseUrl . '/audio/create-by-filesets';
+        if ($baseUrl === '') {
+            \Log::warning('BBHub is not configured: BBHUB_BASE_URL is empty');
+            $this->setStatusCode(Response::HTTP_SERVICE_UNAVAILABLE);
+            return $this->replyWithError('BBHub is unavailable.');
+        }
+        $url =$baseUrl . '/audio/create-by-filesets';
         $timeout = (int) config('services.bbhub.service_timeout', 60);
 
         try {

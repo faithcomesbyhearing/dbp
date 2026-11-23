@@ -73,7 +73,7 @@ return [
     ],
 
     'bbhub' => [
-        'url' => env('BBHUB_BASE_URL', 'https://dev.biblebrainhub.fcbh.org/'),
+        'url' => env('BBHUB_BASE_URL'),
         'service_timeout' => env('BBHUB_SERVICE_TIMEOUT', 1200),
     ],
 ];
