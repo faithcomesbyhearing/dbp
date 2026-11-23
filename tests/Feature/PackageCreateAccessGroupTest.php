@@ -120,6 +120,7 @@ class PackageCreateAccessGroupTest extends TestCase
     public function package_create_calls_hub_when_key_belongs_to_allowed_group(): void
     {
         config(['settings.package_create_access_group_ids' => (string) $this->allowedGroupId]);
+        config(['services.bbhub.url' => 'https://bbhub.test']);
 
         Http::fake([
             '*' => Http::response(['success' => true], 200),

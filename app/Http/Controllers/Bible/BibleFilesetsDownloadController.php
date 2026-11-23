@@ -240,7 +240,7 @@ class BibleFilesetsDownloadController extends APIController
      *
      * @OA\Post(
      *     path="/download/package-create",
-     *     operationId="v4_download_package_create",
+     *     operationId="v4_internal_download_package_create",
      *     tags={"Bibles"},
      *     summary="Create a download package from filesets",
      *     description="Accepts a JSON payload containing fileset IDs and an encryption type, then proxies the request to BBHub package creation.",
