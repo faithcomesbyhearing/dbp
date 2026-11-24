@@ -92,6 +92,77 @@ class TextSearchTest extends ApiV4Test
 
 
     /**
+     * PBI 106796 (H-01): an id with a quote or an SQL expression never reaches the database.
+     *
+     * @category V2_Text
+     * @see \App\Http\Controllers\Bible\TextControllerV2::search()
+     * @category Route Name: v2_text_search
+     * @group    V2
+     * @group    travis
+     * @test
+     */
+    public function v2TextSearchRejectsSqlInjectionInDamId()
+    {
+        $this->params['v']     = 2;
+        $this->params['query'] = 'God';
+
+        foreach (["ENGESV'", "ENGESV' OR '1'='1", "ENGESV'; DROP TABLE bible_verses; --", 'ENGESV) UNION SELECT 1 --'] as $dam_id) {
+            $this->params['dam_id'] = $dam_id;
+            $path = route('v2_text_search', $this->params);
+            $this->get($path)->assertStatus(422);
+        }
+    }
+
+    /**
+     * PBI 106796 (H-01): a well-formed id that matches no fileset keeps the v2 contract: 200 [].
+     *
+     * @category V2_Text
+     * @see \App\Http\Controllers\Bible\TextControllerV2::search()
+     * @category Route Name: v2_text_search
+     * @group    V2
+     * @group    travis
+     * @test
+     */
+    public function v2TextSearchUnknownDamIdReturns404()
+    {
+        $this->params['v']      = 2;
+        $this->params['query']  = 'God';
+        $this->params['dam_id'] = 'ZZZZZZN2ET';
+        $path = route('v2_text_search', $this->params);
+        $this->get($path)->assertOk()->assertExactJson([]);
+    }
+
+    /**
+     * PBI 106796 (H-01): a valid id still returns results and echoes the requested id (dam_id).
+     *
+     * @category V2_Text
+     * @see \App\Http\Controllers\Bible\TextControllerV2::search()
+     * @category Route Name: v2_text_search
+     * @group    V2
+     * @group    travis
+     * @test
+     */
+    public function v2TextSearchValidDamIdEchoesRequestedId()
+    {
+        $this->params['v'] = 2;
+        $bible_verse = BibleVerse::with('fileset')->where('id', random_int(1, BibleVerse::count()))->first();
+        $word = $this->selectSearchableWord($bible_verse);
+        $this->params['dam_id'] = $bible_verse->fileset->id;
+        $this->params['query']  = preg_replace("/(?![.=$'€%-])\p{P}/u", '', $word);
+        $this->params['limit']  = 6;
+
+        $path = route('v2_text_search', $this->params);
+        $response = $this->get($path);
+        $response->assertSuccessful();
+
+        $response_content = json_decode($response->getContent());
+        $this->assertSame((int) $response_content[0][0]->total_results, count($response_content[1]));
+        foreach ($response_content[1] as $verse) {
+            $this->assertStringStartsWith($bible_verse->fileset->id, $verse->dam_id);
+        }
+    }
+
+    /**
      * @category V2_Text
      * @see \app\Http\Controllers\TextController::searchGroup()
      * @category Swagger ID: TextSearchGroup

@@ -122,7 +122,8 @@ class TextControllerV2 extends APIController
      *         response=200,
      *         description="successful operation",
      *         @OA\MediaType(mediaType="application/json", @OA\Schema(ref="#/components/schemas/v2_text_search"))
-     *     )
+     *     ),
+     *     @OA\Response(response=422, description="The fileset_id / dam_id is malformed")
      * )
      *
      * @return Response
@@ -144,6 +145,16 @@ class TextControllerV2 extends APIController
         $query      = checkParam('query', true);
         $fileset_id = checkParam('fileset_id|dam_id', true);
         $book_id    = checkParam('book|book_id|books');
+
+        // Security (PBI 106796 / H-01): the id is user input. Reject anything that is not a
+        // plain fileset / DAM id before it gets anywhere near the database, and never
+        // interpolate it into SQL below (it is passed to the query builder as a binding only).
+        if (!self::isValidFilesetIdFormat($fileset_id)) {
+            return response()->json(
+                ['error' => 'Invalid fileset_id / dam_id. Only letters, digits, "-" and "_" are allowed.'],
+                422
+            );
+        }
 
         $testament_filter = getTestamentString($fileset_id);
         $fileset = BibleFileset::with('bible')
@@ -170,7 +181,6 @@ class TextControllerV2 extends APIController
             'bible_verses.verse_end',
             'bible_verses.verse_text',
             'book_testament',
-            DB::raw("'$fileset_id' as dam_id_request"),
         ];
         $verses = BibleVerse::where('hash_id', $fileset->hash_id)
             ->withVernacularMetaData($bible, $testament_filter)
@@ -194,9 +204,25 @@ class TextControllerV2 extends APIController
             $verses->select($select_columns);
         }
 
+        // The requested id is echoed back as dam_id_request (v2 clients read it from the response).
+        // It is added as a bound parameter, not as a string inside the SQL.
+        $verses->selectRaw('? as dam_id_request', [$fileset_id]);
+
         return $this->reply([
             [['total_results' => strval($verses->count())]],
             fractal($verses->get(), new TextTransformer(), $this->serializer)
         ]);
+    }
+
+    /**
+     * A v2 fileset / DAM id is a plain token (e.g. ENGESV, ENGESVN2ET, ENGESVN_ET-mobile).
+     * Same character set as the `alpha_dash` rule used for fileset_id elsewhere in the API.
+     *
+     * @param mixed $fileset_id
+     * @return bool
+     */
+    public static function isValidFilesetIdFormat($fileset_id): bool
+    {
+        return is_string($fileset_id) && preg_match('/^[A-Za-z0-9_-]{1,32}$/', $fileset_id) === 1;
     }
 }
