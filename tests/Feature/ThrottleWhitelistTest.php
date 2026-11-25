@@ -191,6 +191,36 @@ class ThrottleWhitelistTest extends TestCase
     }
 
     /**
+     * Changing only the left-most X-Forwarded-For value must not open a new
+     * rate-limit bucket. Both requests are the same caller at the load balancer.
+     *
+     * @group throttle_whitelist
+     * @test
+     */
+    public function forged_leftmost_xff_shares_one_rate_limit_bucket()
+    {
+        config(['app.ip_trusted_no_rate_limit' => '']);
+
+        $first = $this->call('GET', self::TEST_ROUTE, [], [], [], [
+            'REMOTE_ADDR'          => self::ALB_REMOTE_ADDR,
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.1, ' . self::ATTACKER_IP,
+        ]);
+
+        $second = $this->call('GET', self::TEST_ROUTE, [], [], [], [
+            'REMOTE_ADDR'          => self::ALB_REMOTE_ADDR,
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.2, ' . self::ATTACKER_IP,
+        ]);
+
+        $first->assertStatus(200);
+        $second->assertStatus(200);
+        $this->assertSame(
+            (int) $first->headers->get('X-RateLimit-Remaining') - 1,
+            (int) $second->headers->get('X-RateLimit-Remaining'),
+            'Requests with different forged left-most addresses must share one counter'
+        );
+    }
+
+    /**
      * Without X-Forwarded-For (e.g. direct/local request) the whitelist matches
      * against REMOTE_ADDR.
      *

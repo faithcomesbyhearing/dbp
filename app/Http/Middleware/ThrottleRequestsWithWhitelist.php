@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use RuntimeException;
 
 class ThrottleRequestsWithWhitelist extends ThrottleRequests
 {
@@ -34,7 +35,43 @@ class ThrottleRequestsWithWhitelist extends ThrottleRequests
     }
 
     /**
-     * Resolve the client IP used for whitelist matching.
+     * Key the limiter on the address the load balancer observed.
+     *
+     * $request->ip() is the left-most X-Forwarded-For value while TrustProxies
+     * trusts every proxy, and the caller can change that value on every request.
+     * The right-most entry is the same address the whitelist already uses.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return string
+     *
+     * @throws \RuntimeException
+     */
+    protected function resolveRequestSignature($request)
+    {
+        if ($user = $request->user()) {
+            return $this->hashRateLimitKey($user->getAuthIdentifier());
+        }
+
+        if ($route = $request->route()) {
+            return $this->hashRateLimitKey($route->getDomain().'|'.$this->resolvePeerIp($request));
+        }
+
+        throw new RuntimeException('Unable to generate the request signature. Route unavailable.');
+    }
+
+    /**
+     * Match ThrottleRequests::formatIdentifier, which is private in Laravel 11.
+     *
+     * @param string $value
+     * @return string
+     */
+    private function hashRateLimitKey(string $value): string
+    {
+        return self::$shouldHashKeys ? sha1($value) : $value;
+    }
+
+    /**
+     * Resolve the client IP used for whitelist matching and the rate-limit counter.
      *
      * The API runs behind an AWS Application Load Balancer, so REMOTE_ADDR is the
      * ALB's private IP, not the upstream (live.bible.is) proxy. The ALB appends the
