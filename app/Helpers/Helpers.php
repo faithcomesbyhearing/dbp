@@ -166,9 +166,10 @@ function cacheRemember($cache_key, $cache_args, $ttl, $callback)
  * @param string $key
  * @param Carbon $ttl
  * @param Closure $callback
+ * @param callable|null $ttlForValue See getCacheValueWithLock(). Ignored off prod, where the array store uses dev_ttl.
  * @return mixed
  */
-function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
+function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback, ?callable $ttlForValue = null)
 {
     if (config('app.env') !== 'prod') {
         // Use array cache store for dev mode to avoid Memcached minimum TTL issues
@@ -184,7 +185,7 @@ function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
     }
 
     // Value not cached, try to get it with locking mechanism
-    return getCacheValueWithLock($key, $ttl, $callback);
+    return getCacheValueWithLock($key, $ttl, $callback, $ttlForValue);
 }
 
 /**
@@ -193,9 +194,11 @@ function cacheRememberByKey(string $key, Carbon $ttl, Closure $callback)
  * @param string $key
  * @param Carbon $ttl
  * @param Closure $callback
+ * @param callable|null $ttlForValue When set, receives the callback result and returns the TTL to store. A null
+ *                                  return leaves the value uncached. Callers that omit it keep $ttl.
  * @return mixed
  */
-function getCacheValueWithLock(string $key, Carbon $ttl, Closure $callback)
+function getCacheValueWithLock(string $key, Carbon $ttl, Closure $callback, ?callable $ttlForValue = null)
 {
     // if something fails on the callback, release the lock
     // 20 seconds was selected to allow for the longest query to complete.
@@ -207,9 +210,10 @@ function getCacheValueWithLock(string $key, Carbon $ttl, Closure $callback)
         try {
             // lock acquired. access resource via callback
             $value = $callback();
-            if (!is_null($value)) {
-                Cache::put($key, $value, $ttl);
-            } else {
+            $expiresAt = $ttlForValue ? $ttlForValue($value) : $ttl;
+            if (!is_null($value) && !is_null($expiresAt)) {
+                Cache::put($key, $value, $expiresAt);
+            } else if (is_null($value)) {
                 Log::error("CacheRemember. callback returned null for key: " . $key);
             }
             $lock->release();
