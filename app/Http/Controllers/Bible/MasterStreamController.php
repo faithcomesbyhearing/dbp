@@ -12,6 +12,8 @@ class MasterStreamController extends APIController
 {
     use CallsBucketsTrait;
 
+    private const PLAYLIST_ERROR_CACHE_SECONDS = 5;
+
     protected $biblebrainService;
 
     public function __construct(BiblebrainService $biblebrainService)
@@ -67,12 +69,10 @@ class MasterStreamController extends APIController
             [$fileset_id, $book_id, $chapter, $verse_start, $verse_end]
         );
 
-        return cacheRemember(
-            'stream_master_index',
-            $cache_params,
+        return cacheRememberByKey(
+            generateCacheString('stream_master_index', $cache_params),
             now()->addHours(12),
             function () use ($fileset_id, $book_id, $chapter, $verse_start, $verse_end) {
-                // Call the new biblebrain service method
                 return $this->biblebrainMasterPlaylist(
                     $fileset_id,
                     $book_id,
@@ -80,7 +80,24 @@ class MasterStreamController extends APIController
                     $verse_start,
                     $verse_end,
                 );
-            }
+            },
+            [self::class, 'masterPlaylistCacheTtl']
         );
+    }
+
+    /**
+     * A playlist is cached for 12 hours only when biblebrain-services returned HTTP 200.
+     * An error is kept for a few seconds so a short outage is not served for the rest of the day
+     * (H-20 / 104169), and a burst of identical failures does not all hit the service at once.
+     *
+     * @param mixed $response
+     */
+    public static function masterPlaylistCacheTtl($response): \Illuminate\Support\Carbon
+    {
+        $status = $response instanceof HttpResponse ? $response->getStatusCode() : HttpResponse::HTTP_OK;
+
+        return $status === HttpResponse::HTTP_OK
+            ? now()->addHours(12)
+            : now()->addSeconds(self::PLAYLIST_ERROR_CACHE_SECONDS);
     }
 }
