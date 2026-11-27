@@ -93,7 +93,7 @@ return [
   /*
    * Google Maps API Key
    */
-  'googleMapsAPIKey' => env('GOOGLEMAPS_API_KEY', 'YOURGOOGLEMAPSkeyHERE'),
+  'googleMapsAPIKey' => env('GOOGLEMAPS_API_KEY'),
 
   /*
    * DropZone CDN
